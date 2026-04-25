@@ -1,0 +1,26 @@
+[package]
+name = "logolig-app"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+description = "Local-first, ABDD-compliant logolig generator GUI."
+
+# バイナリ名は workspace のスローガンを反映する。
+[[bin]]
+name = "logolig-forge"
+path = "src/main.rs"
+
+[dependencies]
+logolig-core.workspace = true
+iced.workspace = true
+snora.workspace = true
+
+# Step 2 以降で追加予定:
+# rfd  = "0.15"   # ネイティブファイルピッカー (ドラッグ&ドロップの代替経路, §12)
+# tokio = { version = "1", features = ["fs"] }
+
+[lints]
+workspace = true

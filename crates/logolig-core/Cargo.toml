@@ -1,0 +1,23 @@
+[package]
+name = "logolig-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+description = "Pure domain types and image processing services for logolig-forge (no GUI)."
+
+[dependencies]
+thiserror.workspace = true
+
+# Step 2 以降で追加予定:
+# image            = "0.25"   # PNG decode
+# fast_image_resize = "5"     # 高品質リサイズ (§6.2)
+# ico              = "0.4"    # ICO 生成 (§7.1)
+# resvg            = "0.45"   # SVG ラスタライズ (§6.3)
+# tiny-skia        = "0.11"   # resvg の出力ターゲット
+# tokio            = { version = "1", features = ["fs"] }  # 非同期 I/O
+
+[lints]
+workspace = true
