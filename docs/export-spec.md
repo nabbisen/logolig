@@ -10,11 +10,11 @@ to be **minimal but practically sufficient** for a modern web project:
 
 | File | Purpose |
 | --- | --- |
-| `logolig.ico` | Backwards compatibility (Windows / older browsers). Contains 16, 32, and 48 px frames so each size is rasterized **independently** rather than scaled from a single source — this preserves quality at small sizes (§6.2). |
+| `favicon.ico` | Backwards compatibility (Windows / older browsers). Contains 16, 32, and 48 px frames so each size is rasterized **independently** rather than scaled from a single source — this preserves quality at small sizes (§6.2). |
 | `apple-touch-icon.png` | 180×180 PNG; iOS / iPadOS home-screen icon. |
-| `logolig-32.png` | High-DPI browser tab. |
-| `logolig-192.png` | PWA / Android home-screen install. |
-| `logolig-512.png` | PWA splash / `manifest.webmanifest` reference. |
+| `favicon-32.png` | High-DPI browser tab. |
+| `favicon-192.png` | PWA / Android home-screen install. |
+| `favicon-512.png` | PWA splash / `manifest.webmanifest` reference. |
 | `<head>` HTML snippet | Pasteable markup; see below. |
 
 A user can extend `png_sizes` or `ico_sizes` via the advanced
@@ -33,7 +33,7 @@ Each output PNG is rendered:
 
 For the ICO container, **each frame is generated from the source at
 that exact size**. ICO frames are not scaled from a "master"
-bitmap — this is what produces the jaggy 16×16 logoligs on most
+bitmap — this is what produces the jaggy 16×16 favicons on most
 online generators. We avoid that mode entirely.
 
 ## Source non-destructiveness
@@ -55,9 +55,9 @@ Generated for `<head>`. Constraints (§7.2):
 Default shape (Step 4 will finalize):
 
 ```html
-<link rel="icon" href="/logolig.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="/logolig-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/logolig-192.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <!-- 512×512 is referenced from your web app manifest -->
 ```
@@ -76,7 +76,7 @@ The following are **not** emitted by default:
   Legacy / IE11 only.
 - A `manifest.webmanifest` file. Generation is opt-in (Step 4 may
   add it as an advanced option) because it is project-shaped, not
-  logolig-shaped — the user often has their own manifest already.
+  favicon-shaped — the user often has their own manifest already.
 
 ## Failure modes
 

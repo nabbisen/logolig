@@ -15,7 +15,7 @@ pub mod label {
     pub const CHOOSE_FILE_BTN: &str = "Choose source image file";
     pub const TOGGLE_THEME_BTN: &str = "Toggle theme (System / Light / Dark)";
     pub const TOGGLE_ADVANCED_BTN: &str = "Show or hide advanced settings";
-    pub const EXPORT_BTN: &str = "Export logoligs to disk";
+    pub const EXPORT_BTN: &str = "Export favicons to disk";
 }
 
 #[allow(dead_code)]

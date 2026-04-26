@@ -6,7 +6,7 @@ use logolig_core::{ExportPlan, ResizeAlgorithm, ThemeMode};
 
 #[test]
 fn export_plan_default_is_minimal_modern_set() {
-    // §7.1: logolig.ico, apple-touch-icon.png, 高解像度 PNG, HTML スニペット
+    // §7.1: favicon.ico, apple-touch-icon.png, 高解像度 PNG, HTML スニペット
     let plan = ExportPlan::default();
     assert!(plan.include_ico);
     assert!(plan.include_apple_touch);

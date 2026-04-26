@@ -13,7 +13,9 @@ use std::time::Instant;
 use iced::{Element, Subscription, Task, Theme};
 use snora::{Toast, ToastIntent};
 
-use logolig_core::{AppError, ExportPlan, PreviewProfile, ResizeAlgorithm, SourceAsset, ThemeMode};
+use logolig_core::{
+    AppError, ExportPlan, PreviewProfile, ResizeAlgorithm, SourceAsset, ThemeMode,
+};
 
 // ----------------------------------------------------------------------
 // 状態モデル
@@ -135,8 +137,17 @@ fn theme(state: &AppState) -> Theme {
 }
 
 fn subscription(state: &AppState) -> Subscription<Message> {
-    // snora が transient toast の存否を見て、必要なときだけ tick を流してくれる。
-    snora::toast::subscription(&state.toasts, || Message::ToastTick)
+    // 2 つのサブスクリプションを結合する:
+    //   (a) snora の Toast tick — transient toast の自動消滅
+    //   (b) iced のウィンドウイベント — ファイルドロップを Message::FileDropped に変換
+    let toasts = snora::toast::subscription(&state.toasts, || Message::ToastTick);
+
+    let drops = iced::window::events().filter_map(|(_id, ev)| match ev {
+        iced::window::Event::FileDropped(path) => Some(Message::FileDropped(path)),
+        _ => None,
+    });
+
+    Subscription::batch([toasts, drops])
 }
 
 fn view(state: &AppState) -> Element<'_, Message> {
@@ -149,10 +160,17 @@ fn view(state: &AppState) -> Element<'_, Message> {
 
 fn update(state: &mut AppState, message: Message) -> Task<Message> {
     match message {
-        Message::FileDropped(path) | Message::FilePicked(Some(path)) => start_ingest(state, path),
-        Message::FilePicked(None) | Message::PickFileRequested => {
-            // PickFileRequested の本体（rfd 経由のダイアログ起動）は Step 2 で実装。
+        Message::FileDropped(path) | Message::FilePicked(Some(path)) => {
+            start_ingest(state, path)
+        }
+        Message::FilePicked(None) => {
+            // ピッカーをキャンセルされただけ。状態は変えない。
             Task::none()
+        }
+        Message::PickFileRequested => {
+            // ネイティブファイルピッカーを Task として起動する (§12 代替経路)。
+            // 結果は `Message::FilePicked(Option<PathBuf>)` として返る。
+            crate::task_queue::pick_file_task()
         }
         Message::IngestCompleted(Ok(asset)) => {
             state.source_asset = Some(asset);

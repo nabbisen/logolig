@@ -3,14 +3,17 @@ name = "logolig-app"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-license.workspace = true
 authors.workspace = true
+license.workspace = true
+repository.workspace = true
 publish.workspace = true
-description = "Local-first, ABDD-compliant logolig generator GUI."
+description = "Local-first, ABDD-compliant favicon generator GUI (binary: logolig)."
 
-# バイナリ名は workspace のスローガンを反映する。
+# バイナリ名は `logolig`。
+# パッケージ名と異なる名前を `[[bin]]` で宣言することで、
+# `cargo install logolig-app` した時に `logolig` コマンドとして使える。
 [[bin]]
-name = "logolig-forge"
+name = "logolig"
 path = "src/main.rs"
 
 [dependencies]
@@ -18,9 +21,8 @@ logolig-core.workspace = true
 iced.workspace = true
 snora.workspace = true
 
-# Step 2 以降で追加予定:
-# rfd  = "0.15"   # ネイティブファイルピッカー (ドラッグ&ドロップの代替経路, §12)
-# tokio = { version = "1", features = ["fs"] }
+# ファイルピッカー (キーボード代替経路, §5.1, §12)
+rfd.workspace = true
 
 [lints]
 workspace = true

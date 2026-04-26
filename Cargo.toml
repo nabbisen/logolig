@@ -3,6 +3,7 @@
 # 構造の意図 (§16, §3.1):
 # - logolig-core: 純粋なドメイン + 画像処理。iced/snora 非依存。
 # - logolig-app : GUI バイナリ。iced 0.14 + snora 0.4 + logolig-core を結線する。
+#                 バイナリ名は `logolig` (cargo install で `logolig` コマンドとして使える)。
 #
 # 「ドメイン/サービス/UI 分離」を慣習ではなく依存グラフで強制する。
 # logolig-core から iced を import しようとするとコンパイルエラーになる。
@@ -12,11 +13,12 @@ resolver = "3"
 members = ["crates/logolig-core", "crates/logolig-app"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
-license = "Apache-2.0"
 authors = ["nabbisen <nabbisen@scqr.net>"]
+license = "Apache-2.0"
+repository = "https://github.com/nabbisen/logolig"
 publish = false
 
 [workspace.dependencies]
@@ -26,11 +28,23 @@ thiserror = "2"
 # GUI ランタイム + フレームワーク
 # 元の指示書は "snora 0.4 (iced ベース)" を指定。snora 0.4 は iced 0.14 を要求する。
 iced  = { version = "0.14", features = ["tokio"] }
-# snora は lucide-icons / svg-icons feature を持つが、Step 1 ではアイコン未使用。
+# snora は lucide-icons / svg-icons feature を持つが、現状アイコン未使用。
 # また snora 0.4.1 + lucide-icons 1.9.0 + iced 0.14 の組み合わせは
 # snora 上流側で型不整合があり (widget/icon.rs:27)、フィーチャ無効化で回避する。
 # Icon::Text は無条件で使えるため、必要時はそれで代替する。
 snora = { version = "0.4", default-features = false }
+
+# Step 2: 画像処理コア (logolig-core 専用)
+image = { version = "0.25", default-features = false, features = ["png"] }
+fast_image_resize = { version = "5", features = ["image"] }
+resvg = "0.45"
+tiny-skia = "0.11"
+usvg = "0.45"
+ico = "0.4"
+tokio = { version = "1", features = ["fs", "rt", "macros"] }
+
+# Step 2: ファイルピッカー (logolig-app 専用、§5.1 の代替経路)
+rfd = "0.15"
 
 # クレート間参照
 logolig-core = { path = "crates/logolig-core" }

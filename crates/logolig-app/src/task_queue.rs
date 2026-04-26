@@ -21,3 +21,22 @@ pub fn ingest_task(path: PathBuf) -> Task<Message> {
         Message::IngestCompleted,
     )
 }
+
+/// rfd のネイティブファイルピッカーを開き、選ばれたパスを `Message::FilePicked`
+/// として返す。キャンセル時は `FilePicked(None)` を返す (§5.1, §12 代替経路)。
+///
+/// `AsyncFileDialog::pick_file()` が返す `FileHandle` は `path()` で
+/// `&Path` を取れる。`PathBuf` に複製してから iced::Task のメッセージに乗せる。
+pub fn pick_file_task() -> Task<Message> {
+    Task::perform(
+        async {
+            rfd::AsyncFileDialog::new()
+                .add_filter("Images", &["png", "svg"])
+                .set_title("Choose a PNG or SVG to forge favicons from")
+                .pick_file()
+                .await
+                .map(|handle| handle.path().to_path_buf())
+        },
+        Message::FilePicked,
+    )
+}

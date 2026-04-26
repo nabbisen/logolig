@@ -13,7 +13,7 @@ The architecture exists to enforce four properties from the spec:
 ## Workspace layout
 
 ```
-logolig-forge/
+logolig/
 ├── Cargo.toml                       # [workspace] manifest
 ├── README.md
 ├── docs/
@@ -24,8 +24,10 @@ logolig-forge/
     │   │   ├── error.rs             # AppError (Clone + Send)
     │   │   ├── domain.rs / domain/  # SourceAsset, ExportPlan, ...
     │   │   └── services.rs / services/
-    │   │       ├── ingest.rs        # async file load (Step 2)
-    │   │       └── rasterize_svg.rs # resvg + tiny-skia (Step 2)
+    │   │       ├── ingest.rs        # async file load (PNG/SVG, magic-byte detection)
+    │   │       ├── decode_png.rs    # PNG → Rgba8 (image crate)
+    │   │       ├── rasterize_svg.rs # SVG → Rgba8 (resvg + tiny-skia, per-size render)
+    │   │       └── resize.rs        # Rgba8 → Rgba8 (fast_image_resize, Lanczos3 default)
     │   └── tests/
     └── logolig-app/                 # iced + snora GUI binary
         ├── src/
@@ -141,9 +143,9 @@ That alignment is why we chose snora over a hand-rolled iced shell.
 
 ## Staged build plan
 
-| Step | Deliverable |
-| --- | --- |
-| 1 | Skeleton, state model, snora layout (this commit) |
-| 2 | Drop reception + image processing pipeline |
-| 3 | Context preview UI + theme toggle + a11y polish |
-| 4 | ICO writing, export, HTML snippet generation |
+| Step | Deliverable | Status |
+| --- | --- | --- |
+| 1 | Skeleton, state model, snora layout | ✅ done (v0.1.0) |
+| 2 | Drop reception + image processing pipeline | ✅ done (v0.2.0) |
+| 3 | Context preview UI + theme toggle + a11y polish | upcoming |
+| 4 | ICO writing, export, HTML snippet generation | upcoming |

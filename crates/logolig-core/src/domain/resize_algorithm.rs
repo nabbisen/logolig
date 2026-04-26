@@ -1,6 +1,8 @@
 //! リサイズアルゴリズム (§6.2)。
 //! 既定値は品質重視 (Lanczos3)。
 
+use fast_image_resize::{FilterType, ResizeAlg};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ResizeAlgorithm {
     #[default]
@@ -32,5 +34,20 @@ impl ResizeAlgorithm {
             Self::Bilinear,
             Self::Nearest,
         ]
+    }
+
+    /// `fast_image_resize` の `ResizeAlg` への変換。
+    ///
+    /// 直接 `FilterType` ではなく `ResizeAlg` を返すのは、
+    /// `Nearest` だけが Convolution ではなく独立バリアント (`ResizeAlg::Nearest`)
+    /// として表現されているため。
+    pub fn to_resize_alg(self) -> ResizeAlg {
+        match self {
+            Self::Lanczos3 => ResizeAlg::Convolution(FilterType::Lanczos3),
+            Self::MitchellNetravali => ResizeAlg::Convolution(FilterType::Mitchell),
+            Self::CatmullRom => ResizeAlg::Convolution(FilterType::CatmullRom),
+            Self::Bilinear => ResizeAlg::Convolution(FilterType::Bilinear),
+            Self::Nearest => ResizeAlg::Nearest,
+        }
     }
 }

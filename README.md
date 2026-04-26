@@ -26,23 +26,44 @@ afterthoughts.
 
 ## Status
 
-This is an in-progress staged build. See `docs/architecture.md` for
-the four-step plan. Currently at: **Step 1 — skeleton & state model**.
+In-progress staged build. See `docs/architecture.md` for the four-step plan.
+Currently at: **Step 2 — drop reception and image processing pipeline**.
 
-## Quick start
+## Installation
 
-Requires Rust 1.88+ (project pins `rustc-1.91`).
+Requires Rust 1.85 or newer.
+
+### From source (recommended while in development)
+
+```sh
+git clone https://github.com/nabbisen/logolig
+cd logolig
+cargo install --path crates/logolig-app
+logolig
+```
+
+`cargo install` places a `logolig` binary in `~/.cargo/bin/`. Make sure that
+directory is on your `$PATH`.
+
+### From a published crate (after release)
+
+```sh
+cargo install logolig-app
+logolig
+```
+
+## Running without installing
 
 ```sh
 cargo run -p logolig-app
 ```
 
-## Design
+## Layout
 
 - `crates/logolig-core` — pure domain types and image processing.
   No iced / snora dependency. Reusable from a future CLI or WASM
   frontend.
-- `crates/logolig-app` — the iced + snora GUI binary.
+- `crates/logolig-app` — the iced + snora GUI binary (compiled to `logolig`).
 
 Documentation lives under `docs/`:
 
