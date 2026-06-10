@@ -52,18 +52,20 @@ Generated for `<head>`. Constraints (§7.2):
 - Brief; only what is necessary for the artifacts produced
 - A11y-respecting; uses no broken or deprecated attributes
 
-Default shape (Step 4 will finalize):
+The actual default output (matching the `tests/html_snippet.rs`
+expectations):
 
 ```html
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<!-- 512×512 is referenced from your web app manifest -->
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 ```
 
-The path prefix is configurable in the advanced drawer; the default
-is `/`.
+The path prefix is configurable per call to
+`html_snippet::render(plan, base)` — for example pass
+`"/static/icons/"`. Trailing slashes are normalized.
 
 ## Avoided bloat
 
@@ -74,15 +76,19 @@ The following are **not** emitted by default:
   any iOS we target.
 - `browserconfig.xml` and the Microsoft tile colors. They were Edge
   Legacy / IE11 only.
-- A `manifest.webmanifest` file. Generation is opt-in (Step 4 may
-  add it as an advanced option) because it is project-shaped, not
-  favicon-shaped — the user often has their own manifest already.
+- A `manifest.webmanifest` file. v1 does not generate one because it
+  is project-shaped, not favicon-shaped — the user often has their
+  own manifest already. (A future v2 may add it as an advanced
+  option once the WASM build introduces PWA-flavoured workflows.)
 
 ## Failure modes
 
 Output failures surface as `AppError::Export(_)` from `logolig_core`
 and become persistent error toasts in the UI (§ui-a11y "Errors as
 toasts"). The export step is **transactional at the file level**:
-either every requested artifact is written, or none is — partial
-writes from a failed run are cleaned up before the toast is shown.
-(Implementation in Step 4.)
+either every requested artifact is written, or none is. The
+implementation uses a hidden staging directory
+(`.logolig-<pid>-<nanos>.tmp`) inside the chosen output directory,
+writes every artifact there, and finalizes by atomic rename. A
+`StagingGuard` (RAII) deletes the staging on any failure path,
+including panics.

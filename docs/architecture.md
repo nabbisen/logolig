@@ -146,11 +146,46 @@ boolean flags or magic numbers.
 
 That alignment is why we chose snora over a hand-rolled iced shell.
 
-## Staged build plan
+## How v1 was built
 
-| Step | Deliverable | Status |
+Logolig v1 was assembled in four ordered increments. Each one closed
+on a green `cargo check --workspace` and a passing `cargo test
+-p logolig-core` before the next began. The progression is recorded
+here both as build history and as a map for future contributors who
+want to retrace the design decisions.
+
+| Step | Deliverable | Released as |
 | --- | --- | --- |
-| 1 | Skeleton, state model, snora layout | ✅ done (v0.1.0) |
-| 2 | Drop reception + image processing pipeline | ✅ done (v0.2.0) |
-| 3 | Context preview UI + theme toggle + a11y polish | ✅ done (v0.3.0) |
-| 4 | ICO writing, export, HTML snippet generation | ✅ done (v0.4.0) |
+| 1 | Skeleton, state model, snora layout | v0.1.0 |
+| 2 | Drop reception + image processing pipeline | v0.2.0 |
+| 3 | Context preview UI + theme toggle + a11y polish | v0.3.0 |
+| 4 | ICO writing, export, HTML snippet generation | v0.4.0 |
+| — | Stabilization, freeze | **v1.0.0** |
+
+v1.0.0 is the feature-complete iced/native build. It is in
+maintenance mode: security and critical-bug fixes only.
+
+## Where v2 is going
+
+v2 retargets the same `logolig-core` to a leptos-based WebAssembly
+build, distributed as a privacy-preserving in-browser app
+(Service Worker for offline, no upload). The split is feasible
+specifically because v1's `logolig-core` carries no GUI-framework
+dependency — the workspace boundary that was set up in Step 1
+becomes the seam.
+
+Two changes in `logolig-core` are anticipated for v2 but are
+deliberately not made in v1 (they would be churn without immediate
+payoff in v1):
+
+1. **Make ingest WASM-friendly.** `services/ingest::ingest_bytes`
+   (already present, used by tests) becomes the canonical API; the
+   `tokio::fs::read`-based `ingest(path)` wrapper moves to a
+   native-only feature gate.
+2. **Split exporter into a pure half and a fs half.** The pure half
+   produces `Vec<(PathBuf, Vec<u8>)>`; the fs half writes
+   transactionally as today. Browsers will use the pure half plus a
+   zip download or File System Access API.
+
+Neither change affects v1 behaviour. Both are recorded here so the
+v1 reader knows why the boundary is shaped the way it is.
