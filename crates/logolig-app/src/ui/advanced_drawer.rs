@@ -107,6 +107,12 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             &t.t(MessageKey::SectionLanguageBlurb),
             language_row(state),
         ),
+        // 7. Web manifest (v1.8.0)
+        section(
+            &t.t(MessageKey::SectionWebManifest),
+            &t.t(MessageKey::SectionWebManifestBlurb),
+            web_manifest_body(state),
+        ),
         // フッタ: Reset と Close を横並び
         row![
             button(text(t.t(MessageKey::ResetButton)))
@@ -118,6 +124,85 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     ]
     .spacing(18)
     .padding(20)
+    .into()
+}
+
+/// v1.8.0: Web manifest セクションの中身。
+///
+/// トグル off の時はラベルのみ。 on の時は 4 つのテキスト入力 (name /
+/// short_name / theme_color / background_color) を縦に並べる。
+///
+/// 設計判断:
+/// - 入力中の検証はしない (`#FF` まで打って警告を出す UX を避ける)
+/// - 検証は export 直前 (`Message::ExportRequested`) でまとめて行う
+/// - 永続化はキー入力ごと (`persist_settings`) — 既存の挙動 (size 入力など)
+///   と一貫させる
+fn web_manifest_body<'a>(state: &'a AppState) -> Element<'a, Message> {
+    let t = &state.translator;
+    let toggle = checkbox(state.export_plan.web_manifest.is_some())
+        .label(t.t(MessageKey::IncludeWebManifestLabel))
+        .on_toggle(Message::IncludeWebManifestToggled)
+        .text_size(13);
+
+    let Some(manifest) = state.export_plan.web_manifest.as_ref() else {
+        // off 状態では toggle のみ表示。 入力フィールドを最初から見せると
+        // 「これは何?」 と認知負荷が増えるため、 on の時だけ展開する。
+        return column![toggle].spacing(8).into();
+    };
+
+    // on 状態: 4 つのフィールドを縦に並べる。
+    // 各フィールドは「ラベル + text_input」 の row。 ラベルは固定幅で揃えると
+    // 美しいが、 v1.8 では labeled_input ヘルパで row 内縦揃えを統一する。
+    column![
+        toggle,
+        labeled_input(
+            &t.t(MessageKey::WebManifestNameLabel),
+            &manifest.name,
+            &t.t(MessageKey::WebManifestNamePlaceholder),
+            Message::WebManifestNameChanged,
+        ),
+        labeled_input(
+            &t.t(MessageKey::WebManifestShortNameLabel),
+            &manifest.short_name,
+            &t.t(MessageKey::WebManifestShortNamePlaceholder),
+            Message::WebManifestShortNameChanged,
+        ),
+        labeled_input(
+            &t.t(MessageKey::WebManifestThemeColorLabel),
+            &manifest.theme_color,
+            "#RRGGBB",
+            Message::WebManifestThemeColorChanged,
+        ),
+        labeled_input(
+            &t.t(MessageKey::WebManifestBackgroundColorLabel),
+            &manifest.background_color,
+            "#RRGGBB",
+            Message::WebManifestBackgroundColorChanged,
+        ),
+    ]
+    .spacing(8)
+    .into()
+}
+
+/// 「ラベル + text_input」 の 1 行 row。 v1.8 のフォーム入力で繰り返し使うので
+/// ヘルパ化。 ラベル幅は固定 (140px) でテキスト入力幅と揃える。
+fn labeled_input<'a>(
+    label: &str,
+    value: &str,
+    placeholder: &str,
+    on_change: fn(String) -> Message,
+) -> Element<'a, Message> {
+    row![
+        text(label.to_string())
+            .size(13)
+            .width(Length::Fixed(140.0)),
+        text_input(placeholder, value)
+            .on_input(on_change)
+            .size(13)
+            .width(Length::Fixed(220.0)),
+    ]
+    .spacing(8)
+    .align_y(Alignment::Center)
     .into()
 }
 

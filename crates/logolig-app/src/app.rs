@@ -249,6 +249,21 @@ pub enum Message {
     /// プレビュー背景に市松模様を重ねるかの toggle。
     PreviewCheckerToggled(bool),
 
+    // v1.8.0: Web manifest
+    /// `manifest.webmanifest` 出力の有効/無効 toggle。 ON で
+    /// `WebManifestSettings::default()` が `state.export_plan.web_manifest`
+    /// に挿入される。
+    IncludeWebManifestToggled(bool),
+    /// `name` フィールドの編集。
+    WebManifestNameChanged(String),
+    /// `short_name` フィールドの編集。
+    WebManifestShortNameChanged(String),
+    /// `theme_color` フィールドの編集 (リアルタイムで state に反映、
+    /// 検証は値確定時 — text_input::on_submit またはフォーカス外し時に行う)。
+    WebManifestThemeColorChanged(String),
+    /// `background_color` フィールドの編集。
+    WebManifestBackgroundColorChanged(String),
+
     // 書き出し
     ExportRequested,
     ExportDirPicked(Option<PathBuf>),
@@ -594,11 +609,92 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
+        // -----------------------------------------------------------------
+        // v1.8.0: Web manifest 設定
+        // -----------------------------------------------------------------
+        Message::IncludeWebManifestToggled(on) => {
+            // ON → デフォルト値で構造体を挿入。 OFF → None に戻す。
+            // ユーザが入力した値があっても OFF 時は破棄する (シンプルな状態遷移)。
+            // 必要なら v1.8.x で「OFF にしてもメモリ上の値は保持」 を検討。
+            state.export_plan.web_manifest = if on {
+                Some(logolig_core::WebManifestSettings::default())
+            } else {
+                None
+            };
+            persist_settings(state);
+            Task::none()
+        }
+        Message::WebManifestNameChanged(s) => {
+            if let Some(m) = state.export_plan.web_manifest.as_mut() {
+                m.name = s;
+                persist_settings(state);
+            }
+            Task::none()
+        }
+        Message::WebManifestShortNameChanged(s) => {
+            if let Some(m) = state.export_plan.web_manifest.as_mut() {
+                m.short_name = s;
+                persist_settings(state);
+            }
+            Task::none()
+        }
+        Message::WebManifestThemeColorChanged(s) => {
+            // 入力中の検証は行わない (ユーザがタイプしている途中で警告を出すと UX が悪い)。
+            // `is_valid_color` 検証は実行時 export まで遅延する — この時点では
+            // ユーザが #FF や #FFFFF のような途中状態でも自由に編集できる。
+            if let Some(m) = state.export_plan.web_manifest.as_mut() {
+                m.theme_color = s;
+                persist_settings(state);
+            }
+            Task::none()
+        }
+        Message::WebManifestBackgroundColorChanged(s) => {
+            if let Some(m) = state.export_plan.web_manifest.as_mut() {
+                m.background_color = s;
+                persist_settings(state);
+            }
+            Task::none()
+        }
+
         Message::ExportRequested => {
             // ソースが無ければ何もしない (UI 側でボタン無効化済みだが念のため)。
             if state.source_asset.is_none() {
                 return Task::none();
             }
+
+            // v1.8.0: web manifest が有効なら色文字列の形式を検証する。
+            // 不正な色を含んだまま JSON 出力すると、 ブラウザが parse は通すが
+            // 実際の表示で無視される (theme_color が反映されない等)。 ユーザに
+            // 早めに教えるため export 直前にチェックする。
+            //
+            // 入力中ではなく **出力直前** に検証する設計判断:
+            // - 入力中に文句を言うと UX が悪い (#FFF まで打って警告される)
+            // - 出力直前なら「最終的な値」 で判定できる
+            if let Some(manifest) = state.export_plan.web_manifest.as_ref() {
+                use logolig_core::WebManifestSettings;
+                if !WebManifestSettings::is_valid_color(&manifest.theme_color) {
+                    let title = state.translator.t(MessageKey::ToastInvalidColorTitle);
+                    let body = state.translator.t_args(
+                        MessageKey::ToastInvalidColorBody,
+                        &[("input", &manifest.theme_color)],
+                    );
+                    push_warning_toast(state, &title, &body);
+                    return Task::none();
+                }
+                if !WebManifestSettings::is_valid_color(&manifest.background_color) {
+                    let title = state.translator.t(MessageKey::ToastInvalidColorTitle);
+                    let body = state.translator.t_args(
+                        MessageKey::ToastInvalidColorBody,
+                        &[("input", &manifest.background_color)],
+                    );
+                    push_warning_toast(state, &title, &body);
+                    return Task::none();
+                }
+                // name / short_name が空でも valid な JSON は出るので blocking
+                // にはしないが、 export はそのまま続行する (ユーザは意図して
+                // 空にした可能性もある)。 必要なら v1.8.x で警告に格上げ。
+            }
+
             // 出力先選択ダイアログを開く。 結果は `ExportDirPicked` で戻る。
             crate::task_queue::pick_export_dir_task()
         }

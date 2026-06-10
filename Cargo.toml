@@ -13,7 +13,7 @@ resolver = "3"
 members = ["crates/logolig-core", "crates/logolig-app", "crates/logolig-i18n"]
 
 [workspace.package]
-version = "1.7.0"
+version = "1.8.0"
 edition = "2024"
 rust-version = "1.85"
 authors = ["nabbisen <nabbisen@scqr.net>"]
@@ -59,6 +59,11 @@ app-json-settings = "2"
 # toml: logolig-i18n の辞書ファイル (en.toml 等) のパース。 v2 WASM でも問題なく動く。
 sys-locale = "0.3"
 toml = "0.8"
+
+# v1.8.0: Web manifest 出力で JSON シリアライズに使用。
+# logolig-core では今まで dev-dep として InMemoryStore のテストで使っていたが、
+# v1.8 で本体機能 (manifest.webmanifest) に必要となるため runtime dep へ昇格。
+serde_json = "1"
 
 # Step 2: ファイルピッカー (logolig-app 専用、§5.1 の代替経路)
 rfd = "0.15"

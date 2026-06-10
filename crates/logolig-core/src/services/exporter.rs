@@ -17,7 +17,8 @@ use std::path::{Path, PathBuf};
 use crate::domain::{ExportPlan, Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
 use crate::services::{
-    decode_png, decode_webp, encode_png, html_snippet, ico_writer, rasterize_svg, resize,
+    decode_png, decode_webp, encode_png, html_snippet, ico_writer, manifest_writer, rasterize_svg,
+    resize,
     vectorize,
 };
 
@@ -126,6 +127,22 @@ pub fn run(
         let png_bytes = encode_png::encode(&rgba)?;
         write_file(&stage.join("apple-touch-icon.png"), &png_bytes)?;
         artifacts.push(output_dir.join("apple-touch-icon.png"));
+    }
+
+    // v1.8.0: Web manifest 出力。 HTML snippet より前に書く理由:
+    // - snippet が manifest の有無を見て <link rel="manifest"> 行を出すか
+    //   決められるよう、 plan の web_manifest フィールド自体を snippet に渡す
+    //   (実ファイル出力の有無ではなく、 plan 上の意図で判断する流儀)
+    // - manifest 書き込みが失敗した場合は staging guard が全部巻き戻すため
+    //   snippet の生成順序とは独立
+    if let Some(manifest_settings) = plan.web_manifest.as_ref() {
+        let manifest_json = manifest_writer::build_manifest_json(
+            manifest_settings,
+            &plan.png_sizes,
+        );
+        let manifest_path = stage.join(manifest_writer::MANIFEST_FILENAME);
+        write_file(&manifest_path, manifest_json.as_bytes())?;
+        artifacts.push(output_dir.join(manifest_writer::MANIFEST_FILENAME));
     }
 
     // HTML snippet。 実際に SVG が書かれたかを反映するため、 plan を一時改変する。

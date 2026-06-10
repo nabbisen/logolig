@@ -63,6 +63,16 @@ pub fn render(plan: &ExportPlan, base: &str) -> String {
         ));
     }
 
+    // v1.8.0: Web manifest が出力対象なら link 行を追加。
+    // `<link rel="manifest">` は PWA 仕様の標準。 サーバ側の MIME 設定
+    // (`application/manifest+json`) はユーザの責任で、 logolig は HTML への
+    // 紐付けだけを担う。
+    if plan.web_manifest.is_some() {
+        out.push_str(&format!(
+            "<link rel=\"manifest\" href=\"{base}manifest.webmanifest\">\n"
+        ));
+    }
+
     out
 }
 

@@ -118,3 +118,16 @@ toast_fully_opaque_body = "この画像には透過部分がありません。 �
 toast_fully_transparent_title = "画像が空"
 toast_fully_transparent_body = "この画像の全ピクセルが完全に透明です。 別のファイルを読み込む意図でしたか?"
 preview_checker_label = "透過チェッカーを表示"
+
+# --- Web manifest (v1.8.0) ---
+section_web_manifest = "Web manifest"
+section_web_manifest_blurb = "manifest.webmanifest を生成し、 アイコンを PWA としてインストール可能にする。 favicon だけでよければオフのままで。"
+include_web_manifest_label = "manifest.webmanifest を出力"
+web_manifest_name_label = "名前"
+web_manifest_name_placeholder = "例: My App"
+web_manifest_short_name_label = "短縮名"
+web_manifest_short_name_placeholder = "例: App"
+web_manifest_theme_color_label = "テーマカラー"
+web_manifest_background_color_label = "背景色"
+toast_invalid_color_title = "色の指定が不正"
+toast_invalid_color_body = "「{input}」 は有効な色ではありません。 #RRGGBB (7 文字の 16 進数) で指定してください。"

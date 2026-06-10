@@ -100,3 +100,46 @@ fn png_sizes_are_sorted_and_deduped() {
     // 32 が 1 度しか登場しないことの確認 (重複除去)
     assert_eq!(html.matches("favicon-32.png").count(), 1);
 }
+
+// ---------------------------------------------------------------------------
+// v1.8.0: web_manifest が <link rel="manifest"> を生成すること
+// ---------------------------------------------------------------------------
+
+#[test]
+fn manifest_link_is_emitted_when_web_manifest_is_some() {
+    let plan = ExportPlan {
+        web_manifest: Some(logolig_core::WebManifestSettings::default()),
+        ..ExportPlan::default()
+    };
+    let html = render(&plan, "/");
+    assert!(
+        html.contains(r#"<link rel="manifest" href="/manifest.webmanifest">"#),
+        "manifest link missing: {html}"
+    );
+}
+
+#[test]
+fn manifest_link_omitted_when_web_manifest_is_none() {
+    let plan = ExportPlan {
+        web_manifest: None,
+        ..ExportPlan::default()
+    };
+    let html = render(&plan, "/");
+    assert!(
+        !html.contains("manifest"),
+        "unexpected manifest reference: {html}"
+    );
+}
+
+#[test]
+fn manifest_link_uses_normalized_base_path() {
+    let plan = ExportPlan {
+        web_manifest: Some(logolig_core::WebManifestSettings::default()),
+        ..ExportPlan::default()
+    };
+    let html = render(&plan, "/assets/icons");
+    assert!(
+        html.contains(r#"<link rel="manifest" href="/assets/icons/manifest.webmanifest">"#),
+        "base-prefixed manifest link missing: {html}"
+    );
+}

@@ -116,3 +116,16 @@ toast_fully_opaque_body = "This image is fully opaque. It may show as a white sq
 toast_fully_transparent_title = "Image is empty"
 toast_fully_transparent_body = "Every pixel in this image is fully transparent. Did you mean to load a different file?"
 preview_checker_label = "Show transparency checker"
+
+# --- Web manifest (v1.8.0) ---
+section_web_manifest = "Web manifest"
+section_web_manifest_blurb = "Generates manifest.webmanifest so browsers treat the icon set as an installable PWA. Leave off if you only need favicons."
+include_web_manifest_label = "Output manifest.webmanifest"
+web_manifest_name_label = "Name"
+web_manifest_name_placeholder = "e.g. My App"
+web_manifest_short_name_label = "Short name"
+web_manifest_short_name_placeholder = "e.g. App"
+web_manifest_theme_color_label = "Theme color"
+web_manifest_background_color_label = "Background color"
+toast_invalid_color_title = "Invalid color"
+toast_invalid_color_body = "'{input}' is not a valid color. Use #RRGGBB (7 characters, hex digits)."

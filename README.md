@@ -89,6 +89,11 @@ If your input is a photograph or otherwise unsuitable for vectorization,
 turn off **Vectorize raster sources to SVG** in the advanced drawer to skip
 `favicon.svg` for that run.
 
+Optionally, enabling **Output `manifest.webmanifest`** (since v1.8.0) adds a
+PWA `manifest.webmanifest` to the output, alongside a matching
+`<link rel="manifest">` line in the HTML snippet. The manifest's `icons`
+array mirrors the PNG sizes you've configured.
+
 See `docs/export-spec.md` for the rationale on what is **not** emitted (no
 `browserconfig.xml`, no `msapplication-*`).
 
@@ -144,6 +149,28 @@ browser-tab / smartphone framing for a checker-pattern view: light
 and dark grey 12px tiles with the icon overlaid at native size, so
 transparent regions are visually unambiguous.
 
+## Web manifest (PWA)
+
+When **Output `manifest.webmanifest`** is enabled in the advanced drawer,
+Logolig writes a [W3C Web App Manifest](https://www.w3.org/TR/appmanifest/)
+alongside the favicons. The four user-editable fields are:
+
+- **Name** — the full app name shown on the home screen
+- **Short name** — fallback for narrow contexts (recommended ≤12 chars)
+- **Theme color** — the browser UI accent (`#RRGGBB`)
+- **Background color** — the splash-screen background (`#RRGGBB`)
+
+The manifest's `icons` array is generated from the PNG sizes you have
+configured, so it stays in sync with what's actually written to disk.
+`start_url` and `display` are fixed at `"/"` and `"standalone"` for v1.8 —
+favicon users rarely need to change these, and exposing every W3C field
+would defeat the "fewer settings" design (§5). v1.8.x can lift this
+limitation if a real need surfaces.
+
+Color values are validated at export time (not while typing), so `#FF…`
+in mid-edit doesn't trigger a warning. If a malformed color is detected at
+export, a Toast is shown and the export is blocked until it's fixed.
+
 ## Language
 
 Logolig follows your system language by default. Override the language
@@ -172,14 +199,15 @@ cargo test -p logolig-core
 cargo test -p logolig-i18n
 ```
 
-logolig-core has 63 integration tests covering ingest, decode, SVG
+logolig-core has 80 integration tests covering ingest, decode, SVG
 rasterization, vectorization, resize, preview cache, ICO writing, HTML
 snippet generation, transactional export, settings round-trip,
-forward-compatible JSON deserialization, and transparency-state
-classification. logolig-i18n adds 16 tests covering dictionary loading
-(English and Japanese), placeholder substitution, error translation,
-BCP-47 locale resolution including POSIX forms, and a regression check
-that Japanese UI keys actually differ from English. Total: 79 tests.
+forward-compatible JSON deserialization, transparency-state
+classification, and Web manifest JSON generation. logolig-i18n adds 16
+tests covering dictionary loading (English and Japanese), placeholder
+substitution, error translation, BCP-47 locale resolution including
+POSIX forms, and a regression check that Japanese UI keys actually
+differ from English. Total: 96 tests.
 
 ## Versioning
 

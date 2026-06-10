@@ -20,8 +20,8 @@ pub mod settings;
 // 短く参照できるよう、頻出型はクレート直下に re-export する。
 pub use domain::{
     ExportPlan, PersistedSettings, PreviewContext, PreviewProfile, ResizeAlgorithm, Rgba8,
-    SizeOverride, SourceAsset, SourceKind, ThemeMode, VtracerPreset, ICO_SIZE_MAX, ICO_SIZE_MIN,
-    PNG_SIZE_MAX, PNG_SIZE_MIN,
+    SizeOverride, SourceAsset, SourceKind, ThemeMode, VtracerPreset, WebManifestSettings,
+    ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX, PNG_SIZE_MIN,
 };
 pub use error::AppError;
 pub use message_key::MessageKey;

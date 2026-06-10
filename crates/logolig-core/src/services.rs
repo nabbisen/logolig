@@ -27,6 +27,10 @@
 //! v1.7.0 で追加:
 //! - `transparency_audit` — 入力 Rgba8 の透過状態を分類 (favicon 用途で起きやすい
 //!   「全不透明」 「全透明」 を検出してユーザに警告するため)
+//!
+//! v1.8.0 で追加:
+//! - `manifest_writer` — `WebManifestSettings` + PNG サイズから
+//!   `manifest.webmanifest` の JSON 文字列を組み立てる
 
 pub mod decode_png;
 pub mod decode_webp;
@@ -35,6 +39,7 @@ pub mod exporter;
 pub mod html_snippet;
 pub mod ico_writer;
 pub mod ingest;
+pub mod manifest_writer;
 pub mod preview;
 pub mod rasterize_svg;
 pub mod resize;

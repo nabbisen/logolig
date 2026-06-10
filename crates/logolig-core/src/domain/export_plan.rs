@@ -57,6 +57,15 @@ pub struct ExportPlan {
     /// `Sharp` はロゴ・アイコン向け、 `Default` は v1.2.0 と同じ既定値、
     /// `PhotoRich` は写真風 / グラデーション向け。
     pub vtracer_preset: VtracerPreset,
+
+    /// Web manifest 出力 (v1.8.0+)。 `Some(_)` のとき `manifest.webmanifest`
+    /// を生成し、 HTML スニペットに `<link rel="manifest">` を追記する。
+    /// `None` (デフォルト) なら manifest 関連の出力は一切行わない。
+    ///
+    /// `Some(WebManifestSettings::default())` でも有効化できるが、 デフォルト
+    /// 値はプレースホルダ ("My App" 等) なので、 ユーザは詳細設定で
+    /// `name`, `short_name`, `theme_color`, `background_color` を埋める想定。
+    pub web_manifest: Option<crate::domain::WebManifestSettings>,
 }
 
 impl Default for ExportPlan {
@@ -79,6 +88,10 @@ impl Default for ExportPlan {
             // vtracer プリセットは v1.2.0 互換として Default を採用 (vtracer 既定値)。
             // Sharp / PhotoRich はユーザがオプトインで選択する。
             vtracer_preset: VtracerPreset::Default,
+            // v1.8.0: web manifest 出力はオプトイン (None がデフォルト)。
+            // 「迷いを減らす」 §5: ほとんどのユーザは PWA を作らないので、
+            // 知らない間に意図しない manifest が出力されないようにする。
+            web_manifest: None,
         }
     }
 }
@@ -95,7 +108,9 @@ impl ExportPlan {
         let apple = usize::from(self.include_apple_touch);
         let html = usize::from(self.include_html_snippet);
         let svg = usize::from(self.include_svg);
-        ico + apple + html + svg + self.png_sizes.len()
+        // v1.8.0: web_manifest が Some なら manifest.webmanifest が +1。
+        let manifest = usize::from(self.web_manifest.is_some());
+        ico + apple + html + svg + manifest + self.png_sizes.len()
     }
 
     /// PNG サイズ集合への追加 (v1.3.0)。 重複や範囲外を弾き、 昇順を保つ。

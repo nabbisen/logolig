@@ -145,6 +145,19 @@ pub(crate) struct Dictionary {
     pub toast_fully_transparent_title: String,
     pub toast_fully_transparent_body: String,
     pub preview_checker_label: String,
+
+    // Web manifest (v1.8.0)
+    pub section_web_manifest: String,
+    pub section_web_manifest_blurb: String,
+    pub include_web_manifest_label: String,
+    pub web_manifest_name_label: String,
+    pub web_manifest_name_placeholder: String,
+    pub web_manifest_short_name_label: String,
+    pub web_manifest_short_name_placeholder: String,
+    pub web_manifest_theme_color_label: String,
+    pub web_manifest_background_color_label: String,
+    pub toast_invalid_color_title: String,
+    pub toast_invalid_color_body: String,
 }
 
 impl Dictionary {
@@ -275,6 +288,19 @@ impl Dictionary {
             MessageKey::ToastFullyTransparentTitle => &self.toast_fully_transparent_title,
             MessageKey::ToastFullyTransparentBody => &self.toast_fully_transparent_body,
             MessageKey::PreviewCheckerLabel => &self.preview_checker_label,
+
+            // v1.8.0
+            MessageKey::SectionWebManifest => &self.section_web_manifest,
+            MessageKey::SectionWebManifestBlurb => &self.section_web_manifest_blurb,
+            MessageKey::IncludeWebManifestLabel => &self.include_web_manifest_label,
+            MessageKey::WebManifestNameLabel => &self.web_manifest_name_label,
+            MessageKey::WebManifestNamePlaceholder => &self.web_manifest_name_placeholder,
+            MessageKey::WebManifestShortNameLabel => &self.web_manifest_short_name_label,
+            MessageKey::WebManifestShortNamePlaceholder => &self.web_manifest_short_name_placeholder,
+            MessageKey::WebManifestThemeColorLabel => &self.web_manifest_theme_color_label,
+            MessageKey::WebManifestBackgroundColorLabel => &self.web_manifest_background_color_label,
+            MessageKey::ToastInvalidColorTitle => &self.toast_invalid_color_title,
+            MessageKey::ToastInvalidColorBody => &self.toast_invalid_color_body,
         }
     }
 }

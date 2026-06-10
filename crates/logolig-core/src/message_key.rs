@@ -148,4 +148,19 @@ pub enum MessageKey {
     ToastFullyTransparentBody,
     /// プレビュー背景の市松模様 toggle ラベル ("Show transparency checker")。
     PreviewCheckerLabel,
+
+    // --- Web manifest (v1.8.0) ---
+    SectionWebManifest,
+    SectionWebManifestBlurb,
+    IncludeWebManifestLabel,
+    WebManifestNameLabel,
+    WebManifestNamePlaceholder,
+    WebManifestShortNameLabel,
+    WebManifestShortNamePlaceholder,
+    WebManifestThemeColorLabel,
+    WebManifestBackgroundColorLabel,
+    /// 入力した色文字列が `#RRGGBB` 形式でないときの Toast タイトル。
+    ToastInvalidColorTitle,
+    /// 入力した色文字列が `#RRGGBB` 形式でないときの Toast 本文 (input プレースホルダ含む)。
+    ToastInvalidColorBody,
 }
