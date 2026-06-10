@@ -8,8 +8,12 @@ use iced::widget::{button, column, container, row, text, Space};
 use iced::{Element, Length};
 use snora::{AppLayout, BottomSheet, LayoutDirection, SheetHeight, render};
 
+use logolig_core::MessageKey;
+
 use crate::app::{AppState, Message, Screen};
-use crate::ui::{accessibility::label, accessibility::marker, advanced_drawer, drop_zone, preview_panel};
+use crate::ui::{
+    accessibility::label, accessibility::marker, advanced_drawer, drop_zone, preview_panel,
+};
 
 pub fn view(state: &AppState) -> Element<'_, Message> {
     let mut layout = AppLayout::new(body(state))
@@ -37,26 +41,38 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
 fn body(state: &AppState) -> Element<'_, Message> {
     match state.screen {
         Screen::Empty => drop_zone::view(state),
-        Screen::Importing | Screen::Exporting => busy_view(),
+        Screen::Importing | Screen::Exporting => busy_view(state),
         Screen::Preview | Screen::ExportReady => preview_panel::view(state),
     }
 }
 
 fn header(state: &AppState) -> Element<'_, Message> {
-    let theme_label = format!("Theme: {}", state.theme.label());
+    let t = &state.translator;
+    // テーマラベル: 翻訳された "Theme" + 翻訳された現在のモード名
+    let theme_mode_key = match state.theme {
+        logolig_core::ThemeMode::System => MessageKey::PreviewBackgroundSystem,
+        logolig_core::ThemeMode::Light => MessageKey::PreviewBackgroundLight,
+        logolig_core::ThemeMode::Dark => MessageKey::PreviewBackgroundDark,
+    };
+    let theme_label = format!(
+        "{}: {}",
+        t.t(MessageKey::ToggleThemeButton),
+        t.t(theme_mode_key)
+    );
 
     // busy 表示は色だけでなく文字マーカーでも示す (§12「色だけに依存しない」)
     let busy_indicator: Element<'_, Message> = if state.busy {
-        text(format!("{} working", marker::BUSY)).size(13).into()
+        text(format!("{} {}", marker::BUSY, t.t(MessageKey::ImportingMessage)))
+            .size(13)
+            .into()
     } else {
         // 空のゼロサイズスペース。レイアウトを安定させる。
-        // iced 0.14 で `Space::with_width` は削除されたため `Space::new()` を使う。
         Space::new().into()
     };
 
     container(
         row![
-            text(label::APP_TITLE).size(22),
+            text(t.t(MessageKey::AppTitle)).size(22),
             busy_indicator,
             // 横方向 flex spacer。`horizontal_space()` は iced 0.14 で削除された。
             Space::new().width(Length::Fill),
@@ -73,10 +89,14 @@ fn header(state: &AppState) -> Element<'_, Message> {
 }
 
 fn footer(state: &AppState) -> Element<'_, Message> {
+    let t = &state.translator;
     let advanced_label = if state.advanced_open {
-        "Hide advanced"
+        // 「Hide advanced」 と「Show advanced」 で切り替えるが、 v1.5.0 では
+        // 同じキー (ToggleAdvancedButton) を使う。 必要なら v1.6 で
+        // ToggleAdvancedShow / Hide の 2 キーに分ける。
+        t.t(MessageKey::ToggleAdvancedButton)
     } else {
-        "Show advanced"
+        t.t(MessageKey::ToggleAdvancedButton)
     };
 
     container(
@@ -95,11 +115,11 @@ fn footer(state: &AppState) -> Element<'_, Message> {
     .into()
 }
 
-fn busy_view<'a>() -> Element<'a, Message> {
+fn busy_view<'a>(state: &'a AppState) -> Element<'a, Message> {
+    let t = &state.translator;
     container(
         column![
-            text(format!("{} Working…", marker::BUSY)).size(20),
-            text("Heavy work runs off the UI thread (§2.4).").size(12),
+            text(format!("{} {}", marker::BUSY, t.t(MessageKey::ImportingMessage))).size(20),
         ]
         .spacing(6)
         .align_x(iced::alignment::Horizontal::Center),

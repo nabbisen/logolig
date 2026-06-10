@@ -12,17 +12,18 @@
 use iced::widget::{button, column, container, image, row, text, Space};
 use iced::{Background, Border, Color, Element, Length, Theme};
 
-use logolig_core::{PreviewCache, PreviewContext, Rgba8, ThemeMode};
+use logolig_core::{MessageKey, PreviewCache, PreviewContext, Rgba8, ThemeMode};
 
 use crate::app::{AppState, Message};
 use crate::ui::accessibility::{label, marker};
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
+    let t = &state.translator;
     let asset_name = state
         .source_asset
         .as_ref()
         .map(|a| a.display_name())
-        .unwrap_or_else(|| "(no source)".into());
+        .unwrap_or_else(|| t.t(MessageKey::PreviewNoSource));
 
     let context = state
         .preview
@@ -38,21 +39,22 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // メインプレビュー領域 (キャッシュが揃ってから初めて描ける)
     let preview_area: Element<'a, Message> = match state.preview_cache.as_ref() {
         Some(cache) => render_context(cache, context, bg),
-        None => loading_placeholder(),
+        None => loading_placeholder(state),
     };
 
+    let source_label = format!("{}: {}", t.t(MessageKey::PreviewSourceLabel), asset_name);
     column![
-        text(format!("Source: {asset_name}")).size(14),
+        text(source_label).size(14),
         // コンテキスト選択 (キーボードでアクセス可能なボタン群、 §12)
-        context_picker(context),
-        background_picker(bg),
+        context_picker(state, context),
+        background_picker(state, bg),
         // メインプレビュー枠
-        container(preview_area)
-            .padding(20)
-            .center_x(Length::Fill),
+        container(preview_area).padding(20).center_x(Length::Fill),
         // 出力アクション
         row![
-            button(text("Export")).padding([8, 14]).on_press(Message::ExportRequested),
+            button(text(t.t(MessageKey::ExportButton)))
+                .padding([8, 14])
+                .on_press(Message::ExportRequested),
             text(label::EXPORT_BTN).size(11),
         ]
         .spacing(12)
@@ -66,13 +68,15 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 // コンテキスト・背景の切り替え UI (キーボード代替経路として button を使う、 §12)
 // ---------------------------------------------------------------------------
 
-fn context_picker<'a>(current: PreviewContext) -> Element<'a, Message> {
+fn context_picker<'a>(state: &'a AppState, current: PreviewContext) -> Element<'a, Message> {
+    let t = &state.translator;
     let mk = |ctx: PreviewContext| -> Element<'a, Message> {
         let active = ctx == current;
+        let label_text = state.translator.t(context_message_key(ctx));
         let lbl = if active {
-            format!("{} {}", marker::READY, ctx.label())
+            format!("{} {}", marker::READY, label_text)
         } else {
-            ctx.label().to_string()
+            label_text
         };
         button(text(lbl))
             .padding([6, 12])
@@ -81,7 +85,7 @@ fn context_picker<'a>(current: PreviewContext) -> Element<'a, Message> {
     };
 
     row![
-        text("Context:").size(13),
+        text(format!("{}:", t.t(MessageKey::PreviewBrowserTab))).size(13),
         mk(PreviewContext::BrowserTab16),
         mk(PreviewContext::SmartphoneIcon),
     ]
@@ -90,13 +94,14 @@ fn context_picker<'a>(current: PreviewContext) -> Element<'a, Message> {
     .into()
 }
 
-fn background_picker<'a>(current: ThemeMode) -> Element<'a, Message> {
+fn background_picker<'a>(state: &'a AppState, current: ThemeMode) -> Element<'a, Message> {
     let mk = |theme: ThemeMode| -> Element<'a, Message> {
         let active = theme == current;
+        let label_text = state.translator.t(background_message_key(theme));
         let lbl = if active {
-            format!("{} {}", marker::READY, theme.label())
+            format!("{} {}", marker::READY, label_text)
         } else {
-            theme.label().to_string()
+            label_text
         };
         button(text(lbl))
             .padding([6, 12])
@@ -104,8 +109,9 @@ fn background_picker<'a>(current: ThemeMode) -> Element<'a, Message> {
             .into()
     };
 
+    // 「Background:」 のような共通ラベルは v1.5.0 では出さず、 切替ボタン群だけ並べる
+    // (個々の "System / Light / Dark" ラベル自体が機能を伝える)
     row![
-        text("Background:").size(13),
         mk(ThemeMode::System),
         mk(ThemeMode::Light),
         mk(ThemeMode::Dark),
@@ -115,11 +121,11 @@ fn background_picker<'a>(current: ThemeMode) -> Element<'a, Message> {
     .into()
 }
 
-fn loading_placeholder<'a>() -> Element<'a, Message> {
+fn loading_placeholder<'a>(state: &'a AppState) -> Element<'a, Message> {
+    let t = &state.translator;
     container(
         column![
-            text(format!("{} Building preview…", marker::BUSY)).size(16),
-            text("Resizing source for the chosen context (§5.2).").size(12),
+            text(format!("{} {}", marker::BUSY, t.t(MessageKey::ImportingMessage))).size(16),
         ]
         .spacing(6)
         .align_x(iced::alignment::Horizontal::Center),
@@ -128,6 +134,21 @@ fn loading_placeholder<'a>() -> Element<'a, Message> {
     .center_x(Length::Fill)
     .center_y(Length::Fill)
     .into()
+}
+
+fn context_message_key(ctx: PreviewContext) -> MessageKey {
+    match ctx {
+        PreviewContext::BrowserTab16 => MessageKey::PreviewBrowserTab,
+        PreviewContext::SmartphoneIcon => MessageKey::PreviewSmartphoneHome,
+    }
+}
+
+fn background_message_key(theme: ThemeMode) -> MessageKey {
+    match theme {
+        ThemeMode::System => MessageKey::PreviewBackgroundSystem,
+        ThemeMode::Light => MessageKey::PreviewBackgroundLight,
+        ThemeMode::Dark => MessageKey::PreviewBackgroundDark,
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -17,25 +17,25 @@ use crate::error::AppError;
 ///   (アスペクト比が 1:1 でない場合は中央に配置し余白は透明)
 pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppError> {
     if asset.kind != SourceKind::Svg {
-        return Err(AppError::UnsupportedFile(format!(
+        return Err(AppError::unsupported_file(format!(
             "rasterize_svg called on non-SVG source ({})",
             asset.kind.label()
         )));
     }
     if target_size == 0 {
-        return Err(AppError::Rasterize("target_size must be > 0".into()));
+        return Err(AppError::rasterize("target_size must be > 0"));
     }
 
     // 1. usvg でツリーを得る
     let opt = usvg::Options::default();
     let tree = usvg::Tree::from_data(&asset.raw, &opt)
-        .map_err(|e| AppError::Rasterize(format!("usvg parse: {e}")))?;
+        .map_err(|e| AppError::rasterize(format!("usvg parse: {e}")))?;
 
     let svg_size = tree.size();
     let svg_w = svg_size.width();
     let svg_h = svg_size.height();
     if svg_w <= 0.0 || svg_h <= 0.0 {
-        return Err(AppError::Rasterize("SVG has zero or negative size".into()));
+        return Err(AppError::rasterize("SVG has zero or negative size"));
     }
 
     // 2. アスペクト比を保ったまま target_size に収まる scale を選ぶ
@@ -48,7 +48,7 @@ pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppErro
 
     // 3. Pixmap を確保して resvg で描く
     let mut pixmap = tiny_skia::Pixmap::new(target_size, target_size).ok_or_else(|| {
-        AppError::Rasterize(format!(
+        AppError::rasterize(format!(
             "tiny_skia: cannot allocate pixmap {target_size}x{target_size}"
         ))
     })?;
@@ -68,5 +68,5 @@ pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppErro
         .collect();
 
     Rgba8::try_from_raw(target_size, target_size, Arc::<[u8]>::from(pixels))
-        .ok_or_else(|| AppError::Rasterize("internal: rgba length mismatch".into()))
+        .ok_or_else(|| AppError::rasterize("internal: rgba length mismatch"))
 }

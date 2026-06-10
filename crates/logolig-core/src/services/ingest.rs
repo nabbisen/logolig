@@ -29,11 +29,11 @@ pub async fn ingest(path: PathBuf) -> Result<SourceAsset, AppError> {
     // 2. ファイルを非同期に読む
     let raw = tokio::fs::read(&path)
         .await
-        .map_err(|e| AppError::Io(format!("{}: {e}", path.display())))?;
+        .map_err(|e| AppError::io(path.display().to_string(), e.to_string()))?;
 
     // 3. 先頭バイトで実形式を確定。マジックバイト未一致なら UnsupportedFile。
     let kind = detect_kind(&raw, ext_kind)
-        .ok_or_else(|| AppError::UnsupportedFile(path.display().to_string()))?;
+        .ok_or_else(|| AppError::unsupported_file(path.display().to_string()))?;
 
     // 4. 論理サイズの推定
     let intrinsic_size = match kind {
@@ -63,7 +63,7 @@ pub fn ingest_bytes(
         .and_then(SourceKind::from_extension);
 
     let kind = detect_kind(&bytes, ext_kind)
-        .ok_or_else(|| AppError::UnsupportedFile(path.display().to_string()))?;
+        .ok_or_else(|| AppError::unsupported_file(path.display().to_string()))?;
 
     let intrinsic_size = match kind {
         SourceKind::Png => parse_png_size(&bytes),

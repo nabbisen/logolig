@@ -28,5 +28,8 @@ rfd.workspace = true
 # OS 標準 config dir 自動解決 + typed ConfigManager<T> + read-modify-write update()。
 app-json-settings.workspace = true
 
+# v1.5.0: 翻訳 (英語のみ、 v1.6 で日本語追加)
+logolig-i18n = { path = "../logolig-i18n" }
+
 [lints]
 workspace = true

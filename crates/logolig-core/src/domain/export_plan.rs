@@ -12,6 +12,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::resize_algorithm::ResizeAlgorithm;
+use crate::domain::vtracer_preset::VtracerPreset;
 
 /// PNG サイズの実用下限 (px)。 これ以下は描画破綻する。
 pub const PNG_SIZE_MIN: u32 = 16;
@@ -52,6 +53,10 @@ pub struct ExportPlan {
     /// (v1.2.0+)。 `false` の場合、 ラスタ入力時は `favicon.svg` 出力をスキップ
     /// する (HTML スニペットからも `<link type="image/svg+xml">` 行が省かれる)。
     pub vectorize_on_raster: bool,
+    /// vtracer のチューニングプリセット (v1.4.1+)。
+    /// `Sharp` はロゴ・アイコン向け、 `Default` は v1.2.0 と同じ既定値、
+    /// `PhotoRich` は写真風 / グラデーション向け。
+    pub vtracer_preset: VtracerPreset,
 }
 
 impl Default for ExportPlan {
@@ -71,6 +76,9 @@ impl Default for ExportPlan {
             // ラスタ入力に対するベクトル化もデフォルトオン。
             // 写真など vtracer に向かない入力に対しては詳細設定でオフにする。
             vectorize_on_raster: true,
+            // vtracer プリセットは v1.2.0 互換として Default を採用 (vtracer 既定値)。
+            // Sharp / PhotoRich はユーザがオプトインで選択する。
+            vtracer_preset: VtracerPreset::Default,
         }
     }
 }

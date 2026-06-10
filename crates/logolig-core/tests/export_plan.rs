@@ -8,12 +8,14 @@ use logolig_core::{ExportPlan, ResizeAlgorithm, ThemeMode};
 fn export_plan_default_is_minimal_modern_set() {
     // §7.1: favicon.ico, apple-touch-icon.png, 高解像度 PNG, HTML スニペット
     // v1.2.0: favicon.svg を default に追加 (SVG ソースは raw コピー、 ラスタは vectorize)
+    // v1.4.1: vtracer_preset = Default を追加 (v1.2.0 互換)
     let plan = ExportPlan::default();
     assert!(plan.include_ico);
     assert!(plan.include_apple_touch);
     assert!(plan.include_html_snippet);
     assert!(plan.include_svg);
     assert!(plan.vectorize_on_raster);
+    assert_eq!(plan.vtracer_preset, logolig_core::VtracerPreset::Default);
     // モダン構成の最小: 32 / 192 / 512 (browser, PWA, hi-res)
     assert_eq!(plan.png_sizes, vec![32, 192, 512]);
     // ICO は古い環境向けに 16/32/48 を内包

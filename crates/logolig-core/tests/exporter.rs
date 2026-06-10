@@ -178,7 +178,7 @@ fn fails_cleanly_when_output_dir_does_not_exist() {
     let bad = std::env::temp_dir().join("logolig-this-path-must-not-exist-yet-xyz");
     let _ = std::fs::remove_dir_all(&bad);
     let err = run(&asset, &ExportPlan::default(), &bad).expect_err("should fail");
-    // エラー内容は AppError::Export(_)
+    // エラー内容は AppError::Export { .. }
     let s = err.to_string();
     assert!(s.contains("output directory"));
 }

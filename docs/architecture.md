@@ -21,24 +21,38 @@ logolig/
     ├── logolig-core/                # pure logic, no GUI deps
     │   ├── src/
     │   │   ├── lib.rs
-    │   │   ├── error.rs             # AppError (Clone + Send)
-    │   │   ├── domain.rs / domain/  # SourceAsset, ExportPlan, ...
+    │   │   ├── error.rs             # AppError (Clone + Send), keyed via key()/args() since v1.5
+    │   │   ├── message_key.rs       # MessageKey enum, the i18n vocabulary (v1.5+)
+    │   │   ├── settings.rs          # SettingsStore<T> trait (v1.4+)
+    │   │   ├── domain.rs / domain/  # SourceAsset, ExportPlan, PersistedSettings, ...
     │   │   └── services.rs / services/
-    │   │       ├── ingest.rs        # async file load (PNG/SVG, magic-byte detection)
+    │   │       ├── ingest.rs        # async file load (PNG/SVG/WebP, magic-byte detection)
     │   │       ├── decode_png.rs    # PNG → Rgba8 (image crate)
+    │   │       ├── decode_webp.rs   # WebP → Rgba8 (since v1.1)
     │   │       ├── rasterize_svg.rs # SVG → Rgba8 (resvg + tiny-skia, per-size render)
     │   │       ├── resize.rs        # Rgba8 → Rgba8 (fast_image_resize, Lanczos3 default)
+    │   │       ├── vectorize.rs     # Rgba8 → SVG string (vtracer, since v1.2)
     │   │       ├── preview.rs       # build 16×16 + 120×120 preview cache
     │   │       ├── encode_png.rs    # Rgba8 → PNG bytes
     │   │       ├── ico_writer.rs    # bundle Rgba8 frames into .ico
     │   │       ├── html_snippet.rs  # render <head> snippet
     │   │       └── exporter.rs      # transactional orchestrator (staging + atomic rename)
     │   └── tests/
+    ├── logolig-i18n/                # translations (v1.5+)
+    │   ├── src/
+    │   │   ├── lib.rs               # Translator + Locale public API
+    │   │   ├── locale.rs            # Locale enum, sys-locale OS detection
+    │   │   ├── dictionary.rs        # bundled TOML → typed struct, exhaustive lookup
+    │   │   └── translator.rs        # Translator { t(key), t_args(key, args), translate_error }
+    │   ├── locales/
+    │   │   └── en.toml              # English dictionary (v1.5)
+    │   └── tests/
     └── logolig-app/                 # iced + snora GUI binary
         ├── src/
         │   ├── main.rs              # 5-line entry point
         │   ├── app.rs               # AppState / Message / update / view / run
         │   ├── shell.rs             # snora::AppLayout assembly
+        │   ├── native_store.rs      # SettingsStore impl for the native target (v1.4+)
         │   ├── task_queue.rs        # iced::Task helpers
         │   └── ui.rs / ui/
         │       ├── drop_zone.rs
@@ -49,9 +63,11 @@ logolig/
 ```
 
 The split is **enforced by the dependency graph**: `logolig-core`
-declares no dependency on iced or snora, so importing them from
-inside `logolig-core` is a compile-time error. Architectural drift
-is caught by `cargo check`, not by code review.
+declares no dependency on iced, snora, or `logolig-i18n`, so importing
+them from inside `logolig-core` is a compile-time error.
+`logolig-i18n` depends on `logolig-core` one-way (it speaks the
+core's `MessageKey` vocabulary). `logolig-app` consumes both.
+Architectural drift is caught by `cargo check`, not by code review.
 
 The original spec (§9) suggested a single-crate layout with a `domain/
 mod.rs` style. Two adjustments were made and signed off on:
@@ -170,11 +186,15 @@ that strengthen the core for v2 reuse:
 | v1.1.0 | WebP input (decoder, magic-byte detection, size parser) |
 | v1.2.0 | SVG output (raw passthrough for SVG sources, vtracer for raster) |
 | v1.3.0 | Advanced settings UX overhaul (chip-style size editors, per-artifact toggles, validation in core) |
-| **v1.4.0** | **Persisted settings** (`SettingsStore` trait in core; `NativeStore` wraps `app-json-settings` v2 ConfigManager; immediate-save on every user change; `PersistedSettings { export_plan, theme, locale }` with `serde(default)` for forward compat) |
-| v1.5.0 | i18n base (planned: English, `MessageKey` enum, `logolig-i18n` crate) |
+| v1.4.0 | Persisted settings (`SettingsStore` trait in core; `NativeStore` wraps `app-json-settings` v2 ConfigManager; immediate-save on every user change; `PersistedSettings { export_plan, theme, locale }` with `serde(default)` for forward compat) |
+| v1.4.1 | Internal improvements: vtracer presets (Sharp / Default / PhotoRich) for vector quality control; "Reset to defaults" button on advanced drawer; persistent success toast on export so the completion message stays visible until dismissed |
+| **v1.4.2** | **Internal refinements**: Sharp preset re-tuned to a single-parameter delta from defaults (`corner_threshold: 60 → 80`) after user testing showed the v1.4.1 multi-parameter version did not improve quality and possibly worsened it; Export success toast switched from persistent back to a 7-second transient (long enough to read the path, short enough not to linger); Sharp preset now follows an empirical-tuning approach where future adjustments will be made one parameter at a time so their effect is observable |
+| **v1.5.0** | **i18n base (English)**: new `logolig-i18n` crate with a typed `Translator` API; all UI strings keyed via `logolig_core::MessageKey` enum (compile-time exhaustiveness checking via the dictionary's `match` so translation files must satisfy the enum, or build fails); `AppError` keyed via `key()` and `args()` so error toasts translate automatically; `sys-locale` for OS locale detection with explicit override available in advanced settings ("Language" pick_list); English-only ship — Japanese arrives in v1.6.0 by adding `ja.toml` and a `Locale::Ja` variant |
 | v1.6.0 | Japanese translation (planned) |
 | v1.7.0 | Transparency checker (planned) |
 | v1.8.0 | Web manifest output (planned) |
+| v1.9.0 | Monochrome output set (planned): opt-in extra output that produces a black-and-white version of every artifact for use cases like single-color print or theme-aware light/dark icons. Likely realized as `ExportPlan::monochrome: Option<Monochrome>` with a saturation knob and emit alongside the colored set under a `mono/` subdirectory. |
+| v1.10.0 | Toast positioning (planned, depends on snora 0.5+): snora 0.4 hard-codes toast placement to bottom-end (right in LTR, left in RTL). User testing showed this is hard to notice for our screen layout; top-end (right side, near the title bar) would be more visible. The fix belongs upstream as `AppLayout::toast_position(ToastPosition)` so other snora users benefit too. logolig will adopt it via `ToastPosition::TopEnd` once available. |
 
 v1.0.0 is the feature-complete iced/native build. It is in
 maintenance mode: security and critical-bug fixes only.

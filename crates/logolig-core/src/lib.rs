@@ -12,6 +12,7 @@
 
 pub mod domain;
 pub mod error;
+pub mod message_key;
 pub mod services;
 pub mod settings;
 
@@ -19,10 +20,11 @@ pub mod settings;
 // 短く参照できるよう、頻出型はクレート直下に re-export する。
 pub use domain::{
     ExportPlan, PersistedSettings, PreviewContext, PreviewProfile, ResizeAlgorithm, Rgba8,
-    SizeOverride, SourceAsset, SourceKind, ThemeMode, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX,
-    PNG_SIZE_MIN,
+    SizeOverride, SourceAsset, SourceKind, ThemeMode, VtracerPreset, ICO_SIZE_MAX, ICO_SIZE_MIN,
+    PNG_SIZE_MAX, PNG_SIZE_MIN,
 };
 pub use error::AppError;
+pub use message_key::MessageKey;
 pub use services::exporter::ExportReport;
 pub use services::preview::PreviewCache;
 pub use settings::SettingsStore;

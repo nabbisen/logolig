@@ -5,4 +5,4 @@
 [![Dependency Status](https://deps.rs/crate/logolig-app/latest/status.svg)](https://deps.rs/crate/logolig-app)
 [![License](https://img.shields.io/github/license/nabbisen/logolig-app)](https://github.com/nabbisen/logolig-app/blob/main/LICENSE)
 
-Local-first, ABDD-compliant logolig generator GUI.
+Local-first, ABDD-compliant favicon generator GUI (binary: logolig).

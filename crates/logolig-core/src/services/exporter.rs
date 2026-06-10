@@ -38,7 +38,7 @@ pub fn run(
     output_dir: &Path,
 ) -> Result<ExportReport, AppError> {
     if !output_dir.is_dir() {
-        return Err(AppError::Export(format!(
+        return Err(AppError::export(format!(
             "output directory does not exist or is not a directory: {}",
             output_dir.display()
         )));
@@ -82,9 +82,9 @@ pub fn run(
                 if plan.vectorize_on_raster {
                     // ベクトル化はソース解像度のまま実行する (細部温存のため)。
                     let src = decoded_raster.as_ref().ok_or_else(|| {
-                        AppError::Export("internal: missing decoded raster".into())
+                        AppError::export("internal: missing decoded raster")
                     })?;
-                    let svg_string = vectorize::vectorize(src)?;
+                    let svg_string = vectorize::vectorize(src, plan.vtracer_preset)?;
                     write_file(&stage.join("favicon.svg"), svg_string.as_bytes())?;
                     artifacts.push(output_dir.join("favicon.svg"));
                     true
@@ -169,7 +169,7 @@ fn render_at_size(
     match asset.kind {
         SourceKind::Png | SourceKind::Webp => {
             let src = decoded_raster
-                .ok_or_else(|| AppError::Export("internal: missing decoded raster".into()))?;
+                .ok_or_else(|| AppError::export("internal: missing decoded raster"))?;
             resize::resize(src, size, size, plan.algorithm)
         }
         SourceKind::Svg => rasterize_svg::rasterize(asset, size),
@@ -186,7 +186,7 @@ fn build_ico_frames<'a>(
     sizes.sort_unstable();
     sizes.dedup();
     if sizes.is_empty() {
-        return Err(AppError::Export("ico_sizes is empty".into()));
+        return Err(AppError::export("ico_sizes is empty"));
     }
     let mut frames = Vec::with_capacity(sizes.len());
     for size in sizes {
@@ -208,13 +208,13 @@ fn make_staging_dir(parent: &Path) -> Result<PathBuf, AppError> {
     let name = format!(".logolig-{pid}-{nanos}.tmp");
     let path = parent.join(name);
     std::fs::create_dir(&path)
-        .map_err(|e| AppError::Export(format!("create staging {}: {e}", path.display())))?;
+        .map_err(|e| AppError::export(format!("create staging {}: {e}", path.display())))?;
     Ok(path)
 }
 
 fn write_file(path: &Path, bytes: &[u8]) -> Result<(), AppError> {
     std::fs::write(path, bytes)
-        .map_err(|e| AppError::Export(format!("write {}: {e}", path.display())))
+        .map_err(|e| AppError::export(format!("write {}: {e}", path.display())))
 }
 
 /// staging から本配置への rename。 失敗が起きたら、 すでに移動したものは
@@ -227,7 +227,7 @@ fn finalize(stage: &Path, output_dir: &Path, artifacts: &[PathBuf]) -> Result<()
     for final_path in artifacts {
         let name = final_path
             .file_name()
-            .ok_or_else(|| AppError::Export("internal: artifact has no file name".into()))?;
+            .ok_or_else(|| AppError::export("internal: artifact has no file name"))?;
         let staged = stage.join(name);
         // 既存ファイルがあれば上書きするため、 rename 前に削除。
         // (Unix の std::fs::rename は同名ファイル上書きできるが、 念のため明示)
@@ -235,7 +235,7 @@ fn finalize(stage: &Path, output_dir: &Path, artifacts: &[PathBuf]) -> Result<()
             let _ = std::fs::remove_file(final_path);
         }
         std::fs::rename(&staged, final_path).map_err(|e| {
-            AppError::Export(format!(
+            AppError::export(format!(
                 "finalize rename {} -> {}: {e}",
                 staged.display(),
                 final_path.display()

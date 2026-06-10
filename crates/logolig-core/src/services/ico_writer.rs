@@ -21,13 +21,13 @@ use crate::error::AppError;
 /// 場合は `Err(Export(_))` を返す (誤った組み立てを防ぐためのガード)。
 pub fn build(frames: &[(u32, &Rgba8)]) -> Result<Vec<u8>, AppError> {
     if frames.is_empty() {
-        return Err(AppError::Export("ICO requires at least one frame".into()));
+        return Err(AppError::export("ICO requires at least one frame"));
     }
 
     let mut dir = IconDir::new(ResourceType::Icon);
     for (size, rgba) in frames {
         if rgba.width != *size || rgba.height != *size {
-            return Err(AppError::Export(format!(
+            return Err(AppError::export(format!(
                 "ICO frame size mismatch: requested {size}, got {}x{}",
                 rgba.width, rgba.height
             )));
@@ -36,12 +36,12 @@ pub fn build(frames: &[(u32, &Rgba8)]) -> Result<Vec<u8>, AppError> {
         let pixels = rgba.as_bytes().to_vec();
         let image = IconImage::from_rgba_data(rgba.width, rgba.height, pixels);
         let entry = IconDirEntry::encode(&image)
-            .map_err(|e| AppError::Export(format!("ICO entry encode at {size}px: {e}")))?;
+            .map_err(|e| AppError::export(format!("ICO entry encode at {size}px: {e}")))?;
         dir.add_entry(entry);
     }
 
     let mut out = Vec::new();
     dir.write(Cursor::new(&mut out))
-        .map_err(|e| AppError::Export(format!("ICO write: {e}")))?;
+        .map_err(|e| AppError::export(format!("ICO write: {e}")))?;
     Ok(out)
 }

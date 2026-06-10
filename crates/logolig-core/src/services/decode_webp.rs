@@ -18,19 +18,19 @@ use crate::error::AppError;
 /// 入力が WebP でなければ `Err(UnsupportedFile)`。
 pub fn decode(asset: &SourceAsset) -> Result<Rgba8, AppError> {
     if asset.kind != SourceKind::Webp {
-        return Err(AppError::UnsupportedFile(format!(
+        return Err(AppError::unsupported_file(format!(
             "decode_webp called on non-WebP source ({})",
             asset.kind.label()
         )));
     }
 
     let img = image::load_from_memory(&asset.raw)
-        .map_err(|e| AppError::Decode(format!("WebP decode: {e}")))?;
+        .map_err(|e| AppError::decode(format!("WebP decode: {e}")))?;
 
     let rgba = img.to_rgba8();
     let (w, h) = rgba.dimensions();
     let pixels: Vec<u8> = rgba.into_raw();
 
     Rgba8::try_from_raw(w, h, Arc::<[u8]>::from(pixels))
-        .ok_or_else(|| AppError::Decode("internal: rgba length mismatch".into()))
+        .ok_or_else(|| AppError::decode("internal: rgba length mismatch"))
 }

@@ -45,12 +45,12 @@ fn rasterize_centers_drawn_pixels_with_transparent_padding() {
 fn rasterize_rejects_png_source() {
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let err = rasterize(&asset, 32).expect_err("PNG should not be rasterizable as SVG");
-    assert!(matches!(err, AppError::UnsupportedFile(_)));
+    assert!(matches!(err, AppError::UnsupportedFile { .. }));
 }
 
 #[test]
 fn rasterize_rejects_zero_size() {
     let asset = ingest_bytes("tile.svg", fixtures::SVG_16.as_bytes().to_vec()).unwrap();
     let err = rasterize(&asset, 0).expect_err("zero target should fail");
-    assert!(matches!(err, AppError::Rasterize(_)));
+    assert!(matches!(err, AppError::Rasterize { .. }));
 }

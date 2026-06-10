@@ -2,84 +2,81 @@
 //!
 //! 既定値は隠す。 `state.advanced_open == true` のときだけ shell が表示する。
 //!
-//! ## v1.3.0 で改善された点
+//! ## v1.5.0 で追加
 //!
-//! - **チェックボックスでオプトアウト**: ICO / Apple touch / HTML スニペットを
-//!   個別にオン/オフできる
-//! - **PNG / ICO サイズの編集**: 既存サイズはチップ風の `[size ×]` ボタンで
-//!   削除、 末尾のテキスト入力で新規追加
-//! - **セクション分け**: 「Resize」「SVG」「Files」「Sizes」 の 4 区画
-//! - **検証ロジックは core 任せ**: `ExportPlan::add_*_size` / `remove_*_size`
-//!   が範囲外 / 重複を弾く
+//! - 全文言を `state.translator.t(MessageKey::...)` 経由で翻訳
+//! - **Language セクション** を追加: pick_list で `System default / English / 日本語` を選択
+//!   (v1.5.0 では English のみ実体あり、 v1.6 で 日本語 が機能する)
 
 use iced::widget::{button, checkbox, column, container, pick_list, row, text, text_input};
 use iced::{Alignment, Element, Length, Padding};
 
-use logolig_core::{ResizeAlgorithm, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX, PNG_SIZE_MIN};
+use logolig_core::{
+    MessageKey, ResizeAlgorithm, VtracerPreset, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX,
+    PNG_SIZE_MIN,
+};
+use logolig_i18n::Locale;
 
 use crate::app::{AppState, Message};
-use crate::ui::accessibility::label;
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
+    let t = &state.translator;
+
     column![
         // ヘッダ
-        text("Advanced settings").size(22),
-        text(
-            "Defaults are tuned for quality and minimal output. \
-             Adjust only if you have a specific need."
-        )
-        .size(12),
+        text(t.t(MessageKey::AdvancedTitle)).size(22),
+        text(t.t(MessageKey::AdvancedBlurb)).size(12),
         // 1. リサイズアルゴリズム
         section(
-            "Resize algorithm",
-            "Lanczos3 is the recommended default. Switch to Nearest only for pixel art.",
+            &t.t(MessageKey::SectionResize),
+            &t.t(MessageKey::SectionResizeBlurb),
             algorithm_row(state),
         ),
-        // 2. SVG 出力 (v1.2.0 機能、 v1.3.0 で UI 整理)
+        // 2. SVG 出力
         section(
-            "SVG output",
-            "Modern browsers prefer SVG on high-DPI displays. \
-             Turn off vectorization for photos or noisy images.",
+            &t.t(MessageKey::SectionSvg),
+            &t.t(MessageKey::SectionSvgBlurb),
             column![
                 checkbox(state.export_plan.include_svg)
-                    .label("Output favicon.svg")
+                    .label(t.t(MessageKey::IncludeSvgLabel))
                     .on_toggle(Message::IncludeSvgToggled)
                     .text_size(13),
                 checkbox(state.export_plan.vectorize_on_raster)
-                    .label("Vectorize raster sources to SVG (vtracer)")
+                    .label(t.t(MessageKey::VectorizeOnRasterLabel))
                     .on_toggle(Message::VectorizeOnRasterToggled)
                     .text_size(13),
+                vtracer_preset_row(state),
             ]
             .spacing(6)
             .into(),
         ),
-        // 3. 出力ファイル種別 (v1.3.0 で編集可能化)
+        // 3. 出力ファイル種別
         section(
-            "Files to write",
-            "Each artifact can be skipped if your project doesn't need it.",
+            &t.t(MessageKey::SectionFiles),
+            &t.t(MessageKey::SectionFilesBlurb),
             column![
                 checkbox(state.export_plan.include_ico)
-                    .label("favicon.ico (legacy compatibility)")
+                    .label(t.t(MessageKey::IncludeIcoLabel))
                     .on_toggle(Message::IncludeIcoToggled)
                     .text_size(13),
                 checkbox(state.export_plan.include_apple_touch)
-                    .label("apple-touch-icon.png (iOS / iPadOS home screen)")
+                    .label(t.t(MessageKey::IncludeAppleTouchLabel))
                     .on_toggle(Message::IncludeAppleTouchToggled)
                     .text_size(13),
                 checkbox(state.export_plan.include_html_snippet)
-                    .label("favicon-snippet.html (paste-ready <head> markup)")
+                    .label(t.t(MessageKey::IncludeHtmlSnippetLabel))
                     .on_toggle(Message::IncludeHtmlSnippetToggled)
                     .text_size(13),
             ]
             .spacing(6)
             .into(),
         ),
-        // 4. PNG サイズ集合 (v1.3.0 編集 UI)
+        // 4. PNG サイズ集合
         section(
-            "PNG sizes",
-            "Each size becomes a separate favicon-{size}.png. 32 / 192 / 512 covers \
-             tabs, PWA install, and high-DPI splash. Range: 16–1024 px.",
+            &t.t(MessageKey::SectionPngSizes),
+            &t.t(MessageKey::SectionPngSizesBlurb),
             size_set_editor(
+                state,
                 &state.export_plan.png_sizes,
                 &state.png_size_input,
                 Message::PngSizeRemoveRequested,
@@ -89,12 +86,12 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
                 PNG_SIZE_MAX,
             ),
         ),
-        // 5. ICO サイズ集合 (v1.3.0 編集 UI)
+        // 5. ICO サイズ集合
         section(
-            "ICO frame sizes",
-            "Sizes embedded in favicon.ico. Each frame is rendered independently \
-             from the source for sharp small-size results. Range: 16–256 px (ICO format limit).",
+            &t.t(MessageKey::SectionIcoSizes),
+            &t.t(MessageKey::SectionIcoSizesBlurb),
             size_set_editor(
+                state,
                 &state.export_plan.ico_sizes,
                 &state.ico_size_input,
                 Message::IcoSizeRemoveRequested,
@@ -104,9 +101,20 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
                 ICO_SIZE_MAX,
             ),
         ),
-        // 閉じるボタン (キーボード代替経路)
-        button(text("Close")).on_press(Message::AdvancedToggled),
-        text(label::TOGGLE_ADVANCED_BTN).size(11),
+        // 6. 言語選択 (v1.5.0)
+        section(
+            &t.t(MessageKey::SectionLanguage),
+            &t.t(MessageKey::SectionLanguageBlurb),
+            language_row(state),
+        ),
+        // フッタ: Reset と Close を横並び
+        row![
+            button(text(t.t(MessageKey::ResetButton)))
+                .on_press(Message::ExportPlanResetRequested),
+            button(text(t.t(MessageKey::CloseButton))).on_press(Message::AdvancedToggled),
+        ]
+        .spacing(8)
+        .align_y(Alignment::Center),
     ]
     .spacing(18)
     .padding(20)
@@ -114,14 +122,14 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 }
 
 // ---------------------------------------------------------------------------
-// 共通レイアウトヘルパ: 「セクション」 = ヘッダ + 説明 + 中身
+// 共通レイアウトヘルパ
 // ---------------------------------------------------------------------------
 
-fn section<'a>(title: &'a str, blurb: &'a str, body: Element<'a, Message>) -> Element<'a, Message> {
+fn section<'a>(title: &str, blurb: &str, body: Element<'a, Message>) -> Element<'a, Message> {
     container(
         column![
-            text(title).size(15),
-            text(blurb).size(11),
+            text(title.to_string()).size(15),
+            text(blurb.to_string()).size(11),
             container(body).padding(Padding::default().top(4)),
         ]
         .spacing(4),
@@ -131,31 +139,83 @@ fn section<'a>(title: &'a str, blurb: &'a str, body: Element<'a, Message>) -> El
 }
 
 fn algorithm_row<'a>(state: &'a AppState) -> Element<'a, Message> {
-    let options: Vec<ResizeAlgorithm> = ResizeAlgorithm::all().to_vec();
-    let picker = pick_list(
-        options,
-        Some(state.export_plan.algorithm),
-        Message::AlgorithmChanged,
-    )
+    let t = &state.translator;
+    // 翻訳用のラッパ。 ResizeAlgorithm に直接 Display を実装したくない (core が
+    // i18n に依存しないため) ので、 UI 層でラップする。
+    let options: Vec<LocalizedAlgorithm> = ResizeAlgorithm::all()
+        .iter()
+        .map(|a| LocalizedAlgorithm {
+            value: *a,
+            label: state.translator.t(algorithm_message_key(*a)),
+        })
+        .collect();
+    let selected = options
+        .iter()
+        .find(|opt| opt.value == state.export_plan.algorithm)
+        .cloned();
+    let picker = pick_list(options, selected, |opt: LocalizedAlgorithm| {
+        Message::AlgorithmChanged(opt.value)
+    })
     .text_size(13);
 
-    row![text("Algorithm:").size(13), picker]
+    row![text(t.t(MessageKey::AlgorithmLabel)).size(13), picker]
         .spacing(10)
         .align_y(Alignment::Center)
         .into()
 }
 
-// ---------------------------------------------------------------------------
-// サイズ集合エディタ (v1.3.0)
-// ---------------------------------------------------------------------------
-//
-// 「現在の集合 (削除可能チップ群) + 追加用テキスト入力」 の構造。
-// 集合は &[u32] として渡され、 削除/追加メッセージは関数引数で受ける。
-//
-// メッセージコンストラクタを fn(u32) -> Message / fn(String) -> Message として
-// 渡すことで、 PNG / ICO 用の 2 セットを同じウィジェットで描ける。
+fn vtracer_preset_row<'a>(state: &'a AppState) -> Element<'a, Message> {
+    let t = &state.translator;
+    let options: Vec<LocalizedPreset> = VtracerPreset::all()
+        .iter()
+        .map(|p| LocalizedPreset {
+            value: *p,
+            label: state.translator.t(preset_message_key(*p)),
+        })
+        .collect();
+    let selected = options
+        .iter()
+        .find(|opt| opt.value == state.export_plan.vtracer_preset)
+        .cloned();
+    let picker = pick_list(options, selected, |opt: LocalizedPreset| {
+        Message::VtracerPresetChanged(opt.value)
+    })
+    .text_size(13);
+
+    row![text(t.t(MessageKey::PresetLabel)).size(13), picker]
+        .spacing(10)
+        .align_y(Alignment::Center)
+        .into()
+}
+
+fn language_row<'a>(state: &'a AppState) -> Element<'a, Message> {
+    // System default に加え、 各 Locale を選択肢として並べる。
+    // 内部表現は Option<Locale>: None = system default。
+    let mut options: Vec<LocalizedLocaleChoice> = Vec::new();
+    options.push(LocalizedLocaleChoice {
+        value: None,
+        label: state.translator.t(MessageKey::LanguageSystemDefault),
+    });
+    for loc in Locale::all() {
+        options.push(LocalizedLocaleChoice {
+            value: Some(loc),
+            label: state.translator.t(locale_message_key(loc)),
+        });
+    }
+    let selected = options
+        .iter()
+        .find(|opt| opt.value == state.locale_override)
+        .cloned();
+    let picker = pick_list(options, selected, |opt: LocalizedLocaleChoice| {
+        Message::LocaleChanged(opt.value)
+    })
+    .text_size(13);
+
+    row![picker].into()
+}
 
 fn size_set_editor<'a>(
+    state: &'a AppState,
     sizes: &'a [u32],
     input_value: &'a str,
     on_remove: fn(u32) -> Message,
@@ -164,25 +224,26 @@ fn size_set_editor<'a>(
     min: u32,
     max: u32,
 ) -> Element<'a, Message> {
-    // チップ列。 1 行に詰め込みすぎると小さいウィンドウで切れるが、 PNG/ICO サイズが
-    // 12 個を超えることは実用上ほぼ無いので、 単純な row でよい。
+    let t = &state.translator;
     let mut chips_row = row![].spacing(6).align_y(Alignment::Center);
     for size in sizes {
-        chips_row = chips_row.push(size_chip(*size, on_remove));
+        chips_row = chips_row.push(size_chip(state, *size, on_remove));
     }
     if sizes.is_empty() {
-        chips_row = chips_row.push(text("(empty)").size(12));
+        chips_row = chips_row.push(text(t.t(MessageKey::EmptySetLabel)).size(12));
     }
 
-    // 入力フィールド + Add ボタン
-    let placeholder = format!("e.g. 64 ({min}–{max})");
+    let placeholder = t.t_args(
+        MessageKey::SizeInputPlaceholder,
+        &[("min", &min.to_string()), ("max", &max.to_string())],
+    );
     let input = text_input(&placeholder, input_value)
         .on_input(on_input)
         .on_submit(on_submit.clone())
         .size(13)
-        .width(Length::Fixed(140.0));
+        .width(Length::Fixed(160.0));
 
-    let add_button = button(text("Add").size(13)).on_press(on_submit);
+    let add_button = button(text(t.t(MessageKey::SizeAddButton)).size(13)).on_press(on_submit);
 
     column![
         chips_row,
@@ -194,11 +255,15 @@ fn size_set_editor<'a>(
     .into()
 }
 
-/// チップ 1 個: `[ 32 ×]` のような見た目を、 既存ウィジェットだけで作る。
-fn size_chip<'a>(size: u32, on_remove: fn(u32) -> Message) -> Element<'a, Message> {
+fn size_chip<'a>(
+    state: &'a AppState,
+    size: u32,
+    on_remove: fn(u32) -> Message,
+) -> Element<'a, Message> {
     let inner = row![
         text(format!("{size}")).size(12),
-        button(text("×").size(12)).on_press(on_remove(size)),
+        button(text(state.translator.t(MessageKey::SizeChipRemove)).size(12))
+            .on_press(on_remove(size)),
     ]
     .spacing(4)
     .align_y(Alignment::Center);
@@ -206,4 +271,78 @@ fn size_chip<'a>(size: u32, on_remove: fn(u32) -> Message) -> Element<'a, Messag
     container(inner)
         .padding(Padding::default().top(2).bottom(2).left(8).right(4))
         .into()
+}
+
+// ---------------------------------------------------------------------------
+// pick_list 用の「翻訳済みラベル + 値」 ラッパ
+//
+// pick_list は T: Display + Clone + Eq を要求する。 ResizeAlgorithm 等に
+// Display を直接実装すると core が翻訳責任を持つことになる(言語が固定される)。
+// 代わりに UI 層でラッパを作り、 翻訳済みのラベルを Display で返す。
+// 値は元の enum をそのまま保持して message に乗せる。
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LocalizedAlgorithm {
+    value: ResizeAlgorithm,
+    label: String,
+}
+
+impl std::fmt::Display for LocalizedAlgorithm {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.label)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LocalizedPreset {
+    value: VtracerPreset,
+    label: String,
+}
+
+impl std::fmt::Display for LocalizedPreset {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.label)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LocalizedLocaleChoice {
+    value: Option<Locale>,
+    label: String,
+}
+
+impl std::fmt::Display for LocalizedLocaleChoice {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.label)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// enum → MessageKey マップ (UI 層に置く: core を i18n から独立させるため)
+// ---------------------------------------------------------------------------
+
+fn algorithm_message_key(alg: ResizeAlgorithm) -> MessageKey {
+    match alg {
+        ResizeAlgorithm::Lanczos3 => MessageKey::AlgorithmLanczos3,
+        ResizeAlgorithm::MitchellNetravali => MessageKey::AlgorithmMitchellNetravali,
+        ResizeAlgorithm::CatmullRom => MessageKey::AlgorithmCatmullRom,
+        ResizeAlgorithm::Bilinear => MessageKey::AlgorithmBilinear,
+        ResizeAlgorithm::Nearest => MessageKey::AlgorithmNearest,
+    }
+}
+
+fn preset_message_key(preset: VtracerPreset) -> MessageKey {
+    match preset {
+        VtracerPreset::Sharp => MessageKey::VtracerPresetSharp,
+        VtracerPreset::Default => MessageKey::VtracerPresetDefault,
+        VtracerPreset::PhotoRich => MessageKey::VtracerPresetPhotoRich,
+    }
+}
+
+fn locale_message_key(loc: Locale) -> MessageKey {
+    match loc {
+        Locale::En => MessageKey::LanguageEnglish,
+        // v1.6 で追加: Locale::Ja => MessageKey::LanguageJapanese
+    }
 }

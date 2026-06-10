@@ -6,4 +6,4 @@
 [![Dependency Status](https://deps.rs/crate/logolig-core/latest/status.svg)](https://deps.rs/crate/logolig-core)
 [![License](https://img.shields.io/github/license/nabbisen/logolig-core)](https://github.com/nabbisen/logolig-core/blob/main/LICENSE)
 
-Pure domain types and image processing services for logolig-forge (no GUI).
+Pure domain types and image processing services for logolig (no GUI).

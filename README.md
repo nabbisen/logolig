@@ -123,16 +123,35 @@ files because of `serde(default)` forward compatibility).
 If saving fails (read-only config dir, etc.), a warning toast is shown
 and the app keeps running — your changes stay in memory for the session.
 
+## Language
+
+Logolig follows your system language by default. Override the language
+in **Show advanced → Language**:
+
+- **System default** — use the OS locale (`LANG` on Linux, `NSLocale` on macOS,
+  user UI language on Windows)
+- **English** — explicit override
+
+The selection is persisted alongside other advanced settings. v1.5.0
+ships English only; Japanese is planned for v1.6.0.
+
+If your OS locale isn't supported yet, Logolig falls back to English
+without warning. New languages are added by dropping a TOML file under
+`crates/logolig-i18n/locales/` and adding a `Locale` enum variant.
+
 ## Tests
 
 ```sh
 cargo test -p logolig-core
+cargo test -p logolig-i18n
 ```
 
-logolig-core has 53 integration tests covering ingest, decode, SVG
+logolig-core has 54 integration tests covering ingest, decode, SVG
 rasterization, vectorization, resize, preview cache, ICO writing, HTML
 snippet generation, transactional export, settings round-trip, and
-forward-compatible JSON deserialization.
+forward-compatible JSON deserialization. logolig-i18n adds 9 tests
+covering dictionary loading, placeholder substitution, error
+translation, and BCP-47 locale resolution. Total: 63 tests.
 
 ## Versioning
 

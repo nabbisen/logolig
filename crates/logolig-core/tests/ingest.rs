@@ -42,13 +42,13 @@ fn detects_webp_and_reads_intrinsic_size() {
 fn rejects_unrelated_bytes_even_with_png_extension() {
     let err =
         ingest_bytes("fake.png", b"not really an image".to_vec()).expect_err("should reject");
-    assert!(matches!(err, AppError::UnsupportedFile(_)));
+    assert!(matches!(err, AppError::UnsupportedFile { .. }));
 }
 
 #[test]
 fn rejects_unknown_extension_and_unknown_content() {
     let err = ingest_bytes("notes.txt", b"hello".to_vec()).expect_err("should reject");
-    assert!(matches!(err, AppError::UnsupportedFile(_)));
+    assert!(matches!(err, AppError::UnsupportedFile { .. }));
 }
 
 #[test]

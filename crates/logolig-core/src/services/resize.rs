@@ -22,7 +22,7 @@ pub fn resize(
     algorithm: ResizeAlgorithm,
 ) -> Result<Rgba8, AppError> {
     if target_w == 0 || target_h == 0 {
-        return Err(AppError::Resize("target dimensions must be > 0".into()));
+        return Err(AppError::resize("target dimensions must be > 0"));
     }
     // ターゲットが入力と同寸ならそのまま返す（短絡）。
     if src.width == target_w && src.height == target_h {
@@ -32,9 +32,9 @@ pub fn resize(
     // 0 サイズチェックは NonZero に通すついでに行う。
     let (sw, sh) = (
         NonZeroU32::new(src.width)
-            .ok_or_else(|| AppError::Resize("source width is 0".into()))?,
+            .ok_or_else(|| AppError::resize("source width is 0"))?,
         NonZeroU32::new(src.height)
-            .ok_or_else(|| AppError::Resize("source height is 0".into()))?,
+            .ok_or_else(|| AppError::resize("source height is 0"))?,
     );
 
     // src は読み専用 view、 dst は書き換え可能なバッファとして用意する。
@@ -42,7 +42,7 @@ pub fn resize(
     // RGBA8 を表すには PixelType::U8x4 を渡す。
     let mut src_buf: Vec<u8> = src.pixels.to_vec();
     let src_view = Image::from_slice_u8(sw.get(), sh.get(), &mut src_buf, fr::PixelType::U8x4)
-        .map_err(|e| AppError::Resize(format!("src view: {e}")))?;
+        .map_err(|e| AppError::resize(format!("src view: {e}")))?;
 
     let mut dst = Image::new(target_w, target_h, fr::PixelType::U8x4);
 
@@ -52,10 +52,10 @@ pub fn resize(
     let opts = ResizeOptions::new().resize_alg(algorithm.to_resize_alg());
     resizer
         .resize(&src_view, &mut dst, &opts)
-        .map_err(|e| AppError::Resize(format!("resize: {e}")))?;
+        .map_err(|e| AppError::resize(format!("resize: {e}")))?;
 
     // dst はピクセル所有バッファ。Vec に取り出して Arc 化。
     let pixels: Vec<u8> = dst.into_vec();
     Rgba8::try_from_raw(target_w, target_h, Arc::<[u8]>::from(pixels))
-        .ok_or_else(|| AppError::Resize("internal: rgba length mismatch".into()))
+        .ok_or_else(|| AppError::resize("internal: rgba length mismatch"))
 }

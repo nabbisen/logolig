@@ -42,5 +42,5 @@ fn webp_then_resize_to_favicon_sizes() {
 fn decode_webp_rejects_png_source() {
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let err = decode(&asset).expect_err("PNG should not decode as WebP");
-    assert!(matches!(err, AppError::UnsupportedFile(_)));
+    assert!(matches!(err, AppError::UnsupportedFile { .. }));
 }

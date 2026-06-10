@@ -11,12 +11,13 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use iced::{Element, Subscription, Task, Theme};
-use snora::{Toast, ToastIntent};
+use snora::{Toast, ToastIntent, ToastLifetime};
 
 use logolig_core::{
-    AppError, ExportPlan, ExportReport, PreviewCache, PreviewContext, PreviewProfile,
+    AppError, ExportPlan, ExportReport, MessageKey, PreviewCache, PreviewContext, PreviewProfile,
     ResizeAlgorithm, SettingsStore, SourceAsset, ThemeMode,
 };
+use logolig_i18n::{detect_system_locale, Locale, Translator};
 
 // ----------------------------------------------------------------------
 // 状態モデル
@@ -69,6 +70,15 @@ pub struct AppState {
     // - `locale` は v1.5 の i18n で使う伏線として PersistedSettings に含めて
     //   いる。 v1.4 では読み書きするだけで何にも反映しない。
     pub store: Option<crate::native_store::NativeStore>,
+
+    // v1.5.0: i18n
+    /// 現在の Translator。 ロケール切替時はこれを `Translator::for_locale(new)` で
+    /// 入れ替えるだけで再描画 1 回で UI 全体が新言語になる。
+    pub translator: Translator,
+    /// ユーザによるロケール上書き。 `None` なら OS ロケール検出値を使う。
+    /// 詳細設定の Language pick_list で変更され、 `PersistedSettings.locale`
+    /// として保存される。
+    pub locale_override: Option<Locale>,
 }
 
 impl AppState {
@@ -76,29 +86,55 @@ impl AppState {
     ///
     /// 失敗時はエラー Toast を出した上で default の AppState を返す。 永続化が
     /// 効かない状態でもアプリ自体は動くようにする (§ABDD: 機能が縮退しても止まらない)。
+    ///
+    /// ## v1.5.0: i18n 初期化
+    ///
+    /// 1. `PersistedSettings.locale` (BCP-47 風タグ "en" 等) があればそれを使う
+    /// 2. なければ OS ロケールを `sys-locale` で検出
+    /// 3. それも未対応なら英語 (Locale::default())
+    ///
+    /// 検出後の Translator が `state.translator` に入り、 各 view が
+    /// `state.translator.t(MessageKey::AppTitle)` のように使う。
     pub fn boot() -> Self {
         let mut state = Self::default();
         let store = crate::native_store::NativeStore::new();
+        let mut persisted_locale_tag: Option<String> = None;
         match store.load_or_default() {
             Ok(persisted) => {
                 state.export_plan = persisted.export_plan;
                 state.theme = persisted.theme;
-                // locale は v1.4 では未使用 (v1.5 で活きる伏線)。
-                let _ = persisted.locale;
+                persisted_locale_tag = persisted.locale.clone();
                 state.store = Some(store);
             }
             Err(err) => {
                 // 永続化の初期化に失敗してもアプリは続行する。
-                push_warning_toast(
-                    &mut state,
-                    "Settings could not be loaded",
-                    &format!(
-                        "{err} — running with defaults. Your changes won't be persisted."
-                    ),
+                // ここではまだ Translator が default (英語) なので英語の Toast を出す。
+                // 後で Translator が確定したら locale 反映の再描画で UI 全体が
+                // 揃った言語になる (この Toast は次の dismiss/expire まで英語のまま)。
+                let title = state
+                    .translator
+                    .t(MessageKey::ToastSettingsLoadFailedTitle);
+                let body = state.translator.t_args(
+                    MessageKey::ToastSettingsLoadFailedBody,
+                    &[("error", &err.to_string())],
                 );
+                push_warning_toast(&mut state, &title, &body);
                 // store は None のまま。 後続の persist_settings() は no-op になる。
             }
         }
+
+        // ロケール解決:
+        //   1. PersistedSettings.locale があれば優先 (B2: ユーザ上書き)
+        //   2. なければ OS 検出
+        //   3. どちらもダメなら英語 (Locale::default())
+        let resolved_locale = persisted_locale_tag
+            .as_deref()
+            .and_then(Locale::from_bcp47)
+            .map(|loc| (Some(loc), loc))
+            .unwrap_or_else(|| (None, detect_system_locale()));
+        state.locale_override = resolved_locale.0;
+        state.translator = Translator::for_locale(resolved_locale.1);
+
         state
     }
 }
@@ -120,6 +156,8 @@ impl Default for AppState {
             png_size_input: String::new(),
             ico_size_input: String::new(),
             store: None,
+            translator: Translator::default(),
+            locale_override: None,
         }
     }
 }
@@ -183,6 +221,16 @@ pub enum Message {
     /// ICO サイズ集合からの削除
     IcoSizeRemoveRequested(u32),
 
+    // v1.4.1: vtracer プリセット切り替え + ExportPlan リセット
+    /// vtracer プリセット選択の変更 (Sharp / Default / PhotoRich)。
+    VtracerPresetChanged(logolig_core::VtracerPreset),
+    /// ExportPlan を default に戻す。 theme / locale など他の設定には影響しない。
+    ExportPlanResetRequested,
+
+    // v1.5.0: i18n
+    /// 言語選択。 `None` で OS デフォルトに戻す。
+    LocaleChanged(Option<Locale>),
+
     // 書き出し
     ExportRequested,
     ExportDirPicked(Option<PathBuf>),
@@ -204,12 +252,18 @@ pub enum Message {
 ///
 /// iced 0.14 の `application` は第 1 引数を **boot 関数** (`Fn() -> State`) として取る。
 /// タイトルは builder メソッド `.title(...)` で渡す。
+/// v1.5.0: タイトルもキー化 — `state.translator.t(MessageKey::AppTitle)` 経由で
+/// ロケール変更にも追従する。
 pub fn run() -> iced::Result {
     iced::application(AppState::boot, update, view)
-        .title("Logolig")
+        .title(window_title)
         .theme(theme)
         .subscription(subscription)
         .run()
+}
+
+fn window_title(state: &AppState) -> String {
+    state.translator.t(MessageKey::AppTitle)
 }
 
 fn theme(state: &AppState) -> Theme {
@@ -369,29 +423,31 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         persist_settings(state);
                     } else {
                         // 範囲外は parse_size で捕捉済みなので、 ここに来るのは重複のみ
-                        push_warning_toast(
-                            state,
-                            "Already in set",
-                            &format!("PNG size {size} px is already configured."),
+                        let title = state.translator.t(MessageKey::ToastSizeAlreadyInSetTitle);
+                        let body = state.translator.t_args(
+                            MessageKey::ToastPngSizeAlreadyInSetBody,
+                            &[("size", &size.to_string())],
                         );
+                        push_warning_toast(state, &title, &body);
                     }
                 }
                 Err(SizeParseError::Empty) => {
                     // 空入力での Add は無視 (UX: Enter 連打で迷子にしない)
                 }
                 Err(SizeParseError::NotANumber) => {
-                    push_warning_toast(
-                        state,
-                        "Invalid size",
-                        &format!("'{raw}' is not a valid pixel size."),
-                    );
+                    let title = state.translator.t(MessageKey::ToastInvalidSizeTitle);
+                    let body = state
+                        .translator
+                        .t_args(MessageKey::ToastInvalidSizeBody, &[("input", &raw)]);
+                    push_warning_toast(state, &title, &body);
                 }
                 Err(SizeParseError::OutOfRange { min, max }) => {
-                    push_warning_toast(
-                        state,
-                        "Size out of range",
-                        &format!("PNG sizes must be between {min} and {max} px."),
+                    let title = state.translator.t(MessageKey::ToastSizeOutOfRangeTitle);
+                    let body = state.translator.t_args(
+                        MessageKey::ToastPngSizeOutOfRangeBody,
+                        &[("min", &min.to_string()), ("max", &max.to_string())],
                     );
+                    push_warning_toast(state, &title, &body);
                 }
             }
             Task::none()
@@ -414,27 +470,29 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         state.ico_size_input.clear();
                         persist_settings(state);
                     } else {
-                        push_warning_toast(
-                            state,
-                            "Already in set",
-                            &format!("ICO size {size} px is already configured."),
+                        let title = state.translator.t(MessageKey::ToastSizeAlreadyInSetTitle);
+                        let body = state.translator.t_args(
+                            MessageKey::ToastIcoSizeAlreadyInSetBody,
+                            &[("size", &size.to_string())],
                         );
+                        push_warning_toast(state, &title, &body);
                     }
                 }
                 Err(SizeParseError::Empty) => {}
                 Err(SizeParseError::NotANumber) => {
-                    push_warning_toast(
-                        state,
-                        "Invalid size",
-                        &format!("'{raw}' is not a valid pixel size."),
-                    );
+                    let title = state.translator.t(MessageKey::ToastInvalidSizeTitle);
+                    let body = state
+                        .translator
+                        .t_args(MessageKey::ToastInvalidSizeBody, &[("input", &raw)]);
+                    push_warning_toast(state, &title, &body);
                 }
                 Err(SizeParseError::OutOfRange { min, max }) => {
-                    push_warning_toast(
-                        state,
-                        "Size out of range",
-                        &format!("ICO sizes must be between {min} and {max} px (ICO format limit)."),
+                    let title = state.translator.t(MessageKey::ToastSizeOutOfRangeTitle);
+                    let body = state.translator.t_args(
+                        MessageKey::ToastIcoSizeOutOfRangeBody,
+                        &[("min", &min.to_string()), ("max", &max.to_string())],
                     );
+                    push_warning_toast(state, &title, &body);
                 }
             }
             Task::none()
@@ -443,6 +501,50 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             if state.export_plan.remove_ico_size(size) {
                 persist_settings(state);
             }
+            Task::none()
+        }
+
+        // -----------------------------------------------------------------
+        // v1.4.1: vtracer プリセット + ExportPlan リセット
+        // -----------------------------------------------------------------
+        Message::VtracerPresetChanged(preset) => {
+            state.export_plan.vtracer_preset = preset;
+            persist_settings(state);
+            Task::none()
+        }
+        Message::ExportPlanResetRequested => {
+            // ExportPlan のみ default に戻す。 theme / locale / advanced_open など
+            // 他の状態は触らない (§v1.4.1 Reset スコープ判断)。
+            state.export_plan = ExportPlan::default();
+            // 入力中の文字列バッファもクリア (リセット直後に変な値が残らないように)
+            state.png_size_input.clear();
+            state.ico_size_input.clear();
+            // プレビューのアルゴリズムが変わった可能性 (Reset 時に Lanczos3 に戻る)。
+            // キャッシュは破棄して再生成しないと色合わせが古いまま。
+            state.preview_cache = None;
+            persist_settings(state);
+            // 完了通知 (transient): UX として「ボタン押した → 何が起きた」 を明示
+            let title = state.translator.t(MessageKey::ToastResetTitle);
+            let body = state.translator.t(MessageKey::ToastResetBody);
+            push_success_toast(state, &title, &body);
+            // プレビューがあるなら algorithm 変更後と同じ要領で再生成
+            if let Some(asset) = state.source_asset.as_ref() {
+                let arc = std::sync::Arc::new(asset.clone());
+                crate::task_queue::build_preview_task(arc, state.export_plan.algorithm)
+            } else {
+                Task::none()
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // v1.5.0: ロケール変更
+        // -----------------------------------------------------------------
+        Message::LocaleChanged(opt) => {
+            // None ならシステムロケールに戻す。 Some(loc) ならそれを採用。
+            state.locale_override = opt;
+            let resolved = opt.unwrap_or_else(detect_system_locale);
+            state.translator = Translator::for_locale(resolved);
+            persist_settings(state);
             Task::none()
         }
 
@@ -473,11 +575,14 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let dir_display = report.output_dir.display().to_string();
             state.screen = Screen::ExportReady;
             state.busy = false;
-            push_success_toast(
-                state,
-                "Exported",
-                &format!("{count} files written to {dir_display}"),
+            // v1.4.2: persistent から 7 秒 transient に変更。
+            // v1.5.0: i18n 対応 (count / dir プレースホルダ)。
+            let title = state.translator.t(MessageKey::ToastExportTitle);
+            let body = state.translator.t_args(
+                MessageKey::ToastExportBody,
+                &[("count", &count.to_string()), ("dir", &dir_display)],
             );
+            push_long_success_toast(state, &title, &body);
             Task::none()
         }
         Message::ExportCompleted(Err(err)) => fail(state, err),
@@ -524,14 +629,19 @@ fn fail(state: &mut AppState, err: AppError) -> Task<Message> {
 }
 
 /// エラーを persistent な Toast として通知。ユーザーが閉じるまで残る。
+/// v1.5.0: AppError の `key()` + `args()` を Translator で翻訳する。
 fn push_error_toast(state: &mut AppState, err: AppError) {
     let id = next_id(state);
+    let body = state.translator.translate_error(&err);
+    // タイトルは「操作失敗」 のような汎用文言。 これも翻訳キー化したいが、
+    // v1.5.0 では「Operation failed」 を英語で固定しておく。 v1.6 以降で
+    // 必要なら ToastOperationFailedTitle のような MessageKey を増やす。
     state.toasts.push(
         Toast::new(
             id,
             ToastIntent::Error,
             "Operation failed",
-            err.to_string(),
+            body,
             Message::DismissToast(id),
         )
         .persistent(),
@@ -548,6 +658,33 @@ fn push_success_toast(state: &mut AppState, title: &str, body: &str) {
         body.to_string(),
         Message::DismissToast(id),
     ));
+}
+
+/// 長め (7 秒) の transient 成功通知 (v1.4.2)。
+///
+/// v1.4.1 では Export 完了を `persistent()` にしてユーザの dismiss 待ちにして
+/// いたが、 ユーザフィードバックで「persistent は不要、 ただし default の 4 秒
+/// では短い」 と判明。 v1.4.2 では 7 秒の transient に変更。
+///
+/// 7 秒の根拠: snora の default 4 秒は短いメッセージ向け。 Export 通知は
+/// 「N files written to /長い/path/to/dir」 のように読み切るのに時間が要るので、
+/// その分長めにする。 ただし 10 秒以上は「画面に居座っている」 印象になるため
+/// 避ける。 7 秒は「読んで頷いて目を逸らす」 までの時間として妥当な落とし所。
+///
+/// Toast 表示位置の問題 (snora が右下固定) は別途 ROADMAP で snora 拡張依頼として
+/// 扱う。 位置改善が入れば 7 秒でも見落としリスクはさらに下がる見込み。
+fn push_long_success_toast(state: &mut AppState, title: &str, body: &str) {
+    let id = next_id(state);
+    state.toasts.push(
+        Toast::new(
+            id,
+            ToastIntent::Success,
+            title.to_string(),
+            body.to_string(),
+            Message::DismissToast(id),
+        )
+        .with_lifetime(ToastLifetime::seconds(7)),
+    );
 }
 
 fn next_id(state: &mut AppState) -> u64 {
@@ -599,14 +736,13 @@ fn push_warning_toast(state: &mut AppState, title: &str, body: &str) {
 // ----------------------------------------------------------------------
 
 /// 現在の AppState に対応する `PersistedSettings` を組み立てる。
-/// `locale` は v1.4 では未使用 (v1.5 で活きる伏線) のため、 既存値を保つ
-/// (= store から読み戻して維持) のが筋だが、 v1.4 では None 固定で書き戻す。
-/// v1.5 で locale UI を入れる時にここを修正する。
 fn snapshot_persisted(state: &AppState) -> logolig_core::PersistedSettings {
     logolig_core::PersistedSettings {
         export_plan: state.export_plan.clone(),
         theme: state.theme,
-        locale: None,
+        // v1.5.0: ユーザによるロケール上書きがあれば BCP-47 タグとして保存。
+        // None なら次回起動時も OS ロケール検出にフォールバックする。
+        locale: state.locale_override.map(|loc| loc.as_bcp47().to_string()),
     }
 }
 
@@ -625,10 +761,14 @@ fn persist_settings(state: &mut AppState) {
     let snapshot = snapshot_persisted(state);
     if let Err(err) = store.save(&snapshot) {
         // 保存失敗を transient warning として通知 (毎操作 persistent では UI が埋まる)。
-        push_warning_toast(
-            state,
-            "Settings save failed",
-            &format!("{err} — your change is in memory only."),
+        // v1.5.0: i18n 対応。
+        let title = state
+            .translator
+            .t(MessageKey::ToastSettingsSaveFailedTitle);
+        let body = state.translator.t_args(
+            MessageKey::ToastSettingsSaveFailedBody,
+            &[("error", &err.to_string())],
         );
+        push_warning_toast(state, &title, &body);
     }
 }

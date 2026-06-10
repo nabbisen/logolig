@@ -1,0 +1,111 @@
+# logolig English dictionary (v1.5.0)
+#
+# Keys are the snake_case version of `MessageKey` enum variants in logolig-core.
+# Placeholders use `{name}` syntax, replaced at runtime by Translator using
+# args from AppError::args() or t_args() callers.
+#
+# When adding a key here, also add the matching variant to MessageKey in
+# logolig-core/src/message_key.rs. The Translator's exhaustive match will
+# fail to compile until both sides agree.
+
+# --- App-wide ---
+app_title = "Logolig"
+
+# --- Drop zone ---
+drop_zone_instruction = "Drop a PNG, SVG, or WebP here"
+drop_zone_secondary = "or click the button to choose a file"
+drop_zone_accepted_formats = "Accepted: .png, .svg, .webp"
+choose_file_button = "Choose file…"
+change_file_button = "Change file…"
+importing_message = "Importing…"
+
+# --- Preview ---
+preview_browser_tab = "Browser tab (16×16)"
+preview_smartphone_home = "Smartphone home"
+preview_background_light = "Light"
+preview_background_dark = "Dark"
+preview_background_system = "System"
+preview_source_label = "Source"
+preview_no_source = "No file imported yet"
+
+# --- Advanced drawer ---
+advanced_title = "Advanced settings"
+advanced_blurb = "Defaults are tuned for quality and minimal output. Adjust only if you have a specific need."
+
+section_resize = "Resize algorithm"
+section_resize_blurb = "Lanczos3 is the recommended default. Switch to Nearest only for pixel art."
+algorithm_label = "Algorithm:"
+
+section_svg = "SVG output"
+section_svg_blurb = "Modern browsers prefer SVG on high-DPI displays. Turn off vectorization for photos or noisy images. The preset tunes vtracer for the source style."
+include_svg_label = "Output favicon.svg"
+vectorize_on_raster_label = "Vectorize raster sources to SVG (vtracer)"
+preset_label = "Preset:"
+
+section_files = "Files to write"
+section_files_blurb = "Each artifact can be skipped if your project doesn't need it."
+include_ico_label = "favicon.ico (legacy compatibility)"
+include_apple_touch_label = "apple-touch-icon.png (iOS / iPadOS home screen)"
+include_html_snippet_label = "favicon-snippet.html (paste-ready <head> markup)"
+
+section_png_sizes = "PNG sizes"
+section_png_sizes_blurb = "Each size becomes a separate favicon-{size}.png. 32 / 192 / 512 covers tabs, PWA install, and high-DPI splash. Range: 16–1024 px."
+section_ico_sizes = "ICO frame sizes"
+section_ico_sizes_blurb = "Sizes embedded in favicon.ico. Each frame is rendered independently from the source for sharp small-size results. Range: 16–256 px (ICO format limit)."
+size_add_button = "Add"
+size_chip_remove = "×"
+size_input_placeholder = "e.g. 64 ({min}–{max})"
+empty_set_label = "(empty)"
+reset_button = "Reset to defaults"
+close_button = "Close"
+
+# --- Buttons / actions ---
+export_button = "Export"
+toggle_advanced_button = "Show advanced"
+toggle_theme_button = "Theme"
+
+# --- Resize algorithm names ---
+algorithm_lanczos3 = "Lanczos3 (sharp)"
+algorithm_mitchell_netravali = "Mitchell-Netravali"
+algorithm_catmull_rom = "Catmull-Rom"
+algorithm_bilinear = "Bilinear"
+algorithm_nearest = "Nearest (pixel art)"
+
+# --- vtracer preset names ---
+vtracer_preset_sharp = "Sharp (logos, icons)"
+vtracer_preset_default = "Default (balanced)"
+vtracer_preset_photo_rich = "Photo-rich (gradients)"
+
+# --- Language selection ---
+section_language = "Language"
+section_language_blurb = "Logolig follows your system language by default. Override here if you prefer a different language."
+language_english = "English"
+language_japanese = "日本語"
+language_system_default = "System default"
+
+# --- Toasts ---
+toast_export_title = "Exported"
+toast_export_body = "{count} files written to {dir}"
+toast_reset_title = "Settings restored"
+toast_reset_body = "Output plan reset to defaults."
+toast_settings_load_failed_title = "Settings could not be loaded"
+toast_settings_load_failed_body = "{error} — running with defaults. Your changes won't be persisted."
+toast_settings_save_failed_title = "Settings save failed"
+toast_settings_save_failed_body = "{error} — your change is in memory only."
+toast_size_already_in_set_title = "Already in set"
+toast_png_size_already_in_set_body = "PNG size {size} px is already configured."
+toast_ico_size_already_in_set_body = "ICO size {size} px is already configured."
+toast_invalid_size_title = "Invalid size"
+toast_invalid_size_body = "'{input}' is not a valid pixel size."
+toast_size_out_of_range_title = "Size out of range"
+toast_png_size_out_of_range_body = "PNG sizes must be between {min} and {max} px."
+toast_ico_size_out_of_range_body = "ICO sizes must be between {min} and {max} px (ICO format limit)."
+
+# --- Errors (AppError) ---
+error_unsupported_file = "Unsupported file format: {path}"
+error_io = "I/O error on {path}: {cause}"
+error_decode = "Image decode failed: {detail}"
+error_rasterize = "SVG rasterize failed: {detail}"
+error_resize = "Resize failed: {detail}"
+error_export = "Export failed: {detail}"
+error_not_implemented = "Not implemented: {feature}"
