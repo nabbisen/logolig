@@ -17,8 +17,8 @@ use std::path::{Path, PathBuf};
 use crate::domain::{ExportPlan, Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
 use crate::services::{
-    decode_png, decode_webp, encode_png, html_snippet, ico_writer, manifest_writer, rasterize_svg,
-    resize,
+    decode_png, decode_webp, encode_png, html_snippet, ico_writer, manifest_writer, monochrome,
+    rasterize_svg, resize,
     vectorize,
 };
 
@@ -145,6 +145,66 @@ pub fn run(
         artifacts.push(output_dir.join(manifest_writer::MANIFEST_FILENAME));
     }
 
+    // v1.9.0: モノクローム出力セット (mono/ サブディレクトリ)。
+    // 通常出力の rendering と完全に独立した手順 — 同じソースに別 plan で
+    // resize → グレースケール変換 → encode という流れ。 既存の出力には
+    // 一切影響しないため、 既存テストへの破壊リスクなし。
+    //
+    // mono 化対象:
+    // - PNG 各サイズ → mono/favicon-{size}.png
+    // - SVG (色情報を `#000`〜`#FFF` のグレーに置換)
+    //   ↑ ただし v1.9 では SVG 文字列の色置換ではなく、 PNG ベクトル化済み
+    //     SVG (vtracer 出力) の場合のみ「再ベクトル化」 する戦略は重い。
+    //     代替案: SVG ソースなら一度 raster に落としてグレーに変換、
+    //            さらに再ベクトル化 — これも重い。
+    //     代替案 2: mono SVG は出さず PNG/ICO のみ — favicon の主要用途では
+    //              足りる。 v1.9.0 ではこれを採用。 SVG mono は v1.9.x で
+    //              「raster → grayscale → vtracer」 の 2 段で実装する。
+    // - ICO → mono/favicon.ico (各 frame をグレースケール化して再構築)
+    //
+    // SVG mono のスコープ判断:
+    //   v1.9.0 ではあえて SVG mono を入れない。 理由は上記コメントの通り、
+    //   SVG ソースで色置換が技術的に難しい (paint属性 / inline style /
+    //   gradient / external CSS まで考慮すると複雑)。 PNG / ICO だけでも
+    //   「単色印刷物」 「マスク用途」 の主要ユースケースは満たせる。
+    if plan.monochrome {
+        let mono_dir = stage.join("mono");
+        std::fs::create_dir(&mono_dir).map_err(|e| {
+            AppError::export(format!("create mono dir: {e}"))
+        })?;
+
+        // PNG 各サイズの mono 版。 通常 PNG と同じ順序・命名規則で並べる。
+        for size in &png_sizes {
+            let rgba = render_at_size(asset, decoded_raster.as_ref(), *size, plan)?;
+            let mono_rgba = monochrome::to_grayscale(&rgba);
+            let png_bytes = encode_png::encode(&mono_rgba)?;
+            let name = format!("favicon-{size}.png");
+            write_file(&mono_dir.join(&name), &png_bytes)?;
+            artifacts.push(output_dir.join("mono").join(&name));
+        }
+
+        // ICO mono 版。 ICO は複数フレームの集合体なので、 各フレームを
+        // グレースケール化して再構築する。 build_ico_frames を再実行する
+        // のは無駄に見えるが、 各 size から個別に rgba を作って mono 化する
+        // 方が「すでに mono 化された 16px と 32px」 のような中途半端な
+        // 状態を避けやすい (キャッシュ管理の複雑化を避ける)。
+        if plan.include_ico {
+            let frames = build_ico_frames(asset, decoded_raster.as_ref(), plan)?;
+            let mono_frames: Vec<(u32, Rgba8)> = frames
+                .into_iter()
+                .map(|(size, rgba)| (size, monochrome::to_grayscale(&rgba)))
+                .collect();
+            let frame_refs: Vec<(u32, &Rgba8)> =
+                mono_frames.iter().map(|(s, r)| (*s, r)).collect();
+            let ico_bytes = ico_writer::build(&frame_refs)?;
+            write_file(&mono_dir.join("favicon.ico"), &ico_bytes)?;
+            artifacts.push(output_dir.join("mono").join("favicon.ico"));
+        }
+
+        // SVG mono は v1.9.0 ではスコープ外 (上記コメント参照)。
+        // 詳細設定でユーザに UI として見せないので、 ここでも黙って何もしない。
+    }
+
     // HTML snippet。 実際に SVG が書かれたかを反映するため、 plan を一時改変する。
     if plan.include_html_snippet {
         let mut effective_plan = plan.clone();
@@ -161,7 +221,10 @@ pub fn run(
     // 全成功: ガードを解除して staging を残す → finalize 内で空になっているはず。
     guard.cancel();
     // 空の staging dir を片付ける (rename で中身は出ていった)。
-    let _ = std::fs::remove_dir(&stage);
+    // v1.9.0: mono/ サブディレクトリが残る可能性があるため、 remove_dir_all で
+    // 空のサブディレクトリも含めて再帰削除する。 中身は finalize で全て移動
+    // されているはずなので、 削除対象は空のディレクトリだけ。
+    let _ = std::fs::remove_dir_all(&stage);
 
     Ok(ExportReport {
         output_dir: output_dir.to_path_buf(),
@@ -242,10 +305,31 @@ fn write_file(path: &Path, bytes: &[u8]) -> Result<(), AppError> {
 /// のが普通の使い方であり、 ユーザに「既存削除」の手間を負わせない。
 fn finalize(stage: &Path, output_dir: &Path, artifacts: &[PathBuf]) -> Result<(), AppError> {
     for final_path in artifacts {
-        let name = final_path
-            .file_name()
-            .ok_or_else(|| AppError::export("internal: artifact has no file name"))?;
-        let staged = stage.join(name);
+        // v1.9.0: artifacts に mono/favicon-32.png のようなサブディレクトリ付きの
+        // パスが混じる可能性があるため、 file_name() だけでなく output_dir 配下の
+        // 相対パスを取り出して staging 側 / final 側双方を再構築する。
+        let rel = final_path.strip_prefix(output_dir).map_err(|_| {
+            AppError::export(format!(
+                "internal: artifact {} not under output_dir {}",
+                final_path.display(),
+                output_dir.display()
+            ))
+        })?;
+        let staged = stage.join(rel);
+
+        // 出力先のサブディレクトリ (例: mono/) が無ければ作る。 mono/ は
+        // staging 側にしか存在しないので、 rename 前に出力側にも mkdir する。
+        if let Some(parent) = final_path.parent() {
+            if parent != output_dir && !parent.exists() {
+                std::fs::create_dir_all(parent).map_err(|e| {
+                    AppError::export(format!(
+                        "create output subdir {}: {e}",
+                        parent.display()
+                    ))
+                })?;
+            }
+        }
+
         // 既存ファイルがあれば上書きするため、 rename 前に削除。
         // (Unix の std::fs::rename は同名ファイル上書きできるが、 念のため明示)
         if final_path.exists() {
@@ -258,7 +342,6 @@ fn finalize(stage: &Path, output_dir: &Path, artifacts: &[PathBuf]) -> Result<()
                 final_path.display()
             ))
         })?;
-        let _ = output_dir; // finalize は output_dir を直接いじらない
     }
     Ok(())
 }

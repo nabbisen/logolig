@@ -163,4 +163,12 @@ pub enum MessageKey {
     ToastInvalidColorTitle,
     /// 入力した色文字列が `#RRGGBB` 形式でないときの Toast 本文 (input プレースホルダ含む)。
     ToastInvalidColorBody,
+
+    // --- モノクローム出力 (v1.9.0) ---
+    /// 詳細設定の「モノクローム出力」 セクション見出し。
+    SectionMonochrome,
+    /// セクションの説明 (`mono/` サブディレクトリ、 PNG/ICO 対象、 等)。
+    SectionMonochromeBlurb,
+    /// チェックボックスのラベル。
+    IncludeMonochromeLabel,
 }

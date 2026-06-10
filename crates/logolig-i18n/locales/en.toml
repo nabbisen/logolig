@@ -129,3 +129,8 @@ web_manifest_theme_color_label = "Theme color"
 web_manifest_background_color_label = "Background color"
 toast_invalid_color_title = "Invalid color"
 toast_invalid_color_body = "'{input}' is not a valid color. Use #RRGGBB (7 characters, hex digits)."
+
+# --- Monochrome output (v1.9.0) ---
+section_monochrome = "Monochrome output"
+section_monochrome_blurb = "Adds a mono/ subdirectory with grayscale (BT.709) versions of PNG and ICO artifacts. Useful for single-color print, theme-aware mask icons, and stencils. SVG monochrome is not yet supported."
+include_monochrome_label = "Output mono/ grayscale set"

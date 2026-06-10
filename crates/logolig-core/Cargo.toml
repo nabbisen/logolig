@@ -94,5 +94,9 @@ path = "tests/transparency_audit.rs"
 name = "manifest_writer"
 path = "tests/manifest_writer.rs"
 
+[[test]]
+name = "monochrome"
+path = "tests/monochrome.rs"
+
 [lints]
 workspace = true

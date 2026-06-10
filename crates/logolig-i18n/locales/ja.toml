@@ -131,3 +131,8 @@ web_manifest_theme_color_label = "テーマカラー"
 web_manifest_background_color_label = "背景色"
 toast_invalid_color_title = "色の指定が不正"
 toast_invalid_color_body = "「{input}」 は有効な色ではありません。 #RRGGBB (7 文字の 16 進数) で指定してください。"
+
+# --- モノクローム出力 (v1.9.0) ---
+section_monochrome = "モノクローム出力"
+section_monochrome_blurb = "PNG / ICO のグレースケール版 (BT.709) を mono/ サブディレクトリに追加出力。 単色印刷物、 テーマ対応のマスク用アイコン、 ステンシル用途に。 SVG のモノクローム化は現状未対応。"
+include_monochrome_label = "mono/ グレースケールセットを出力"

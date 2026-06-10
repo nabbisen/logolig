@@ -113,6 +113,16 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             &t.t(MessageKey::SectionWebManifestBlurb),
             web_manifest_body(state),
         ),
+        // 8. Monochrome (v1.9.0)
+        section(
+            &t.t(MessageKey::SectionMonochrome),
+            &t.t(MessageKey::SectionMonochromeBlurb),
+            checkbox(state.export_plan.monochrome)
+                .label(t.t(MessageKey::IncludeMonochromeLabel))
+                .on_toggle(Message::IncludeMonochromeToggled)
+                .text_size(13)
+                .into(),
+        ),
         // フッタ: Reset と Close を横並び
         row![
             button(text(t.t(MessageKey::ResetButton)))

@@ -158,6 +158,11 @@ pub(crate) struct Dictionary {
     pub web_manifest_background_color_label: String,
     pub toast_invalid_color_title: String,
     pub toast_invalid_color_body: String,
+
+    // Monochrome (v1.9.0)
+    pub section_monochrome: String,
+    pub section_monochrome_blurb: String,
+    pub include_monochrome_label: String,
 }
 
 impl Dictionary {
@@ -301,6 +306,11 @@ impl Dictionary {
             MessageKey::WebManifestBackgroundColorLabel => &self.web_manifest_background_color_label,
             MessageKey::ToastInvalidColorTitle => &self.toast_invalid_color_title,
             MessageKey::ToastInvalidColorBody => &self.toast_invalid_color_body,
+
+            // v1.9.0
+            MessageKey::SectionMonochrome => &self.section_monochrome,
+            MessageKey::SectionMonochromeBlurb => &self.section_monochrome_blurb,
+            MessageKey::IncludeMonochromeLabel => &self.include_monochrome_label,
         }
     }
 }

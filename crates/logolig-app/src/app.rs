@@ -264,6 +264,10 @@ pub enum Message {
     /// `background_color` フィールドの編集。
     WebManifestBackgroundColorChanged(String),
 
+    // v1.9.0: モノクローム出力
+    /// `mono/` グレースケール出力セットの有効/無効 toggle。
+    IncludeMonochromeToggled(bool),
+
     // 書き出し
     ExportRequested,
     ExportDirPicked(Option<PathBuf>),
@@ -653,6 +657,21 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 m.background_color = s;
                 persist_settings(state);
             }
+            Task::none()
+        }
+
+        // -----------------------------------------------------------------
+        // v1.9.0: モノクローム出力セット
+        // -----------------------------------------------------------------
+        Message::IncludeMonochromeToggled(on) => {
+            // 単純な bool フラグ操作。 既存の include_ico / include_apple_touch
+            // などと同じ流儀で persist_settings まで行う。
+            //
+            // 既存のプレビューや preview_cache に副作用なし — モノクロームは
+            // 出力時にのみ生成され、 プレビュー画面の表示には影響しない
+            // (プレビューでの mono 表示は v1.11 IA 刷新と合わせて検討)。
+            state.export_plan.monochrome = on;
+            persist_settings(state);
             Task::none()
         }
 

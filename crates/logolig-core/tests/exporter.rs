@@ -206,3 +206,98 @@ fn no_apple_touch_omits_that_file() {
 
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+// ---------------------------------------------------------------------------
+// v1.9.0: モノクローム出力セット (mono/ サブディレクトリ)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn monochrome_emits_mono_subdir_with_png_and_ico() {
+    let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
+    let dir = fresh_tmp_dir("mono-png");
+    let plan = ExportPlan {
+        monochrome: true,
+        ..ExportPlan::default()
+    };
+
+    let report = run(&asset, &plan, &dir).expect("export should succeed");
+
+    // 通常出力 + mono/ サブディレクトリの全ファイル
+    let expected_color = [
+        "favicon.svg",
+        "favicon.ico",
+        "favicon-32.png",
+        "favicon-192.png",
+        "favicon-512.png",
+        "apple-touch-icon.png",
+        "favicon-snippet.html",
+    ];
+    let expected_mono = [
+        "mono/favicon.ico",
+        "mono/favicon-32.png",
+        "mono/favicon-192.png",
+        "mono/favicon-512.png",
+    ];
+
+    for name in expected_color {
+        let p = dir.join(name);
+        assert!(p.is_file(), "missing color artifact: {}", p.display());
+    }
+    for name in expected_mono {
+        let p = dir.join(name);
+        assert!(p.is_file(), "missing mono artifact: {}", p.display());
+    }
+    // mono/ 自体がディレクトリとして存在する
+    assert!(dir.join("mono").is_dir());
+
+    // artifacts の合計は color 7 + mono 4 = 11 (v1.9.0 の SVG mono は無し)
+    assert_eq!(report.artifacts.len(), expected_color.len() + expected_mono.len());
+
+    // mono/favicon-32.png は通常 favicon-32.png と異なるバイト列 (グレースケール化)
+    let color_bytes = std::fs::read(dir.join("favicon-32.png")).unwrap();
+    let mono_bytes = std::fs::read(dir.join("mono/favicon-32.png")).unwrap();
+    assert_ne!(
+        color_bytes, mono_bytes,
+        "mono PNG should differ from color PNG"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn monochrome_off_does_not_create_mono_dir() {
+    // monochrome=false のとき (デフォルト) は mono/ ディレクトリが
+    // 一切作られないことを確認 — 既存ユーザの出力が破壊されないことの保証。
+    let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
+    let dir = fresh_tmp_dir("mono-off");
+    let plan = ExportPlan::default(); // monochrome = false
+
+    run(&asset, &plan, &dir).expect("export should succeed");
+    assert!(
+        !dir.join("mono").exists(),
+        "mono/ should not exist when monochrome=false"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn monochrome_with_ico_off_skips_mono_ico() {
+    // include_ico=false なら mono/favicon.ico も出ないこと。
+    // ユーザが「ICO は要らない」 と決めたなら mono/ICO も要らないはず。
+    let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
+    let dir = fresh_tmp_dir("mono-no-ico");
+    let plan = ExportPlan {
+        monochrome: true,
+        include_ico: false,
+        ..ExportPlan::default()
+    };
+
+    run(&asset, &plan, &dir).expect("export should succeed");
+    assert!(dir.join("mono").is_dir());
+    assert!(!dir.join("mono/favicon.ico").exists());
+    // PNG は出ているはず
+    assert!(dir.join("mono/favicon-32.png").is_file());
+
+    let _ = std::fs::remove_dir_all(&dir);
+}

@@ -31,6 +31,10 @@
 //! v1.8.0 で追加:
 //! - `manifest_writer` — `WebManifestSettings` + PNG サイズから
 //!   `manifest.webmanifest` の JSON 文字列を組み立てる
+//!
+//! v1.9.0 で追加:
+//! - `monochrome` — Rgba8 → Rgba8 のグレースケール変換 (BT.709 輝度公式)。
+//!   モノクローム favicon セット (mono/ サブディレクトリ) の生成に使う
 
 pub mod decode_png;
 pub mod decode_webp;
@@ -40,6 +44,7 @@ pub mod html_snippet;
 pub mod ico_writer;
 pub mod ingest;
 pub mod manifest_writer;
+pub mod monochrome;
 pub mod preview;
 pub mod rasterize_svg;
 pub mod resize;

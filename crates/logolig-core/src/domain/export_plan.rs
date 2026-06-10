@@ -66,6 +66,21 @@ pub struct ExportPlan {
     /// 値はプレースホルダ ("My App" 等) なので、 ユーザは詳細設定で
     /// `name`, `short_name`, `theme_color`, `background_color` を埋める想定。
     pub web_manifest: Option<crate::domain::WebManifestSettings>,
+
+    /// モノクローム出力セット (v1.9.0+)。 `true` のとき、 通常の出力に加えて
+    /// `mono/` サブディレクトリにグレースケール版 (BT.709 輝度) を出力する:
+    ///
+    /// ```text
+    /// mono/
+    /// ├── favicon.svg     (include_svg が true なら)
+    /// ├── favicon.ico     (include_ico が true なら)
+    /// └── favicon-{N}.png (各 png_sizes ごと)
+    /// ```
+    ///
+    /// `apple-touch-icon` は iOS ホーム画面がカラー前提のため mono 化しない。
+    /// HTML snippet にも mono の `<link>` は自動追加しない (CSS prefers-color-scheme
+    /// と組み合わせる用途は多様で、 ユーザに委ねる方が自然)。
+    pub monochrome: bool,
 }
 
 impl Default for ExportPlan {
@@ -92,6 +107,10 @@ impl Default for ExportPlan {
             // 「迷いを減らす」 §5: ほとんどのユーザは PWA を作らないので、
             // 知らない間に意図しない manifest が出力されないようにする。
             web_manifest: None,
+            // v1.9.0: モノクローム出力もオプトイン (false がデフォルト)。
+            // 大半のユーザはカラー版だけで十分。 単色印刷やテーマ対応 mask の
+            // ような特殊用途のときだけ有効化する想定。
+            monochrome: false,
         }
     }
 }
@@ -110,7 +129,18 @@ impl ExportPlan {
         let svg = usize::from(self.include_svg);
         // v1.8.0: web_manifest が Some なら manifest.webmanifest が +1。
         let manifest = usize::from(self.web_manifest.is_some());
-        ico + apple + html + svg + manifest + self.png_sizes.len()
+        let base = ico + apple + html + svg + manifest + self.png_sizes.len();
+        // v1.9.0: monochrome が ON なら、 PNG 各サイズ + SVG (if include_svg)
+        //          + ICO (if include_ico) のグレースケール版が増える。
+        //          apple-touch / html / manifest は mono 化しない。
+        let mono = if self.monochrome {
+            self.png_sizes.len()
+                + usize::from(self.include_svg)
+                + usize::from(self.include_ico)
+        } else {
+            0
+        };
+        base + mono
     }
 
     /// PNG サイズ集合への追加 (v1.3.0)。 重複や範囲外を弾き、 昇順を保つ。

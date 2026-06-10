@@ -10,7 +10,8 @@ PNG / SVG / WebP goes in. A polished `favicon.svg`, `favicon.ico`, an
 Apple touch icon, high-resolution PNGs, and a clean HTML `<head>` snippet
 come out — all on your machine, with no upload anywhere.
 
-Built on [iced](https://iced.rs/) and [snora](https://github.com/nabbisen/snora).
+Built on [iced 0.14](https://iced.rs/) and
+[snora 0.4](https://github.com/nabbisen/snora).
 
 ## Why
 
@@ -171,6 +172,86 @@ Color values are validated at export time (not while typing), so `#FF…`
 in mid-edit doesn't trigger a warning. If a malformed color is detected at
 export, a Toast is shown and the export is blocked until it's fixed.
 
+## Monochrome output
+
+When **Output `mono/` grayscale set** is enabled in the advanced drawer,
+Logolig adds a grayscale version of each PNG and the ICO under a `mono/`
+subdirectory:
+
+```
+your-output-dir/
+├── favicon.svg
+├── favicon.ico
+├── apple-touch-icon.png
+├── favicon-32.png
+├── favicon-192.png
+├── favicon-512.png
+├── favicon-snippet.html
+└── mono/
+    ├── favicon.ico
+    ├── favicon-32.png
+    ├── favicon-192.png
+    └── favicon-512.png
+```
+
+The grayscale conversion uses the [BT.709 luma formula](https://en.wikipedia.org/wiki/Rec._709)
+(`Y = 0.2126 R + 0.7152 G + 0.0722 B`), the modern sRGB-aligned standard.
+Alpha is preserved per pixel — transparent regions stay transparent.
+
+Typical use cases:
+
+- **Single-color print** (business cards, faxes, embroidery) where the
+  color version would muddy
+- **Theme-aware mask icons** referenced from CSS via `mask-image` so the
+  user agent can recolor the icon to match light/dark mode
+- **Stencil and design-asset re-use** where you want a flat tone version
+  of the logo
+
+### Wiring monochrome into your `<head>` (optional)
+
+Logolig does **not** auto-inject `<link>` lines for monochrome icons —
+how you use them is too project-specific to template. The most common
+pattern uses CSS `prefers-color-scheme` to swap which icon the browser
+should pick. Here is the diff you can paste into the snippet Logolig
+generated:
+
+```diff
+ <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+ <link rel="icon" href="/favicon.ico" sizes="any">
+ <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+ <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+ <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png">
+ <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
++
++<!-- Dark-mode icon overrides (monochrome set) -->
++<link rel="icon" type="image/png" sizes="32x32"
++      href="/mono/favicon-32.png" media="(prefers-color-scheme: dark)">
++<link rel="icon" type="image/png" sizes="192x192"
++      href="/mono/favicon-192.png" media="(prefers-color-scheme: dark)">
++<link rel="icon" type="image/png" sizes="512x512"
++      href="/mono/favicon-512.png" media="(prefers-color-scheme: dark)">
+```
+
+Alternative: use the mono PNG as a CSS mask-image so the icon picks up
+the user's accent color automatically:
+
+```css
+.app-icon {
+  background: currentColor;
+  mask-image: url("/mono/favicon-192.png");
+  mask-size: cover;
+}
+```
+
+ICO is shipped as `mono/favicon.ico` for completeness — its primary use
+case is legacy `favicon.ico` URLs at the site root, which can't easily
+be theme-swapped, but it's there if you need it.
+
+SVG monochrome is not yet supported in v1.9.0. The naive "replace `fill`
+attributes" approach breaks on gradients, external CSS, and inline
+styles, so a future v1.9.x release will go raster → grayscale →
+re-vectorize via vtracer instead.
+
 ## Language
 
 Logolig follows your system language by default. Override the language
@@ -199,15 +280,17 @@ cargo test -p logolig-core
 cargo test -p logolig-i18n
 ```
 
-logolig-core has 80 integration tests covering ingest, decode, SVG
+logolig-core has 92 integration tests covering ingest, decode, SVG
 rasterization, vectorization, resize, preview cache, ICO writing, HTML
 snippet generation, transactional export, settings round-trip,
 forward-compatible JSON deserialization, transparency-state
-classification, and Web manifest JSON generation. logolig-i18n adds 16
-tests covering dictionary loading (English and Japanese), placeholder
-substitution, error translation, BCP-47 locale resolution including
-POSIX forms, and a regression check that Japanese UI keys actually
-differ from English. Total: 96 tests.
+classification, Web manifest JSON generation, and BT.709 grayscale
+conversion (alpha preservation, coefficient precision, exporter `mono/`
+subdirectory wiring). logolig-i18n adds 16 tests covering dictionary
+loading (English and Japanese), placeholder substitution, error
+translation, BCP-47 locale resolution including POSIX forms, and a
+regression check that Japanese UI keys actually differ from English.
+Total: 108 tests.
 
 ## Versioning
 
