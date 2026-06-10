@@ -42,6 +42,10 @@ name = "exporter"
 path = "tests/exporter.rs"
 
 [[test]]
+name = "decode_webp"
+path = "tests/decode_webp.rs"
+
+[[test]]
 name = "html_snippet"
 path = "tests/html_snippet.rs"
 

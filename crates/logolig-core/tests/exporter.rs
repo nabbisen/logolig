@@ -74,6 +74,21 @@ fn exports_default_artifact_set_from_svg_source() {
 }
 
 #[test]
+fn exports_default_artifact_set_from_webp_source() {
+    let asset = ingest_bytes("tile.webp", fixtures::webp_8x8_blue()).unwrap();
+    let dir = fresh_tmp_dir("webp-default");
+    let plan = ExportPlan::default();
+
+    run(&asset, &plan, &dir).expect("WebP export should succeed");
+    assert!(dir.join("favicon.ico").is_file());
+    assert!(dir.join("apple-touch-icon.png").is_file());
+    assert!(dir.join("favicon-32.png").is_file());
+    assert!(dir.join("favicon-snippet.html").is_file());
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
 fn ico_can_be_read_back_with_correct_frames() {
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let dir = fresh_tmp_dir("ico-roundtrip");

@@ -4,6 +4,8 @@
 [![crates.io](https://img.shields.io/crates/v/logolig-app?label=app)](https://crates.io/crates/logolig-app)
 [![crates.io](https://img.shields.io/crates/v/logolig-core?label=core)](https://crates.io/crates/logolig-core)
 
+A local-first, accessible favicon generator GUI.
+
 PNG / SVG goes in. A polished `favicon.ico`, an Apple touch icon,
 high-resolution PNGs, and a clean HTML `<head>` snippet come out —
 all on your machine, with no upload anywhere.

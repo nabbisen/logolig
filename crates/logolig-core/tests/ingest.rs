@@ -29,6 +29,16 @@ fn detects_svg_and_reads_intrinsic_size() {
 }
 
 #[test]
+fn detects_webp_and_reads_intrinsic_size() {
+    let bytes = fixtures::webp_8x8_blue();
+    let asset = ingest_bytes("dummy.webp", bytes).expect("WebP should ingest");
+    assert_eq!(asset.kind, SourceKind::Webp);
+    // image クレートの encoder は VP8 / VP8L のいずれを出すか実装依存だが、
+    // どちらでも 8×8 が読めることを確認。
+    assert_eq!(asset.intrinsic_size, Some((8, 8)));
+}
+
+#[test]
 fn rejects_unrelated_bytes_even_with_png_extension() {
     let err =
         ingest_bytes("fake.png", b"not really an image".to_vec()).expect_err("should reject");

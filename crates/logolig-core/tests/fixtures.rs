@@ -32,3 +32,20 @@ pub fn png_4x4_red() -> Vec<u8> {
         .expect("PNG encoding for fixture should not fail");
     out
 }
+
+/// 8×8 の青色 WebP (v1.1.0 fixture)。
+///
+/// image クレートの WebP encoder は最低 8×8 を要求するため、 PNG fixture
+/// (4×4) より大きめになっている。 マジックバイト + intrinsic_size の検証で使う。
+pub fn webp_8x8_blue() -> Vec<u8> {
+    let mut buf = image::RgbaImage::new(8, 8);
+    for px in buf.pixels_mut() {
+        *px = image::Rgba([0x33, 0x66, 0xCC, 0xFF]);
+    }
+    let mut out = Vec::new();
+    let dynamic = image::DynamicImage::ImageRgba8(buf);
+    dynamic
+        .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::WebP)
+        .expect("WebP encoding for fixture should not fail");
+    out
+}

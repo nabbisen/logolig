@@ -39,6 +39,7 @@ pub async fn ingest(path: PathBuf) -> Result<SourceAsset, AppError> {
     let intrinsic_size = match kind {
         SourceKind::Png => parse_png_size(&raw),
         SourceKind::Svg => parse_svg_size(&raw),
+        SourceKind::Webp => parse_webp_size(&raw),
     };
 
     Ok(SourceAsset {
@@ -67,6 +68,7 @@ pub fn ingest_bytes(
     let intrinsic_size = match kind {
         SourceKind::Png => parse_png_size(&bytes),
         SourceKind::Svg => parse_svg_size(&bytes),
+        SourceKind::Webp => parse_webp_size(&bytes),
     };
 
     Ok(SourceAsset {
@@ -83,9 +85,19 @@ pub fn ingest_bytes(
 
 const PNG_MAGIC: &[u8] = &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
 
+/// WebP は RIFF コンテナ。先頭 12 バイトの構造は:
+///   "RIFF" (4) + ファイルサイズ LE (4) + "WEBP" (4)
+/// この時点では VP8/VP8L/VP8X どれかは判定しない (image-webp が見てくれる)。
+fn looks_like_webp(bytes: &[u8]) -> bool {
+    bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP"
+}
+
 fn detect_kind(bytes: &[u8], hint: Option<SourceKind>) -> Option<SourceKind> {
     if bytes.starts_with(PNG_MAGIC) {
         return Some(SourceKind::Png);
+    }
+    if looks_like_webp(bytes) {
+        return Some(SourceKind::Webp);
     }
     if looks_like_svg(bytes) {
         return Some(SourceKind::Svg);
@@ -142,4 +154,78 @@ fn parse_svg_size(bytes: &[u8]) -> Option<(u32, u32)> {
     let tree = usvg::Tree::from_data(bytes, &opt).ok()?;
     let size = tree.size();
     Some((size.width().ceil() as u32, size.height().ceil() as u32))
+}
+
+/// WebP のサイズ抽出。 RIFF コンテナ内の最初のチャンクから読む。
+///
+/// WebP には 3 種類のフォーマットがある:
+/// - **VP8** (Lossy): チャンクヘッダ後 6 バイト目から 14 ビットずつで width / height
+/// - **VP8L** (Lossless): チャンクヘッダ後 1 バイト目から 14 ビットずつ (1 ベース)
+/// - **VP8X** (Extended): チャンクヘッダ後 4 バイト目から 24 ビットずつ (1 ベース)
+///
+/// パース失敗時は `None` を返す (decode 時に正規のパーサが詳細エラーを出す)。
+/// favicon 用途なら VP8 / VP8L が大半なので、 VP8X (アニメーション/アルファ拡張)
+/// は最低限の対応にとどめる。
+fn parse_webp_size(bytes: &[u8]) -> Option<(u32, u32)> {
+    if !looks_like_webp(bytes) {
+        return None;
+    }
+    // RIFF ヘッダ (12 バイト) の直後にチャンクが並ぶ。
+    // チャンクヘッダ = FourCC (4) + size LE (4)。
+    if bytes.len() < 12 + 8 {
+        return None;
+    }
+    let chunk_fourcc = &bytes[12..16];
+    let chunk_data = &bytes[20..];
+
+    match chunk_fourcc {
+        b"VP8 " => {
+            // VP8 lossy: width/height は keyframe header の 7-10 バイト目あたり。
+            // start code (3 bytes) + version 等 (3 bytes) = 6 バイト後ろから。
+            if chunk_data.len() < 10 {
+                return None;
+            }
+            // 0xFFFF マスクで 14 ビット取り出し (上位 2 ビットは scale フラグ)
+            let w_raw = u16::from_le_bytes([chunk_data[6], chunk_data[7]]);
+            let h_raw = u16::from_le_bytes([chunk_data[8], chunk_data[9]]);
+            let w = (w_raw & 0x3FFF) as u32;
+            let h = (h_raw & 0x3FFF) as u32;
+            (w > 0 && h > 0).then_some((w, h))
+        }
+        b"VP8L" => {
+            // VP8L lossless: 先頭 1 バイトのシグネチャ後、 width-1 と height-1 が
+            // 14 ビットずつ詰めて格納されている (リトルエンディアン)。
+            if chunk_data.len() < 5 {
+                return None;
+            }
+            // signature 0x2F の確認
+            if chunk_data[0] != 0x2F {
+                return None;
+            }
+            let b1 = chunk_data[1] as u32;
+            let b2 = chunk_data[2] as u32;
+            let b3 = chunk_data[3] as u32;
+            let b4 = chunk_data[4] as u32;
+            let w = ((b1 | ((b2 & 0x3F) << 8)) + 1) as u32;
+            let h = (((b2 >> 6) | (b3 << 2) | ((b4 & 0x0F) << 10)) + 1) as u32;
+            (w > 0 && h > 0).then_some((w, h))
+        }
+        b"VP8X" => {
+            // VP8X 拡張: フラグ 1 バイト + reserved 3 バイト + width-1 (24bit LE)
+            // + height-1 (24bit LE)。
+            if chunk_data.len() < 10 {
+                return None;
+            }
+            let w = (chunk_data[4] as u32
+                | ((chunk_data[5] as u32) << 8)
+                | ((chunk_data[6] as u32) << 16))
+                + 1;
+            let h = (chunk_data[7] as u32
+                | ((chunk_data[8] as u32) << 8)
+                | ((chunk_data[9] as u32) << 16))
+                + 1;
+            (w > 0 && h > 0).then_some((w, h))
+        }
+        _ => None,
+    }
 }

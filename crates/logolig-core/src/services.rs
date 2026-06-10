@@ -17,8 +17,12 @@
 //! - `ico_writer`     — 複数 RGBA8 を 1 つの ICO にまとめる
 //! - `html_snippet`   — `<head>` 用 HTML 文字列の生成
 //! - `exporter`       — オーケストレータ。 SourceAsset + ExportPlan + dir → 全成果物
+//!
+//! v1.1.0 で追加:
+//! - `decode_webp`    — WebP SourceAsset を RGBA8 に展開 (静的 WebP, image-webp 経由)
 
 pub mod decode_png;
+pub mod decode_webp;
 pub mod encode_png;
 pub mod exporter;
 pub mod html_snippet;

@@ -14,7 +14,7 @@ use crate::ui::accessibility::label;
 
 pub fn view<'a>(_state: &'a AppState) -> Element<'a, Message> {
     let body = column![
-        text("Drop a PNG or SVG").size(28),
+        text("Drop a PNG, SVG, or WebP").size(28),
         text("Local-first. Your image never leaves this device.").size(14),
         // ドラッグ&ドロップが使えない場合の代替経路 (§12)
         button(text("Choose file…").size(16))

@@ -16,7 +16,9 @@ use std::path::{Path, PathBuf};
 
 use crate::domain::{ExportPlan, Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
-use crate::services::{decode_png, encode_png, html_snippet, ico_writer, rasterize_svg, resize};
+use crate::services::{
+    decode_png, decode_webp, encode_png, html_snippet, ico_writer, rasterize_svg, resize,
+};
 
 /// 書き出し結果。 UI に「何が作られたか」を伝えるために使う。
 #[derive(Debug, Clone)]
@@ -41,10 +43,11 @@ pub fn run(
         )));
     }
 
-    // 1. PNG ソースなら 1 度だけデコードして使い回す (無駄な再デコードを避ける)。
-    //    SVG はサイズごとに再ラスタライズ (§6.2)。
-    let decoded_png = match asset.kind {
+    // 1. ラスタソース (PNG / WebP) なら 1 度だけデコードして使い回す
+    //    (無駄な再デコードを避ける)。 SVG はサイズごとに再ラスタライズ (§6.2)。
+    let decoded_raster: Option<Rgba8> = match asset.kind {
         SourceKind::Png => Some(decode_png::decode(asset)?),
+        SourceKind::Webp => Some(decode_webp::decode(asset)?),
         SourceKind::Svg => None,
     };
 
@@ -59,7 +62,7 @@ pub fn run(
 
     // ICO
     if plan.include_ico {
-        let frames = build_ico_frames(asset, decoded_png.as_ref(), plan)?;
+        let frames = build_ico_frames(asset, decoded_raster.as_ref(), plan)?;
         let frame_refs: Vec<(u32, &Rgba8)> =
             frames.iter().map(|(s, r)| (*s, r)).collect();
         let ico_bytes = ico_writer::build(&frame_refs)?;
@@ -73,7 +76,7 @@ pub fn run(
     png_sizes.sort_unstable();
     png_sizes.dedup();
     for size in &png_sizes {
-        let rgba = render_at_size(asset, decoded_png.as_ref(), *size, plan)?;
+        let rgba = render_at_size(asset, decoded_raster.as_ref(), *size, plan)?;
         let png_bytes = encode_png::encode(&rgba)?;
         let name = format!("favicon-{size}.png");
         write_file(&stage.join(&name), &png_bytes)?;
@@ -82,7 +85,7 @@ pub fn run(
 
     // Apple touch icon (180×180 固定)
     if plan.include_apple_touch {
-        let rgba = render_at_size(asset, decoded_png.as_ref(), 180, plan)?;
+        let rgba = render_at_size(asset, decoded_raster.as_ref(), 180, plan)?;
         let png_bytes = encode_png::encode(&rgba)?;
         write_file(&stage.join("apple-touch-icon.png"), &png_bytes)?;
         artifacts.push(output_dir.join("apple-touch-icon.png"));
@@ -116,18 +119,18 @@ pub fn run(
 
 /// 与えられた最終ターゲットサイズに対して、 ソースから RGBA8 を作る。
 ///
-/// - PNG: あらかじめデコード済みのフルサイズ画像をリサイズ
-/// - SVG: ターゲットサイズで個別レンダリング (§6.2)
+/// - PNG / WebP: あらかじめデコード済みのフルサイズ画像をリサイズ
+/// - SVG:        ターゲットサイズで個別レンダリング (§6.2)
 fn render_at_size(
     asset: &SourceAsset,
-    decoded_png: Option<&Rgba8>,
+    decoded_raster: Option<&Rgba8>,
     size: u32,
     plan: &ExportPlan,
 ) -> Result<Rgba8, AppError> {
     match asset.kind {
-        SourceKind::Png => {
-            let src = decoded_png
-                .ok_or_else(|| AppError::Export("internal: missing decoded PNG".into()))?;
+        SourceKind::Png | SourceKind::Webp => {
+            let src = decoded_raster
+                .ok_or_else(|| AppError::Export("internal: missing decoded raster".into()))?;
             resize::resize(src, size, size, plan.algorithm)
         }
         SourceKind::Svg => rasterize_svg::rasterize(asset, size),
@@ -137,7 +140,7 @@ fn render_at_size(
 /// ICO に内包する全フレームをレンダリング。
 fn build_ico_frames<'a>(
     asset: &SourceAsset,
-    decoded_png: Option<&Rgba8>,
+    decoded_raster: Option<&Rgba8>,
     plan: &ExportPlan,
 ) -> Result<Vec<(u32, Rgba8)>, AppError> {
     let mut sizes = plan.ico_sizes.clone();
@@ -148,7 +151,7 @@ fn build_ico_frames<'a>(
     }
     let mut frames = Vec::with_capacity(sizes.len());
     for size in sizes {
-        let rgba = render_at_size(asset, decoded_png, size, plan)?;
+        let rgba = render_at_size(asset, decoded_raster, size, plan)?;
         frames.push((size, rgba));
     }
     Ok(frames)

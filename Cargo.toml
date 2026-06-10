@@ -13,7 +13,7 @@ resolver = "3"
 members = ["crates/logolig-core", "crates/logolig-app"]
 
 [workspace.package]
-version = "1.0.0"
+version = "1.1.0"
 edition = "2024"
 rust-version = "1.85"
 authors = ["nabbisen <nabbisen@scqr.net>"]
@@ -35,7 +35,7 @@ iced  = { version = "0.14", features = ["tokio", "image"] }
 snora = { version = "0.4", default-features = false }
 
 # Step 2: 画像処理コア (logolig-core 専用)
-image = { version = "0.25", default-features = false, features = ["png"] }
+image = { version = "0.25", default-features = false, features = ["png", "webp"] }
 fast_image_resize = { version = "5", features = ["image"] }
 resvg = "0.45"
 tiny-skia = "0.11"

@@ -7,6 +7,8 @@ use std::sync::Arc;
 pub enum SourceKind {
     Png,
     Svg,
+    /// 静的 WebP (v1.1.0+)。 アニメーション WebP は最初のフレームのみ扱う。
+    Webp,
 }
 
 impl SourceKind {
@@ -15,6 +17,7 @@ impl SourceKind {
         match ext.to_ascii_lowercase().as_str() {
             "png" => Some(Self::Png),
             "svg" => Some(Self::Svg),
+            "webp" => Some(Self::Webp),
             _ => None,
         }
     }
@@ -23,6 +26,7 @@ impl SourceKind {
         match self {
             Self::Png => "PNG",
             Self::Svg => "SVG",
+            Self::Webp => "WebP",
         }
     }
 }

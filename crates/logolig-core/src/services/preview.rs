@@ -14,7 +14,7 @@ use std::path::PathBuf;
 
 use crate::domain::{ResizeAlgorithm, Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
-use crate::services::{decode_png, rasterize_svg, resize};
+use crate::services::{decode_png, decode_webp, rasterize_svg, resize};
 
 /// プレビュー専用のリサイズ済みラスタ群。
 ///
@@ -49,8 +49,8 @@ pub fn build_preview(
 }
 
 /// 単一サイズのレンダリング:
-/// - SVG → ターゲットサイズで直接ラスタライズ
-/// - PNG → デコード → リサイズ
+/// - SVG          → ターゲットサイズで直接ラスタライズ
+/// - PNG / WebP   → デコード → リサイズ
 fn render_at(
     asset: &SourceAsset,
     size: u32,
@@ -60,6 +60,10 @@ fn render_at(
         SourceKind::Svg => rasterize_svg::rasterize(asset, size),
         SourceKind::Png => {
             let decoded = decode_png::decode(asset)?;
+            resize::resize(&decoded, size, size, algorithm)
+        }
+        SourceKind::Webp => {
+            let decoded = decode_webp::decode(asset)?;
             resize::resize(&decoded, size, size, algorithm)
         }
     }
