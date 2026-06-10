@@ -58,18 +58,34 @@ cargo run -p logolig-app --release
 ## Usage
 
 1. Drop a PNG, SVG, or WebP onto the window, or click **Choose file…**
-2. Inspect the **Browser tab (16×16)** and **Smartphone home** previews;
-   toggle background between System / Light / Dark to spot contrast issues
-3. (Optional) Open **Show advanced** to:
-   - pick a different resize algorithm (Lanczos3 default)
-   - turn off SVG output or vectorization for unsuitable sources
-   - skip individual artifact types (ICO, Apple touch, HTML snippet)
-   - add or remove PNG / ICO sizes (chip-style editor, validated to
-     16–1024 px for PNG and 16–256 px for ICO)
-4. Click **Export**, choose an output directory, and the artifacts
+2. Inspect the preview using the **View as** picker:
+   - **Browser tab** — 16×16 in a tab-frame mock
+   - **Phone home** — the icon at home-screen size on a phone-style mock
+   - **Checker** — drop the framing entirely and show the icon over a
+     light/dark grey checker pattern so transparent regions are obvious
+3. Switch the **Surface** (System / Light / Dark) to see how the icon
+   reads on each background. The Surface picker greys out automatically
+   when Checker is active because background tinting doesn't apply there.
+4. (Optional) Open **Show advanced** to adjust output. The drawer is
+   organized into four labelled groups so you can find what you need
+   without scrolling:
+   - **What to export** — file kinds (ICO, Apple touch, SVG, HTML
+     snippet) and PNG / ICO size sets. Size sets at their defaults
+     (32 / 192 / 512 for PNG, 16 / 32 / 48 for ICO) display as a quiet
+     "at defaults: …" badge; type a number into the adjacent input and
+     the full chip editor expands.
+   - **Extras** — opt-in extras (Web manifest for PWA, Monochrome
+     `mono/` set). Visually quieter — most users skip these.
+   - **Rendering quality** — resize algorithm (Lanczos3 default).
+   - **App preferences** — language.
+5. Click **Export**, choose an output directory, and the artifacts
    are written atomically (all-or-nothing — see `docs/export-spec.md`)
 
 The generated `favicon-snippet.html` is paste-ready for your `<head>`.
+
+Active picker buttons (View as / Surface, language, vtracer preset) are
+indicated **both** with a filled background and a `▣` text prefix, so
+the active state is conveyed without relying on color alone (ABDD §12).
 
 ## What gets written
 

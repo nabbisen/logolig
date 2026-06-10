@@ -134,3 +134,12 @@ toast_invalid_color_body = "'{input}' is not a valid color. Use #RRGGBB (7 chara
 section_monochrome = "Monochrome output"
 section_monochrome_blurb = "Adds a mono/ subdirectory with grayscale (BT.709) versions of PNG and ICO artifacts. Useful for single-color print, theme-aware mask icons, and stencils. SVG monochrome is not yet supported."
 include_monochrome_label = "Output mono/ grayscale set"
+
+# --- UI redesign (v1.10.0) ---
+picker_label_view_as = "View as:"
+picker_label_surface = "Surface:"
+preview_transparency_checker = "Checker"
+group_what_to_export = "What to export"
+group_extras = "Extras"
+group_rendering_quality = "Rendering quality"
+group_app_preferences = "App preferences"

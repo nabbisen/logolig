@@ -163,6 +163,15 @@ pub(crate) struct Dictionary {
     pub section_monochrome: String,
     pub section_monochrome_blurb: String,
     pub include_monochrome_label: String,
+
+    // UI redesign (v1.10.0)
+    pub picker_label_view_as: String,
+    pub picker_label_surface: String,
+    pub preview_transparency_checker: String,
+    pub group_what_to_export: String,
+    pub group_extras: String,
+    pub group_rendering_quality: String,
+    pub group_app_preferences: String,
 }
 
 impl Dictionary {
@@ -311,6 +320,15 @@ impl Dictionary {
             MessageKey::SectionMonochrome => &self.section_monochrome,
             MessageKey::SectionMonochromeBlurb => &self.section_monochrome_blurb,
             MessageKey::IncludeMonochromeLabel => &self.include_monochrome_label,
+
+            // v1.10.0
+            MessageKey::PickerLabelViewAs => &self.picker_label_view_as,
+            MessageKey::PickerLabelSurface => &self.picker_label_surface,
+            MessageKey::PreviewTransparencyChecker => &self.preview_transparency_checker,
+            MessageKey::GroupWhatToExport => &self.group_what_to_export,
+            MessageKey::GroupExtras => &self.group_extras,
+            MessageKey::GroupRenderingQuality => &self.group_rendering_quality,
+            MessageKey::GroupAppPreferences => &self.group_app_preferences,
         }
     }
 }

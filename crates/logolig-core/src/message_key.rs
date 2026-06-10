@@ -171,4 +171,20 @@ pub enum MessageKey {
     SectionMonochromeBlurb,
     /// チェックボックスのラベル。
     IncludeMonochromeLabel,
+
+    // --- v1.10.0: UI 情報設計刷新 ---
+    /// メイン画面「View as:」 ラベル。
+    PickerLabelViewAs,
+    /// メイン画面「Surface:」 ラベル。
+    PickerLabelSurface,
+    /// 透過チェッカー (PreviewContext バリアント名)。
+    PreviewTransparencyChecker,
+    /// 詳細設定: 「What to export」 大グループ見出し。
+    GroupWhatToExport,
+    /// 詳細設定: 「Extras」 大グループ見出し。
+    GroupExtras,
+    /// 詳細設定: 「Rendering quality」 大グループ見出し。
+    GroupRenderingQuality,
+    /// 詳細設定: 「App preferences」 大グループ見出し。
+    GroupAppPreferences,
 }

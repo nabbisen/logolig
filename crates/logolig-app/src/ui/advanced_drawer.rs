@@ -2,22 +2,36 @@
 //!
 //! 既定値は隠す。 `state.advanced_open == true` のときだけ shell が表示する。
 //!
-//! ## v1.5.0 で追加
+//! ## v1.10.0: 情報設計刷新
 //!
-//! - 全文言を `state.translator.t(MessageKey::...)` 経由で翻訳
-//! - **Language セクション** を追加: pick_list で `System default / English / 日本語` を選択
-//!   (v1.5.0 では English のみ実体あり、 v1.6 で 日本語 が機能する)
+//! セクションを 4 つの大グループに整理し、 ユーザの思考順 (何を出力するか →
+//! どう描画するか → アプリ全体) に並べる:
+//!
+//! 1. **What to export** — アーティファクト種別 + サイズ群を集約
+//! 2. **Extras** — 追加機能 (Web manifest / Monochrome) — 控えめなトーン
+//! 3. **Rendering quality** — Resize algorithm のような描画品質設定
+//! 4. **App preferences** — Language のようなアプリ全体の好み
+//!
+//! 既定値の PNG/ICO サイズは折りたたみ気味に表示し、 「普段触らなくてよい」
+//! を視覚で伝える。 Active な選択状態はボタン背景塗り分けで強調。
 
 use iced::widget::{button, checkbox, column, container, pick_list, row, text, text_input};
-use iced::{Alignment, Element, Length, Padding};
+use iced::{Alignment, Color, Element, Length, Padding};
 
 use logolig_core::{
-    MessageKey, ResizeAlgorithm, VtracerPreset, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX,
-    PNG_SIZE_MIN,
+    ExportPlan, MessageKey, ResizeAlgorithm, VtracerPreset, ICO_SIZE_MAX, ICO_SIZE_MIN,
+    PNG_SIZE_MAX, PNG_SIZE_MIN,
 };
 use logolig_i18n::Locale;
 
 use crate::app::{AppState, Message};
+
+/// 大グループ見出し用テキスト色 (主見出しを目立たせる主張色相当の濃さ)。
+const HEADING_COLOR: Color = Color::from_rgb(0.15, 0.15, 0.15);
+/// blurb / 補足説明用 (主役を引き立てる控えめな中間グレー)。
+const MUTED_COLOR: Color = Color::from_rgb(0.5, 0.5, 0.5);
+/// 既定値時の "at defaults" バッジ色 (PNG/ICO サイズが初期値のときに添える)。
+const BADGE_MUTED_BG: Color = Color::from_rgb(0.92, 0.92, 0.92);
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
@@ -25,104 +39,90 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     column![
         // ヘッダ
         text(t.t(MessageKey::AdvancedTitle)).size(22),
-        text(t.t(MessageKey::AdvancedBlurb)).size(12),
-        // 1. リサイズアルゴリズム
-        section(
-            &t.t(MessageKey::SectionResize),
-            &t.t(MessageKey::SectionResizeBlurb),
-            algorithm_row(state),
-        ),
-        // 2. SVG 出力
-        section(
-            &t.t(MessageKey::SectionSvg),
-            &t.t(MessageKey::SectionSvgBlurb),
-            column![
-                checkbox(state.export_plan.include_svg)
-                    .label(t.t(MessageKey::IncludeSvgLabel))
-                    .on_toggle(Message::IncludeSvgToggled)
-                    .text_size(13),
-                checkbox(state.export_plan.vectorize_on_raster)
-                    .label(t.t(MessageKey::VectorizeOnRasterLabel))
-                    .on_toggle(Message::VectorizeOnRasterToggled)
-                    .text_size(13),
-                vtracer_preset_row(state),
-            ]
-            .spacing(6)
-            .into(),
-        ),
-        // 3. 出力ファイル種別
-        section(
-            &t.t(MessageKey::SectionFiles),
-            &t.t(MessageKey::SectionFilesBlurb),
-            column![
-                checkbox(state.export_plan.include_ico)
-                    .label(t.t(MessageKey::IncludeIcoLabel))
-                    .on_toggle(Message::IncludeIcoToggled)
-                    .text_size(13),
-                checkbox(state.export_plan.include_apple_touch)
-                    .label(t.t(MessageKey::IncludeAppleTouchLabel))
-                    .on_toggle(Message::IncludeAppleTouchToggled)
-                    .text_size(13),
-                checkbox(state.export_plan.include_html_snippet)
-                    .label(t.t(MessageKey::IncludeHtmlSnippetLabel))
-                    .on_toggle(Message::IncludeHtmlSnippetToggled)
-                    .text_size(13),
-            ]
-            .spacing(6)
-            .into(),
-        ),
-        // 4. PNG サイズ集合
-        section(
+        text(t.t(MessageKey::AdvancedBlurb)).size(12).color(MUTED_COLOR),
+
+        // ━━━ Group 1: What to export ━━━━━━━━━━━━━━━━━━━━━
+        group_heading(&t.t(MessageKey::GroupWhatToExport)),
+        // ファイル種別
+        column![
+            checkbox(state.export_plan.include_ico)
+                .label(t.t(MessageKey::IncludeIcoLabel))
+                .on_toggle(Message::IncludeIcoToggled)
+                .text_size(13),
+            checkbox(state.export_plan.include_apple_touch)
+                .label(t.t(MessageKey::IncludeAppleTouchLabel))
+                .on_toggle(Message::IncludeAppleTouchToggled)
+                .text_size(13),
+            // SVG はチェックボックス + 配下のオプション (vectorize, preset)
+            // をインデントして従属関係を視覚化
+            svg_subsection(state),
+            checkbox(state.export_plan.include_html_snippet)
+                .label(t.t(MessageKey::IncludeHtmlSnippetLabel))
+                .on_toggle(Message::IncludeHtmlSnippetToggled)
+                .text_size(13),
+        ]
+        .spacing(8),
+        // PNG / ICO サイズ
+        size_subsection(
             &t.t(MessageKey::SectionPngSizes),
-            &t.t(MessageKey::SectionPngSizesBlurb),
-            size_set_editor(
-                state,
-                &state.export_plan.png_sizes,
-                &state.png_size_input,
-                Message::PngSizeRemoveRequested,
-                Message::PngSizeInputChanged,
-                Message::PngSizeAddRequested,
-                PNG_SIZE_MIN,
-                PNG_SIZE_MAX,
-            ),
+            &state.export_plan.png_sizes,
+            ExportPlan::default_png_sizes(),
+            &state.png_size_input,
+            Message::PngSizeRemoveRequested,
+            Message::PngSizeInputChanged,
+            Message::PngSizeAddRequested,
+            PNG_SIZE_MIN,
+            PNG_SIZE_MAX,
+            state,
         ),
-        // 5. ICO サイズ集合
-        section(
+        size_subsection(
             &t.t(MessageKey::SectionIcoSizes),
-            &t.t(MessageKey::SectionIcoSizesBlurb),
-            size_set_editor(
-                state,
-                &state.export_plan.ico_sizes,
-                &state.ico_size_input,
-                Message::IcoSizeRemoveRequested,
-                Message::IcoSizeInputChanged,
-                Message::IcoSizeAddRequested,
-                ICO_SIZE_MIN,
-                ICO_SIZE_MAX,
-            ),
+            &state.export_plan.ico_sizes,
+            ExportPlan::default_ico_sizes(),
+            &state.ico_size_input,
+            Message::IcoSizeRemoveRequested,
+            Message::IcoSizeInputChanged,
+            Message::IcoSizeAddRequested,
+            ICO_SIZE_MIN,
+            ICO_SIZE_MAX,
+            state,
         ),
-        // 6. 言語選択 (v1.5.0)
-        section(
-            &t.t(MessageKey::SectionLanguage),
-            &t.t(MessageKey::SectionLanguageBlurb),
-            language_row(state),
-        ),
-        // 7. Web manifest (v1.8.0)
-        section(
+
+        // ━━━ Group 2: Extras (普段触らない追加機能) ━━━━━━
+        group_heading(&t.t(MessageKey::GroupExtras)),
+        // Web manifest
+        subsection(
             &t.t(MessageKey::SectionWebManifest),
-            &t.t(MessageKey::SectionWebManifestBlurb),
+            Some(&t.t(MessageKey::SectionWebManifestBlurb)),
             web_manifest_body(state),
         ),
-        // 8. Monochrome (v1.9.0)
-        section(
+        // Monochrome
+        subsection(
             &t.t(MessageKey::SectionMonochrome),
-            &t.t(MessageKey::SectionMonochromeBlurb),
+            Some(&t.t(MessageKey::SectionMonochromeBlurb)),
             checkbox(state.export_plan.monochrome)
                 .label(t.t(MessageKey::IncludeMonochromeLabel))
                 .on_toggle(Message::IncludeMonochromeToggled)
                 .text_size(13)
                 .into(),
         ),
+
+        // ━━━ Group 3: Rendering quality ━━━━━━━━━━━━━━━━━━
+        group_heading(&t.t(MessageKey::GroupRenderingQuality)),
+        subsection(
+            &t.t(MessageKey::SectionResize),
+            Some(&t.t(MessageKey::SectionResizeBlurb)),
+            algorithm_row(state),
+        ),
+
+        // ━━━ Group 4: App preferences ━━━━━━━━━━━━━━━━━━━━
+        group_heading(&t.t(MessageKey::GroupAppPreferences)),
+        subsection(
+            &t.t(MessageKey::SectionLanguage),
+            Some(&t.t(MessageKey::SectionLanguageBlurb)),
+            language_row(state),
+        ),
+
         // フッタ: Reset と Close を横並び
         row![
             button(text(t.t(MessageKey::ResetButton)))
@@ -132,9 +132,154 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         .spacing(8)
         .align_y(Alignment::Center),
     ]
-    .spacing(18)
+    .spacing(14)
     .padding(20)
     .into()
+}
+
+/// 大グループ見出し。 太字 + 上に余白 + 上下に控えめな分割線色のテキスト。
+fn group_heading<'a>(label: &str) -> Element<'a, Message> {
+    container(
+        text(label.to_string())
+            .size(13)
+            .color(HEADING_COLOR),
+    )
+    .padding(Padding::default().top(8).bottom(2))
+    .into()
+}
+
+/// SVG セクション: チェックボックス + 配下のオプションをインデント表示。
+fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
+    let t = &state.translator;
+    let main_toggle = checkbox(state.export_plan.include_svg)
+        .label(t.t(MessageKey::IncludeSvgLabel))
+        .on_toggle(Message::IncludeSvgToggled)
+        .text_size(13);
+
+    // include_svg が off のときは配下のオプションも見せる必要なし
+    if !state.export_plan.include_svg {
+        return main_toggle.into();
+    }
+
+    // 配下: vectorize toggle と preset pick_list。 段下げで従属関係を示す。
+    let nested = column![
+        checkbox(state.export_plan.vectorize_on_raster)
+            .label(t.t(MessageKey::VectorizeOnRasterLabel))
+            .on_toggle(Message::VectorizeOnRasterToggled)
+            .text_size(13),
+        vtracer_preset_row(state),
+    ]
+    .spacing(6);
+
+    // インデント表現: 左 padding + 上下少しの padding
+    column![
+        main_toggle,
+        container(nested).padding(Padding::default().left(20).top(4)),
+    ]
+    .spacing(4)
+    .into()
+}
+
+// ---------------------------------------------------------------------------
+// 共通レイアウトヘルパ
+// ---------------------------------------------------------------------------
+
+/// サブセクション (グループの中の小単位)。 タイトル + 任意の blurb + 中身。
+/// 旧 `section` ヘルパの後継だが、 v1.10 でグループ階層が増えた都合で名前を
+/// 変えた。
+fn subsection<'a>(
+    title: &str,
+    blurb: Option<&str>,
+    body: Element<'a, Message>,
+) -> Element<'a, Message> {
+    let mut col = column![
+        text(title.to_string()).size(13),
+    ]
+    .spacing(2);
+    if let Some(b) = blurb {
+        col = col.push(text(b.to_string()).size(11).color(MUTED_COLOR));
+    }
+    col = col.push(container(body).padding(Padding::default().top(4)));
+    container(col).padding(Padding::default().top(2).bottom(2)).into()
+}
+
+/// PNG / ICO サイズ用サブセクション。 既定値のままなら控えめ表示
+/// (チップ群の代わりに「at defaults: 32 / 192 / 512」 のような 1 行サマリ +
+/// 小さい "Edit" ボタン)。 ユーザが変更を加えていたら従来通りの編集 UI を
+/// 全展開して見せる。
+#[allow(clippy::too_many_arguments)]
+fn size_subsection<'a>(
+    title: &str,
+    sizes: &'a [u32],
+    defaults: &[u32],
+    input_value: &'a str,
+    on_remove: fn(u32) -> Message,
+    on_input: fn(String) -> Message,
+    on_submit: Message,
+    min: u32,
+    max: u32,
+    state: &'a AppState,
+) -> Element<'a, Message> {
+    let at_defaults = sizes == defaults;
+    if at_defaults && input_value.is_empty() {
+        // 既定値表示: 折りたたみ気味の 1 行
+        let summary: String = sizes
+            .iter()
+            .map(u32::to_string)
+            .collect::<Vec<_>>()
+            .join(" / ");
+        let body = container(
+            text(format!("at defaults: {summary}"))
+                .size(12)
+                .color(MUTED_COLOR),
+        )
+        .padding(Padding::default().top(2).bottom(2).left(8).right(8))
+        .style(|_theme| iced::widget::container::Style {
+            background: Some(iced::Background::Color(BADGE_MUTED_BG)),
+            border: iced::Border {
+                radius: 4.0.into(),
+                ..Default::default()
+            },
+            ..Default::default()
+        });
+        // タイトル + 既定値バッジ + 隣接の編集呼び出し用入力欄 (展開のきっかけ)
+        // 入力欄を空のまま見せておくことで、 そこに数値を打てば自然と編集モードに
+        // 移行する (折りたたみを開く専用ボタンを設けない)。
+        let placeholder = state.translator.t_args(
+            MessageKey::SizeInputPlaceholder,
+            &[("min", &min.to_string()), ("max", &max.to_string())],
+        );
+        let nudge = text_input(&placeholder, input_value)
+            .on_input(on_input)
+            .on_submit(on_submit)
+            .size(12)
+            .width(Length::Fixed(140.0));
+        column![
+            text(title.to_string()).size(13),
+            row![body, nudge,]
+                .spacing(8)
+                .align_y(Alignment::Center),
+        ]
+        .spacing(4)
+        .into()
+    } else {
+        // 編集モード: 従来の chip + 入力欄を展開
+        column![
+            text(title.to_string()).size(13),
+            size_set_editor(
+                state,
+                sizes,
+                input_value,
+                on_remove,
+                on_input,
+                on_submit,
+                min,
+                max,
+            ),
+        ]
+        .spacing(4)
+        .into()
+    }
 }
 
 /// v1.8.0: Web manifest セクションの中身。
@@ -219,19 +364,6 @@ fn labeled_input<'a>(
 // ---------------------------------------------------------------------------
 // 共通レイアウトヘルパ
 // ---------------------------------------------------------------------------
-
-fn section<'a>(title: &str, blurb: &str, body: Element<'a, Message>) -> Element<'a, Message> {
-    container(
-        column![
-            text(title.to_string()).size(15),
-            text(blurb.to_string()).size(11),
-            container(body).padding(Padding::default().top(4)),
-        ]
-        .spacing(4),
-    )
-    .padding(Padding::default().top(2).bottom(2))
-    .into()
-}
 
 fn algorithm_row<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;

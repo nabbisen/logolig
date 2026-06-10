@@ -86,11 +86,9 @@ pub struct AppState {
     /// audit を実行していない状態。 ingest 完了時に audit を走らせて埋める。
     /// 警告 Toast の重複発行を防ぐため、 同じ画像で再度 audit しないように使う。
     pub transparency: Option<logolig_core::TransparencyReport>,
-    /// プレビュー背景に市松模様 (透過チェッカー) を重ねるか。 `ThemeMode` の
-    /// Light/Dark/System とは独立した toggle。 `true` のとき、 プレビューパネルは
-    /// 透明部分を市松模様で可視化する。 永続化はしない (一時的な確認用設定の
-    /// ため、 アプリ再起動でリセット)。
-    pub preview_checker: bool,
+    // v1.10.0: `preview_checker: bool` は廃止 (PreviewContext::TransparencyChecker
+    // バリアントに昇格)。 これにより「タブ風 + チェッカー」 のような無意味な
+    // 同時 ON 状態を型レベルで排除。
 }
 
 impl AppState {
@@ -171,7 +169,6 @@ impl Default for AppState {
             translator: Translator::default(),
             locale_override: None,
             transparency: None,
-            preview_checker: false,
         }
     }
 }
@@ -245,9 +242,9 @@ pub enum Message {
     /// 言語選択。 `None` で OS デフォルトに戻す。
     LocaleChanged(Option<Locale>),
 
-    // v1.7.0: 透過チェッカー
-    /// プレビュー背景に市松模様を重ねるかの toggle。
-    PreviewCheckerToggled(bool),
+    // v1.10.0: PreviewCheckerToggled は削除 (Checker は
+    // PreviewContextSelected(PreviewContext::TransparencyChecker) で
+    // 表現される。 既存の context picker ロジックがそのまま使える)。
 
     // v1.8.0: Web manifest
     /// `manifest.webmanifest` 出力の有効/無効 toggle。 ON で
@@ -605,13 +602,9 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         // -----------------------------------------------------------------
-        // v1.7.0: 透過チェッカー (プレビュー背景の市松模様 toggle)
+        // v1.7.0 → v1.10.0: 透過チェッカーの実装は PreviewContextSelected に統合。
+        // 専用 Message は廃止。
         // -----------------------------------------------------------------
-        Message::PreviewCheckerToggled(on) => {
-            // 永続化はしない (一時的な確認用設定のため、 アプリ再起動でリセット)。
-            state.preview_checker = on;
-            Task::none()
-        }
 
         // -----------------------------------------------------------------
         // v1.8.0: Web manifest 設定

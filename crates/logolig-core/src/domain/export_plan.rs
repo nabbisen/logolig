@@ -89,12 +89,12 @@ impl Default for ExportPlan {
             include_ico: true,
             include_apple_touch: true,
             // モダンブラウザ向けの最小構成。詳細設定で増やせる。
-            png_sizes: vec![32, 192, 512],
+            png_sizes: Self::default_png_sizes().to_vec(),
             include_html_snippet: true,
             algorithm: ResizeAlgorithm::default(),
             overrides: Vec::new(),
             // ICO は 16/32/48 を内包。各サイズを個別レンダリングして詰める。
-            ico_sizes: vec![16, 32, 48],
+            ico_sizes: Self::default_ico_sizes().to_vec(),
             // SVG 出力は v1.2.0 のデフォルト。 高 DPI 画面で最美。
             include_svg: true,
             // ラスタ入力に対するベクトル化もデフォルトオン。
@@ -116,6 +116,18 @@ impl Default for ExportPlan {
 }
 
 impl ExportPlan {
+    /// 既定の PNG サイズ集合 (`Default` でも使われる)。 v1.10.0 で UI が
+    /// 「at defaults: 32 / 192 / 512」 のような控えめ表示と編集モードを切り替える
+    /// 際、 「現在の値が既定と一致するか」 の比較に使う。
+    pub fn default_png_sizes() -> &'static [u32] {
+        &[32, 192, 512]
+    }
+
+    /// 既定の ICO サイズ集合 (`Default` でも使われる)。
+    pub fn default_ico_sizes() -> &'static [u32] {
+        &[16, 32, 48]
+    }
+
     /// この計画で**確定的に**生成される出力数 (プレビュー表示用)。
     ///
     /// 注: `include_svg` の真偽は実際の出力数を決定づけない。 ラスタ入力で

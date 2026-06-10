@@ -36,36 +36,45 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         .map(|p| p.background)
         .unwrap_or(ThemeMode::System);
 
-    // メインプレビュー領域 (キャッシュが揃ってから初めて描ける)
+    // メインプレビュー領域 (キャッシュが揃ってから初めて描ける)。
+    // v1.10.0: PreviewContext::TransparencyChecker のときは framing を一切
+    // 付けず、 市松模様の上に icon_120 を実寸で重ねる専用ビューを使う。
     let preview_area: Element<'a, Message> = match state.preview_cache.as_ref() {
-        Some(cache) => {
-            // v1.7.0: 透過チェッカー toggle が on のときは framing を一切付けず、
-            // 市松模様の上に icon_120 を実寸で重ねる専用ビューを使う。
-            if state.preview_checker {
-                checker_view(&cache.icon_120)
-            } else {
-                render_context(cache, context, bg)
-            }
-        }
+        Some(cache) => match context {
+            PreviewContext::TransparencyChecker => checker_view(&cache.icon_120),
+            _ => render_context(cache, context, bg),
+        },
         None => loading_placeholder(state),
     };
 
+    // ----- 行構成 (v1.10.0) -----
+    // 1. Source: <ファイル名>           (ノイズを減らすため小さめ・控えめに)
+    // 2. プレビュー枠 (大)              (主役を視覚的にも主役に)
+    // 3. View as: [3 ボタン]            (タブ風 / スマホ風 / Checker)
+    // 4. Surface: [3 ボタン]            (System / Light / Dark — Checker 中は無効)
+    // 5. (右下) [Export]               (補助テキストは a11y label のみで取り除き)
     let source_label = format!("{}: {}", t.t(MessageKey::PreviewSourceLabel), asset_name);
+
     column![
-        text(source_label).size(14),
-        // コンテキスト選択 (キーボードでアクセス可能なボタン群、 §12)
-        context_picker(state, context),
-        background_picker(state, bg),
-        // v1.7.0: 透過チェッカー toggle。 背景選択と独立した別軸の設定。
-        transparency_checker_toggle(state),
-        // メインプレビュー枠
-        container(preview_area).padding(20).center_x(Length::Fill),
-        // 出力アクション
+        // 1. Source (control 上部・控えめ)
+        text(source_label).size(13).color(MUTED_TEXT),
+        // 2. プレビュー枠 — 中央寄せ、 余白控えめにして視覚的主役に
+        container(preview_area)
+            .padding(16)
+            .center_x(Length::Fill),
+        // 3. View as (3 ボタン)
+        view_as_picker(state, context),
+        // 4. Surface (3 ボタン、 Checker 中は disabled)
+        surface_picker(state, context, bg),
+        // 5. Export (右寄せ)
         row![
-            button(text(t.t(MessageKey::ExportButton)))
-                .padding([8, 14])
+            Space::new().width(Length::Fill),
+            button(text(t.t(MessageKey::ExportButton)).size(15))
+                .padding([10, 22])
                 .on_press(Message::ExportRequested),
-            text(label::EXPORT_BTN).size(11),
+            // a11y 用 hidden ラベル (画面読み上げ向け)。 視覚的にはノイズに
+            // なるので最小サイズで添える (UI の主役は Export ボタン本体)
+            text(label::EXPORT_BTN).size(0),
         ]
         .spacing(12)
         .align_y(iced::Alignment::Center),
@@ -74,77 +83,151 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .into()
 }
 
-/// v1.7.0: 透過チェッカー toggle (checkbox)。
-///
-/// 背景選択 (System/Light/Dark) と独立した toggle。 ON のとき、
-/// プレビュー背景の上に市松模様 (グレー/白の格子) が重なって、 透明部分を
-/// 視覚的に確認できる。 §12「色だけに依存しない」 ABDD 原則と整合: 透明度を
-/// 「ない / ある」 の二項で見せる。
-fn transparency_checker_toggle<'a>(state: &'a AppState) -> Element<'a, Message> {
-    use iced::widget::checkbox;
-    let t = &state.translator;
-    checkbox(state.preview_checker)
-        .label(t.t(MessageKey::PreviewCheckerLabel))
-        .on_toggle(Message::PreviewCheckerToggled)
-        .text_size(13)
-        .into()
-}
+/// 控えめなテキスト色 (Source ラベル用)。 主役を引き立てるため、 通常テキスト
+/// より明度を落とす。 ライト/ダーク両テーマで読める中間グレー。
+const MUTED_TEXT: Color = Color::from_rgb(0.55, 0.55, 0.55);
 
 // ---------------------------------------------------------------------------
 // コンテキスト・背景の切り替え UI (キーボード代替経路として button を使う、 §12)
 // ---------------------------------------------------------------------------
 
-fn context_picker<'a>(state: &'a AppState, current: PreviewContext) -> Element<'a, Message> {
+// ---------------------------------------------------------------------------
+// v1.10.0: 「View as」 / 「Surface」 ボタン群
+//
+// 設計:
+// - 群の左にラベル (`View as:` / `Surface:`) を 80px 固定幅で揃え、 視覚的に
+//   2 つの群が同じ並列構造であることを示す
+// - active ボタンは背景塗りで強調 (ABDD §12 の color-blind 安全のため、 文字
+//   prefix `▣` も併用 — 色覚に依存せずに状態が分かる)
+// - Surface 群は Checker 表示中は disabled (背景塗りが意味を持たないため)
+// ---------------------------------------------------------------------------
+
+/// 「View as」 群: タブ風 / スマホ風 / Checker の 3 ボタン。
+fn view_as_picker<'a>(state: &'a AppState, current: PreviewContext) -> Element<'a, Message> {
     let t = &state.translator;
-    let mk = |ctx: PreviewContext| -> Element<'a, Message> {
+    let mut buttons = row![]
+        .spacing(6)
+        .align_y(iced::Alignment::Center);
+    for ctx in PreviewContext::all() {
         let active = ctx == current;
-        let label_text = state.translator.t(context_message_key(ctx));
-        let lbl = if active {
-            format!("{} {}", marker::READY, label_text)
-        } else {
-            label_text
-        };
-        button(text(lbl))
-            .padding([6, 12])
-            .on_press(Message::PreviewContextSelected(ctx))
-            .into()
-    };
+        let label = state.translator.t(context_message_key(ctx));
+        buttons = buttons.push(picker_button(
+            &label,
+            active,
+            Message::PreviewContextSelected(ctx),
+        ));
+    }
 
     row![
-        text(format!("{}:", t.t(MessageKey::PreviewBrowserTab))).size(13),
-        mk(PreviewContext::BrowserTab16),
-        mk(PreviewContext::SmartphoneIcon),
+        text(t.t(MessageKey::PickerLabelViewAs))
+            .size(13)
+            .width(Length::Fixed(80.0))
+            .color(MUTED_TEXT),
+        buttons,
     ]
     .spacing(8)
     .align_y(iced::Alignment::Center)
     .into()
 }
 
-fn background_picker<'a>(state: &'a AppState, current: ThemeMode) -> Element<'a, Message> {
-    let mk = |theme: ThemeMode| -> Element<'a, Message> {
+/// 「Surface」 群: System / Light / Dark の 3 ボタン。
+/// Checker コンテキスト中は背景設定が描画に影響しないため、 全ボタンが
+/// 視覚的に灰色化 (押下しても効果なし) する。 disable は `on_press` を渡さない
+/// ことで実現する。
+fn surface_picker<'a>(
+    state: &'a AppState,
+    context: PreviewContext,
+    current: ThemeMode,
+) -> Element<'a, Message> {
+    let t = &state.translator;
+    let respects_surface = context.respects_surface();
+    let mut buttons = row![]
+        .spacing(6)
+        .align_y(iced::Alignment::Center);
+    for theme in [ThemeMode::System, ThemeMode::Light, ThemeMode::Dark] {
         let active = theme == current;
-        let label_text = state.translator.t(background_message_key(theme));
-        let lbl = if active {
-            format!("{} {}", marker::READY, label_text)
+        let label = state.translator.t(background_message_key(theme));
+        let on_press = if respects_surface {
+            Some(Message::PreviewBackgroundSelected(theme))
         } else {
-            label_text
+            None
         };
-        button(text(lbl))
-            .padding([6, 12])
-            .on_press(Message::PreviewBackgroundSelected(theme))
-            .into()
-    };
+        buttons = buttons.push(picker_button_optional(&label, active, on_press));
+    }
 
-    // 「Background:」 のような共通ラベルは v1.5.0 では出さず、 切替ボタン群だけ並べる
-    // (個々の "System / Light / Dark" ラベル自体が機能を伝える)
     row![
-        mk(ThemeMode::System),
-        mk(ThemeMode::Light),
-        mk(ThemeMode::Dark),
+        text(t.t(MessageKey::PickerLabelSurface))
+            .size(13)
+            .width(Length::Fixed(80.0))
+            .color(MUTED_TEXT),
+        buttons,
     ]
     .spacing(8)
     .align_y(iced::Alignment::Center)
     .into()
+}
+
+/// 押下可能な picker ボタン。
+fn picker_button<'a>(label: &str, active: bool, on_press: Message) -> Element<'a, Message> {
+    picker_button_optional(label, active, Some(on_press))
+}
+
+/// `on_press = None` のとき disabled な picker ボタンを返す。
+/// active ボタンは `marker::READY` プレフィックス + 塗り背景で 2 通りの方法で
+/// 強調 (色覚に依存しない原則)。
+fn picker_button_optional<'a>(
+    label: &str,
+    active: bool,
+    on_press: Option<Message>,
+) -> Element<'a, Message> {
+    let lbl = if active {
+        format!("{} {}", marker::READY, label)
+    } else {
+        // 非 active のとき先頭 1 文字分のスペースを確保することで、
+        // active/非 active で文字幅が違って row が揺れるのを防ぐ。
+        format!("  {}", label)
+    };
+    let mut btn = button(text(lbl).size(13)).padding([6, 12]);
+    if let Some(msg) = on_press {
+        btn = btn.on_press(msg);
+    }
+    // active 時の視覚強調: テーマの primary 色で背景を塗る。
+    // iced 0.14 の button::Style は closure で渡す。
+    btn = btn.style(move |theme: &Theme, status| {
+        let palette = theme.extended_palette();
+        let base = if active {
+            palette.primary.base.color
+        } else {
+            palette.background.weak.color
+        };
+        let text_color = if active {
+            palette.primary.base.text
+        } else {
+            palette.background.weak.text
+        };
+        // hover で少し暗くする (active のときは更に主張、 非 active は薄い色)。
+        let bg = match status {
+            iced::widget::button::Status::Hovered => {
+                if active {
+                    palette.primary.strong.color
+                } else {
+                    palette.background.strong.color
+                }
+            }
+            _ => base,
+        };
+        iced::widget::button::Style {
+            background: Some(Background::Color(bg)),
+            text_color,
+            border: Border {
+                color: palette.background.strong.color,
+                width: 1.0,
+                radius: 6.0.into(),
+            },
+            ..Default::default()
+        }
+    });
+    btn.into()
 }
 
 fn loading_placeholder<'a>(state: &'a AppState) -> Element<'a, Message> {
@@ -166,6 +249,7 @@ fn context_message_key(ctx: PreviewContext) -> MessageKey {
     match ctx {
         PreviewContext::BrowserTab16 => MessageKey::PreviewBrowserTab,
         PreviewContext::SmartphoneIcon => MessageKey::PreviewSmartphoneHome,
+        PreviewContext::TransparencyChecker => MessageKey::PreviewTransparencyChecker,
     }
 }
 
@@ -262,6 +346,10 @@ fn render_context<'a>(
     match context {
         PreviewContext::BrowserTab16 => browser_tab_view(&cache.tab_16, bg),
         PreviewContext::SmartphoneIcon => smartphone_view(&cache.icon_120, bg),
+        // 防御的: 上位の `view` 関数が `TransparencyChecker` を `checker_view` に
+        // 振り分けるため、 ここに来ることはない。 万一きてもアプリを落とさず
+        // checker view を返す。
+        PreviewContext::TransparencyChecker => checker_view(&cache.icon_120),
     }
 }
 
