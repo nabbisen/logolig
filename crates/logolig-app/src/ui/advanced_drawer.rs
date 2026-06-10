@@ -192,20 +192,18 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // (4) その他: 透過 (アルファ) を維持する トグル
     // ============================================================
     //
-    // 「透過維持 ON/OFF」 は旧 logolig には対応するフィールドが無い (デコー
-    // ド時に常に alpha を保持) ため、 v1.17.0 では UI だけ用意して「ON」 で
-    // 固定表示する。 OFF 時の挙動は v1.x で実装。 これにより PNG モック
-    // との見た目互換は保たれる。
-    //
-    // ※ phase A: 内部状態を持たないトグル (常に true、 click 無効寄り)。
-    //    v1.17.x で `ExportPlan::keep_transparency` を追加して実装。
+    // v1.21.0 で本実装。 旧 v1.17.0 では UI のみ用意して常時 ON 固定の
+    // placeholder だったが、 v1.21.0 で `ExportPlan::keep_transparency` を
+    // 追加し、 OFF 時は raster 出力 (PNG / ICO / mono PNG / mono ICO) を
+    // 白背景でフラット化する処理が `services::flatten` で動く。 SVG は
+    // 影響を受けない (Q2-a)。 永続化対象 (Q4-a)。
     let misc_section = column![
         text(t.t(MessageKey::SectionMisc))
             .size(14)
             .color(colors::section_label(&theme)),
-        checkbox(true)
+        checkbox(state.export_plan.keep_transparency)
             .label(t.t(MessageKey::KeepTransparency))
-            .on_toggle(|_| Message::NoOp)
+            .on_toggle(Message::KeepTransparencyToggled)
             .text_size(13),
     ]
     .spacing(8);

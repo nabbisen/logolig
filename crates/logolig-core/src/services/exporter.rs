@@ -260,19 +260,32 @@ fn push_artifact(artifacts: &mut Vec<InMemoryArtifact>, relative_path: &str, byt
 ///
 /// - PNG / WebP / JPEG: あらかじめデコード済みのフルサイズ画像をリサイズ
 /// - SVG: ターゲットサイズで個別レンダリング (§6.2)
+///
+/// v1.21.0: `plan.keep_transparency == false` の場合、 最終段階で
+/// [`flatten::flatten_to_white`] を適用してアルファを白背景で合成する。
+/// これは PNG / ICO フレーム / apple-touch / mono PNG / mono ICO フレーム
+/// 全てに適用される (= 全 raster 出力経路で `render_at_size` を経由する
+/// ため、 ここで一括処理するのが最もキレイ)。 SVG 出力 (`asset.raw` を
+/// 直接 push する経路、 もしくは `vectorize::vectorize` 経路) はここを通ら
+/// ないので、 Q2-a の方針通り影響を受けない。
 fn render_at_size(
     asset: &SourceAsset,
     decoded_raster: Option<&Rgba8>,
     size: u32,
     plan: &ExportPlan,
 ) -> Result<Rgba8, AppError> {
-    match asset.kind {
+    let rgba = match asset.kind {
         SourceKind::Png | SourceKind::Webp | SourceKind::Jpeg => {
             let src = decoded_raster
                 .ok_or_else(|| AppError::export("internal: missing decoded raster"))?;
-            resize::resize(src, size, size, plan.algorithm)
+            resize::resize(src, size, size, plan.algorithm)?
         }
-        SourceKind::Svg => rasterize_svg::rasterize(asset, size),
+        SourceKind::Svg => rasterize_svg::rasterize(asset, size)?,
+    };
+    if plan.keep_transparency {
+        Ok(rgba)
+    } else {
+        Ok(crate::services::flatten::flatten_to_white(&rgba))
     }
 }
 

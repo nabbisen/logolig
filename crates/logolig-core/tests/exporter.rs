@@ -469,3 +469,171 @@ fn run_in_memory_skips_optional_artifacts_when_disabled() {
     assert!(names.iter().any(|n| n == "favicon-192.png"));
     assert!(names.iter().any(|n| n == "favicon-512.png"));
 }
+
+// ---------------------------------------------------------------------------
+// v1.21.0: keep_transparency トグルの統合テスト
+// ---------------------------------------------------------------------------
+//
+// `ExportPlan::keep_transparency` が PNG / ICO 出力に正しく反映されることを
+// 確認する。 `flatten` 単体のロジックは services/flatten.rs の unit tests に
+// あり、 ここでは「export パイプライン全体を通して」 期待した挙動になるかを
+// 統合的にチェックする。
+
+#[test]
+fn keep_transparency_true_preserves_alpha_in_png_output() {
+    // 半透明赤 PNG を投入 → keep_transparency=true (デフォルト) → 出力 PNG の
+    // ピクセルにアルファ < 255 が残っている。
+    let asset = ingest_bytes(
+        "halftransp.png",
+        fixtures::png_4x4_half_alpha_red(),
+    )
+    .unwrap();
+    let mut plan = ExportPlan::default();
+    plan.png_sizes = vec![32];
+    plan.include_ico = false;
+    plan.include_apple_touch = false;
+    plan.include_html_snippet = false;
+    plan.include_svg = false;
+    assert!(plan.keep_transparency, "default should be true");
+
+    let artifacts = run_in_memory(&asset, &plan).expect("should succeed");
+
+    // PNG をデコードして alpha チャンネルを確認。
+    let png_art = artifacts
+        .iter()
+        .find(|a| a.relative_path.to_string_lossy() == "favicon-32.png")
+        .expect("favicon-32.png should exist");
+    let img = image::load_from_memory_with_format(&png_art.bytes, image::ImageFormat::Png)
+        .unwrap();
+    let rgba = img.to_rgba8();
+    // 入力は alpha=0x80 (128)。 リサイズ (Lanczos3) でアルファが多少ぶれる
+    // 可能性があるため、 「255 ではない」 で十分とする。
+    let alpha_sample = rgba.get_pixel(0, 0)[3];
+    assert!(
+        alpha_sample < 255,
+        "expected alpha < 255 (transparency preserved), got {}",
+        alpha_sample
+    );
+}
+
+#[test]
+fn keep_transparency_false_flattens_to_fully_opaque_png() {
+    // 半透明赤 PNG を投入 → keep_transparency=false → 出力 PNG の全ピクセル
+    // alpha=255 になっている。
+    let asset = ingest_bytes(
+        "halftransp.png",
+        fixtures::png_4x4_half_alpha_red(),
+    )
+    .unwrap();
+    let mut plan = ExportPlan::default();
+    plan.png_sizes = vec![32];
+    plan.include_ico = false;
+    plan.include_apple_touch = false;
+    plan.include_html_snippet = false;
+    plan.include_svg = false;
+    plan.keep_transparency = false; // フラット化 ON
+
+    let artifacts = run_in_memory(&asset, &plan).expect("should succeed");
+
+    let png_art = artifacts
+        .iter()
+        .find(|a| a.relative_path.to_string_lossy() == "favicon-32.png")
+        .expect("favicon-32.png should exist");
+    let img = image::load_from_memory_with_format(&png_art.bytes, image::ImageFormat::Png)
+        .unwrap();
+    let rgba = img.to_rgba8();
+    // 全ピクセルで alpha=255 になっているはず。
+    for px in rgba.pixels() {
+        assert_eq!(
+            px[3], 255,
+            "expected fully opaque after flatten, got alpha={}",
+            px[3]
+        );
+    }
+    // 入力の半透明赤 (A=128) が白でフラット化されると、 RGB は赤と白の
+    // 中間色になる: R は 0xCC + (255-0xCC)*128/255 ≈ 0xE6 程度。
+    // 厳密値は浮動小数の丸めに依存するので幅で許容。
+    let center = rgba.get_pixel(2, 2);
+    assert!(
+        center[0] >= 0xD0 && center[0] <= 0xF0,
+        "R should be ~0xE6 (red blended with white halfway), got {:#X}",
+        center[0]
+    );
+}
+
+#[test]
+fn keep_transparency_false_does_not_affect_svg_output() {
+    // SVG ソースを投入 → keep_transparency=false → SVG は asset.raw を
+    // そのまま push する経路を通るため、 出力 SVG は入力と完全一致する
+    // (= フラット化の影響を受けない、 Q2-a)。
+    let asset = ingest_bytes(
+        "tile.svg",
+        fixtures::SVG_16.as_bytes().to_vec(),
+    )
+    .unwrap();
+    let mut plan = ExportPlan::default();
+    plan.png_sizes = vec![]; // PNG は出さない
+    plan.include_ico = false;
+    plan.include_apple_touch = false;
+    plan.include_html_snippet = false;
+    plan.include_svg = true;
+    plan.keep_transparency = false;
+
+    let artifacts = run_in_memory(&asset, &plan).expect("should succeed");
+
+    let svg_art = artifacts
+        .iter()
+        .find(|a| a.relative_path.to_string_lossy() == "favicon.svg")
+        .expect("favicon.svg should exist");
+    // SVG ソースは asset.raw (= 入力バイト列) がそのまま出力されることを確認。
+    // フラット化の影響を受けていない。
+    assert_eq!(svg_art.bytes, fixtures::SVG_16.as_bytes());
+}
+
+#[test]
+fn keep_transparency_false_makes_ico_frames_fully_opaque() {
+    // ICO 出力でも全フレームが alpha=255 になることを確認。
+    let asset = ingest_bytes(
+        "halftransp.png",
+        fixtures::png_4x4_half_alpha_red(),
+    )
+    .unwrap();
+    let mut plan = ExportPlan::default();
+    plan.png_sizes = vec![]; // PNG は不要
+    plan.include_apple_touch = false;
+    plan.include_html_snippet = false;
+    plan.include_svg = false;
+    plan.include_ico = true;
+    plan.keep_transparency = false;
+
+    let artifacts = run_in_memory(&asset, &plan).expect("should succeed");
+    let ico_art = artifacts
+        .iter()
+        .find(|a| a.relative_path.to_string_lossy() == "favicon.ico")
+        .expect("favicon.ico should exist");
+    // ICO の各フレームを decode してアルファを確認。 ico crate (logolig-core
+    // の既存依存、 ico_writer で使用中) で BMP / PNG エンコードを問わず
+    // 統一的に読み戻せる。 image crate の `ico` feature は workspace の
+    // 標準では有効化していないので使えない (= image::load_from_memory_with_format
+    // (_, Ico) は Unsupported になる)。
+    use std::io::Cursor;
+    let dir = ico::IconDir::read(Cursor::new(&ico_art.bytes))
+        .expect("ico parse should succeed");
+    assert!(!dir.entries().is_empty(), "ICO should have at least 1 frame");
+    for entry in dir.entries() {
+        let img = entry.decode().expect("ICO frame decode should succeed");
+        let rgba = img.rgba_data();
+        // rgba は連続バイト列 (RGBA 形式)。 アルファチャンネルは index % 4 == 3。
+        for (i, byte) in rgba.iter().enumerate() {
+            if i % 4 == 3 {
+                assert_eq!(
+                    *byte,
+                    255,
+                    "expected fully opaque ICO frame after flatten, got alpha={} at index {}",
+                    byte,
+                    i
+                );
+            }
+        }
+    }
+}

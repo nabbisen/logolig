@@ -45,6 +45,7 @@ pub mod decode_webp;
 pub mod decode_jpeg;
 pub mod encode_png;
 pub mod exporter;
+pub mod flatten;
 pub mod html_snippet;
 pub mod ico_writer;
 pub mod ingest;

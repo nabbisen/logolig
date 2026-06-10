@@ -420,6 +420,13 @@ pub enum Message {
     /// `mono/` グレースケール出力セットの有効/無効 toggle。
     IncludeMonochromeToggled(bool),
 
+    // v1.21.0: 透過維持トグル
+    /// 透過 (アルファチャンネル) を維持するか / 白背景でフラット化するか。
+    /// `true` で維持 (favicon の現代的標準)、 `false` でフラット化。
+    /// PNG / ICO / mono PNG / mono ICO の全 raster 出力に影響、 SVG は不変
+    /// (Q2-a 方針)。
+    KeepTransparencyToggled(bool),
+
     // v1.19.0: 旧 Export* Message 系は削除済。 v1.16.0 で
     // `ConvertCompleted` 経路に移行 (ファイル投入 → 自動変換 → Result 画面 →
     // 個別 DL or ZIP DL)、 旧の「Export ボタン → ディレクトリ選択 → 一括書出」
@@ -1039,6 +1046,24 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             // 出力時にのみ生成され、 プレビュー画面の表示には影響しない
             // (プレビューでの mono 表示は v1.11 IA 刷新と合わせて検討)。
             state.export_plan.monochrome = on;
+            persist_settings(state);
+            Task::none()
+        }
+
+        // -----------------------------------------------------------------
+        // v1.21.0: 透過維持トグル
+        // -----------------------------------------------------------------
+        Message::KeepTransparencyToggled(on) => {
+            // 永続化対象 (Q4-a)。 旧 Settings JSON との互換性は ExportPlan の
+            // struct-level `#[serde(default)]` で確保されており、 旧バージョン
+            // 出身の設定でも自動的に true を補って読み込める。
+            //
+            // プレビュー画面 (preview_cache) は keep_transparency の影響を
+            // 受けるべきだが、 v1.21.0 ではプレビュー側の合成は変更しない
+            // (プレビューは「ソースの見え方の確認」 が主目的、 出力時の
+            // フラット化は別レイヤ)。 ユーザは Result 画面のサムネで実際の
+            // 出力を確認できる。
+            state.export_plan.keep_transparency = on;
             persist_settings(state);
             Task::none()
         }

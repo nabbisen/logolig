@@ -81,6 +81,20 @@ pub struct ExportPlan {
     /// HTML snippet にも mono の `<link>` は自動追加しない (CSS prefers-color-scheme
     /// と組み合わせる用途は多様で、 ユーザに委ねる方が自然)。
     pub monochrome: bool,
+
+    /// 透過 (アルファチャンネル) を維持するか (v1.21.0)。
+    ///
+    /// - `true` (デフォルト): ソース画像のアルファをそのまま保持。 PNG / ICO
+    ///   出力には透明部分が残る。 favicon の現代的標準。
+    /// - `false`: アルファを **白背景** で合成して全ピクセルを完全不透明に
+    ///   する (Q1-a で確定: シンプルさ + favicon ツールの慣例)。 SVG は
+    ///   この設定の影響を受けない (Q2-a: フラット化はラスタ用語、 SVG は
+    ///   そのまま)。 JPEG ソースは元から alpha=255 なので結果は両設定で同じ。
+    ///
+    /// 永続化対象 (Q4-a)。 旧バージョンの設定 JSON 不存在時は struct-level の
+    /// `#[serde(default)]` (= `ExportPlan::default()`) が呼ばれるため、 自動的に
+    /// `true` で埋まる (= 既存ユーザはアップグレードしても挙動変化なし)。
+    pub keep_transparency: bool,
 }
 
 impl Default for ExportPlan {
@@ -111,6 +125,9 @@ impl Default for ExportPlan {
             // 大半のユーザはカラー版だけで十分。 単色印刷やテーマ対応 mask の
             // ような特殊用途のときだけ有効化する想定。
             monochrome: false,
+            // v1.21.0: 透過維持はデフォルト ON (favicon の現代的標準 + 旧 logolig
+            // 完全互換)。 ユーザがフラット化を望むときだけオフにする。
+            keep_transparency: true,
         }
     }
 }

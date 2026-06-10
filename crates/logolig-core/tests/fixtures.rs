@@ -67,3 +67,21 @@ pub fn jpeg_8x8_red() -> Vec<u8> {
         .expect("JPEG encoding for fixture should not fail");
     out
 }
+
+/// 4×4 の **半透明** 赤 PNG (v1.21.0 fixture、 透過維持トグルテスト用)。
+///
+/// 全ピクセル `(R=0xCC, G=0x33, B=0x33, A=0x80)` (= 約 50% 不透明)。
+/// `keep_transparency=false` でフラット化したとき、 全ピクセルが
+/// `A=255` の ~ 中間色 (赤と白の中間) になることを確認する。
+pub fn png_4x4_half_alpha_red() -> Vec<u8> {
+    let mut buf = image::RgbaImage::new(4, 4);
+    for px in buf.pixels_mut() {
+        *px = image::Rgba([0xCC, 0x33, 0x33, 0x80]);
+    }
+    let mut out = Vec::new();
+    let dynamic = image::DynamicImage::ImageRgba8(buf);
+    dynamic
+        .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+        .expect("PNG encoding for fixture should not fail");
+    out
+}
