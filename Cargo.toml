@@ -13,7 +13,7 @@ resolver = "3"
 members = ["crates/logolig-core", "crates/logolig-app", "crates/logolig-i18n"]
 
 [workspace.package]
-version = "1.17.0"
+version = "1.18.0"
 edition = "2024"
 rust-version = "1.85"
 authors = ["nabbisen <nabbisen@scqr.net>"]
@@ -45,7 +45,7 @@ iced  = { version = "0.14", features = ["tokio", "image"] }
 # default-features=false で `widgets` feature を切る。 logolig は app_header /
 # app_side_bar 等を使わず、 自前の shell.rs で AppLayout を組み立てるため。
 # vocabulary (Toast, Sheet, AppLayout) は default-features=false でも常時有効。
-snora = { version = "0.8", default-features = false }
+snora = { version = "0.8", default-features = false, features = ["widgets", "lucide-icons"] }
 
 # Step 2: 画像処理コア (logolig-core 専用)
 image = { version = "0.25", default-features = false, features = ["png", "webp", "jpeg"] }

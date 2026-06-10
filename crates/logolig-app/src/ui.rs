@@ -8,5 +8,7 @@ pub mod advanced_drawer;
 pub mod colors;
 pub mod converting;
 pub mod drop_zone;
+pub mod picker_overlay;
 pub mod preview_panel;
 pub mod result_view;
+pub mod sidebar;

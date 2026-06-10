@@ -209,6 +209,17 @@ pub(crate) struct Dictionary {
     pub section_misc: String,
     pub keep_transparency: String,
     pub advanced_extras_section: String,
+
+    // 左サイドバー + ピッカーポップアップ (v1.18.0)
+    pub sidebar_label_settings: String,
+    pub sidebar_label_locale: String,
+    pub sidebar_label_theme: String,
+    pub locale_name_ja: String,
+    pub locale_name_en: String,
+    pub locale_system: String,
+    pub theme_name_light: String,
+    pub theme_name_dark: String,
+    pub theme_system: String,
 }
 
 impl Dictionary {
@@ -403,6 +414,17 @@ impl Dictionary {
             MessageKey::SectionMisc => &self.section_misc,
             MessageKey::KeepTransparency => &self.keep_transparency,
             MessageKey::AdvancedExtrasSection => &self.advanced_extras_section,
+
+            // v1.18.0
+            MessageKey::SidebarLabelSettings => &self.sidebar_label_settings,
+            MessageKey::SidebarLabelLocale => &self.sidebar_label_locale,
+            MessageKey::SidebarLabelTheme => &self.sidebar_label_theme,
+            MessageKey::LocaleNameJa => &self.locale_name_ja,
+            MessageKey::LocaleNameEn => &self.locale_name_en,
+            MessageKey::LocaleSystem => &self.locale_system,
+            MessageKey::ThemeNameLight => &self.theme_name_light,
+            MessageKey::ThemeNameDark => &self.theme_name_dark,
+            MessageKey::ThemeSystem => &self.theme_system,
         }
     }
 }

@@ -255,4 +255,24 @@ pub enum MessageKey {
     KeepTransparency,
     /// 折りたたみ式の「上級設定」 セクション見出し。
     AdvancedExtrasSection,
+
+    // --- v1.18.0: 左サイドバー + ピッカーポップアップ ---
+    /// サイドバー: 設定アイコンのラベル / tooltip。
+    SidebarLabelSettings,
+    /// サイドバー: 言語アイコンのラベル / tooltip。
+    SidebarLabelLocale,
+    /// サイドバー: テーマアイコンのラベル / tooltip。
+    SidebarLabelTheme,
+    /// 言語ピッカーの「日本語」 行。
+    LocaleNameJa,
+    /// 言語ピッカーの「English」 行。
+    LocaleNameEn,
+    /// 言語ピッカーの「システム設定に従う」 行 (= `LocalePicked(None)`)。
+    LocaleSystem,
+    /// テーマピッカーの「ライト」 行。
+    ThemeNameLight,
+    /// テーマピッカーの「ダーク」 行。
+    ThemeNameDark,
+    /// テーマピッカーの「システム設定に従う」 行。
+    ThemeSystem,
 }

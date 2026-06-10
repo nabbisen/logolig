@@ -144,6 +144,25 @@ pub struct AppState {
     /// 集約する。 デフォルト false (折りたたみ)。
     /// セッション内のみ保持、 永続化対象外。
     pub advanced_extras_open: bool,
+
+    // ---------------------------------------------------------------
+    // v1.18.0: 左サイドバー + ピッカーポップアップ
+    // ---------------------------------------------------------------
+    /// 左サイドバーから出るピッカーポップアップの状態。
+    ///
+    /// PNG モック準拠で、 言語アイコン / テーマアイコンをクリックすると
+    /// 選択肢のオーバーレイポップアップが出る (旧 cycle UI を廃止)。 同時に
+    /// 1 種類しか開けない (snora の `context_menu` slot が単数のため)。
+    pub active_picker: Option<SidebarPicker>,
+}
+
+/// v1.18.0: 左サイドバーから出るピッカーの種類。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SidebarPicker {
+    /// 言語選択ポップアップ (English / 日本語)。
+    Locale,
+    /// テーマ選択ポップアップ (System / Light / Dark)。
+    Theme,
 }
 
 /// 詳細設定の 3 グループそれぞれの展開状態。
@@ -240,6 +259,8 @@ impl Default for AppState {
             // v1.17.0
             window_size: iced::Size::new(1280.0, 720.0),
             advanced_extras_open: false,
+            // v1.18.0
+            active_picker: None,
         }
     }
 }
@@ -307,6 +328,16 @@ pub enum Message {
     PngPresetSizeAdded(u32),
     /// no-op (UI 上で実装途中の placeholder トグル等で使う)。
     NoOp,
+
+    // v1.18.0: 左サイドバー + ピッカーポップアップ
+    /// サイドバーのピッカーアイコンをクリック → 該当ピッカーを開く。
+    SidebarPickerOpened(SidebarPicker),
+    /// ピッカー外をクリックなどで閉じる (snora の `on_close_menus` から発火)。
+    SidebarPickerClosed,
+    /// 言語ピッカーで選択肢を確定。 None は「OS のロケールに従う」 (auto)。
+    LocalePicked(Option<Locale>),
+    /// テーマピッカーで選択肢を確定。
+    ThemePicked(ThemeMode),
 
     // テーマ・UI
     ThemeToggled,
@@ -677,6 +708,38 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         // v1.17.0: placeholder トグル (現状は内部状態を持たないので何もしない)
         Message::NoOp => Task::none(),
+
+        // v1.18.0: 左サイドバーの言語/テーマピッカー
+        //
+        // クリックで `active_picker` をセット。 既に同じピッカーが開いていれば
+        // トグルで閉じる (連打挙動)。 別のピッカーが開いていれば即座に切替
+        // (= 1 種類しか開けない、 snora の `context_menu` slot 単数性に対応)。
+        Message::SidebarPickerOpened(picker) => {
+            state.active_picker = if state.active_picker == Some(picker) {
+                None
+            } else {
+                Some(picker)
+            };
+            Task::none()
+        }
+        Message::SidebarPickerClosed => {
+            state.active_picker = None;
+            Task::none()
+        }
+        Message::LocalePicked(opt) => {
+            state.locale_override = opt;
+            let resolved = opt.unwrap_or_else(detect_system_locale);
+            state.translator = Translator::for_locale(resolved);
+            state.active_picker = None;
+            persist_settings(state);
+            Task::none()
+        }
+        Message::ThemePicked(theme) => {
+            state.theme = theme;
+            state.active_picker = None;
+            persist_settings(state);
+            Task::none()
+        }
 
         Message::ThemeToggled => {
             state.theme = state.theme.next();
