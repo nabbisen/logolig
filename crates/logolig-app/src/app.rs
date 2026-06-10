@@ -14,8 +14,8 @@ use iced::{Element, Subscription, Task, Theme};
 use snora::{Toast, ToastIntent};
 
 use logolig_core::{
-    AppError, ExportPlan, PreviewCache, PreviewContext, PreviewProfile, ResizeAlgorithm,
-    SourceAsset, ThemeMode,
+    AppError, ExportPlan, ExportReport, PreviewCache, PreviewContext, PreviewProfile,
+    ResizeAlgorithm, SourceAsset, ThemeMode,
 };
 
 // ----------------------------------------------------------------------
@@ -111,7 +111,8 @@ pub enum Message {
 
     // 書き出し
     ExportRequested,
-    ExportCompleted(Result<(), AppError>),
+    ExportDirPicked(Option<PathBuf>),
+    ExportCompleted(Result<ExportReport, AppError>),
 
     // Toast ライフサイクル
     ToastTick,
@@ -248,15 +249,37 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         Message::ExportRequested => {
-            // Step 4 で実装。今は遷移だけ進める。
-            state.screen = Screen::Exporting;
-            state.busy = true;
+            // ソースが無ければ何もしない (UI 側でボタン無効化済みだが念のため)。
+            if state.source_asset.is_none() {
+                return Task::none();
+            }
+            // 出力先選択ダイアログを開く。 結果は `ExportDirPicked` で戻る。
+            crate::task_queue::pick_export_dir_task()
+        }
+        Message::ExportDirPicked(None) => {
+            // ユーザがキャンセル。 状態は変えない。
             Task::none()
         }
-        Message::ExportCompleted(Ok(())) => {
+        Message::ExportDirPicked(Some(dir)) => {
+            let Some(asset) = state.source_asset.as_ref() else {
+                return Task::none();
+            };
+            state.screen = Screen::Exporting;
+            state.busy = true;
+            let asset_arc = std::sync::Arc::new(asset.clone());
+            let plan = state.export_plan.clone();
+            crate::task_queue::export_task(asset_arc, plan, dir)
+        }
+        Message::ExportCompleted(Ok(report)) => {
+            let count = report.artifacts.len();
+            let dir_display = report.output_dir.display().to_string();
             state.screen = Screen::ExportReady;
             state.busy = false;
-            push_success_toast(state, "Exported", "Files written to disk.");
+            push_success_toast(
+                state,
+                "Exported",
+                &format!("{count} files written to {dir_display}"),
+            );
             Task::none()
         }
         Message::ExportCompleted(Err(err)) => fail(state, err),

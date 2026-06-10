@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use iced::Task;
 
-use logolig_core::{ResizeAlgorithm, SourceAsset};
+use logolig_core::{ExportPlan, ResizeAlgorithm, SourceAsset};
 
 use crate::app::Message;
 
@@ -59,5 +59,34 @@ pub fn build_preview_task(asset: Arc<SourceAsset>, algorithm: ResizeAlgorithm) -
             logolig_core::services::preview::build_preview(&asset, algorithm)
         },
         Message::PreviewBuilt,
+    )
+}
+
+/// 書き出し先ディレクトリを選ぶダイアログを開く (§7)。
+/// 結果は `Message::ExportDirPicked(Option<PathBuf>)` として返る。
+pub fn pick_export_dir_task() -> Task<Message> {
+    Task::perform(
+        async {
+            rfd::AsyncFileDialog::new()
+                .set_title("Choose where to write the favicons")
+                .pick_folder()
+                .await
+                .map(|handle| handle.path().to_path_buf())
+        },
+        Message::ExportDirPicked,
+    )
+}
+
+/// 実際のエクスポートを走らせるタスク。
+/// `exporter::run` は同期 + 数十ミリ秒〜数百ミリ秒程度の CPU/IO 仕事なので、
+/// async ブロック内で実行して UI スレッドから逃がす (§2.4)。
+pub fn export_task(
+    asset: Arc<SourceAsset>,
+    plan: ExportPlan,
+    output_dir: PathBuf,
+) -> Task<Message> {
+    Task::perform(
+        async move { logolig_core::services::exporter::run(&asset, &plan, &output_dir) },
+        Message::ExportCompleted,
     )
 }

@@ -38,6 +38,14 @@ name = "export_plan"
 path = "tests/export_plan.rs"
 
 [[test]]
+name = "exporter"
+path = "tests/exporter.rs"
+
+[[test]]
+name = "html_snippet"
+path = "tests/html_snippet.rs"
+
+[[test]]
 name = "ingest"
 path = "tests/ingest.rs"
 

@@ -26,7 +26,8 @@ Logolig addresses all of these as **design requirements**, not afterthoughts.
 ## Status
 
 In-progress staged build. See `docs/architecture.md` for the four-step plan.
-Currently at: **Step 2 — drop reception and image processing pipeline**.
+**Step 4 — export, ICO writing, and HTML snippet generation — is done.**
+The application is feature-complete for the original specification.
 
 ## Installation
 

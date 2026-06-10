@@ -21,4 +21,5 @@ pub use domain::{
     SourceAsset, SourceKind, ThemeMode,
 };
 pub use error::AppError;
+pub use services::exporter::ExportReport;
 pub use services::preview::PreviewCache;

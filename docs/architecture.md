@@ -27,7 +27,12 @@ logolig/
     │   │       ├── ingest.rs        # async file load (PNG/SVG, magic-byte detection)
     │   │       ├── decode_png.rs    # PNG → Rgba8 (image crate)
     │   │       ├── rasterize_svg.rs # SVG → Rgba8 (resvg + tiny-skia, per-size render)
-    │   │       └── resize.rs        # Rgba8 → Rgba8 (fast_image_resize, Lanczos3 default)
+    │   │       ├── resize.rs        # Rgba8 → Rgba8 (fast_image_resize, Lanczos3 default)
+    │   │       ├── preview.rs       # build 16×16 + 120×120 preview cache
+    │   │       ├── encode_png.rs    # Rgba8 → PNG bytes
+    │   │       ├── ico_writer.rs    # bundle Rgba8 frames into .ico
+    │   │       ├── html_snippet.rs  # render <head> snippet
+    │   │       └── exporter.rs      # transactional orchestrator (staging + atomic rename)
     │   └── tests/
     └── logolig-app/                 # iced + snora GUI binary
         ├── src/
@@ -148,4 +153,4 @@ That alignment is why we chose snora over a hand-rolled iced shell.
 | 1 | Skeleton, state model, snora layout | ✅ done (v0.1.0) |
 | 2 | Drop reception + image processing pipeline | ✅ done (v0.2.0) |
 | 3 | Context preview UI + theme toggle + a11y polish | ✅ done (v0.3.0) |
-| 4 | ICO writing, export, HTML snippet generation | upcoming |
+| 4 | ICO writing, export, HTML snippet generation | ✅ done (v0.4.0) |
