@@ -9,7 +9,7 @@
 //! - 背景色は `PreviewProfile::background` で切り替え、 ラスタ自体には触れない
 //!   (§5.2 「画像自体を破壊しない」)
 
-use iced::widget::{button, column, container, image, row, text, Space};
+use iced::widget::{button, column, container, image, row, stack, text, Space};
 use iced::{Background, Border, Color, Element, Length, Theme};
 
 use logolig_core::{MessageKey, PreviewCache, PreviewContext, Rgba8, ThemeMode};
@@ -38,7 +38,15 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 
     // メインプレビュー領域 (キャッシュが揃ってから初めて描ける)
     let preview_area: Element<'a, Message> = match state.preview_cache.as_ref() {
-        Some(cache) => render_context(cache, context, bg),
+        Some(cache) => {
+            // v1.7.0: 透過チェッカー toggle が on のときは framing を一切付けず、
+            // 市松模様の上に icon_120 を実寸で重ねる専用ビューを使う。
+            if state.preview_checker {
+                checker_view(&cache.icon_120)
+            } else {
+                render_context(cache, context, bg)
+            }
+        }
         None => loading_placeholder(state),
     };
 
@@ -48,6 +56,8 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         // コンテキスト選択 (キーボードでアクセス可能なボタン群、 §12)
         context_picker(state, context),
         background_picker(state, bg),
+        // v1.7.0: 透過チェッカー toggle。 背景選択と独立した別軸の設定。
+        transparency_checker_toggle(state),
         // メインプレビュー枠
         container(preview_area).padding(20).center_x(Length::Fill),
         // 出力アクション
@@ -62,6 +72,22 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     ]
     .spacing(14)
     .into()
+}
+
+/// v1.7.0: 透過チェッカー toggle (checkbox)。
+///
+/// 背景選択 (System/Light/Dark) と独立した toggle。 ON のとき、
+/// プレビュー背景の上に市松模様 (グレー/白の格子) が重なって、 透明部分を
+/// 視覚的に確認できる。 §12「色だけに依存しない」 ABDD 原則と整合: 透明度を
+/// 「ない / ある」 の二項で見せる。
+fn transparency_checker_toggle<'a>(state: &'a AppState) -> Element<'a, Message> {
+    use iced::widget::checkbox;
+    let t = &state.translator;
+    checkbox(state.preview_checker)
+        .label(t.t(MessageKey::PreviewCheckerLabel))
+        .on_toggle(Message::PreviewCheckerToggled)
+        .text_size(13)
+        .into()
 }
 
 // ---------------------------------------------------------------------------
@@ -149,6 +175,79 @@ fn background_message_key(theme: ThemeMode) -> MessageKey {
         ThemeMode::Light => MessageKey::PreviewBackgroundLight,
         ThemeMode::Dark => MessageKey::PreviewBackgroundDark,
     }
+}
+
+// ---------------------------------------------------------------------------
+// v1.7.0: 透過チェッカー (専用ビュー)
+// ---------------------------------------------------------------------------
+
+/// 市松模様のサイズ。 240×240 で 1 タイル 12px。 ABDD §12 の「色だけに依存しない」
+/// に従い、 透明度の有無を視覚的に明示するための共通パターン。
+const CHECKER_SIDE: u32 = 240;
+const CHECKER_TILE: u32 = 12;
+
+/// 1 度生成したらアプリ実行中ずっと同じ。 毎フレーム再生成すると無駄な
+/// アロケーションが発生するため、 `OnceLock` でキャッシュする。
+fn checker_handle() -> &'static image::Handle {
+    use std::sync::OnceLock;
+    static HANDLE: OnceLock<image::Handle> = OnceLock::new();
+    HANDLE.get_or_init(|| {
+        // ライト寄りグレー 2 色の市松。 透明部分を「見やすい中間色」 で示す
+        // ことで、 ロゴが白でも黒でも輪郭が判別しやすい。
+        let light: [u8; 4] = [0xE6, 0xE6, 0xE6, 0xFF];
+        let dark: [u8; 4] = [0xC0, 0xC0, 0xC0, 0xFF];
+        let n = (CHECKER_SIDE as usize) * (CHECKER_SIDE as usize);
+        let mut pixels = Vec::with_capacity(n * 4);
+        for y in 0..CHECKER_SIDE {
+            for x in 0..CHECKER_SIDE {
+                let cx = x / CHECKER_TILE;
+                let cy = y / CHECKER_TILE;
+                let color = if (cx + cy) % 2 == 0 { light } else { dark };
+                pixels.extend_from_slice(&color);
+            }
+        }
+        image::Handle::from_rgba(CHECKER_SIDE, CHECKER_SIDE, pixels)
+    })
+}
+
+/// 透過チェッカー専用ビュー。 framing (タブ枠 / スマホ枠) を一切付けず、
+/// 市松背景の上にアイコンを実寸より少し大きく拡大して重ねる。
+///
+/// 設計判断:
+/// - **framing を排除**: 透過状態の確認に集中するための専用モード。 タブ枠や
+///   スマホホーム枠が同居すると「何を見てよいか」 がブレる
+/// - **アイコンを 120px で表示**: cache.icon_120 の実寸そのまま (アイコンが
+///   小さいと透明部分の存在感が薄れる)
+/// - **市松を 240×240**: アイコンの周囲に余白があり、 透過範囲が明確に分かる
+fn checker_view<'a>(rgba: &'a Rgba8) -> Element<'a, Message> {
+    let icon_bytes: Vec<u8> = rgba.as_bytes().to_vec();
+    let icon_handle = image::Handle::from_rgba(rgba.width, rgba.height, icon_bytes);
+
+    // 市松背景: 240×240 を実寸表示
+    let checker_layer = container(
+        image(checker_handle().clone())
+            .width(Length::Fixed(CHECKER_SIDE as f32))
+            .height(Length::Fixed(CHECKER_SIDE as f32))
+            .filter_method(image::FilterMethod::Nearest),
+    )
+    .center_x(Length::Fill)
+    .center_y(Length::Fill);
+
+    // アイコン層: cache.icon_120 を実寸表示。 中央寄せで市松の上に重ねる
+    let icon_layer = container(
+        image(icon_handle)
+            .width(Length::Fixed(rgba.width as f32))
+            .height(Length::Fixed(rgba.height as f32))
+            .filter_method(image::FilterMethod::Nearest),
+    )
+    .center_x(Length::Fill)
+    .center_y(Length::Fill);
+
+    // stack で 2 層に重ねる (iced 0.14 の stack は後の要素ほど手前に描画)。
+    container(stack![checker_layer, icon_layer])
+        .width(Length::Fixed(CHECKER_SIDE as f32))
+        .height(Length::Fixed(CHECKER_SIDE as f32))
+        .into()
 }
 
 // ---------------------------------------------------------------------------

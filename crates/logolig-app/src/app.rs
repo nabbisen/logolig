@@ -14,6 +14,7 @@ use iced::{Element, Subscription, Task, Theme};
 use snora::{Toast, ToastIntent, ToastLifetime};
 
 use logolig_core::{
+    services::transparency_audit::{audit as audit_transparency, TransparencyReport},
     AppError, ExportPlan, ExportReport, MessageKey, PreviewCache, PreviewContext, PreviewProfile,
     ResizeAlgorithm, SettingsStore, SourceAsset, ThemeMode,
 };
@@ -79,6 +80,17 @@ pub struct AppState {
     /// 詳細設定の Language pick_list で変更され、 `PersistedSettings.locale`
     /// として保存される。
     pub locale_override: Option<Locale>,
+
+    // v1.7.0: 透過チェッカー
+    /// 直近に読み込んだ画像の透過状態。 `None` はまだ画像が読み込まれていないか、
+    /// audit を実行していない状態。 ingest 完了時に audit を走らせて埋める。
+    /// 警告 Toast の重複発行を防ぐため、 同じ画像で再度 audit しないように使う。
+    pub transparency: Option<logolig_core::TransparencyReport>,
+    /// プレビュー背景に市松模様 (透過チェッカー) を重ねるか。 `ThemeMode` の
+    /// Light/Dark/System とは独立した toggle。 `true` のとき、 プレビューパネルは
+    /// 透明部分を市松模様で可視化する。 永続化はしない (一時的な確認用設定の
+    /// ため、 アプリ再起動でリセット)。
+    pub preview_checker: bool,
 }
 
 impl AppState {
@@ -158,6 +170,8 @@ impl Default for AppState {
             store: None,
             translator: Translator::default(),
             locale_override: None,
+            transparency: None,
+            preview_checker: false,
         }
     }
 }
@@ -230,6 +244,10 @@ pub enum Message {
     // v1.5.0: i18n
     /// 言語選択。 `None` で OS デフォルトに戻す。
     LocaleChanged(Option<Locale>),
+
+    // v1.7.0: 透過チェッカー
+    /// プレビュー背景に市松模様を重ねるかの toggle。
+    PreviewCheckerToggled(bool),
 
     // 書き出し
     ExportRequested,
@@ -319,6 +337,11 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.preview_cache = None;
             state.screen = Screen::Preview;
             state.busy = false;
+            // v1.7.0: 新しい画像 → 透過状態は未確定に戻す。
+            // PreviewBuilt で audit を走らせて確定する。 これにより:
+            // - 再読み込み時に過去の警告が引き継がれない
+            // - 同じ画像で警告 Toast が複数回出ないように制御できる
+            state.transparency = None;
             // プレビュー画像を非同期に作る (§2.4)。
             crate::task_queue::build_preview_task(arc, state.export_plan.algorithm)
         }
@@ -331,6 +354,20 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let still_valid = asset_path.as_ref() == Some(&cache.source_path)
                 && cache.algorithm == state.export_plan.algorithm;
             if still_valid {
+                // v1.7.0: 透過チェッカー
+                // この cache が「この画像で初めて」 構築されたなら audit を走らせる。
+                // 既に audit 済 (state.transparency が Some) なら警告を再表示しない
+                // — 例えば algorithm 変更で preview が再構築された場合に Toast が
+                // 何度も出ないように。 audit 自体は idempotent なのでバグはないが、
+                // UX として 1 画像 1 警告にする。
+                let needs_audit = state.transparency.is_none();
+                if needs_audit {
+                    let report = audit_transparency(&cache.icon_120);
+                    state.transparency = Some(report);
+                    if report.needs_warning() {
+                        push_transparency_warning(state, report);
+                    }
+                }
                 state.preview_cache = Some(cache);
             }
             Task::none()
@@ -548,6 +585,15 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
+        // -----------------------------------------------------------------
+        // v1.7.0: 透過チェッカー (プレビュー背景の市松模様 toggle)
+        // -----------------------------------------------------------------
+        Message::PreviewCheckerToggled(on) => {
+            // 永続化はしない (一時的な確認用設定のため、 アプリ再起動でリセット)。
+            state.preview_checker = on;
+            Task::none()
+        }
+
         Message::ExportRequested => {
             // ソースが無ければ何もしない (UI 側でボタン無効化済みだが念のため)。
             if state.source_asset.is_none() {
@@ -729,6 +775,30 @@ fn push_warning_toast(state: &mut AppState, title: &str, body: &str) {
         body.to_string(),
         Message::DismissToast(id),
     ));
+}
+
+/// v1.7.0: 透過チェッカー警告。 完全不透明 / 完全透明な画像が読み込まれた時に
+/// 表示する Warning Toast。 通常の入力検証 Toast (transient 4 秒) より少し長め
+/// にしたいところだが、 v1.7 では既存の transient ライフタイムをそのまま使う
+/// (ユーザに「重大ではない注意」 と伝える意図)。
+fn push_transparency_warning(state: &mut AppState, report: TransparencyReport) {
+    let (title_key, body_key) = match report {
+        TransparencyReport::FullyOpaque => (
+            MessageKey::ToastFullyOpaqueTitle,
+            MessageKey::ToastFullyOpaqueBody,
+        ),
+        TransparencyReport::FullyTransparent => (
+            MessageKey::ToastFullyTransparentTitle,
+            MessageKey::ToastFullyTransparentBody,
+        ),
+        TransparencyReport::HasTransparency => {
+            // needs_warning() == false なので呼ばれないはずだが、 防御的に no-op
+            return;
+        }
+    };
+    let title = state.translator.t(title_key);
+    let body = state.translator.t(body_key);
+    push_warning_toast(state, &title, &body);
 }
 
 // ----------------------------------------------------------------------

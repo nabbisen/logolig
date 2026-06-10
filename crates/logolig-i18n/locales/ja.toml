@@ -111,3 +111,10 @@ error_rasterize = "SVG のラスタライズに失敗: {detail}"
 error_resize = "リサイズに失敗: {detail}"
 error_export = "出力に失敗: {detail}"
 error_not_implemented = "未実装: {feature}"
+
+# --- 透過チェッカー (v1.7.0) ---
+toast_fully_opaque_title = "透過部分なし"
+toast_fully_opaque_body = "この画像には透過部分がありません。 ダークテーマのタブでは白い四角として表示される可能性があります。 出力前に背景を切り抜くことをご検討ください。"
+toast_fully_transparent_title = "画像が空"
+toast_fully_transparent_body = "この画像の全ピクセルが完全に透明です。 別のファイルを読み込む意図でしたか?"
+preview_checker_label = "透過チェッカーを表示"

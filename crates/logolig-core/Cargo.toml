@@ -85,5 +85,9 @@ path = "tests/vectorize.rs"
 name = "persisted_settings"
 path = "tests/persisted_settings.rs"
 
+[[test]]
+name = "transparency_audit"
+path = "tests/transparency_audit.rs"
+
 [lints]
 workspace = true

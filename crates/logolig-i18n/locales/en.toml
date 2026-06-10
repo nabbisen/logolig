@@ -109,3 +109,10 @@ error_rasterize = "SVG rasterize failed: {detail}"
 error_resize = "Resize failed: {detail}"
 error_export = "Export failed: {detail}"
 error_not_implemented = "Not implemented: {feature}"
+
+# --- Transparency checker (v1.7.0) ---
+toast_fully_opaque_title = "No transparency detected"
+toast_fully_opaque_body = "This image is fully opaque. It may show as a white square on dark browser tabs. Consider removing the background before export."
+toast_fully_transparent_title = "Image is empty"
+toast_fully_transparent_body = "Every pixel in this image is fully transparent. Did you mean to load a different file?"
+preview_checker_label = "Show transparency checker"

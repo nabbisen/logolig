@@ -123,6 +123,27 @@ files because of `serde(default)` forward compatibility).
 If saving fails (read-only config dir, etc.), a warning toast is shown
 and the app keeps running — your changes stay in memory for the session.
 
+## Transparency
+
+Logolig audits each loaded image's alpha channel and warns about two
+common favicon mistakes:
+
+- **Fully opaque image** — every pixel has alpha=255. The favicon will
+  show as a white square on dark browser tabs. Usually you want to
+  remove the background before export.
+- **Empty image** — every pixel has alpha=0. Likely the wrong file was
+  loaded.
+
+The warning shows once per loaded image as a Toast and lets you
+continue regardless. Halo detection and pre-multiplied-alpha analysis
+are intentionally not included — their thresholds risk false positives
+on legitimate anti-aliasing.
+
+Toggle **Show transparency checker** in the preview panel to swap the
+browser-tab / smartphone framing for a checker-pattern view: light
+and dark grey 12px tiles with the icon overlaid at native size, so
+transparent regions are visually unambiguous.
+
 ## Language
 
 Logolig follows your system language by default. Override the language
@@ -151,14 +172,14 @@ cargo test -p logolig-core
 cargo test -p logolig-i18n
 ```
 
-logolig-core has 54 integration tests covering ingest, decode, SVG
+logolig-core has 63 integration tests covering ingest, decode, SVG
 rasterization, vectorization, resize, preview cache, ICO writing, HTML
-snippet generation, transactional export, settings round-trip, and
-forward-compatible JSON deserialization. logolig-i18n adds 16 tests
-covering dictionary loading (English and Japanese), placeholder
-substitution, error translation, BCP-47 locale resolution including
-POSIX forms, and a regression check that Japanese UI keys actually
-differ from English. Total: 70 tests.
+snippet generation, transactional export, settings round-trip,
+forward-compatible JSON deserialization, and transparency-state
+classification. logolig-i18n adds 16 tests covering dictionary loading
+(English and Japanese), placeholder substitution, error translation,
+BCP-47 locale resolution including POSIX forms, and a regression check
+that Japanese UI keys actually differ from English. Total: 79 tests.
 
 ## Versioning
 

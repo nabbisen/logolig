@@ -136,4 +136,16 @@ pub enum MessageKey {
     ErrorResize,
     ErrorExport,
     ErrorNotImplemented,
+
+    // --- 透過チェッカー (v1.7.0) ---
+    /// 完全不透明画像の警告タイトル。
+    ToastFullyOpaqueTitle,
+    /// 完全不透明画像の警告本文。
+    ToastFullyOpaqueBody,
+    /// 完全透明画像の警告タイトル。
+    ToastFullyTransparentTitle,
+    /// 完全透明画像の警告本文。
+    ToastFullyTransparentBody,
+    /// プレビュー背景の市松模様 toggle ラベル ("Show transparency checker")。
+    PreviewCheckerLabel,
 }

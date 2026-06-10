@@ -138,6 +138,13 @@ pub(crate) struct Dictionary {
     pub error_resize: String,
     pub error_export: String,
     pub error_not_implemented: String,
+
+    // Transparency checker (v1.7.0)
+    pub toast_fully_opaque_title: String,
+    pub toast_fully_opaque_body: String,
+    pub toast_fully_transparent_title: String,
+    pub toast_fully_transparent_body: String,
+    pub preview_checker_label: String,
 }
 
 impl Dictionary {
@@ -261,6 +268,13 @@ impl Dictionary {
             MessageKey::ErrorResize => &self.error_resize,
             MessageKey::ErrorExport => &self.error_export,
             MessageKey::ErrorNotImplemented => &self.error_not_implemented,
+
+            // v1.7.0
+            MessageKey::ToastFullyOpaqueTitle => &self.toast_fully_opaque_title,
+            MessageKey::ToastFullyOpaqueBody => &self.toast_fully_opaque_body,
+            MessageKey::ToastFullyTransparentTitle => &self.toast_fully_transparent_title,
+            MessageKey::ToastFullyTransparentBody => &self.toast_fully_transparent_body,
+            MessageKey::PreviewCheckerLabel => &self.preview_checker_label,
         }
     }
 }
