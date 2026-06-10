@@ -1,5 +1,14 @@
 # snora 機能改善リクエスト: BottomSheet のスクロール対応 + フッター固定
 
+> **状態 (logolig v1.13.0 時点): 部分的に解決済み・歴史的文書**
+>
+> snora 0.8.0 で旧 `BottomSheet` は汎用 `Sheet` に再構成され、 「pure content carrier」 という設計意図が docstring で明文化されました。 これにより:
+>
+> - **内部スクロール**: アプリケーション側で `iced::widget::scrollable` を使ってコンテンツをラップする責務が明確化され、 logolig 自身で対応可能になりました (v1.15.0 で実施予定)
+> - **sticky フッター**: 同じく `Sheet` の content に column を渡して、 上に scrollable 領域、 下に固定行を置く形でアプリ側で実現可能
+>
+> snora 側に追加 API を要望する必要はなくなり、 本文書は当時の課題整理として残します。
+
 ## 課題
 
 snora の `BottomSheet` ウィジェットは、 設定画面のような「項目数が多い補助 UI」 に最適な構造を提供してくれます。 ロゴジェネレータ logolig でも詳細設定の表示にこのコンポーネントを採用しています。

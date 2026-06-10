@@ -14,7 +14,7 @@
 
 use iced::widget::{button, column, container, row, text, tooltip, Space};
 use iced::{Background, Border, Color, Element, Length, Theme};
-use snora::{AppLayout, BottomSheet, LayoutDirection, SheetHeight, render};
+use snora::{AppLayout, LayoutDirection, Sheet, SheetSize, render};
 
 use logolig_core::{MessageKey, ThemeMode};
 use logolig_i18n::Locale;
@@ -41,10 +41,17 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
         .toasts(state.toasts.clone())
         .on_close_modals(Message::CloseModals);
 
-    // 詳細設定が開いているときだけ BottomSheet を取り付ける (§5.3)。
+    // 詳細設定が開いているときだけ Sheet を取り付ける (§5.3)。
+    //
+    // v1.13.0 (snora 0.8 移行): 旧 `BottomSheet` (Bottom 固定) は汎用 `Sheet` に
+    // 統一された。 `Sheet::new` のデフォルト edge は `SheetEdge::Bottom` なので
+    // 旧来と同じ「下から滑り出るドロワー」 として動く。 サイズ指定は
+    // `with_height(SheetHeight::Half)` から `with_size(SheetSize::Half)` に
+    // 改名 (Sheet を Top/Start/End に置けるよう、 axis に依存しない `Size` 名に
+    // 統一された)。
     if state.advanced_open {
-        let sheet = BottomSheet::new(advanced_drawer::view(state)).with_height(SheetHeight::Half);
-        layout = layout.bottom_sheet(sheet);
+        let sheet = Sheet::new(advanced_drawer::view(state)).with_size(SheetSize::Half);
+        layout = layout.sheet(sheet);
     }
 
     render(layout)

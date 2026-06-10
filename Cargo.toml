@@ -2,7 +2,7 @@
 #
 # 構造の意図 (§16, §3.1):
 # - logolig-core: 純粋なドメイン + 画像処理。iced/snora 非依存。
-# - logolig-app : GUI バイナリ。iced 0.14 + snora 0.4 + logolig-core を結線する。
+# - logolig-app : GUI バイナリ。iced 0.14 + snora 0.8 + logolig-core を結線する。
 #                 バイナリ名は `logolig` (cargo install で `logolig` コマンドとして使える)。
 #
 # 「ドメイン/サービス/UI 分離」を慣習ではなく依存グラフで強制する。
@@ -13,7 +13,7 @@ resolver = "3"
 members = ["crates/logolig-core", "crates/logolig-app", "crates/logolig-i18n"]
 
 [workspace.package]
-version = "1.12.0"
+version = "1.13.0"
 edition = "2024"
 rust-version = "1.85"
 authors = ["nabbisen <nabbisen@scqr.net>"]
@@ -26,13 +26,26 @@ publish = false
 thiserror = "2"
 
 # GUI ランタイム + フレームワーク
-# 元の指示書は "snora 0.4 (iced ベース)" を指定。snora 0.4 は iced 0.14 を要求する。
+# 元の指示書は "snora (iced ベース)" を指定。snora 0.8 は iced 0.14 を要求する。
 iced  = { version = "0.14", features = ["tokio", "image"] }
-# snora は lucide-icons / svg-icons feature を持つが、現状アイコン未使用。
-# また snora 0.4.1 + lucide-icons 1.9.0 + iced 0.14 の組み合わせは
-# snora 上流側で型不整合があり (widget/icon.rs:27)、フィーチャ無効化で回避する。
-# Icon::Text は無条件で使えるため、必要時はそれで代替する。
-snora = { version = "0.4", default-features = false }
+# snora 0.8 — v1.13.0 で 0.4 → 0.8 にメジャー API 移行。
+#
+# 0.8 で変わった主な点 (logolig に直接効くもの):
+# - workspace 3-crate 分割 (snora-core / snora-widgets / snora) が確立
+# - 旧 `BottomSheet` (bottom 専用) → 汎用 `Sheet` + `SheetEdge` (Top/Bottom/Start/End)
+# - `SheetHeight` → `SheetSize` (perpendicular axis に対する size を表現)
+# - `AppLayout::bottom_sheet(...)` → `AppLayout::sheet(...)` (汎用化)
+# - Toast デフォルト位置が BottomEnd → TopEnd (logolig の v1.16.0 計画が
+#   upgrade だけで達成され、 そちらの roadmap 行は不要に)
+# - lucide-icons feature 修復 (logolig では現状 Unicode 文字を使っており、
+#   lucide-icons への切替は別フェーズ — v1.13.x 以降で行う)
+# - tab UI / breadcrumb UI ウィジェットが追加 (logolig は現状単一画面構成
+#   のため未使用、 将来別画面が増えたら検討)
+#
+# default-features=false で `widgets` feature を切る。 logolig は app_header /
+# app_side_bar 等を使わず、 自前の shell.rs で AppLayout を組み立てるため。
+# vocabulary (Toast, Sheet, AppLayout) は default-features=false でも常時有効。
+snora = { version = "0.8", default-features = false }
 
 # Step 2: 画像処理コア (logolig-core 専用)
 image = { version = "0.25", default-features = false, features = ["png", "webp", "jpeg"] }

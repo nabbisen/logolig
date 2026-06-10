@@ -2324,7 +2324,7 @@ checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
 
 [[package]]
 name = "logolig-app"
-version = "1.12.0"
+version = "1.13.0"
 dependencies = [
  "app-json-settings",
  "iced",
@@ -2336,7 +2336,7 @@ dependencies = [
 
 [[package]]
 name = "logolig-core"
-version = "1.12.0"
+version = "1.13.0"
 dependencies = [
  "fast_image_resize",
  "ico",
@@ -2353,7 +2353,7 @@ dependencies = [
 
 [[package]]
 name = "logolig-i18n"
-version = "1.12.0"
+version = "1.13.0"
 dependencies = [
  "logolig-core",
  "serde",
@@ -4039,9 +4039,9 @@ dependencies = [
 
 [[package]]
 name = "snora"
-version = "0.4.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7072486bb9b64feb87a7836c0cfab7efec51764f29f9ccbf0b09eb9a99196581"
+checksum = "11df3c9f92ca859780774aa62e17b73dc9b8c11e8e514e947329da8aa8af13d9"
 dependencies = [
  "iced",
  "snora-core",
@@ -4049,9 +4049,9 @@ dependencies = [
 
 [[package]]
 name = "snora-core"
-version = "0.4.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91e4fb580d94596b43f09f9e99a51e58acb8867d4dd35a46831aaba17624b6d6"
+checksum = "91eb51e9ab26c12a71e112bdba64139098925e3bbf471f5a3d77f683a88f3350"
 
 [[package]]
 name = "softbuffer"
