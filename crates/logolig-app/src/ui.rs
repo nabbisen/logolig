@@ -6,5 +6,7 @@
 pub mod accessibility;
 pub mod advanced_drawer;
 pub mod colors;
+pub mod converting;
 pub mod drop_zone;
 pub mod preview_panel;
+pub mod result_view;

@@ -190,6 +190,14 @@ pub(crate) struct Dictionary {
     pub section_title_preview: String,
     pub edit_cancel_button: String,
     pub edit_repick_button: String,
+
+    // 画面構造刷新 (v1.16.0)
+    pub importing_please_wait: String,
+    pub result_success_headline: String,
+    pub result_assets_subheading: String,
+    pub result_download_all_button: String,
+    pub result_download_one: String,
+    pub result_preview_toggle: String,
 }
 
 impl Dictionary {
@@ -365,6 +373,14 @@ impl Dictionary {
             MessageKey::SectionTitlePreview => &self.section_title_preview,
             MessageKey::EditCancelButton => &self.edit_cancel_button,
             MessageKey::EditRepickButton => &self.edit_repick_button,
+
+            // v1.16.0
+            MessageKey::ImportingPleaseWait => &self.importing_please_wait,
+            MessageKey::ResultSuccessHeadline => &self.result_success_headline,
+            MessageKey::ResultAssetsSubheading => &self.result_assets_subheading,
+            MessageKey::ResultDownloadAllButton => &self.result_download_all_button,
+            MessageKey::ResultDownloadOne => &self.result_download_one,
+            MessageKey::ResultPreviewToggle => &self.result_preview_toggle,
         }
     }
 }

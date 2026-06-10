@@ -27,15 +27,24 @@ use logolig_i18n::{detect_system_locale, Locale, Translator};
 /// 画面遷移ステート (§4.2)。
 ///
 /// 旧設計の `Failed` は削除した。エラーは Toast で表現するため、
-/// 画面状態は「いまソースがあるか／処理中か」のみを表す。
+/// 画面状態は v1.16.0 で **3 状態に簡素化**:
+///
+/// - `Empty`: ファイル投入待ち。 中央にドロップゾーン。
+/// - `Converting`: ファイル投入直後の自動変換中。 円形プログレス + メッセージ。
+///   v1.15 までは `Importing` (decode + preview) と `Exporting` (write to disk)
+///   の 2 状態に分かれていたが、 v1.16 は「投入したらメモリ上で全部変換」 の
+///   一段モデルなので統合。
+/// - `Result`: 変換完了。 アセットカード一覧 + 個別 DL + ZIP 一括 DL。
+///
+/// 旧 `Preview` 状態 (View as / Surface ピッカーで見え方を確認する画面) は
+/// v1.16.0 で **廃止**。 新設計では「投入 → 即変換 → 結果確認」 の流れで、
+/// プレビューは Result 画面の任意展開セクションとして残る (Q1 b)。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Screen {
     #[default]
     Empty,
-    Importing,
-    Preview,
-    ExportReady,
-    Exporting,
+    Converting,
+    Result,
 }
 
 /// アプリ全体の状態 (§4.1)。
@@ -96,6 +105,26 @@ pub struct AppState {
     /// は同じところから再開したい」 という持続性ではなく、 「毎回ニュートラル
     /// な状態で開きたい」 という意図 (詳細設定はそもそも頻繁には触らない)。
     pub advanced_groups: AdvancedGroupExpansion,
+
+    // ---------------------------------------------------------------
+    // v1.16.0: 新画面構造 (Empty / Converting / Result) 用の状態
+    // ---------------------------------------------------------------
+    /// 変換結果のアセット一式 (メモリ上保持)。
+    ///
+    /// `Screen::Result` の間だけ `Some(...)`。 ファイル投入時にクリアされ、
+    /// 変換完了時に埋まる。 個別 DL ボタンや「ZIP 一括」 ボタンはこの値から
+    /// バイト列を取り出して `rfd` でユーザに保存先を聞いて書き出す。
+    ///
+    /// v1.15 までは「変換 = ディスク書出」 だったので状態は不要だったが、
+    /// v1.16 は「変換はメモリ完結、 保存はユーザ任意」 のため、 アプリ状態
+    /// にアセット束を持つ必要が出た。
+    pub result_assets: Option<crate::result::ResultAssets>,
+
+    /// Result 画面のプレビューパネル (Browser tab / Phone home / Checker) の
+    /// 開閉状態。 Q1 (b) の方針で「結果画面に小さく残す + 任意に開く」 を
+    /// 実現するためのトグル。 デフォルト false (折りたたみ)。
+    /// セッション内のみ保持、 永続化対象外。
+    pub result_preview_open: bool,
 }
 
 /// 詳細設定の 3 グループそれぞれの展開状態。
@@ -237,6 +266,9 @@ impl Default for AppState {
             locale_override: None,
             transparency: None,
             advanced_groups: AdvancedGroupExpansion::default(),
+            // v1.16.0
+            result_assets: None,
+            result_preview_open: false,
         }
     }
 }
@@ -270,6 +302,29 @@ pub enum Message {
     PreviewBuilt(Result<PreviewCache, AppError>),
     PreviewContextSelected(PreviewContext),
     PreviewBackgroundSelected(ThemeMode),
+
+    // v1.16.0: 自動変換完了 (メモリ完結)。
+    /// ファイル投入後の自動変換が終わり、 ResultAssets が組み上がった通知。
+    /// 旧 `Message::ExportCompleted` (= ディスク書出し完了) とは別物で、
+    /// こちらはディスクには触らずアプリ状態にアセット束を載せるだけ。
+    /// ユーザがあとで個別 DL / ZIP DL を押したときに初めて書出が走る。
+    ConvertCompleted(Result<crate::result::ResultAssets, logolig_core::AppError>),
+
+    /// v1.16.0: 個別 DL ボタン押下。 アセット index を指定。
+    DownloadOneRequested(usize),
+    /// v1.16.0: ZIP 一括 DL ボタン押下。
+    DownloadAllRequested,
+    /// v1.16.0: 個別 DL のファイル保存先選択結果 (None = キャンセル)。
+    DownloadOneTargetPicked(usize, Option<std::path::PathBuf>),
+    /// v1.16.0: ZIP 一括 DL のファイル保存先選択結果 (None = キャンセル)。
+    DownloadAllTargetPicked(Option<std::path::PathBuf>),
+    /// v1.16.0: 個別 DL の書出完了通知。
+    DownloadOneCompleted(Result<std::path::PathBuf, logolig_core::AppError>),
+    /// v1.16.0: ZIP 一括 DL の書出完了通知。
+    DownloadAllCompleted(Result<std::path::PathBuf, logolig_core::AppError>),
+
+    /// v1.16.0: Result 画面の「プレビューを見る」 折りたたみセクションのトグル。
+    ResultPreviewToggled,
 
     // テーマ・UI
     ThemeToggled,
@@ -441,9 +496,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         // v1.12.0: 編集画面の戻り動線。
         //
-        // 編集画面 (Screen::Preview / Screen::ExportReady) から startup 画面
-        // (Screen::Empty) に戻る。 ロード済みのソースとプレビューキャッシュは
-        // 全て破棄して、 起動直後と同じ状態に戻す。
+        // v1.16.0: 旧 Preview/ExportReady → 新 Result/Converting の状態どこから
+        // でも Empty に戻す統一動線。 「← Back」 ボタンの実装。
         //
         // 永続化される設定 (export_plan / theme / locale 等) は保持。
         // 詳細ドロワーが開いていたら閉じる (UI 状態をニュートラルに揃える)。
@@ -452,6 +506,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.preview = None;
             state.preview_cache = None;
             state.transparency = None;
+            state.result_assets = None;
+            state.result_preview_open = false;
             state.screen = Screen::Empty;
             state.advanced_open = false;
             Task::none()
@@ -463,15 +519,24 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.source_asset = Some(asset);
             state.preview = Some(PreviewProfile::default());
             state.preview_cache = None;
-            state.screen = Screen::Preview;
+            // v1.16.0: ingest 完了 → 自動変換へ進む。 旧 v1.15 では Preview 状態
+            // でユーザの確認を待っていたが、 v1.16 は「投入したら自動変換」 の
+            // モデル。 Converting 状態を維持したまま、 並行で:
+            //   (a) preview build (Result 画面の折りたたみプレビュー用)
+            //   (b) convert (メモリ完結変換、 ResultAssets を組む)
+            // を走らせる。 (b) の完了で Screen::Result に遷移する。
+            state.screen = Screen::Converting;
             state.busy = false;
             // v1.7.0: 新しい画像 → 透過状態は未確定に戻す。
             // PreviewBuilt で audit を走らせて確定する。 これにより:
             // - 再読み込み時に過去の警告が引き継がれない
             // - 同じ画像で警告 Toast が複数回出ないように制御できる
             state.transparency = None;
-            // プレビュー画像を非同期に作る (§2.4)。
-            crate::task_queue::build_preview_task(arc, state.export_plan.algorithm)
+            // (a) と (b) を並行実行
+            Task::batch([
+                crate::task_queue::build_preview_task(arc.clone(), state.export_plan.algorithm),
+                crate::task_queue::convert_in_memory_task(arc, state.export_plan.clone()),
+            ])
         }
         Message::IngestCompleted(Err(err)) => fail(state, err),
 
@@ -530,6 +595,76 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             if let Some(p) = state.preview.as_mut() {
                 p.background = theme;
             }
+            Task::none()
+        }
+
+        // v1.16.0: 自動変換完了
+        Message::ConvertCompleted(Ok(assets)) => {
+            state.result_assets = Some(assets);
+            state.screen = Screen::Result;
+            state.busy = false;
+            Task::none()
+        }
+        Message::ConvertCompleted(Err(err)) => fail(state, err),
+
+        // v1.16.0: DL ボタン群
+        Message::DownloadOneRequested(idx) => {
+            // ファイル名を取り出して、 デフォルト拡張子付きの保存ダイアログを開く
+            let Some(assets) = state.result_assets.as_ref() else {
+                return Task::none();
+            };
+            let Some(item) = assets.items.get(idx) else {
+                return Task::none();
+            };
+            crate::task_queue::pick_save_one_task(idx, item.file_name.clone())
+        }
+        Message::DownloadAllRequested => {
+            crate::task_queue::pick_save_all_task()
+        }
+        Message::DownloadOneTargetPicked(_, None) => Task::none(),
+        Message::DownloadOneTargetPicked(idx, Some(path)) => {
+            let Some(assets) = state.result_assets.as_ref() else {
+                return Task::none();
+            };
+            let Some(item) = assets.items.get(idx) else {
+                return Task::none();
+            };
+            let bytes = item.bytes.clone();
+            crate::task_queue::write_one_task(path, bytes)
+        }
+        Message::DownloadAllTargetPicked(None) => Task::none(),
+        Message::DownloadAllTargetPicked(Some(path)) => {
+            let Some(assets) = state.result_assets.as_ref() else {
+                return Task::none();
+            };
+            // ZIP 化はメインスレッドの邪魔にならないよう task に逃がす。
+            let items_clone = assets.items.clone();
+            crate::task_queue::write_zip_task(path, items_clone)
+        }
+        Message::DownloadOneCompleted(Ok(path)) => {
+            let title = state.translator.t(MessageKey::ToastExportTitle);
+            let body = format!("{}", path.display());
+            push_long_success_toast(state, &title, &body);
+            Task::none()
+        }
+        Message::DownloadOneCompleted(Err(err)) => {
+            push_error_toast(state, err);
+            Task::none()
+        }
+        Message::DownloadAllCompleted(Ok(path)) => {
+            let title = state.translator.t(MessageKey::ToastExportTitle);
+            let body = format!("{}", path.display());
+            push_long_success_toast(state, &title, &body);
+            Task::none()
+        }
+        Message::DownloadAllCompleted(Err(err)) => {
+            push_error_toast(state, err);
+            Task::none()
+        }
+
+        // v1.16.0: Result 画面のプレビュー折りたたみトグル
+        Message::ResultPreviewToggled => {
+            state.result_preview_open = !state.result_preview_open;
             Task::none()
         }
 
@@ -877,7 +1012,11 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let Some(asset) = state.source_asset.as_ref() else {
                 return Task::none();
             };
-            state.screen = Screen::Exporting;
+            // v1.16.0: 旧 Screen::Exporting → Screen::Converting に統合。
+            // 「変換 + 書出し」 が同じ「処理中」 として扱われる。
+            // ※v1.16 phase A ではディスク書出しの旧パスを残しているが、
+            //   phase B で「変換はメモリ完結、 保存はユーザ任意」 に置き換える。
+            state.screen = Screen::Converting;
             state.busy = true;
             let asset_arc = std::sync::Arc::new(asset.clone());
             let plan = state.export_plan.clone();
@@ -886,7 +1025,9 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::ExportCompleted(Ok(report)) => {
             let count = report.artifacts.len();
             let dir_display = report.output_dir.display().to_string();
-            state.screen = Screen::ExportReady;
+            // v1.16.0: 旧 Screen::ExportReady → Screen::Result。 結果一覧 +
+            // 個別 DL + ZIP 一括 DL を見せる画面。
+            state.screen = Screen::Result;
             state.busy = false;
             // v1.4.2: persistent から 7 秒 transient に変更。
             // v1.5.0: i18n 対応 (count / dir プレースホルダ)。
@@ -916,24 +1057,32 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
 }
 
 /// ファイルパスを受け取って ingest タスクを起動する共通処理。
+///
+/// v1.16.0: 旧 `Screen::Importing` は v1.16 で `Screen::Converting` に統合。
+/// ingest → preview build → asset bundle build までの全フェーズが Converting
+/// 状態にまとまる。
 fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message> {
     state.source_path = Some(path.clone());
-    state.screen = Screen::Importing;
+    state.screen = Screen::Converting;
     state.busy = true;
-    // 古いソースのプレビューキャッシュは破棄。新しい ingest 完了で再生成される。
+    // 古いソースのプレビューキャッシュとアセット束は破棄。 新しい ingest
+    // 完了で再生成される。
     state.preview_cache = None;
+    state.result_assets = None;
+    state.result_preview_open = false;
     crate::task_queue::ingest_task(path)
 }
 
 /// エラー発生時の共通遷移。
 ///
 /// - busy フラグを下ろす
-/// - 画面は「ソースがあれば Preview、なければ Empty」に戻す
+/// - 画面は「ソースがあれば Result、なければ Empty」に戻す
+///   (v1.16: 旧 Preview 状態は廃止されたため、 ソース有 → Result に直す)
 /// - Persistent な Error toast を積む（読まないと消えない）
 fn fail(state: &mut AppState, err: AppError) -> Task<Message> {
     state.busy = false;
-    state.screen = if state.source_asset.is_some() {
-        Screen::Preview
+    state.screen = if state.result_assets.is_some() {
+        Screen::Result
     } else {
         Screen::Empty
     };

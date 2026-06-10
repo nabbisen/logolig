@@ -167,3 +167,11 @@ page_title_edit = "プレビュー確認・Favicon ファイル作成"
 section_title_preview = "プレビュー"
 edit_cancel_button = "← 戻る"
 edit_repick_button = "↻ 再選択"
+
+# --- 画面構造刷新 (v1.16.0) ---
+importing_please_wait = "しばらくお待ちください"
+result_success_headline = "変換が完了しました!"
+result_assets_subheading = "生成されたアセット一覧"
+result_download_all_button = "すべてダウンロード (ZIP)"
+result_download_one = "保存"
+result_preview_toggle = "プレビューを見る"

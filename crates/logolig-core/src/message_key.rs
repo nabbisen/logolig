@@ -220,4 +220,19 @@ pub enum MessageKey {
     EditCancelButton,
     /// 編集画面の「再選択」 ボタン (ファイルピッカーを開き直す)。
     EditRepickButton,
+
+    // --- v1.16.0: 画面構造刷新 (Empty / Converting / Result の 3 状態) ---
+    /// Converting 画面の補助メッセージ (「しばらくお待ちください」)。
+    ImportingPleaseWait,
+    /// Result 画面の見出し「✓ 変換が完了しました!」。
+    ResultSuccessHeadline,
+    /// Result 画面のサブヘッド「生成されたアセット一覧」。
+    ResultAssetsSubheading,
+    /// Result 画面の「すべてダウンロード (ZIP)」 ボタン。
+    ResultDownloadAllButton,
+    /// Result 画面の各カードの個別 DL ボタンの a11y ラベル / tooltip
+    /// (「保存」 / 「Save」)。
+    ResultDownloadOne,
+    /// Result 画面の「プレビューを見る」 折りたたみセクションのラベル。
+    ResultPreviewToggle,
 }

@@ -31,5 +31,15 @@ app-json-settings.workspace = true
 # v1.5.0: 翻訳 (英語のみ、 v1.6 で日本語追加)
 logolig-i18n = { path = "../logolig-i18n" }
 
+# v1.16.0: アセットカードのサムネ生成 (PNG / ICO デコード) で使用。
+# ICO サポートを含めるため `ico` feature を追加。 PNG は workspace 共通の
+# image dep が既に有効化済 だが、 logolig-app から直接呼ぶので個別に依存を
+# 書く。
+image = { workspace = true, features = ["png", "ico"] }
+
+# v1.16.0: 「すべてダウンロード (ZIP)」 ボタンの実装で使用。 全アセットを
+# in-memory で zip 化してから rfd で書き出す。
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
 [lints]
 workspace = true

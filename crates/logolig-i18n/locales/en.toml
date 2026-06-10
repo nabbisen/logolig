@@ -165,3 +165,11 @@ page_title_edit = "Preview & Generate Favicon"
 section_title_preview = "Preview"
 edit_cancel_button = "← Back"
 edit_repick_button = "↻ Re-select"
+
+# --- 画面構造刷新 (v1.16.0) ---
+importing_please_wait = "Please wait…"
+result_success_headline = "Conversion complete!"
+result_assets_subheading = "Generated assets"
+result_download_all_button = "Download all (ZIP)"
+result_download_one = "Save"
+result_preview_toggle = "Preview"

@@ -12,7 +12,7 @@
 //! 各スロットの中身 (header / body / footer / bottom_sheet content) は
 //! `crate::ui::*` の純粋関数に委譲する。
 
-use iced::widget::{button, column, container, row, text, tooltip, Space};
+use iced::widget::{button, container, row, text, tooltip, Space};
 use iced::{Background, Border, Color, Element, Length, Theme};
 use snora::{AppLayout, LayoutDirection, Sheet, SheetSize, render};
 
@@ -20,7 +20,7 @@ use logolig_core::{MessageKey, ThemeMode};
 use logolig_i18n::Locale;
 
 use crate::app::{resolve_theme, AppState, Message, Screen};
-use crate::ui::{accessibility::marker, advanced_drawer, colors, drop_zone, preview_panel};
+use crate::ui::{accessibility::marker, advanced_drawer, colors, drop_zone};
 
 // v1.14.0: 旧 APP_NAME_COLOR / TAGLINE_COLOR / FILE_NAME_COLOR の hardcoded
 // 定数は `crate::ui::colors` モジュールの theme-aware ヘルパに移行した。
@@ -58,10 +58,15 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
 // ----------------------------------------------------------------------
 
 fn body(state: &AppState) -> Element<'_, Message> {
+    // v1.16.0: 5 状態 → 3 状態に簡素化。
+    // - Empty: ドロップゾーン
+    // - Converting: 円形プログレス + ファイル処理中の表示 (新 ui::converting)
+    // - Result: アセットカードグリッド + 一括 DL + 折りたたみプレビュー
+    //   (新 ui::result_view)
     match state.screen {
         Screen::Empty => drop_zone::view(state),
-        Screen::Importing | Screen::Exporting => busy_view(state),
-        Screen::Preview | Screen::ExportReady => preview_panel::view(state),
+        Screen::Converting => crate::ui::converting::view(state),
+        Screen::Result => crate::ui::result_view::view(state),
     }
 }
 
@@ -69,6 +74,10 @@ fn body(state: &AppState) -> Element<'_, Message> {
 ///
 /// 左側にアプリ名 + tagline、 右側にアイコンボタン群 (言語 / テーマ / 詳細 /
 /// 閉じる)。 ボタン間に小さな Space を挟んで誤クリックを防ぐ。
+///
+/// v1.16.0: Screen 列挙が簡素化されたため、 ヘッダの分岐も整理:
+/// - Result 画面 (= ファイル処理済み) → ファイル名表示
+/// - Empty / Converting → アプリ名 + tagline
 fn header(state: &AppState) -> Element<'_, Message> {
     let t = &state.translator;
     let theme = resolve_theme(state);
@@ -76,19 +85,13 @@ fn header(state: &AppState) -> Element<'_, Message> {
     // ----- ヘッダ左のタイトル領域 -----
     //
     // v1.12.0: 画面の状態によって出すものを切り替える:
-    // - startup 画面 (Empty): アプリ名 + tagline (アプリの自己紹介がここの主目的)
-    // - 編集画面 (Preview / ExportReady): 現在処理中のファイル名 (画像が主役)
-    // - その他 (Importing / Exporting): アプリ名のみ (短時間しか出ないので簡素に)
-    //
-    // 編集画面時にアプリ名を出さないのは「画面の主役は今ロード中の画像で、
-    // アプリの自己紹介はもう済んだ」 という遷移を視覚化するため。 ファイル名
-    // を本文相当の濃さで出して、 編集画面の「対象画像」 がここだと一目で
-    // 分かるようにする。
+    // - Empty / Converting: アプリ名 + tagline
+    // - Result: 現在処理中のファイル名 (画像が主役)
     //
     // v1.14.0: 色は `crate::ui::colors` の theme-aware ヘルパ経由。 light/dark
     // 切替時に自動追従する。
     let title_block: Element<'_, Message> = match state.screen {
-        Screen::Preview | Screen::ExportReady => {
+        Screen::Result => {
             let file_name = state
                 .source_asset
                 .as_ref()
@@ -99,7 +102,7 @@ fn header(state: &AppState) -> Element<'_, Message> {
                 .color(colors::file_name(&theme))
                 .into()
         }
-        Screen::Empty | Screen::Importing | Screen::Exporting => {
+        Screen::Empty | Screen::Converting => {
             // サイズで「アプリ名らしさ」 を出す。 さらに横に小さい
             // 「— favicon ジェネレータ」 を添える。
             let app_name = text(t.t(MessageKey::AppTitle))
@@ -247,16 +250,5 @@ fn theme_icon_glyph(theme: ThemeMode) -> &'static str {
     }
 }
 
-fn busy_view<'a>(state: &'a AppState) -> Element<'a, Message> {
-    let t = &state.translator;
-    container(
-        column![
-            text(format!("{} {}", marker::BUSY, t.t(MessageKey::ImportingMessage))).size(20),
-        ]
-        .spacing(6)
-        .align_x(iced::alignment::Horizontal::Center),
-    )
-    .center_x(Length::Fill)
-    .center_y(Length::Fill)
-    .into()
-}
+// v1.16.0: 旧 busy_view は ui::converting::view に移行・拡充されたため削除。
+// header の busy インジケータは header() 内で marker::BUSY を引き続き使用。
