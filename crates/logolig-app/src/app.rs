@@ -14,7 +14,8 @@ use iced::{Element, Subscription, Task, Theme};
 use snora::{Toast, ToastIntent};
 
 use logolig_core::{
-    AppError, ExportPlan, PreviewProfile, ResizeAlgorithm, SourceAsset, ThemeMode,
+    AppError, ExportPlan, PreviewCache, PreviewContext, PreviewProfile, ResizeAlgorithm,
+    SourceAsset, ThemeMode,
 };
 
 // ----------------------------------------------------------------------
@@ -44,6 +45,9 @@ pub struct AppState {
     pub source_path: Option<PathBuf>,
     pub source_asset: Option<SourceAsset>,
     pub preview: Option<PreviewProfile>,
+    /// プレビュー表示用にリサイズ済みのラスタキャッシュ (§5.2 コンテキストプレビュー用)。
+    /// ソースを読み込んだ時、 algorithm が変わった時に再生成される。
+    pub preview_cache: Option<PreviewCache>,
     pub export_plan: ExportPlan,
     pub busy: bool,
     /// snora の Toast キュー。エラー・成功通知はすべてここを経由する。
@@ -61,6 +65,7 @@ impl Default for AppState {
             source_path: None,
             source_asset: None,
             preview: None,
+            preview_cache: None,
             export_plan: ExportPlan::default(),
             busy: false,
             toasts: Vec::new(),
@@ -80,9 +85,8 @@ impl Default for AppState {
 ///
 /// # 段階的開発について
 /// Step 1 ではスケルトンのため、いくつかのバリアントはまだ
-/// **構築箇所が無い** (`FileDropped` は subscription, `FilePicked` は rfd ピッカー、
-/// `AlgorithmChanged` は詳細設定 UI, `ExportCompleted` は出力完了)。
-/// それぞれ Step 2 / Step 3 / Step 4 で生成側を実装する。
+/// **構築箇所が無い** (`ExportCompleted` は出力完了)。
+/// Step 4 で生成側を実装する。
 /// 完成形のメッセージ集合を最初から見せるためここで宣言しておく。
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -94,6 +98,11 @@ pub enum Message {
 
     // 読み込み
     IngestCompleted(Result<SourceAsset, AppError>),
+
+    // プレビュー (Step 3)
+    PreviewBuilt(Result<PreviewCache, AppError>),
+    PreviewContextSelected(PreviewContext),
+    PreviewBackgroundSelected(ThemeMode),
 
     // テーマ・UI
     ThemeToggled,
@@ -173,13 +182,48 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             crate::task_queue::pick_file_task()
         }
         Message::IngestCompleted(Ok(asset)) => {
+            // プレビュー生成タスクを起動するために asset を Arc で保持する。
+            // SourceAsset 自体は Clone (Arc<[u8]> ベース) なので軽量。
+            let arc = std::sync::Arc::new(asset.clone());
             state.source_asset = Some(asset);
             state.preview = Some(PreviewProfile::default());
+            state.preview_cache = None;
             state.screen = Screen::Preview;
             state.busy = false;
-            Task::none()
+            // プレビュー画像を非同期に作る (§2.4)。
+            crate::task_queue::build_preview_task(arc, state.export_plan.algorithm)
         }
         Message::IngestCompleted(Err(err)) => fail(state, err),
+
+        Message::PreviewBuilt(Ok(cache)) => {
+            // 受け取った cache が「現在の状態」 と整合しているか確認する。
+            // 古いソース・古い algorithm のキャッシュなら破棄。
+            let asset_path = state.source_asset.as_ref().map(|a| a.path.clone());
+            let still_valid = asset_path.as_ref() == Some(&cache.source_path)
+                && cache.algorithm == state.export_plan.algorithm;
+            if still_valid {
+                state.preview_cache = Some(cache);
+            }
+            Task::none()
+        }
+        Message::PreviewBuilt(Err(err)) => {
+            // プレビュー生成失敗は致命的ではない (元データは健在)。
+            // 画面遷移はせず、 Toast でだけ知らせる。
+            push_error_toast(state, err);
+            Task::none()
+        }
+        Message::PreviewContextSelected(ctx) => {
+            if let Some(p) = state.preview.as_mut() {
+                p.context = ctx;
+            }
+            Task::none()
+        }
+        Message::PreviewBackgroundSelected(theme) => {
+            if let Some(p) = state.preview.as_mut() {
+                p.background = theme;
+            }
+            Task::none()
+        }
 
         Message::ThemeToggled => {
             state.theme = state.theme.next();
@@ -191,7 +235,16 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::AlgorithmChanged(alg) => {
             state.export_plan.algorithm = alg;
-            Task::none()
+            // algorithm 変更を反映するためプレビュー再生成。
+            // 既存キャッシュは古いので破棄する (UI は cache=None のあいだ
+            // ローディング表示にフォールバックする)。
+            state.preview_cache = None;
+            if let Some(asset) = state.source_asset.as_ref() {
+                let arc = std::sync::Arc::new(asset.clone());
+                crate::task_queue::build_preview_task(arc, alg)
+            } else {
+                Task::none()
+            }
         }
 
         Message::ExportRequested => {
@@ -228,6 +281,8 @@ fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message> {
     state.source_path = Some(path.clone());
     state.screen = Screen::Importing;
     state.busy = true;
+    // 古いソースのプレビューキャッシュは破棄。新しい ingest 完了で再生成される。
+    state.preview_cache = None;
     crate::task_queue::ingest_task(path)
 }
 

@@ -8,12 +8,12 @@ A local-first, accessible logolig generator GUI built on
 [iced 0.14](https://iced.rs/) and [snora 0.4](https://github.com/nabbisen/snora).
 
 > Your image never leaves your machine. PNG / SVG goes in,
-> a polished `logolig.ico` + Apple touch icon + high-resolution PNGs
+> a polished `favicon.ico` + Apple touch icon + high-resolution PNGs
 > + a clean HTML `<head>` snippet come out.
 
 ## Why
 
-Existing online logolig generators have problems:
+Existing online favicon generators have problems:
 
 - Image quality degrades on resize (jaggies, fuzziness, lost detail)
 - Images are uploaded to a third-party server
@@ -21,8 +21,7 @@ Existing online logolig generators have problems:
 - Generated HTML often skimps on accessibility
 - The UI demands too many decisions up front
 
-Logolig addresses all of these as **design requirements**, not
-afterthoughts.
+Logolig addresses all of these as **design requirements**, not afterthoughts.
 
 ## Status
 
@@ -70,3 +69,7 @@ Documentation lives under `docs/`:
 - `architecture.md` — module layout, state model, message flow
 - `ui-a11y.md` — Accessible-by-Default-and-by-Design (ABDD) commitments
 - `export-spec.md` — output artifacts and HTML snippet shape
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).

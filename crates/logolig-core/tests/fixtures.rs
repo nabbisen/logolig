@@ -7,10 +7,13 @@
 
 /// 16×16 の青いマス目を中央に置く SVG。
 /// width / height 属性を持ち、resvg が確実にパースできる構造。
-pub const SVG_16: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+///
+/// raw string のデリミタに `r##"..."##` を使っているのは、 SVG 中の
+/// `fill="#3366cc"` の `"#` のせいで `r#"..."#` だと早期終端するため。
+pub const SVG_16: &str = r##"<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
   <rect x="2" y="2" width="12" height="12" fill="#3366cc"/>
-</svg>"#;
+</svg>"##;
 
 /// 4×4 の赤色 PNG。
 ///

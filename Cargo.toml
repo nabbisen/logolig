@@ -13,7 +13,7 @@ resolver = "3"
 members = ["crates/logolig-core", "crates/logolig-app"]
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.85"
 authors = ["nabbisen <nabbisen@scqr.net>"]
@@ -27,7 +27,7 @@ thiserror = "2"
 
 # GUI ランタイム + フレームワーク
 # 元の指示書は "snora 0.4 (iced ベース)" を指定。snora 0.4 は iced 0.14 を要求する。
-iced  = { version = "0.14", features = ["tokio"] }
+iced  = { version = "0.14", features = ["tokio", "image"] }
 # snora は lucide-icons / svg-icons feature を持つが、現状アイコン未使用。
 # また snora 0.4.1 + lucide-icons 1.9.0 + iced 0.14 の組み合わせは
 # snora 上流側で型不整合があり (widget/icon.rs:27)、フィーチャ無効化で回避する。

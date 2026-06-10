@@ -147,5 +147,5 @@ That alignment is why we chose snora over a hand-rolled iced shell.
 | --- | --- | --- |
 | 1 | Skeleton, state model, snora layout | ✅ done (v0.1.0) |
 | 2 | Drop reception + image processing pipeline | ✅ done (v0.2.0) |
-| 3 | Context preview UI + theme toggle + a11y polish | upcoming |
+| 3 | Context preview UI + theme toggle + a11y polish | ✅ done (v0.3.0) |
 | 4 | ICO writing, export, HTML snippet generation | upcoming |

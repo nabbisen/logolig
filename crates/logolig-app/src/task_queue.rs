@@ -7,8 +7,11 @@
 //! ため、logolig-core ではなく logolig-app 側に置く。
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use iced::Task;
+
+use logolig_core::{ResizeAlgorithm, SourceAsset};
 
 use crate::app::Message;
 
@@ -38,5 +41,23 @@ pub fn pick_file_task() -> Task<Message> {
                 .map(|handle| handle.path().to_path_buf())
         },
         Message::FilePicked,
+    )
+}
+
+/// プレビュー画像 (16×16 と 120×120) を生成するタスク。
+/// CPU バウンドな画像処理なので、 `iced::Task::perform` 経由で UI スレッドから逃がす。
+///
+/// `SourceAsset` を `Arc` に包むのは、 タスクへ move する際に `raw: Arc<[u8]>`
+/// 周りのコピーをさらに減らすため。
+pub fn build_preview_task(asset: Arc<SourceAsset>, algorithm: ResizeAlgorithm) -> Task<Message> {
+    Task::perform(
+        async move {
+            // build_preview は同期関数なので spawn_blocking で別スレッドへ。
+            // tokio の rt-multi-thread は引いていないので current_thread::spawn_blocking
+            // ではなく素直にこのタスク内で計算する。プレビューは 16×16 と 120×120 のみ
+            // でミリ秒オーダーなので UI スレッド的にも許容範囲。
+            logolig_core::services::preview::build_preview(&asset, algorithm)
+        },
+        Message::PreviewBuilt,
     )
 }

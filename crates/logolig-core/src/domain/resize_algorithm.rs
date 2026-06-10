@@ -1,6 +1,8 @@
 //! リサイズアルゴリズム (§6.2)。
 //! 既定値は品質重視 (Lanczos3)。
 
+use std::fmt;
+
 use fast_image_resize::{FilterType, ResizeAlg};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -49,5 +51,13 @@ impl ResizeAlgorithm {
             Self::Bilinear => ResizeAlg::Convolution(FilterType::Bilinear),
             Self::Nearest => ResizeAlg::Nearest,
         }
+    }
+}
+
+/// `Display` 実装は iced の `pick_list` widget が要求する (`T: ToString`)。
+/// `label()` と同じ文字列を返す。
+impl fmt::Display for ResizeAlgorithm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.label())
     }
 }

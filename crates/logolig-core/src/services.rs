@@ -15,5 +15,6 @@
 
 pub mod decode_png;
 pub mod ingest;
+pub mod preview;
 pub mod rasterize_svg;
 pub mod resize;

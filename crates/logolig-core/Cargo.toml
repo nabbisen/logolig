@@ -8,6 +8,12 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 description = "Pure domain types and image processing services for logolig (no GUI)."
+# tests/ 配下の自動テスト発見を無効化する。
+# `tests/fixtures.rs` を共有ヘルパとして残しつつ、 個別の integration test
+# バイナリには昇格させたくないため。 §2.1 の `mod.rs` 禁止規約と両立させる
+# ためのトレードオフ: `tests/common/mod.rs` は使わず、 `tests/fixtures.rs` を
+# `mod fixtures;` から参照する。
+autotests = false
 
 [dependencies]
 thiserror.workspace = true
@@ -24,6 +30,28 @@ tokio.workspace = true
 [dev-dependencies]
 # 非同期 ingest テストでランタイムが必要
 tokio = { workspace = true, features = ["rt", "macros"] }
+
+# 各 integration test を明示宣言する (autotests = false の補完)。
+# `fixtures.rs` は意図的にここに含めない。
+[[test]]
+name = "export_plan"
+path = "tests/export_plan.rs"
+
+[[test]]
+name = "ingest"
+path = "tests/ingest.rs"
+
+[[test]]
+name = "preview"
+path = "tests/preview.rs"
+
+[[test]]
+name = "rasterize"
+path = "tests/rasterize.rs"
+
+[[test]]
+name = "resize"
+path = "tests/resize.rs"
 
 [lints]
 workspace = true
