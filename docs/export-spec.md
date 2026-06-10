@@ -5,11 +5,13 @@ snippet it generates. Implements §7 of the build spec.
 
 ## Default artifact set
 
-The default `ExportPlan` produces six artifacts. The set is chosen
-to be **minimal but practically sufficient** for a modern web project:
+The default `ExportPlan` produces seven artifacts (v1.2.0). The set is
+chosen to be **minimal but practically sufficient** for a modern web
+project:
 
 | File | Purpose |
 | --- | --- |
+| `favicon.svg` | Vector format. Modern browsers prefer it on high-DPI displays. SVG sources are written verbatim (non-destructive); PNG/WebP sources are vectorized via [vtracer](https://github.com/visioncortex/vtracer) using its defaults. |
 | `favicon.ico` | Backwards compatibility (Windows / older browsers). Contains 16, 32, and 48 px frames so each size is rasterized **independently** rather than scaled from a single source — this preserves quality at small sizes (§6.2). |
 | `apple-touch-icon.png` | 180×180 PNG; iOS / iPadOS home-screen icon. |
 | `favicon-32.png` | High-DPI browser tab. |
@@ -17,8 +19,17 @@ to be **minimal but practically sufficient** for a modern web project:
 | `favicon-512.png` | PWA splash / `manifest.webmanifest` reference. |
 | `<head>` HTML snippet | Pasteable markup; see below. |
 
-A user can extend `png_sizes` or `ico_sizes` via the advanced
-settings drawer (§5.3) but the default set is intentionally short.
+A user can extend `png_sizes` or `ico_sizes` via the advanced settings
+drawer (§5.3) but the default set is intentionally short. Two new toggles
+in v1.2.0 control the SVG output:
+
+- `include_svg` (default: `true`) — write `favicon.svg` at all
+- `vectorize_on_raster` (default: `true`) — when the source is PNG/WebP,
+  attempt vectorization. Turn this off for photos or noisy images where
+  tracing produces poor results
+
+When the input is already SVG, `vectorize_on_raster` is irrelevant: the
+source bytes are copied to `favicon.svg` unchanged.
 
 ## Quality strategy
 
@@ -53,15 +64,21 @@ Generated for `<head>`. Constraints (§7.2):
 - A11y-respecting; uses no broken or deprecated attributes
 
 The actual default output (matching the `tests/html_snippet.rs`
-expectations):
+expectations) — note that **SVG is listed first** so modern browsers
+that support it select it before falling back to ICO/PNG:
 
 ```html
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 ```
+
+If `vectorize_on_raster=false` for a raster source, or if `include_svg`
+is off, the `<link rel="icon" type="image/svg+xml">` line is omitted —
+the HTML snippet always reflects what was actually written.
 
 The path prefix is configurable per call to
 `html_snippet::render(plan, base)` — for example pass

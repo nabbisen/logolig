@@ -6,9 +6,9 @@
 
 A local-first, accessible favicon generator GUI.
 
-PNG / SVG goes in. A polished `favicon.ico`, an Apple touch icon,
-high-resolution PNGs, and a clean HTML `<head>` snippet come out —
-all on your machine, with no upload anywhere.
+PNG / SVG / WebP goes in. A polished `favicon.svg`, `favicon.ico`, an
+Apple touch icon, high-resolution PNGs, and a clean HTML `<head>` snippet
+come out — all on your machine, with no upload anywhere.
 
 Built on [iced](https://iced.rs/) and [snora](https://github.com/nabbisen/snora).
 
@@ -56,7 +56,7 @@ cargo run -p logolig-app --release
 
 ## Usage
 
-1. Drop a PNG or SVG onto the window, or click **Choose file…**
+1. Drop a PNG, SVG, or WebP onto the window, or click **Choose file…**
 2. Inspect the **Browser tab (16×16)** and **Smartphone home** previews;
    toggle background between System / Light / Dark to spot contrast issues
 3. (Optional) Open **Show advanced** to pick a different resize algorithm
@@ -67,17 +67,25 @@ The generated `favicon-snippet.html` is paste-ready for your `<head>`.
 
 ## What gets written
 
-By default, six artifacts:
+By default, seven artifacts:
 
+- `favicon.svg` (vector — SVG source is preserved as-is; raster sources are
+  vectorized via [vtracer](https://github.com/visioncortex/vtracer))
 - `favicon.ico` (with 16, 32, 48 frames, each rendered independently)
 - `apple-touch-icon.png` (180×180)
 - `favicon-32.png` / `favicon-192.png` / `favicon-512.png`
 - `favicon-snippet.html` (the `<link>` block for your `<head>`)
 
-The set is intentionally minimal. Increasing it is opt-in via the
-advanced drawer (Step 3 surfaces the algorithm; future revisions may
-expose size lists). See `docs/export-spec.md` for the rationale on
-what is **not** emitted (no `browserconfig.xml`, no `msapplication-*`).
+The set is intentionally minimal. The SVG output is referenced first in the
+generated HTML so modern browsers prefer it on high-DPI displays; older
+browsers fall back to the ICO and PNGs.
+
+If your input is a photograph or otherwise unsuitable for vectorization,
+turn off **Vectorize raster sources to SVG** in the advanced drawer to skip
+`favicon.svg` for that run.
+
+See `docs/export-spec.md` for the rationale on what is **not** emitted (no
+`browserconfig.xml`, no `msapplication-*`).
 
 ## Layout
 

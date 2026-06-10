@@ -3,12 +3,14 @@
 //! 既定値は隠す。 `state.advanced_open == true` のときだけ shell が表示する。
 //! ここで提供するもの:
 //! - リサイズアルゴリズムの `pick_list` (5 アルゴリズム)
-//! - 出力 PNG サイズ集合の現状表示 (Step 4 で編集 UI を追加)
+//! - SVG 出力のオン/オフ (v1.2.0)
+//! - ラスタソースのベクトル化のオン/オフ (v1.2.0)
+//! - 出力 PNG サイズ集合の現状表示
 //! - ICO 内包サイズの現状表示
 //!
 //! どれもすぐに反映されるよう、 状態変更 Message を即送る。
 
-use iced::widget::{button, column, pick_list, row, text};
+use iced::widget::{button, checkbox, column, pick_list, row, text};
 use iced::Element;
 
 use logolig_core::ResizeAlgorithm;
@@ -23,7 +25,22 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             .size(12),
         // リサイズアルゴリズム選択
         algorithm_row(state),
-        // PNG / ICO サイズの現状表示 (Step 4 で編集 UI を追加)
+        // v1.2.0: SVG 出力 + ベクトル化トグル
+        checkbox("Output favicon.svg", state.export_plan.include_svg)
+            .on_toggle(Message::IncludeSvgToggled)
+            .text_size(13),
+        checkbox(
+            "Vectorize raster sources to SVG (vtracer)",
+            state.export_plan.vectorize_on_raster,
+        )
+        .on_toggle(Message::VectorizeOnRasterToggled)
+        .text_size(13),
+        text(
+            "Tip: turn off vectorization for photos or noisy images. \
+             Logos, line art and pixel art trace well."
+        )
+        .size(11),
+        // PNG / ICO サイズの現状表示
         text(format!("PNG sizes: {:?}", state.export_plan.png_sizes)).size(12),
         text(format!("ICO sizes: {:?}", state.export_plan.ico_sizes)).size(12),
         text(format!("Apple touch icon: {}", state.export_plan.include_apple_touch)).size(12),

@@ -18,6 +18,7 @@ use crate::domain::{ExportPlan, Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
 use crate::services::{
     decode_png, decode_webp, encode_png, html_snippet, ico_writer, rasterize_svg, resize,
+    vectorize,
 };
 
 /// 書き出し結果。 UI に「何が作られたか」を伝えるために使う。
@@ -60,6 +61,42 @@ pub fn run(
 
     let mut artifacts: Vec<PathBuf> = Vec::new();
 
+    // SVG 出力 (v1.2.0)。 実際に書いたかどうかは `svg_actually_emitted` で記録し、
+    // HTML スニペット生成時の有効計画に反映する。
+    //
+    // 振る舞い:
+    // - SVG ソース    → 入力 raw をそのまま `favicon.svg` として書く
+    // - PNG/WebP ソース + `vectorize_on_raster=true` → vtracer でベクトル化
+    // - PNG/WebP ソース + `vectorize_on_raster=false` → スキップ
+    // - `include_svg=false`  → スキップ
+    let svg_actually_emitted = if plan.include_svg {
+        match asset.kind {
+            SourceKind::Svg => {
+                // 入力 SVG をそのまま。 余計な再パース・再シリアライズはせず、
+                // 元のバイト列を保持する (§6.4 非破壊性)。
+                write_file(&stage.join("favicon.svg"), &asset.raw)?;
+                artifacts.push(output_dir.join("favicon.svg"));
+                true
+            }
+            SourceKind::Png | SourceKind::Webp => {
+                if plan.vectorize_on_raster {
+                    // ベクトル化はソース解像度のまま実行する (細部温存のため)。
+                    let src = decoded_raster.as_ref().ok_or_else(|| {
+                        AppError::Export("internal: missing decoded raster".into())
+                    })?;
+                    let svg_string = vectorize::vectorize(src)?;
+                    write_file(&stage.join("favicon.svg"), svg_string.as_bytes())?;
+                    artifacts.push(output_dir.join("favicon.svg"));
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    } else {
+        false
+    };
+
     // ICO
     if plan.include_ico {
         let frames = build_ico_frames(asset, decoded_raster.as_ref(), plan)?;
@@ -91,9 +128,11 @@ pub fn run(
         artifacts.push(output_dir.join("apple-touch-icon.png"));
     }
 
-    // HTML snippet
+    // HTML snippet。 実際に SVG が書かれたかを反映するため、 plan を一時改変する。
     if plan.include_html_snippet {
-        let html = html_snippet::render(plan, html_snippet::DEFAULT_BASE);
+        let mut effective_plan = plan.clone();
+        effective_plan.include_svg = svg_actually_emitted;
+        let html = html_snippet::render(&effective_plan, html_snippet::DEFAULT_BASE);
         write_file(&stage.join("favicon-snippet.html"), html.as_bytes())?;
         artifacts.push(output_dir.join("favicon-snippet.html"));
     }

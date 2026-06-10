@@ -13,7 +13,7 @@ resolver = "3"
 members = ["crates/logolig-core", "crates/logolig-app"]
 
 [workspace.package]
-version = "1.1.0"
+version = "1.2.0"
 edition = "2024"
 rust-version = "1.85"
 authors = ["nabbisen <nabbisen@scqr.net>"]
@@ -42,6 +42,10 @@ tiny-skia = "0.11"
 usvg = "0.45"
 ico = "0.4"
 tokio = { version = "1", features = ["fs", "rt", "macros"] }
+
+# v1.2.0: ラスタ → SVG ベクトル化 (logolig-core 専用)
+# vtracer 0.6.5 + visioncortex 0.8.10。 ライセンス MIT/Apache-2.0、 WASM 互換 (公式 webapp 実績)。
+vtracer = "0.6"
 
 # Step 2: ファイルピッカー (logolig-app 専用、§5.1 の代替経路)
 rfd = "0.15"

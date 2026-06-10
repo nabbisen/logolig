@@ -32,8 +32,9 @@ fn exports_default_artifact_set_from_png_source() {
 
     let report = run(&asset, &plan, &dir).expect("export should succeed");
 
-    // 期待されるアーティファクト群
+    // v1.2.0 のデフォルトは 7 ファイル: favicon.svg (vectorized) を追加。
     let expected_names = [
+        "favicon.svg",
         "favicon.ico",
         "favicon-32.png",
         "favicon-192.png",
@@ -66,9 +67,55 @@ fn exports_default_artifact_set_from_svg_source() {
     let plan = ExportPlan::default();
 
     run(&asset, &plan, &dir).expect("svg export should succeed");
+    // SVG ソースのときは入力 SVG をそのまま `favicon.svg` としてコピー (v1.2.0)
+    assert!(dir.join("favicon.svg").is_file(), "SVG output expected");
+    let svg_content = std::fs::read(dir.join("favicon.svg")).unwrap();
+    assert_eq!(
+        svg_content, fixtures::SVG_16.as_bytes(),
+        "SVG source must be copied byte-for-byte (non-destructive)"
+    );
+
     assert!(dir.join("favicon.ico").is_file());
     assert!(dir.join("apple-touch-icon.png").is_file());
     assert!(dir.join("favicon-snippet.html").is_file());
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn vectorize_off_omits_svg_file_for_raster_source() {
+    let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
+    let dir = fresh_tmp_dir("vectorize-off");
+    let mut plan = ExportPlan::default();
+    plan.vectorize_on_raster = false;
+
+    let report = run(&asset, &plan, &dir).expect("export should succeed");
+
+    // ラスタソース + vectorize オフ → SVG は出力されない
+    assert!(!dir.join("favicon.svg").exists());
+    // HTML スニペットも `<link type="image/svg+xml">` を含まない
+    let html = std::fs::read_to_string(dir.join("favicon-snippet.html")).unwrap();
+    assert!(!html.contains(r#"type="image/svg+xml""#));
+    assert!(!html.contains("favicon.svg"));
+
+    // 報告される artifact count から SVG 1 件が引かれている
+    assert_eq!(report.artifacts.len(), 6); // 7 - 1 (favicon.svg)
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn include_svg_off_omits_svg_for_svg_source_too() {
+    // SVG 入力でも `include_svg=false` なら出力しない
+    let asset = ingest_bytes("tile.svg", fixtures::SVG_16.as_bytes().to_vec()).unwrap();
+    let dir = fresh_tmp_dir("include-svg-off");
+    let mut plan = ExportPlan::default();
+    plan.include_svg = false;
+
+    run(&asset, &plan, &dir).unwrap();
+    assert!(!dir.join("favicon.svg").exists());
+    let html = std::fs::read_to_string(dir.join("favicon-snippet.html")).unwrap();
+    assert!(!html.contains("favicon.svg"));
 
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -117,6 +164,8 @@ fn html_snippet_file_contains_link_tags() {
     run(&asset, &ExportPlan::default(), &dir).unwrap();
 
     let html = std::fs::read_to_string(dir.join("favicon-snippet.html")).unwrap();
+    // v1.2.0 default では SVG が先頭に来る
+    assert!(html.contains(r#"<link rel="icon" type="image/svg+xml" href="/favicon.svg">"#));
     assert!(html.contains(r#"<link rel="icon" href="/favicon.ico""#));
     assert!(html.contains(r#"rel="apple-touch-icon""#));
 
@@ -145,12 +194,14 @@ fn no_apple_touch_omits_that_file() {
     let report = run(&asset, &plan, &dir).unwrap();
     assert!(!dir.join("apple-touch-icon.png").exists());
     assert!(!dir.join("favicon-snippet.html").exists());
-    // PNG と ICO は残る
+    // SVG (vectorized) と PNG と ICO は残る (v1.2.0 default で SVG が増えた)
+    assert!(dir.join("favicon.svg").is_file());
     assert!(dir.join("favicon.ico").is_file());
     assert!(dir.join("favicon-32.png").is_file());
     assert_eq!(
         report.artifacts.len(),
-        1 + ExportPlan::default().png_sizes.len()
+        // svg (1) + ico (1) + png_sizes (3) = 5
+        2 + ExportPlan::default().png_sizes.len()
     );
 
     let _ = std::fs::remove_dir_all(&dir);

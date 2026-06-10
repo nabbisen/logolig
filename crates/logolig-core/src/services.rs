@@ -20,6 +20,9 @@
 //!
 //! v1.1.0 で追加:
 //! - `decode_webp`    — WebP SourceAsset を RGBA8 に展開 (静的 WebP, image-webp 経由)
+//!
+//! v1.2.0 で追加:
+//! - `vectorize`      — Rgba8 → SVG 文字列 (vtracer ラッパ、 defaults 使用)
 
 pub mod decode_png;
 pub mod decode_webp;
@@ -31,3 +34,4 @@ pub mod ingest;
 pub mod preview;
 pub mod rasterize_svg;
 pub mod resize;
+pub mod vectorize;

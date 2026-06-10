@@ -11,7 +11,9 @@ use logolig_core::ExportPlan;
 #[test]
 fn default_plan_renders_modern_minimal_set() {
     let html = render(&ExportPlan::default(), DEFAULT_BASE);
-    // ICO は最初に来る (古い後方互換性のため筆頭)
+    // SVG が最初に来る (v1.2.0 — モダンブラウザに優先選択させる)
+    assert!(html.contains(r#"<link rel="icon" type="image/svg+xml" href="/favicon.svg">"#));
+    // ICO は古い後方互換性のため SVG の次
     assert!(html.contains(r#"<link rel="icon" href="/favicon.ico" sizes="any">"#));
     // PNG サイズ (デフォルト 32 / 192 / 512) がそれぞれ出る
     assert!(html.contains(r#"sizes="32x32" href="/favicon-32.png""#));
@@ -19,6 +21,15 @@ fn default_plan_renders_modern_minimal_set() {
     assert!(html.contains(r#"sizes="512x512" href="/favicon-512.png""#));
     // Apple touch icon
     assert!(html.contains(r#"rel="apple-touch-icon" sizes="180x180""#));
+
+    // 順序検証: SVG → ICO → PNG → apple-touch
+    let pos_svg = html.find("favicon.svg").unwrap();
+    let pos_ico = html.find("favicon.ico").unwrap();
+    let pos_png = html.find("favicon-32.png").unwrap();
+    let pos_apple = html.find("apple-touch-icon").unwrap();
+    assert!(pos_svg < pos_ico, "SVG must precede ICO for modern browsers");
+    assert!(pos_ico < pos_png);
+    assert!(pos_png < pos_apple);
 }
 
 #[test]
@@ -26,11 +37,26 @@ fn excluded_artifacts_do_not_appear_in_html() {
     let mut plan = ExportPlan::default();
     plan.include_apple_touch = false;
     plan.include_ico = false;
+    plan.include_svg = false;
 
     let html = render(&plan, DEFAULT_BASE);
     assert!(!html.contains("apple-touch-icon"));
     assert!(!html.contains("favicon.ico"));
+    assert!(!html.contains("favicon.svg"));
     // PNG 参照は残る
+    assert!(html.contains("favicon-32.png"));
+}
+
+#[test]
+fn svg_omitted_when_include_svg_is_false() {
+    let mut plan = ExportPlan::default();
+    plan.include_svg = false;
+
+    let html = render(&plan, DEFAULT_BASE);
+    assert!(!html.contains("favicon.svg"));
+    assert!(!html.contains(r#"type="image/svg+xml""#));
+    // ICO と PNG は残る
+    assert!(html.contains("favicon.ico"));
     assert!(html.contains("favicon-32.png"));
 }
 

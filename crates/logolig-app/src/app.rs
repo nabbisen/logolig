@@ -108,6 +108,10 @@ pub enum Message {
     ThemeToggled,
     AdvancedToggled,
     AlgorithmChanged(ResizeAlgorithm),
+    /// v1.2.0: SVG 出力をオン/オフ
+    IncludeSvgToggled(bool),
+    /// v1.2.0: ラスタソースのベクトル化をオン/オフ
+    VectorizeOnRasterToggled(bool),
 
     // 書き出し
     ExportRequested,
@@ -246,6 +250,15 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             } else {
                 Task::none()
             }
+        }
+        Message::IncludeSvgToggled(on) => {
+            // 出力プランの変更だけ。 プレビュー (16×16 / 120×120) には影響しない。
+            state.export_plan.include_svg = on;
+            Task::none()
+        }
+        Message::VectorizeOnRasterToggled(on) => {
+            state.export_plan.vectorize_on_raster = on;
+            Task::none()
         }
 
         Message::ExportRequested => {

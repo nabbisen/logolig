@@ -16,11 +16,29 @@ pub const DEFAULT_BASE: &str = "/";
 ///
 /// `base` は通常 `"/"`。 サブパスに置く場合は `"/static/favicons/"` のように指定。
 /// 末尾スラッシュは内部で正規化する。
+///
+/// 出力順序 (v1.2.0):
+/// 1. `<link rel="icon" type="image/svg+xml">` — モダンブラウザが優先選択
+/// 2. `<link rel="icon" href="/favicon.ico" sizes="any">` — レガシー互換
+/// 3. PNG 各サイズ (昇順)
+/// 4. `<link rel="apple-touch-icon">` — iOS/Safari 用
+///
+/// なぜ SVG が先か: ブラウザは複数の `<link rel="icon">` から「最も適したもの」
+/// を選ぶ。 SVG をサポートする現代ブラウザは SVG を選び、 高 DPI で美しく表示。
+/// レガシーブラウザは SVG を無視して ICO/PNG にフォールバックする。
 pub fn render(plan: &ExportPlan, base: &str) -> String {
     let base = normalize_base(base);
     let mut out = String::new();
 
-    // ICO は最も古い後方互換のため筆頭に置く。
+    // SVG はモダンブラウザ向けの最優先候補。 出力順は HTML 表現の優先順位と
+    // して効くため、 ICO や PNG の前に置く (§7.2 モダン構成)。
+    if plan.include_svg {
+        out.push_str(&format!(
+            "<link rel=\"icon\" type=\"image/svg+xml\" href=\"{base}favicon.svg\">\n"
+        ));
+    }
+
+    // ICO は最も古い後方互換のため二番目。
     // `sizes="any"` は ICO がスケーラブルである旨を示す現代的な書き方。
     if plan.include_ico {
         out.push_str(&format!(

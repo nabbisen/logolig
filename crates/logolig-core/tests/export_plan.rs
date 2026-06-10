@@ -7,10 +7,13 @@ use logolig_core::{ExportPlan, ResizeAlgorithm, ThemeMode};
 #[test]
 fn export_plan_default_is_minimal_modern_set() {
     // §7.1: favicon.ico, apple-touch-icon.png, 高解像度 PNG, HTML スニペット
+    // v1.2.0: favicon.svg を default に追加 (SVG ソースは raw コピー、 ラスタは vectorize)
     let plan = ExportPlan::default();
     assert!(plan.include_ico);
     assert!(plan.include_apple_touch);
     assert!(plan.include_html_snippet);
+    assert!(plan.include_svg);
+    assert!(plan.vectorize_on_raster);
     // モダン構成の最小: 32 / 192 / 512 (browser, PWA, hi-res)
     assert_eq!(plan.png_sizes, vec![32, 192, 512]);
     // ICO は古い環境向けに 16/32/48 を内包
@@ -33,6 +36,6 @@ fn theme_mode_cycles() {
 
 #[test]
 fn artifact_count_matches_default_plan() {
-    // ico(1) + apple(1) + html(1) + png_sizes(3) = 6
-    assert_eq!(ExportPlan::default().artifact_count(), 6);
+    // v1.2.0: svg(1) + ico(1) + apple(1) + html(1) + png_sizes(3) = 7
+    assert_eq!(ExportPlan::default().artifact_count(), 7);
 }
