@@ -109,28 +109,16 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         }
     });
 
-    // 3. アクション行: 左に補助 (戻る / 再選択)、 右に主操作 (Export)
-    let action_row = row![
-        // 補助操作群 (controlled muted style)
-        button(text(t.t(MessageKey::EditCancelButton)).size(13))
-            .padding([8, 16])
-            .on_press(Message::EditCancelled)
-            .style(secondary_button_style),
-        button(text(t.t(MessageKey::EditRepickButton)).size(13))
-            .padding([8, 16])
-            .on_press(Message::PickFileRequested)
-            .style(secondary_button_style),
-        // 中央スペース (左補助と右主操作を分離)
-        Space::new().width(Length::Fill),
-        // 主操作: Export — 大きく、 強調スタイル (theme primary)
-        button(text(t.t(MessageKey::ExportButton)).size(15))
-            .padding([10, 28])
-            .on_press(Message::ExportRequested),
-    ]
-    .spacing(8)
-    .align_y(iced::Alignment::Center);
+    // v1.19.0: 旧 action_row (戻る / 再選択 / Export) は削除。
+    //
+    // 経緯: v1.16.0 で preview_panel は result_view の「▶ プレビューを見る」
+    // 折りたたみセクションに埋め込まれる役割になり、 戻る / 再選択 / Export の
+    // 3 ボタンは画面の主役ではなくなった (これらの操作は result_view 側の
+    // 「← Back」 や、 ファイル投入で自動的にリピックされる動線に統合された)。
+    // v1.19.0 で旧 Export* Message 系 を完全削除したため、 ここの Export
+    // ボタンも合わせて廃止。
 
-    column![page_title, preview_card, action_row]
+    column![page_title, preview_card]
         .spacing(14)
         .padding(Padding::default().left(8).right(8).top(4).bottom(8))
         .into()
@@ -140,29 +128,10 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 // 定数は `crate::ui::colors` の theme-aware ヘルパに移行した。 dark/light の
 // 切替に追従。
 
-/// 補助ボタンのスタイル (戻る / 再選択用)。
-/// theme primary (Export ボタン) と差別化するため、 透明背景 + 弱い枠線、
-/// hover 時にだけ薄く塗る。
-fn secondary_button_style(
-    theme: &iced::Theme,
-    status: iced::widget::button::Status,
-) -> iced::widget::button::Style {
-    let palette = theme.extended_palette();
-    let bg = match status {
-        iced::widget::button::Status::Hovered => palette.background.weak.color,
-        _ => Color::TRANSPARENT,
-    };
-    iced::widget::button::Style {
-        background: Some(iced::Background::Color(bg)),
-        text_color: palette.background.weak.text,
-        border: iced::Border {
-            color: palette.background.strong.color,
-            width: 1.0,
-            radius: 6.0.into(),
-        },
-        ..Default::default()
-    }
-}
+// v1.19.0: 旧 `secondary_button_style` (戻る / 再選択ボタン用) は削除。
+// action_row 自体が廃止されて参照箇所がなくなった。 必要になれば
+// `crate::ui::advanced_drawer::secondary_drawer_button_style` がほぼ同等の
+// ものを提供している。
 
 // ---------------------------------------------------------------------------
 // コンテキスト・背景の切り替え UI (キーボード代替経路として button を使う、 §12)

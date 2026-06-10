@@ -1,19 +1,20 @@
 //! 非同期タスクのヘルパ。
 //!
-//! `iced::Task::perform` をラップして、UI 層から重い処理を呼ぶときの
+//! `iced::Task::perform` をラップして、 UI 層から重い処理を呼ぶときの
 //! クロージャを散らかさないようにする。
 //!
 //! このモジュールは `iced::Task` と `crate::app::Message` の両方に依存する
-//! ため、logolig-core ではなく logolig-app 側に置く。
+//! ため、 logolig-core ではなく logolig-app 側に置く。
 
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use iced::Task;
 
-use logolig_core::{ExportPlan, ResizeAlgorithm, SourceAsset};
+use logolig_core::{AppError, ExportPlan, InMemoryArtifact, ResizeAlgorithm, Rgba8, SourceAsset};
 
 use crate::app::Message;
+use crate::result::{ResultAssetItem, ResultAssetKind, ResultAssets};
 
 /// ファイル読み込みタスクを起動する。
 ///
@@ -25,11 +26,11 @@ pub fn ingest_task(path: PathBuf) -> Task<Message> {
     )
 }
 
-/// rfd のネイティブファイルピッカーを開き、選ばれたパスを `Message::FilePicked`
-/// として返す。キャンセル時は `FilePicked(None)` を返す (§5.1, §12 代替経路)。
+/// rfd のネイティブファイルピッカーを開き、 選ばれたパスを `Message::FilePicked`
+/// として返す。 キャンセル時は `FilePicked(None)` を返す (§5.1, §12 代替経路)。
 ///
 /// `AsyncFileDialog::pick_file()` が返す `FileHandle` は `path()` で
-/// `&Path` を取れる。`PathBuf` に複製してから iced::Task のメッセージに乗せる。
+/// `&Path` を取れる。 `PathBuf` に複製してから iced::Task のメッセージに乗せる。
 pub fn pick_file_task() -> Task<Message> {
     Task::perform(
         async {
@@ -44,162 +45,91 @@ pub fn pick_file_task() -> Task<Message> {
     )
 }
 
-/// プレビュー画像 (16×16 と 120×120) を生成するタスク。
-/// CPU バウンドな画像処理なので、 `iced::Task::perform` 経由で UI スレッドから逃がす。
+/// プレビュー画像 (16×16 と 120×120) を生成するタスク。 CPU バウンドな画像
+/// 処理なので、 `iced::Task::perform` 経由で UI スレッドから逃がす。
 ///
 /// `SourceAsset` を `Arc` に包むのは、 タスクへ move する際に `raw: Arc<[u8]>`
 /// 周りのコピーをさらに減らすため。
 pub fn build_preview_task(asset: Arc<SourceAsset>, algorithm: ResizeAlgorithm) -> Task<Message> {
     Task::perform(
-        async move {
-            // build_preview は同期関数なので spawn_blocking で別スレッドへ。
-            // tokio の rt-multi-thread は引いていないので current_thread::spawn_blocking
-            // ではなく素直にこのタスク内で計算する。プレビューは 16×16 と 120×120 のみ
-            // でミリ秒オーダーなので UI スレッド的にも許容範囲。
-            logolig_core::services::preview::build_preview(&asset, algorithm)
-        },
+        async move { logolig_core::services::preview::build_preview(&asset, algorithm) },
         Message::PreviewBuilt,
     )
 }
 
-/// 書き出し先ディレクトリを選ぶダイアログを開く (§7)。
-/// 結果は `Message::ExportDirPicked(Option<PathBuf>)` として返る。
-pub fn pick_export_dir_task() -> Task<Message> {
-    Task::perform(
-        async {
-            rfd::AsyncFileDialog::new()
-                .set_title("Choose where to write the favicons")
-                .pick_folder()
-                .await
-                .map(|handle| handle.path().to_path_buf())
-        },
-        Message::ExportDirPicked,
-    )
-}
-
-/// 実際のエクスポートを走らせるタスク。
-/// `exporter::run` は同期 + 数十ミリ秒〜数百ミリ秒程度の CPU/IO 仕事なので、
-/// async ブロック内で実行して UI スレッドから逃がす (§2.4)。
-pub fn export_task(
-    asset: Arc<SourceAsset>,
-    plan: ExportPlan,
-    output_dir: PathBuf,
-) -> Task<Message> {
-    Task::perform(
-        async move { logolig_core::services::exporter::run(&asset, &plan, &output_dir) },
-        Message::ExportCompleted,
-    )
-}
-
 // ---------------------------------------------------------------------------
-// v1.16.0: メモリ完結変換タスク
+// v1.16.0 / v1.19.0: メモリ完結変換タスク
 // ---------------------------------------------------------------------------
 
-use crate::result::{ResultAssetItem, ResultAssetKind, ResultAssets};
-use logolig_core::{AppError, Rgba8};
-
-/// v1.16.0: ファイル投入後の自動変換タスク。
+/// ファイル投入後の自動変換タスク (v1.16.0 で導入、 v1.19.0 で簡素化)。
 ///
-/// 旧 `export_task` は「ユーザが選択したディレクトリに直接書き出す」 動作
-/// だったが、 v1.16 ではモデルが変わって「変換結果はメモリに保持し、
-/// ユーザが個別 DL or ZIP DL のときに初めて書き出す」 になる。
+/// 変換結果はメモリに保持し (`ResultAssets`)、 ユーザが個別 DL or ZIP DL を
+/// 押したときに初めて書き出す。 UI 層は `Message::ConvertCompleted` で
+/// 結果を受け取って Result 画面に遷移する。
 ///
-/// 実装戦略: 当面は exporter::run を **OS の一時ディレクトリ** に書かせて
-/// 各ファイルを読み戻すラッパとして実装する。 これは exporter 全体を
-/// in-memory API に書き換えずに済むので、 v1.16.0 のスコープを抑える。
-/// 将来的に exporter::run_in_memory 直接 API を生やすのは v1.17 以降の課題。
-pub fn convert_in_memory_task(
-    asset: Arc<SourceAsset>,
-    plan: ExportPlan,
-) -> Task<Message> {
+/// ## v1.19.0 変更
+///
+/// 旧実装 (`run_convert_in_memory` v1.16) は OS の一時ディレクトリに
+/// `exporter::run` を走らせて結果を読み戻すラッパだったが、 v1.19.0 で
+/// `exporter::run_in_memory` 直接 API が logolig-core に追加されたため、
+/// 一時ディレクトリ経由のステップを撤去し、 直接呼び出しに簡素化。
+/// 副次効果:
+/// - ディスク I/O 一切なし → ブラウザ移行 (= file system API なしで動く)
+///   が視野に入る
+/// - 一時ディレクトリの後始末漏れ (途中で panic 等) リスクゼロ
+/// - パフォーマンス: ディスク I/O 削減 (favicon 一式は 1 MB 未満なので
+///   メモリ完結が自然)
+///
+/// 関数名も旧 `convert_in_memory_task` から **`convert_task`** に rename
+/// (v1.19 では「変換 = メモリ完結」 が前提なので "in_memory" 修飾子は冗長)。
+pub fn convert_task(asset: Arc<SourceAsset>, plan: ExportPlan) -> Task<Message> {
     Task::perform(
-        async move { run_convert_in_memory(&asset, &plan) },
+        async move { run_convert(&asset, &plan) },
         Message::ConvertCompleted,
     )
 }
 
-fn run_convert_in_memory(
-    asset: &SourceAsset,
-    plan: &ExportPlan,
-) -> Result<ResultAssets, AppError> {
-    // 一時ディレクトリ: tempfile crate ではなく std::env::temp_dir を使い、
-    // pid + nanosec で衝突を避けた sub-directory を作る。 後始末はこの関数の
-    // 末尾で removel_dir_all。
-    let tmp_root = std::env::temp_dir();
-    let stage_name = format!(
-        "logolig-convert-{}-{}",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or(0)
-    );
-    let stage = tmp_root.join(stage_name);
-    std::fs::create_dir_all(&stage).map_err(|e| {
-        AppError::export(format!(
-            "failed to create temp directory: {}",
-            e
-        ))
-    })?;
-
-    // 既存の exporter::run を再利用してファイルとして書き出す。
-    let report = match logolig_core::services::exporter::run(asset, plan, &stage) {
-        Ok(r) => r,
-        Err(e) => {
-            let _ = std::fs::remove_dir_all(&stage);
-            return Err(e);
-        }
-    };
-
-    // 書き出されたファイルを ResultAssets として読み戻す。
-    let bundle = match collect_assets(&report.artifacts) {
-        Ok(b) => b,
-        Err(e) => {
-            let _ = std::fs::remove_dir_all(&stage);
-            return Err(e);
-        }
-    };
-
-    // 一時ディレクトリを掃除。 失敗しても処理結果は返せるので無視。
-    let _ = std::fs::remove_dir_all(&stage);
-
-    Ok(bundle)
+fn run_convert(asset: &SourceAsset, plan: &ExportPlan) -> Result<ResultAssets, AppError> {
+    // 全成果物をメモリ上で組み立てる。
+    let in_memory = logolig_core::services::exporter::run_in_memory(asset, plan)?;
+    // ResultAssets (UI カードレンダリング用) に変換。
+    Ok(collect_assets(in_memory))
 }
 
-fn collect_assets(artifacts: &[PathBuf]) -> Result<ResultAssets, AppError> {
-    let mut items = Vec::with_capacity(artifacts.len());
-    for path in artifacts {
-        let bytes = std::fs::read(path).map_err(|e| {
-            AppError::export(format!(
-                "failed to read converted artifact {}: {}",
-                path.display(),
-                e
-            ))
-        })?;
-        let file_name = path
+/// `Vec<InMemoryArtifact>` を `ResultAssets` (UI カード表示用) に変換する。
+///
+/// 各 artifact について:
+/// 1. 種別判定 (PngMono / Png / Ico / Svg / HtmlSnippet / WebManifest)
+/// 2. 寸法取得 (PNG IHDR / ICO ヘッダから)
+/// 3. サムネ生成 (PNG / ICO のみ、 image crate でデコード)
+fn collect_assets(in_memory: Vec<InMemoryArtifact>) -> ResultAssets {
+    let mut items = Vec::with_capacity(in_memory.len());
+    for art in in_memory {
+        let file_name = art
+            .relative_path
             .file_name()
             .and_then(|n| n.to_str())
             .map(String::from)
             .unwrap_or_else(|| "(unknown)".to_string());
-        let kind = classify_asset(&file_name, path);
-        let dimensions = derive_dimensions(&file_name, kind, &bytes);
-        let thumbnail = build_thumbnail(kind, &bytes);
+        let kind = classify_asset(&file_name, &art.relative_path);
+        let dimensions = derive_dimensions(kind, &art.bytes);
+        let thumbnail = build_thumbnail(kind, &art.bytes);
         items.push(ResultAssetItem {
             file_name,
-            bytes,
+            bytes: art.bytes,
             kind,
             dimensions,
             thumbnail,
         });
     }
-    Ok(ResultAssets { items })
+    ResultAssets { items }
 }
 
-/// ファイル名 (+ パス) からアセット種別を判定。
-fn classify_asset(file_name: &str, path: &std::path::Path) -> ResultAssetKind {
+/// ファイル名 (+ 相対パス) からアセット種別を判定。
+fn classify_asset(file_name: &str, relative_path: &std::path::Path) -> ResultAssetKind {
     let name = file_name.to_ascii_lowercase();
-    // `mono/` サブディレクトリ配下なら mono PNG として扱う。
-    let is_mono = path
+    // 相対パスの parent が `mono` なら mono ファイルとして扱う。
+    let is_mono = relative_path
         .parent()
         .and_then(|p| p.file_name())
         .map(|n| n == "mono")
@@ -226,40 +156,34 @@ fn classify_asset(file_name: &str, path: &std::path::Path) -> ResultAssetKind {
 }
 
 /// PNG / ICO なら寸法をパース。 失敗したら None。
-fn derive_dimensions(
-    file_name: &str,
-    kind: ResultAssetKind,
-    bytes: &[u8],
-) -> Option<(u32, u32)> {
+fn derive_dimensions(kind: ResultAssetKind, bytes: &[u8]) -> Option<(u32, u32)> {
     match kind {
         ResultAssetKind::Png | ResultAssetKind::PngMono => parse_png_size(bytes),
         ResultAssetKind::Ico => {
-            // ICO ヘッダ: 6 byte 署名 + 各 entry 16 byte。 1st entry の幅/高さは
-            // 4 byte 目と 5 byte 目に格納 (0 は 256 を意味)。 単純に 1 個目だけ
-            // 読み取って表示用とする (マルチサイズ ICO の場合は最大サイズが
-            // 1 個目に来る運用ではないが、 表示用なのでこれで十分)。
+            // ICO ヘッダ: 6 byte 署名 + 各 entry 16 byte。 1 個目の entry の
+            // 幅/高さは 4 byte 目と 5 byte 目に格納 (0 は 256 を意味)。
             if bytes.len() >= 8 {
-                let w = match bytes[6] { 0 => 256, n => n as u32 };
-                let h = match bytes[7] { 0 => 256, n => n as u32 };
+                let w = match bytes[6] {
+                    0 => 256,
+                    n => n as u32,
+                };
+                let h = match bytes[7] {
+                    0 => 256,
+                    n => n as u32,
+                };
                 Some((w, h))
             } else {
                 None
             }
         }
-        ResultAssetKind::Svg => {
-            // SVG は寸法が viewBox 等で表現され、 事実上「サイズ可変」 なので
-            // None でよい。 表示は「SVG」 のバッジのみ。
-            let _ = file_name;
-            None
-        }
+        // SVG は viewBox で表現されており事実上「サイズ可変」 なので None。
+        ResultAssetKind::Svg => None,
         _ => None,
     }
 }
 
-/// PNG IHDR から幅高さを取得。 標準形式 (8 byte signature + IHDR 13 byte payload)
-/// を仮定するシンプルなパーサ。
+/// PNG IHDR から幅高さを取得 (8 byte signature + IHDR 13 byte payload)。
 fn parse_png_size(bytes: &[u8]) -> Option<(u32, u32)> {
-    // 8 byte signature + 4 byte length + 4 byte type + 4 byte width + 4 byte height
     if bytes.len() < 24 {
         return None;
     }
@@ -277,13 +201,10 @@ fn build_thumbnail(kind: ResultAssetKind, bytes: &[u8]) -> Option<Rgba8> {
     if !kind.has_visual_thumbnail() {
         return None;
     }
-    // PNG / ICO / SVG いずれも image crate でデコードを試みる。 ICO は image
-    // crate が対応している場合と未対応の場合があるので、 失敗しても致命的に
-    // しない。
     let format = match kind {
         ResultAssetKind::Png | ResultAssetKind::PngMono => image::ImageFormat::Png,
         ResultAssetKind::Ico => image::ImageFormat::Ico,
-        ResultAssetKind::Svg => return None, // SVG はサムネ生成を行わず、 バッジ表示のみ
+        // SVG はサムネ生成を行わず、 バッジ表示のみ。
         _ => return None,
     };
     let img = image::load_from_memory_with_format(bytes, format).ok()?;
@@ -329,21 +250,14 @@ pub fn write_one_task(path: PathBuf, bytes: Vec<u8>) -> Task<Message> {
         async move {
             std::fs::write(&path, &bytes)
                 .map(|_| path.clone())
-                .map_err(|e| AppError::export(format!(
-                    "failed to write {}: {}",
-                    path.display(),
-                    e
-                )))
+                .map_err(|e| AppError::export(format!("failed to write {}: {}", path.display(), e)))
         },
         Message::DownloadOneCompleted,
     )
 }
 
 /// 全アセットを ZIP に固めて `path` に書き出す。
-pub fn write_zip_task(
-    path: PathBuf,
-    items: Vec<ResultAssetItem>,
-) -> Task<Message> {
+pub fn write_zip_task(path: PathBuf, items: Vec<ResultAssetItem>) -> Task<Message> {
     Task::perform(
         async move { write_zip_blocking(&path, &items).map(|_| path.clone()) },
         Message::DownloadAllCompleted,
@@ -352,9 +266,8 @@ pub fn write_zip_task(
 
 fn write_zip_blocking(path: &std::path::Path, items: &[ResultAssetItem]) -> Result<(), AppError> {
     use std::io::Write;
-    let file = std::fs::File::create(path).map_err(|e| {
-        AppError::export(format!("failed to create zip file: {}", e))
-    })?;
+    let file = std::fs::File::create(path)
+        .map_err(|e| AppError::export(format!("failed to create zip file: {}", e)))?;
     let mut zip = zip::ZipWriter::new(file);
     let opts: zip::write::SimpleFileOptions = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated);

@@ -15,7 +15,7 @@ use snora::{Toast, ToastIntent, ToastLifetime};
 
 use logolig_core::{
     services::transparency_audit::{audit as audit_transparency, TransparencyReport},
-    AppError, ExportPlan, ExportReport, MessageKey, PreviewCache, PreviewContext, PreviewProfile,
+    AppError, ExportPlan, MessageKey, PreviewCache, PreviewContext, PreviewProfile,
     ResizeAlgorithm, SettingsStore, SourceAsset, ThemeMode,
 };
 use logolig_i18n::{detect_system_locale, Locale, Translator};
@@ -340,7 +340,9 @@ pub enum Message {
     ThemePicked(ThemeMode),
 
     // テーマ・UI
-    ThemeToggled,
+    // v1.19.0: 旧 `ThemeToggled` (cycle UI 用) は削除済。 v1.18.0 で left
+    // sidebar + ピッカーポップアップに移行した際に `ThemePicked(ThemeMode)`
+    // が後継として導入された。
     AdvancedToggled,
     AlgorithmChanged(ResizeAlgorithm),
     /// v1.2.0: SVG 出力をオン/オフ
@@ -378,11 +380,12 @@ pub enum Message {
     /// 言語選択。 `None` で OS デフォルトに戻す。
     LocaleChanged(Option<Locale>),
 
-    // v1.10.2: ヘッダの言語アイコンボタン用 — System → English → 日本語 → System の循環。
-    LocaleCycled,
-
-    // v1.10.2: ヘッダの閉じるアイコンボタン用 — アプリを終了する。
-    AppCloseRequested,
+    // v1.19.0: 旧 `LocaleCycled` (ヘッダ言語アイコン cycle UI 用) と
+    // `AppCloseRequested` (ヘッダ ✕ ボタン用) は削除済。
+    // - `LocaleCycled` は v1.18.0 で left sidebar + 言語ピッカーポップアップ
+    //   に置き換わり、 `LocalePicked(Option<Locale>)` が後継。
+    // - `AppCloseRequested` は v1.18.0 で ✕ ボタン自体が完全撤去 (= OS の
+    //   ネイティブウィンドウチャートに任せる方針) されたため不要。
 
     // v1.17.0: 旧 `AdvancedGroupToggled` Message は削除。 アコーディオン構造
     // 廃止に伴い不要 — 「上級設定」 折りたたみのトグルは
@@ -417,10 +420,15 @@ pub enum Message {
     /// `mono/` グレースケール出力セットの有効/無効 toggle。
     IncludeMonochromeToggled(bool),
 
-    // 書き出し
-    ExportRequested,
-    ExportDirPicked(Option<PathBuf>),
-    ExportCompleted(Result<ExportReport, AppError>),
+    // v1.19.0: 旧 Export* Message 系は削除済。 v1.16.0 で
+    // `ConvertCompleted` 経路に移行 (ファイル投入 → 自動変換 → Result 画面 →
+    // 個別 DL or ZIP DL)、 旧の「Export ボタン → ディレクトリ選択 → 一括書出」
+    // 動線は廃止された。 削除済 Message:
+    // - `ExportRequested` (Export ボタン押下、 ボタン自体が無くなった)
+    // - `ExportDirPicked(Option<PathBuf>)` (出力先ディレクトリ選択結果)
+    // - `ExportCompleted(Result<ExportReport, AppError>)` (一括書出完了通知)
+    // 個別 DL / ZIP DL の完了通知は `DownloadOneCompleted` /
+    // `DownloadAllCompleted` で別途実装済 (v1.16.0)。
 
     // Toast ライフサイクル
     ToastTick,
@@ -468,6 +476,30 @@ pub(crate) fn resolve_theme(state: &AppState) -> Theme {
 fn theme(state: &AppState) -> Theme {
     resolve_theme(state)
 }
+
+/// v1.20.0: モバイル/デスクトップ判定。
+///
+/// ウィンドウ幅が `MOBILE_BREAKPOINT_PX` (768px) 未満ならモバイル扱いとする。
+/// 768px は Bootstrap の `md` ブレークポイントや旧 iPad mini portrait の
+/// 横幅 (768×1024) など、 web アクセシビリティ業界で広く採用されている
+/// 「タブレットの境界」 と一致するため、 ユーザの一般的なメンタルモデルに
+/// 馴染む。
+///
+/// この判定値は UI の各所 (sidebar / bottom_nav の出し分け、 result_view の
+/// グリッド列数、 advanced_drawer の幅、 ヘッダーパディング) で使う。
+///
+/// なお、 Window 起動直後 (まだ resize_events が来ていない時点) では
+/// `AppState::window_size` がデフォルト 1280×720 になっているので、
+/// 起動直後の判定はデスクトップ (false) になる。 リサイズイベントで遅延
+/// 訂正される (実害なし — 表示が一瞬デスクトップで描画されてからモバイル
+/// に切り替わるだけ)。
+pub(crate) fn is_mobile(state: &AppState) -> bool {
+    state.window_size.width < MOBILE_BREAKPOINT_PX
+}
+
+/// v1.20.0: モバイル/デスクトップ境界 (px)。 詳細は [`is_mobile`] のドキュメント
+/// 参照。
+pub(crate) const MOBILE_BREAKPOINT_PX: f32 = 768.0;
 
 fn subscription(state: &AppState) -> Subscription<Message> {
     // v1.17.0: 3 つのサブスクリプションを結合する:
@@ -556,7 +588,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             // (a) と (b) を並行実行
             Task::batch([
                 crate::task_queue::build_preview_task(arc.clone(), state.export_plan.algorithm),
-                crate::task_queue::convert_in_memory_task(arc, state.export_plan.clone()),
+                crate::task_queue::convert_task(arc, state.export_plan.clone()),
             ])
         }
         Message::IngestCompleted(Err(err)) => fail(state, err),
@@ -741,11 +773,9 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::ThemeToggled => {
-            state.theme = state.theme.next();
-            persist_settings(state);
-            Task::none()
-        }
+        // v1.19.0: 旧 `Message::ThemeToggled` ハンドラは削除済 (上記 Message
+        // 列挙宣言箇所のコメント参照)。 後継は `ThemePicked(ThemeMode)`。
+
         Message::AdvancedToggled => {
             // advanced_open は永続化対象外 (UI 状態)。 保存しない。
             state.advanced_open = !state.advanced_open;
@@ -935,28 +965,12 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        // v1.10.2: 言語アイコン (ヘッダ) — System → English → 日本語 → System の 3 状態循環。
-        // None (System default) も状態の 1 つとして含める。
-        Message::LocaleCycled => {
-            let next = match state.locale_override {
-                None => Some(Locale::En),
-                Some(Locale::En) => Some(Locale::Ja),
-                Some(Locale::Ja) => None,
-            };
-            state.locale_override = next;
-            let resolved = next.unwrap_or_else(detect_system_locale);
-            state.translator = Translator::for_locale(resolved);
-            persist_settings(state);
-            Task::none()
-        }
-
-        // v1.10.2: ヘッダの閉じるボタン。 主ウィンドウを閉じる。
-        // iced 0.14 の `window::latest()` は `Task<Option<Id>>` を返し、
-        // `Task<Option<T>>::and_then` は `Some` のときだけクロージャを呼び出す
-        // (`None` のときは Task::none を発行する)。
-        Message::AppCloseRequested => {
-            iced::window::latest().and_then(|id| iced::window::close(id))
-        }
+        // v1.19.0: 旧 `Message::LocaleCycled` / `Message::AppCloseRequested`
+        // ハンドラは削除済 (上記 Message 列挙宣言箇所のコメント参照)。
+        // 後継:
+        // - LocaleCycled → `LocalePicked(Option<Locale>)` (left sidebar の
+        //   言語ピッカーポップアップで直接選択)
+        // - AppCloseRequested → ✕ ボタン廃止により不要 (OS ネイティブに任せる)
 
         // -----------------------------------------------------------------
         // v1.10.3 → v1.17.0: 旧アコーディオンハンドラは削除済 (上記参照)。
@@ -1029,84 +1043,10 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::ExportRequested => {
-            // ソースが無ければ何もしない (UI 側でボタン無効化済みだが念のため)。
-            if state.source_asset.is_none() {
-                return Task::none();
-            }
-
-            // v1.8.0: web manifest が有効なら色文字列の形式を検証する。
-            // 不正な色を含んだまま JSON 出力すると、 ブラウザが parse は通すが
-            // 実際の表示で無視される (theme_color が反映されない等)。 ユーザに
-            // 早めに教えるため export 直前にチェックする。
-            //
-            // 入力中ではなく **出力直前** に検証する設計判断:
-            // - 入力中に文句を言うと UX が悪い (#FFF まで打って警告される)
-            // - 出力直前なら「最終的な値」 で判定できる
-            if let Some(manifest) = state.export_plan.web_manifest.as_ref() {
-                use logolig_core::WebManifestSettings;
-                if !WebManifestSettings::is_valid_color(&manifest.theme_color) {
-                    let title = state.translator.t(MessageKey::ToastInvalidColorTitle);
-                    let body = state.translator.t_args(
-                        MessageKey::ToastInvalidColorBody,
-                        &[("input", &manifest.theme_color)],
-                    );
-                    push_warning_toast(state, &title, &body);
-                    return Task::none();
-                }
-                if !WebManifestSettings::is_valid_color(&manifest.background_color) {
-                    let title = state.translator.t(MessageKey::ToastInvalidColorTitle);
-                    let body = state.translator.t_args(
-                        MessageKey::ToastInvalidColorBody,
-                        &[("input", &manifest.background_color)],
-                    );
-                    push_warning_toast(state, &title, &body);
-                    return Task::none();
-                }
-                // name / short_name が空でも valid な JSON は出るので blocking
-                // にはしないが、 export はそのまま続行する (ユーザは意図して
-                // 空にした可能性もある)。 必要なら v1.8.x で警告に格上げ。
-            }
-
-            // 出力先選択ダイアログを開く。 結果は `ExportDirPicked` で戻る。
-            crate::task_queue::pick_export_dir_task()
-        }
-        Message::ExportDirPicked(None) => {
-            // ユーザがキャンセル。 状態は変えない。
-            Task::none()
-        }
-        Message::ExportDirPicked(Some(dir)) => {
-            let Some(asset) = state.source_asset.as_ref() else {
-                return Task::none();
-            };
-            // v1.16.0: 旧 Screen::Exporting → Screen::Converting に統合。
-            // 「変換 + 書出し」 が同じ「処理中」 として扱われる。
-            // ※v1.16 phase A ではディスク書出しの旧パスを残しているが、
-            //   phase B で「変換はメモリ完結、 保存はユーザ任意」 に置き換える。
-            state.screen = Screen::Converting;
-            state.busy = true;
-            let asset_arc = std::sync::Arc::new(asset.clone());
-            let plan = state.export_plan.clone();
-            crate::task_queue::export_task(asset_arc, plan, dir)
-        }
-        Message::ExportCompleted(Ok(report)) => {
-            let count = report.artifacts.len();
-            let dir_display = report.output_dir.display().to_string();
-            // v1.16.0: 旧 Screen::ExportReady → Screen::Result。 結果一覧 +
-            // 個別 DL + ZIP 一括 DL を見せる画面。
-            state.screen = Screen::Result;
-            state.busy = false;
-            // v1.4.2: persistent から 7 秒 transient に変更。
-            // v1.5.0: i18n 対応 (count / dir プレースホルダ)。
-            let title = state.translator.t(MessageKey::ToastExportTitle);
-            let body = state.translator.t_args(
-                MessageKey::ToastExportBody,
-                &[("count", &count.to_string()), ("dir", &dir_display)],
-            );
-            push_long_success_toast(state, &title, &body);
-            Task::none()
-        }
-        Message::ExportCompleted(Err(err)) => fail(state, err),
+        // v1.19.0: 旧 `Message::ExportRequested` / `ExportDirPicked` /
+        // `ExportCompleted` ハンドラは削除済 (上記 Message 列挙宣言箇所の
+        // コメント参照)。 v1.16.0 の `convert_task` 経路 + 個別 DL / ZIP DL に
+        // 完全移行された。
 
         Message::ToastTick => {
             snora::toast::sweep_expired(&mut state.toasts, Instant::now());

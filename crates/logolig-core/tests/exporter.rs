@@ -301,3 +301,171 @@ fn monochrome_with_ico_off_skips_mono_ico() {
 
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+// ---------------------------------------------------------------------------
+// v1.19.0: run_in_memory のユニットテスト群
+// ---------------------------------------------------------------------------
+//
+// `run_in_memory` は `run` の in-memory 版で、 v1.16.0 で導入された
+// 「ファイル投入 → 自動変換 → 結果画面で個別 DL or ZIP 一括 DL」 動線で
+// 使われる。 ディスク I/O を一切しないため、 一時ディレクトリも不要。
+//
+// 既存 12 テストは `run` (ディスク書き出し版) を引き続き対象とする — `run`
+// は v1.19.0 で `run_in_memory` の薄いラッパに整理されたので、 既存テストが
+// 通れば in-memory ロジックの大半も間接的に検証される。 ここでは追加で:
+// - 戻り値の本数 / 順序 / 相対パス
+// - 中身が `run` 版と byte-for-byte 一致すること
+// - サブディレクトリ (mono/) が `relative_path` で表現されること
+// - 失敗ケース (空 ico_sizes) で何も書かれない (= ディスクに副作用なし)
+// を確認する。
+
+use logolig_core::services::exporter::run_in_memory;
+
+#[test]
+fn run_in_memory_returns_default_artifact_set_from_png_source() {
+    let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
+    let plan = ExportPlan::default();
+
+    let artifacts = run_in_memory(&asset, &plan).expect("in-memory run should succeed");
+
+    // v1.2.0 のデフォルトは 7 ファイル (run と同じ集合)。
+    let expected_names = [
+        "favicon.svg",
+        "favicon.ico",
+        "favicon-32.png",
+        "favicon-192.png",
+        "favicon-512.png",
+        "apple-touch-icon.png",
+        "favicon-snippet.html",
+    ];
+    let actual_names: Vec<String> = artifacts
+        .iter()
+        .map(|a| a.relative_path.to_string_lossy().to_string())
+        .collect();
+    for name in expected_names {
+        assert!(
+            actual_names.iter().any(|n| n == name),
+            "missing artifact: {} (have: {:?})",
+            name,
+            actual_names
+        );
+    }
+    assert_eq!(artifacts.len(), expected_names.len());
+}
+
+#[test]
+fn run_in_memory_bytes_match_disk_run_byte_for_byte() {
+    // 同じ asset + plan で run_in_memory と run を両方走らせ、 各成果物の
+    // バイト列が完全一致することを確認する。 これで `run` のラッパとしての
+    // 整合性 (in-memory → ディスクへの書き出しで内容が変わらない) を検証。
+    let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
+    let plan = ExportPlan::default();
+
+    let in_memory = run_in_memory(&asset, &plan).expect("in-memory should succeed");
+
+    let dir = fresh_tmp_dir("byte-match");
+    let report = run(&asset, &plan, &dir).expect("disk should succeed");
+
+    assert_eq!(in_memory.len(), report.artifacts.len());
+
+    for art in &in_memory {
+        let on_disk = dir.join(&art.relative_path);
+        assert!(on_disk.is_file(), "expected on disk: {}", on_disk.display());
+        let disk_bytes = std::fs::read(&on_disk).unwrap();
+        assert_eq!(
+            art.bytes,
+            disk_bytes,
+            "byte mismatch for {}",
+            art.relative_path.display()
+        );
+    }
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn run_in_memory_encodes_mono_subdirectory_in_relative_path() {
+    // monochrome を有効化した場合、 mono/favicon-{size}.png のように
+    // サブディレクトリ付きの relative_path で表現されることを確認。
+    let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
+    let mut plan = ExportPlan::default();
+    plan.monochrome = true;
+
+    let artifacts = run_in_memory(&asset, &plan).expect("should succeed");
+
+    let mono_paths: Vec<String> = artifacts
+        .iter()
+        .map(|a| a.relative_path.to_string_lossy().to_string())
+        .filter(|p| p.starts_with("mono/") || p.starts_with("mono\\"))
+        .collect();
+    assert!(
+        !mono_paths.is_empty(),
+        "expected mono/ artifacts but found none. all: {:?}",
+        artifacts
+            .iter()
+            .map(|a| a.relative_path.display().to_string())
+            .collect::<Vec<_>>()
+    );
+
+    // 少なくとも mono/favicon.ico と mono/favicon-{size}.png のいずれかが存在
+    // することを確認 (ico は include_ico=true なので前者が必ず含まれる)。
+    assert!(mono_paths.iter().any(|p| p.ends_with("favicon.ico")));
+}
+
+#[test]
+fn run_in_memory_returns_err_on_empty_ico_sizes() {
+    // 不正な plan (ico_sizes が空 + include_ico=true) で Err を返すことを
+    // 確認。 in-memory なのでディスクには絶対に副作用が無いことが保証される
+    // (ファイルは 1 つも書かれない)。
+    let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
+    let mut plan = ExportPlan::default();
+    plan.ico_sizes.clear();
+
+    let result = run_in_memory(&asset, &plan);
+    assert!(result.is_err(), "expected Err, got {:?}", result.is_ok());
+}
+
+#[test]
+fn run_in_memory_skips_optional_artifacts_when_disabled() {
+    // include_apple_touch=false / include_html_snippet=false / include_svg=false
+    // / include_ico=false のとき、 該当する relative_path が含まれない。
+    let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
+    let mut plan = ExportPlan::default();
+    plan.include_apple_touch = false;
+    plan.include_html_snippet = false;
+    plan.include_svg = false;
+    plan.include_ico = false;
+
+    let artifacts = run_in_memory(&asset, &plan).expect("should succeed");
+
+    let names: Vec<String> = artifacts
+        .iter()
+        .map(|a| a.relative_path.to_string_lossy().to_string())
+        .collect();
+
+    assert!(
+        !names.iter().any(|n| n == "apple-touch-icon.png"),
+        "apple-touch should be omitted, got: {:?}",
+        names
+    );
+    assert!(
+        !names.iter().any(|n| n == "favicon-snippet.html"),
+        "html snippet should be omitted, got: {:?}",
+        names
+    );
+    assert!(
+        !names.iter().any(|n| n == "favicon.svg"),
+        "svg should be omitted, got: {:?}",
+        names
+    );
+    assert!(
+        !names.iter().any(|n| n == "favicon.ico"),
+        "ico should be omitted, got: {:?}",
+        names
+    );
+
+    // PNG は残る (デフォルトの 32/192/512)。
+    assert!(names.iter().any(|n| n == "favicon-32.png"));
+    assert!(names.iter().any(|n| n == "favicon-192.png"));
+    assert!(names.iter().any(|n| n == "favicon-512.png"));
+}

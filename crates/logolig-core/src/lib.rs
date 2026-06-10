@@ -25,7 +25,7 @@ pub use domain::{
 };
 pub use error::AppError;
 pub use message_key::MessageKey;
-pub use services::exporter::ExportReport;
+pub use services::exporter::{ExportReport, InMemoryArtifact};
 pub use services::preview::PreviewCache;
 pub use services::transparency_audit::TransparencyReport;
 pub use settings::SettingsStore;

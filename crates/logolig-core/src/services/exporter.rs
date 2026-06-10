@@ -1,16 +1,28 @@
 //! エクスポートオーケストレータ。
 //!
-//! `SourceAsset` と `ExportPlan` から、 出力ディレクトリに全成果物を書き出す。
+//! `SourceAsset` と `ExportPlan` から、 favicon 一式 (.ico / .svg / .png /
+//! .html / .webmanifest) を組み立てる。 出力には 2 系統の API がある:
 //!
-//! ## トランザクション挙動 (§export-spec.md 「失敗モード」)
+//! - [`run_in_memory`] — メモリ完結。 戻り値は `Vec<InMemoryArtifact>`
+//!   (各 artifact は「相対パス + バイト列」)。 ディスク I/O 一切なし。
+//!   v1.16.0 で導入された「ファイル投入 → 自動変換 → Result 画面で
+//!   個別 DL or ZIP 一括 DL」 のフローで使う。 ブラウザ移行 (= file system
+//!   API なしで動く) も視野に入れた API 形状。
 //!
-//! 「全部書けるか、 一切書かないか」を保証する:
+//! - [`run`] — ディスク書出し。 旧 v1.15 までの「Export ボタン → 出力先選択
+//!   → atomic 書出」 動線で使われていた API。 内部は [`run_in_memory`] を
+//!   呼んで結果をディスクに書く薄いラッパに整理 (v1.19.0)。
+//!
+//! ## トランザクション挙動 (§export-spec.md 「失敗モード」、 [`run`] のみ)
+//!
+//! 「全部書けるか、 一切書かないか」 を保証する:
 //! 1. 出力ディレクトリ直下に `.<rand>.tmp` の **staging サブディレクトリ** を作る
 //! 2. すべての成果物をその staging に書き込む
 //! 3. 全成功で初めて、 staging 内の各ファイルを **本来のファイル名にリネーム**
 //! 4. 1 ファイルでも失敗したら staging 全体を削除 (ロールバック)
 //!
-//! これにより、 既存ファイルを破壊せず、 中途半端な状態が残らない。
+//! [`run_in_memory`] はそもそもディスクに触らないため、 トランザクション
+//! 性は不要 (戻り値の `Vec` を渡すかどうかで「全部 or なし」 が決まる)。
 
 use std::path::{Path, PathBuf};
 
@@ -21,7 +33,7 @@ use crate::services::{
     monochrome, rasterize_svg, resize, vectorize,
 };
 
-/// 書き出し結果。 UI に「何が作られたか」を伝えるために使う。
+/// ディスク書き出し結果。 UI に「何が作られたか」 を伝えるために使う。
 #[derive(Debug, Clone)]
 pub struct ExportReport {
     pub output_dir: PathBuf,
@@ -29,20 +41,41 @@ pub struct ExportReport {
     pub artifacts: Vec<PathBuf>,
 }
 
-/// 同期的にエクスポートを実行する。 CPU バウンド + 同期 fs I/O。
-/// `iced::Task::perform` から呼ばれる前提で、 中で `tokio::fs` は使わない
-/// (リサイズが計算重なので非同期化のメリットが薄く、 同期 std::fs の方が単純)。
-pub fn run(
+/// メモリ上のアセット 1 件分。
+///
+/// - `relative_path`: 出力ディレクトリ起点の相対パス (例: `favicon.ico`、
+///   `favicon-16.png`、 `mono/favicon-32.png`、 `manifest.webmanifest`)。
+///   サブディレクトリ付きの可能性 (mono/) があるため `String` ではなく
+///   `PathBuf` で持つ。
+/// - `bytes`: ファイル内容そのもの。
+///
+/// 生成順序は [`run_in_memory`] 戻り値内で安定 (svg → ico → png 昇順 →
+/// apple-touch → manifest → mono/ → html)。 これは UI のカードグリッド表示
+/// の並び順 (favicon.ico を最初に見せるなど) を直接決める。
+#[derive(Debug, Clone)]
+pub struct InMemoryArtifact {
+    pub relative_path: PathBuf,
+    pub bytes: Vec<u8>,
+}
+
+// ---------------------------------------------------------------------------
+// 公開 API
+// ---------------------------------------------------------------------------
+
+/// メモリ上で全成果物を生成する (v1.19.0)。 ディスク I/O 一切なし。
+///
+/// CPU バウンド + 同期。 `iced::Task::perform` から呼ばれる前提で、 中で
+/// `tokio::*` は使わない。 favicon 一式の合計バイト数は通常 1 MB 未満なので
+/// メモリ保持コストは実質ゼロ。
+///
+/// エラーハンドリング: 1 成果物でも生成に失敗したら即 `Err`。 部分的な
+/// 結果 (ico だけ成功 / png 一部成功) は返さない (= UI 側で「途中まで」 を
+/// 表示する複雑さを避ける)。
+pub fn run_in_memory(
     asset: &SourceAsset,
     plan: &ExportPlan,
-    output_dir: &Path,
-) -> Result<ExportReport, AppError> {
-    if !output_dir.is_dir() {
-        return Err(AppError::export(format!(
-            "output directory does not exist or is not a directory: {}",
-            output_dir.display()
-        )));
-    }
+) -> Result<Vec<InMemoryArtifact>, AppError> {
+    let mut artifacts: Vec<InMemoryArtifact> = Vec::new();
 
     // 1. ラスタソース (PNG / WebP / JPEG) なら 1 度だけデコードして使い回す
     //    (無駄な再デコードを避ける)。 SVG はサイズごとに再ラスタライズ (§6.2)。
@@ -53,41 +86,23 @@ pub fn run(
         SourceKind::Svg => None,
     };
 
-    // 2. staging dir を作る。 競合を避けるため pid と nanosec を混ぜた名前。
-    let stage = make_staging_dir(output_dir)?;
-
-    // 3. 中で何か失敗したら staging 全部消すクロージャパターン。
-    //    `?` で抜けるたびに rollback すべきなので、 ガード構造体で Drop に任せる。
-    let mut guard = StagingGuard::new(stage.clone());
-
-    let mut artifacts: Vec<PathBuf> = Vec::new();
-
     // SVG 出力 (v1.2.0)。 実際に書いたかどうかは `svg_actually_emitted` で記録し、
     // HTML スニペット生成時の有効計画に反映する。
-    //
-    // 振る舞い:
-    // - SVG ソース    → 入力 raw をそのまま `favicon.svg` として書く
-    // - PNG/WebP/JPEG ソース + `vectorize_on_raster=true` → vtracer でベクトル化
-    // - PNG/WebP/JPEG ソース + `vectorize_on_raster=false` → スキップ
-    // - `include_svg=false`  → スキップ
     let svg_actually_emitted = if plan.include_svg {
         match asset.kind {
             SourceKind::Svg => {
                 // 入力 SVG をそのまま。 余計な再パース・再シリアライズはせず、
                 // 元のバイト列を保持する (§6.4 非破壊性)。
-                write_file(&stage.join("favicon.svg"), &asset.raw)?;
-                artifacts.push(output_dir.join("favicon.svg"));
+                push_artifact(&mut artifacts, "favicon.svg", asset.raw.to_vec());
                 true
             }
             SourceKind::Png | SourceKind::Webp | SourceKind::Jpeg => {
                 if plan.vectorize_on_raster {
-                    // ベクトル化はソース解像度のまま実行する (細部温存のため)。
                     let src = decoded_raster.as_ref().ok_or_else(|| {
                         AppError::export("internal: missing decoded raster")
                     })?;
                     let svg_string = vectorize::vectorize(src, plan.vtracer_preset)?;
-                    write_file(&stage.join("favicon.svg"), svg_string.as_bytes())?;
-                    artifacts.push(output_dir.join("favicon.svg"));
+                    push_artifact(&mut artifacts, "favicon.svg", svg_string.into_bytes());
                     true
                 } else {
                     false
@@ -101,12 +116,9 @@ pub fn run(
     // ICO
     if plan.include_ico {
         let frames = build_ico_frames(asset, decoded_raster.as_ref(), plan)?;
-        let frame_refs: Vec<(u32, &Rgba8)> =
-            frames.iter().map(|(s, r)| (*s, r)).collect();
+        let frame_refs: Vec<(u32, &Rgba8)> = frames.iter().map(|(s, r)| (*s, r)).collect();
         let ico_bytes = ico_writer::build(&frame_refs)?;
-        let path = stage.join("favicon.ico");
-        write_file(&path, &ico_bytes)?;
-        artifacts.push(output_dir.join("favicon.ico"));
+        push_artifact(&mut artifacts, "favicon.ico", ico_bytes);
     }
 
     // PNG sizes (高解像度 PNG)。 出力名は `favicon-<size>.png`。
@@ -117,77 +129,39 @@ pub fn run(
         let rgba = render_at_size(asset, decoded_raster.as_ref(), *size, plan)?;
         let png_bytes = encode_png::encode(&rgba)?;
         let name = format!("favicon-{size}.png");
-        write_file(&stage.join(&name), &png_bytes)?;
-        artifacts.push(output_dir.join(&name));
+        push_artifact(&mut artifacts, &name, png_bytes);
     }
 
     // Apple touch icon (180×180 固定)
     if plan.include_apple_touch {
         let rgba = render_at_size(asset, decoded_raster.as_ref(), 180, plan)?;
         let png_bytes = encode_png::encode(&rgba)?;
-        write_file(&stage.join("apple-touch-icon.png"), &png_bytes)?;
-        artifacts.push(output_dir.join("apple-touch-icon.png"));
+        push_artifact(&mut artifacts, "apple-touch-icon.png", png_bytes);
     }
 
-    // v1.8.0: Web manifest 出力。 HTML snippet より前に書く理由:
-    // - snippet が manifest の有無を見て <link rel="manifest"> 行を出すか
-    //   決められるよう、 plan の web_manifest フィールド自体を snippet に渡す
-    //   (実ファイル出力の有無ではなく、 plan 上の意図で判断する流儀)
-    // - manifest 書き込みが失敗した場合は staging guard が全部巻き戻すため
-    //   snippet の生成順序とは独立
+    // v1.8.0: Web manifest 出力。
     if let Some(manifest_settings) = plan.web_manifest.as_ref() {
-        let manifest_json = manifest_writer::build_manifest_json(
-            manifest_settings,
-            &plan.png_sizes,
+        let manifest_json =
+            manifest_writer::build_manifest_json(manifest_settings, &plan.png_sizes);
+        push_artifact(
+            &mut artifacts,
+            manifest_writer::MANIFEST_FILENAME,
+            manifest_json.into_bytes(),
         );
-        let manifest_path = stage.join(manifest_writer::MANIFEST_FILENAME);
-        write_file(&manifest_path, manifest_json.as_bytes())?;
-        artifacts.push(output_dir.join(manifest_writer::MANIFEST_FILENAME));
     }
 
     // v1.9.0: モノクローム出力セット (mono/ サブディレクトリ)。
-    // 通常出力の rendering と完全に独立した手順 — 同じソースに別 plan で
-    // resize → グレースケール変換 → encode という流れ。 既存の出力には
-    // 一切影響しないため、 既存テストへの破壊リスクなし。
-    //
-    // mono 化対象:
-    // - PNG 各サイズ → mono/favicon-{size}.png
-    // - SVG (色情報を `#000`〜`#FFF` のグレーに置換)
-    //   ↑ ただし v1.9 では SVG 文字列の色置換ではなく、 PNG ベクトル化済み
-    //     SVG (vtracer 出力) の場合のみ「再ベクトル化」 する戦略は重い。
-    //     代替案: SVG ソースなら一度 raster に落としてグレーに変換、
-    //            さらに再ベクトル化 — これも重い。
-    //     代替案 2: mono SVG は出さず PNG/ICO のみ — favicon の主要用途では
-    //              足りる。 v1.9.0 ではこれを採用。 SVG mono は v1.9.x で
-    //              「raster → grayscale → vtracer」 の 2 段で実装する。
-    // - ICO → mono/favicon.ico (各 frame をグレースケール化して再構築)
-    //
-    // SVG mono のスコープ判断:
-    //   v1.9.0 ではあえて SVG mono を入れない。 理由は上記コメントの通り、
-    //   SVG ソースで色置換が技術的に難しい (paint属性 / inline style /
-    //   gradient / external CSS まで考慮すると複雑)。 PNG / ICO だけでも
-    //   「単色印刷物」 「マスク用途」 の主要ユースケースは満たせる。
     if plan.monochrome {
-        let mono_dir = stage.join("mono");
-        std::fs::create_dir(&mono_dir).map_err(|e| {
-            AppError::export(format!("create mono dir: {e}"))
-        })?;
-
         // PNG 各サイズの mono 版。 通常 PNG と同じ順序・命名規則で並べる。
         for size in &png_sizes {
             let rgba = render_at_size(asset, decoded_raster.as_ref(), *size, plan)?;
             let mono_rgba = monochrome::to_grayscale(&rgba);
             let png_bytes = encode_png::encode(&mono_rgba)?;
-            let name = format!("favicon-{size}.png");
-            write_file(&mono_dir.join(&name), &png_bytes)?;
-            artifacts.push(output_dir.join("mono").join(&name));
+            let name = format!("mono/favicon-{size}.png");
+            push_artifact(&mut artifacts, &name, png_bytes);
         }
 
-        // ICO mono 版。 ICO は複数フレームの集合体なので、 各フレームを
-        // グレースケール化して再構築する。 build_ico_frames を再実行する
-        // のは無駄に見えるが、 各 size から個別に rgba を作って mono 化する
-        // 方が「すでに mono 化された 16px と 32px」 のような中途半端な
-        // 状態を避けやすい (キャッシュ管理の複雑化を避ける)。
+        // ICO mono 版
         if plan.include_ico {
             let frames = build_ico_frames(asset, decoded_raster.as_ref(), plan)?;
             let mono_frames: Vec<(u32, Rgba8)> = frames
@@ -197,12 +171,10 @@ pub fn run(
             let frame_refs: Vec<(u32, &Rgba8)> =
                 mono_frames.iter().map(|(s, r)| (*s, r)).collect();
             let ico_bytes = ico_writer::build(&frame_refs)?;
-            write_file(&mono_dir.join("favicon.ico"), &ico_bytes)?;
-            artifacts.push(output_dir.join("mono").join("favicon.ico"));
+            push_artifact(&mut artifacts, "mono/favicon.ico", ico_bytes);
         }
 
-        // SVG mono は v1.9.0 ではスコープ外 (上記コメント参照)。
-        // 詳細設定でユーザに UI として見せないので、 ここでも黙って何もしない。
+        // SVG mono は v1.9.0 ではスコープ外 (詳細は git log)。
     }
 
     // HTML snippet。 実際に SVG が書かれたかを反映するため、 plan を一時改変する。
@@ -210,20 +182,60 @@ pub fn run(
         let mut effective_plan = plan.clone();
         effective_plan.include_svg = svg_actually_emitted;
         let html = html_snippet::render(&effective_plan, html_snippet::DEFAULT_BASE);
-        write_file(&stage.join("favicon-snippet.html"), html.as_bytes())?;
-        artifacts.push(output_dir.join("favicon-snippet.html"));
+        push_artifact(&mut artifacts, "favicon-snippet.html", html.into_bytes());
     }
 
-    // 4. ここまで来たら全ファイル staging に揃った。 rename で本配置へ。
-    //    rename 中の失敗もありうるので、 失敗時は最後にもう一度ロールバック。
+    Ok(artifacts)
+}
+
+/// ディスクに書き出す (v1.15 までの旧来動線)。 v1.19.0 で内部実装を整理:
+/// `run_in_memory` でメモリ上に全成果物を組み上げてから、 staging dir 経由で
+/// atomic に書き出す薄いラッパとなった。
+///
+/// 既存テスト (`tests/exporter.rs` の 12 ケース) はこの API を直接呼ぶため、
+/// シグネチャは v1.18 まで と一致を保つ。
+pub fn run(
+    asset: &SourceAsset,
+    plan: &ExportPlan,
+    output_dir: &Path,
+) -> Result<ExportReport, AppError> {
+    if !output_dir.is_dir() {
+        return Err(AppError::export(format!(
+            "output directory does not exist or is not a directory: {}",
+            output_dir.display()
+        )));
+    }
+
+    // 1. 全成果物をメモリ上で組み立てる。 ここで失敗したらディスクには
+    //    一切触らずに即 Err (= 旧 staging guard と同等の挙動が自然に達成される)。
+    let in_memory = run_in_memory(asset, plan)?;
+
+    // 2. staging dir を作る。 競合を避けるため pid + nanosec を混ぜた名前。
+    let stage = make_staging_dir(output_dir)?;
+    let mut guard = StagingGuard::new(stage.clone());
+
+    // 3. 各 artifact を staging に書き出す。 サブディレクトリ (mono/) が
+    //    必要な場合は parent を mkdir。
+    let mut artifacts: Vec<PathBuf> = Vec::with_capacity(in_memory.len());
+    for art in &in_memory {
+        let staged = stage.join(&art.relative_path);
+        if let Some(parent) = staged.parent() {
+            if parent != stage && !parent.exists() {
+                std::fs::create_dir_all(parent).map_err(|e| {
+                    AppError::export(format!("create stage subdir {}: {e}", parent.display()))
+                })?;
+            }
+        }
+        write_file(&staged, &art.bytes)?;
+        artifacts.push(output_dir.join(&art.relative_path));
+    }
+
+    // 4. 全ファイル staging に揃った。 rename で本配置へ。
     finalize(&stage, output_dir, &artifacts)?;
 
     // 全成功: ガードを解除して staging を残す → finalize 内で空になっているはず。
     guard.cancel();
     // 空の staging dir を片付ける (rename で中身は出ていった)。
-    // v1.9.0: mono/ サブディレクトリが残る可能性があるため、 remove_dir_all で
-    // 空のサブディレクトリも含めて再帰削除する。 中身は finalize で全て移動
-    // されているはずなので、 削除対象は空のディレクトリだけ。
     let _ = std::fs::remove_dir_all(&stage);
 
     Ok(ExportReport {
@@ -236,10 +248,18 @@ pub fn run(
 // 内部ヘルパ
 // ---------------------------------------------------------------------------
 
+/// `Vec<InMemoryArtifact>` への push を簡略化するヘルパ。
+fn push_artifact(artifacts: &mut Vec<InMemoryArtifact>, relative_path: &str, bytes: Vec<u8>) {
+    artifacts.push(InMemoryArtifact {
+        relative_path: PathBuf::from(relative_path),
+        bytes,
+    });
+}
+
 /// 与えられた最終ターゲットサイズに対して、 ソースから RGBA8 を作る。
 ///
-/// - PNG / WebP: あらかじめデコード済みのフルサイズ画像をリサイズ
-/// - SVG:        ターゲットサイズで個別レンダリング (§6.2)
+/// - PNG / WebP / JPEG: あらかじめデコード済みのフルサイズ画像をリサイズ
+/// - SVG: ターゲットサイズで個別レンダリング (§6.2)
 fn render_at_size(
     asset: &SourceAsset,
     decoded_raster: Option<&Rgba8>,
@@ -257,7 +277,7 @@ fn render_at_size(
 }
 
 /// ICO に内包する全フレームをレンダリング。
-fn build_ico_frames<'a>(
+fn build_ico_frames(
     asset: &SourceAsset,
     decoded_raster: Option<&Rgba8>,
     plan: &ExportPlan,
@@ -276,8 +296,8 @@ fn build_ico_frames<'a>(
     Ok(frames)
 }
 
-/// staging dir を作る。 名前は `.logolig-<nanos>.tmp`。 隠しファイル接頭辞で
-/// FS リスティングを汚さない。
+/// staging dir を作る。 名前は `.logolig-<pid>-<nanos>.tmp`。 隠しファイル
+/// 接頭辞で FS リスティングを汚さない。
 fn make_staging_dir(parent: &Path) -> Result<PathBuf, AppError> {
     use std::time::{SystemTime, UNIX_EPOCH};
     let nanos = SystemTime::now()
@@ -297,17 +317,12 @@ fn write_file(path: &Path, bytes: &[u8]) -> Result<(), AppError> {
         .map_err(|e| AppError::export(format!("write {}: {e}", path.display())))
 }
 
-/// staging から本配置への rename。 失敗が起きたら、 すでに移動したものは
-/// そのままで(中途状態だが部分的に正しい結果は残す)、 staging 残骸は呼び出し
-/// 側 (`StagingGuard::Drop`) が掃除する。
+/// staging から本配置への rename。
 ///
 /// 既存ファイルは上書き。 これは仕様: 再エクスポートで favicon.ico を更新する
-/// のが普通の使い方であり、 ユーザに「既存削除」の手間を負わせない。
+/// のが普通の使い方であり、 ユーザに「既存削除」 の手間を負わせない。
 fn finalize(stage: &Path, output_dir: &Path, artifacts: &[PathBuf]) -> Result<(), AppError> {
     for final_path in artifacts {
-        // v1.9.0: artifacts に mono/favicon-32.png のようなサブディレクトリ付きの
-        // パスが混じる可能性があるため、 file_name() だけでなく output_dir 配下の
-        // 相対パスを取り出して staging 側 / final 側双方を再構築する。
         let rel = final_path.strip_prefix(output_dir).map_err(|_| {
             AppError::export(format!(
                 "internal: artifact {} not under output_dir {}",
@@ -322,16 +337,12 @@ fn finalize(stage: &Path, output_dir: &Path, artifacts: &[PathBuf]) -> Result<()
         if let Some(parent) = final_path.parent() {
             if parent != output_dir && !parent.exists() {
                 std::fs::create_dir_all(parent).map_err(|e| {
-                    AppError::export(format!(
-                        "create output subdir {}: {e}",
-                        parent.display()
-                    ))
+                    AppError::export(format!("create output subdir {}: {e}", parent.display()))
                 })?;
             }
         }
 
         // 既存ファイルがあれば上書きするため、 rename 前に削除。
-        // (Unix の std::fs::rename は同名ファイル上書きできるが、 念のため明示)
         if final_path.exists() {
             let _ = std::fs::remove_file(final_path);
         }
@@ -346,8 +357,7 @@ fn finalize(stage: &Path, output_dir: &Path, artifacts: &[PathBuf]) -> Result<()
     Ok(())
 }
 
-/// staging dir を Drop 時に必ず掃除するガード。
-/// `cancel()` を呼ぶと無効化され、 ディレクトリは消されない (= 成功時)。
+/// staging dir を Drop 時に必ず掃除するガード。 `cancel()` を呼ぶと無効化。
 struct StagingGuard {
     path: Option<PathBuf>,
 }
@@ -364,8 +374,6 @@ impl StagingGuard {
 impl Drop for StagingGuard {
     fn drop(&mut self) {
         if let Some(path) = self.path.take() {
-            // best-effort 掃除。 失敗してもログのみ出して握りつぶす
-            // (panic in Drop は double-panic 危険)。
             let _ = std::fs::remove_dir_all(&path);
         }
     }

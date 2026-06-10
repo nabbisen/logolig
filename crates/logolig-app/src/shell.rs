@@ -35,29 +35,40 @@ use snora::{AppLayout, LayoutDirection, Sheet, SheetEdge, SheetSize, render};
 
 use logolig_core::MessageKey;
 
-use crate::app::{resolve_theme, AppState, Message, Screen};
-use crate::ui::{advanced_drawer, colors, drop_zone, picker_overlay, sidebar};
+use crate::app::{is_mobile, resolve_theme, AppState, Message, Screen};
+use crate::ui::{advanced_drawer, bottom_nav, colors, drop_zone, picker_overlay, sidebar};
 
 pub fn view(state: &AppState) -> Element<'_, Message> {
+    let mobile = is_mobile(state);
+
+    // v1.20.0: モバイル/デスクトップで sidebar/footer を排他切替。
+    // - デスクトップ (>= 768px): `side_bar` slot に縦並びサイドバー
+    // - モバイル (< 768px): `footer` slot に横並び下部ナビ
+    //
+    // 同じ Message を発火するので、 user-facing な機能は全く変わらない。
+    // 「同じ機能の場所が変わるだけ」 のメンタルモデル (PNG モック明示)。
     let mut layout = AppLayout::new(body(state))
         .header(header(state))
-        .side_bar(sidebar::view(state))
         .direction(LayoutDirection::Ltr)
         .toasts(state.toasts.clone())
-        // v1.18.0: 言語/テーマピッカー外側クリックで閉じる
         .on_close_menus(Message::SidebarPickerClosed)
         .on_close_modals(Message::CloseModals);
 
+    if mobile {
+        layout = layout.footer(bottom_nav::view(state));
+    } else {
+        layout = layout.side_bar(sidebar::view(state));
+    }
+
     // 言語 / テーマピッカーが開いていれば context_menu slot に乗せる。
-    // PNG モックの「言語メニュー」 / 「テーマメニュー」 オーバーレイに対応。
     if let Some(picker) = state.active_picker {
         layout = layout.context_menu(picker_overlay::view(state, picker));
     }
 
-    // 詳細設定ドロワー (v1.17.0 の Right Sheet)。 サイドバー設定アイコンの
-    // 押下 → AdvancedToggled で開閉。
+    // 詳細設定ドロワー (v1.17.0 の Right Sheet)。 サイドバー / 下部ナビの
+    // 設定アイコン押下 → AdvancedToggled で開閉。
     if state.advanced_open {
-        let sheet_pixels = drawer_pixel_width(state.window_size.width);
+        let sheet_pixels = drawer_pixel_width(state.window_size.width, mobile);
         let sheet = Sheet::new(advanced_drawer::view(state))
             .at(SheetEdge::End)
             .with_size(SheetSize::Pixels(sheet_pixels));
@@ -67,10 +78,22 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
     render(layout)
 }
 
-/// v1.17.0: Right Sheet の幅を画面幅から算出する (`window_width / 3` を
-/// `[280px, 480px]` で clamp)。
-fn drawer_pixel_width(window_width: f32) -> f32 {
-    (window_width / 3.0).clamp(280.0, 480.0)
+/// v1.17.0: Right Sheet の幅を画面幅から算出する。
+///
+/// - **デスクトップ**: `window_width / 3` を `[280px, 480px]` で clamp。
+///   小さい画面ではラベルが読める下限を確保し、 大きい画面では中央コンテンツ
+///   を圧迫しない上限を設ける。
+/// - **モバイル (v1.20.0)**: `[280px, window_width - 16px]` で clamp。
+///   画面幅をほぼ占有 (16px の margin だけ残してコンテンツが背後に少し
+///   見える程度)。 これにより 375px の iPhone でも 359px のドロワーで
+///   設定項目が読めるようになる。 280px の下限は、 280px 未満の画面 (= 殆ど
+///   存在しない) で破綻させないための保険。
+fn drawer_pixel_width(window_width: f32, mobile: bool) -> f32 {
+    if mobile {
+        (window_width - 16.0).clamp(280.0, window_width)
+    } else {
+        (window_width / 3.0).clamp(280.0, 480.0)
+    }
 }
 
 fn body(state: &AppState) -> Element<'_, Message> {
@@ -121,8 +144,12 @@ fn header(state: &AppState) -> Element<'_, Message> {
         }
     };
 
+    // v1.20.0: モバイル時はヘッダーの左右 padding を縮小 (画面幅の節約)。
+    // - デスクトップ: 12 vertical / 20 horizontal
+    // - モバイル: 12 vertical / 8 horizontal
+    let h_pad: f32 = if is_mobile(state) { 8.0 } else { 20.0 };
     container(title_block)
-        .padding([12, 20])
+        .padding([12.0, h_pad])
         .width(Length::Fill)
         .into()
 }

@@ -66,7 +66,11 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         .color(colors::muted_text(&theme));
 
     // 3. アセットカードグリッド (3 列)
-    let grid = build_grid(assets, &theme);
+    // v1.20.0: モバイル時は 2 列、 デスクトップ時は 3 列。
+    // 1 列だと縦に長くなりすぎ (favicon 一式は 7-12 アイテム)、 一画面に
+    // ちょうど 4-6 個収まる 2 列が許容スクロール量との折り合い。
+    let columns = if crate::app::is_mobile(state) { 2 } else { 3 };
+    let grid = build_grid(assets, columns, &theme);
 
     // 4. ZIP 一括 DL ボタン
     let download_all = container(
@@ -142,15 +146,21 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         .into()
 }
 
-/// アセットカードグリッド (3 列) を組む。
-fn build_grid<'a>(assets: &'a ResultAssets, theme: &Theme) -> Element<'a, Message> {
+/// アセットカードグリッド (`columns` 列) を組む。
+///
+/// v1.20.0: 列数を引数化 (デスクトップ 3 / モバイル 2)。
+fn build_grid<'a>(
+    assets: &'a ResultAssets,
+    columns: usize,
+    theme: &Theme,
+) -> Element<'a, Message> {
     let mut col = column![].spacing(12);
     let mut cur_row = row![].spacing(12);
-    let mut count_in_row = 0;
+    let mut count_in_row = 0usize;
     for (idx, item) in assets.items.iter().enumerate() {
         cur_row = cur_row.push(asset_card(idx, item, theme));
         count_in_row += 1;
-        if count_in_row == 3 {
+        if count_in_row == columns {
             col = col.push(cur_row);
             cur_row = row![].spacing(12);
             count_in_row = 0;
@@ -158,7 +168,7 @@ fn build_grid<'a>(assets: &'a ResultAssets, theme: &Theme) -> Element<'a, Messag
     }
     // 半端な末尾行があれば追加 (Space で右側を埋めて幅を整える)
     if count_in_row > 0 {
-        for _ in count_in_row..3 {
+        for _ in count_in_row..columns {
             cur_row = cur_row.push(Space::new().width(Length::FillPortion(1)));
         }
         col = col.push(cur_row);
