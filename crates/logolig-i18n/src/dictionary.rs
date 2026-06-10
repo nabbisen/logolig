@@ -198,6 +198,17 @@ pub(crate) struct Dictionary {
     pub result_download_all_button: String,
     pub result_download_one: String,
     pub result_preview_toggle: String,
+
+    // 設定ドロワー Right Sheet 化 + flat 再編 (v1.17.0)
+    pub settings_title: String,
+    pub section_png_output_sizes: String,
+    pub add_custom_size: String,
+    pub section_svg_conversion: String,
+    pub svg_conversion_simple: String,
+    pub svg_conversion_detailed: String,
+    pub section_misc: String,
+    pub keep_transparency: String,
+    pub advanced_extras_section: String,
 }
 
 impl Dictionary {
@@ -381,6 +392,17 @@ impl Dictionary {
             MessageKey::ResultDownloadAllButton => &self.result_download_all_button,
             MessageKey::ResultDownloadOne => &self.result_download_one,
             MessageKey::ResultPreviewToggle => &self.result_preview_toggle,
+
+            // v1.17.0
+            MessageKey::SettingsTitle => &self.settings_title,
+            MessageKey::SectionPngOutputSizes => &self.section_png_output_sizes,
+            MessageKey::AddCustomSize => &self.add_custom_size,
+            MessageKey::SectionSvgConversion => &self.section_svg_conversion,
+            MessageKey::SvgConversionSimple => &self.svg_conversion_simple,
+            MessageKey::SvgConversionDetailed => &self.svg_conversion_detailed,
+            MessageKey::SectionMisc => &self.section_misc,
+            MessageKey::KeepTransparency => &self.keep_transparency,
+            MessageKey::AdvancedExtrasSection => &self.advanced_extras_section,
         }
     }
 }

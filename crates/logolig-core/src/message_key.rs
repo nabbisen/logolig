@@ -235,4 +235,24 @@ pub enum MessageKey {
     ResultDownloadOne,
     /// Result 画面の「プレビューを見る」 折りたたみセクションのラベル。
     ResultPreviewToggle,
+
+    // --- v1.17.0: 設定ドロワー Right Sheet 化 + flat 再編 ---
+    /// ドロワーのタイトル「設定」。
+    SettingsTitle,
+    /// 「出力サイズ (PNG)」 セクション見出し。
+    SectionPngOutputSizes,
+    /// 「+ カスタムサイズ追加」 ボタン (出力サイズリストの末尾に置く)。
+    AddCustomSize,
+    /// 「SVG 変換方式」 セクション見出し。
+    SectionSvgConversion,
+    /// SVG スライダーの左端ラベル (「シンプル」)。
+    SvgConversionSimple,
+    /// SVG スライダーの右端ラベル (「詳細」)。
+    SvgConversionDetailed,
+    /// 「その他」 セクション見出し。
+    SectionMisc,
+    /// 「透過 (アルファ) を維持する」 トグルラベル。
+    KeepTransparency,
+    /// 折りたたみ式の「上級設定」 セクション見出し。
+    AdvancedExtrasSection,
 }

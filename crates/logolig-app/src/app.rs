@@ -99,12 +99,10 @@ pub struct AppState {
     // バリアントに昇格)。 これにより「タブ風 + チェッカー」 のような無意味な
     // 同時 ON 状態を型レベルで排除。
 
-    /// 詳細設定の各グループの展開状態 (v1.10.3)。
-    /// セッション内のみ保持、 永続化対象外 — 詳細ドロワーを開き直すたびに
-    /// デフォルト (What to export のみ展開) に戻る。 これは「閉じても次回
-    /// は同じところから再開したい」 という持続性ではなく、 「毎回ニュートラル
-    /// な状態で開きたい」 という意図 (詳細設定はそもそも頻繁には触らない)。
-    pub advanced_groups: AdvancedGroupExpansion,
+    // v1.17.0: 旧 `advanced_groups` フィールド (AdvancedGroupExpansion) は削除。
+    // 詳細設定ドロワーが flat 構造になったため、 アコーディオン展開状態の
+    // 管理は不要になった。 唯一の折りたたみ「上級設定」 は
+    // `advanced_extras_open` で管理する。
 
     // ---------------------------------------------------------------
     // v1.16.0: 新画面構造 (Empty / Converting / Result) 用の状態
@@ -125,67 +123,38 @@ pub struct AppState {
     /// 実現するためのトグル。 デフォルト false (折りたたみ)。
     /// セッション内のみ保持、 永続化対象外。
     pub result_preview_open: bool,
+
+    // ---------------------------------------------------------------
+    // v1.17.0: 設定ドロワー Right Sheet 化用の状態
+    // ---------------------------------------------------------------
+    /// 現在のウィンドウサイズ (logical pixels)。
+    ///
+    /// Right Sheet の幅を `画面幅 / 3` をベースに clamp で `[280, 480]` に
+    /// 抑える計算に使う。 これによりウィンドウサイズによらずドロワーが
+    /// 「狭すぎてラベルが読めない」 「広すぎて中央コンテンツを圧迫する」 の
+    /// 両極端を避けられる。
+    ///
+    /// 起動時の値は仮 (1280x720)、 `Message::WindowResized(size)` で更新。
+    /// セッション内のみ保持、 永続化対象外。
+    pub window_size: iced::Size<f32>,
+
+    /// 詳細設定ドロワーの「上級設定」 折りたたみセクションの開閉状態。
+    /// PNG モックに無い旧設定 (Apple touch / HTML snippet / Web manifest /
+    /// Monochrome / リサイズアルゴリズム / vectorize_on_raster) をここに
+    /// 集約する。 デフォルト false (折りたたみ)。
+    /// セッション内のみ保持、 永続化対象外。
+    pub advanced_extras_open: bool,
 }
 
 /// 詳細設定の 3 グループそれぞれの展開状態。
 ///
 /// `Default` は「What to export のみ展開」 — 詳細ドロワーを初めて開いた時に
 /// 必須項目だけが見えていて、 他は折りたたまれている状態。 ユーザは興味の
-/// あるグループだけ展開して見ればよい。
-///
-/// グループが 4 つ以上に増える可能性は低い (v1.10.2 で App preferences が
-/// 削除されて 3 つに減った経緯あり) ため、 シンプルに 3 つの bool フィールド
-/// で表す。 enum + HashSet にすると追加コストが見合わない。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct AdvancedGroupExpansion {
-    pub what_to_export: bool,
-    pub extras: bool,
-    pub rendering_quality: bool,
-}
+// v1.17.0: 旧 `AdvancedGroupExpansion` / `AdvancedGroup` は削除。 詳細設定
+// ドロワーが flat 構造になり、 アコーディオン展開状態を管理する必要がなく
+// なったため。 「上級設定」 折りたたみ 1 個のみ AppState の
+// `advanced_extras_open` で管理する (v1.16.0 phase B で追加)。
 
-/// 「どのグループをトグルするか」 を識別する enum。 Message として渡される。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AdvancedGroup {
-    WhatToExport,
-    Extras,
-    RenderingQuality,
-}
-
-impl AdvancedGroupExpansion {
-    /// 指定グループの展開状態を反転 (展開↔折りたたみ)。
-    pub fn toggle(&mut self, group: AdvancedGroup) {
-        match group {
-            AdvancedGroup::WhatToExport => self.what_to_export = !self.what_to_export,
-            AdvancedGroup::Extras => self.extras = !self.extras,
-            AdvancedGroup::RenderingQuality => self.rendering_quality = !self.rendering_quality,
-        }
-    }
-
-    /// 指定グループが展開されているか。
-    pub fn is_expanded(&self, group: AdvancedGroup) -> bool {
-        match group {
-            AdvancedGroup::WhatToExport => self.what_to_export,
-            AdvancedGroup::Extras => self.extras,
-            AdvancedGroup::RenderingQuality => self.rendering_quality,
-        }
-    }
-}
-
-impl Default for AdvancedGroupExpansion {
-    fn default() -> Self {
-        Self {
-            // What to export はほぼ全ユーザが触る項目 (PNG sizes, ICO, SVG など)
-            // のため初期展開。
-            what_to_export: true,
-            // Extras (Web manifest / Monochrome) は opt-in 機能で多くのユーザは
-            // スルーするため折りたたみ。
-            extras: false,
-            // Rendering quality (Resize algorithm) も既定値で十分な人が大半の
-            // ため折りたたみ。 興味あるユーザだけ展開する。
-            rendering_quality: false,
-        }
-    }
-}
 
 impl AppState {
     /// boot 関数。 NativeStore で設定を load_or_default() し、 内容を AppState に反映。
@@ -265,10 +234,12 @@ impl Default for AppState {
             translator: Translator::default(),
             locale_override: None,
             transparency: None,
-            advanced_groups: AdvancedGroupExpansion::default(),
             // v1.16.0
             result_assets: None,
             result_preview_open: false,
+            // v1.17.0
+            window_size: iced::Size::new(1280.0, 720.0),
+            advanced_extras_open: false,
         }
     }
 }
@@ -326,6 +297,17 @@ pub enum Message {
     /// v1.16.0: Result 画面の「プレビューを見る」 折りたたみセクションのトグル。
     ResultPreviewToggled,
 
+    // v1.17.0: 詳細設定ドロワー Right Sheet 化
+    /// ウィンドウサイズ変更通知。 Right Sheet の幅を再計算するために使う。
+    WindowResized(iced::Size<f32>),
+    /// 「上級設定」 折りたたみセクションのトグル (詳細設定ドロワー内)。
+    AdvancedExtrasToggled,
+    /// PNG プリセットサイズチェックボックスを ON にしたときの追加。
+    /// 値は重複も範囲も検証済の前提 (16/32/48/96/192/512 のいずれか)。
+    PngPresetSizeAdded(u32),
+    /// no-op (UI 上で実装途中の placeholder トグル等で使う)。
+    NoOp,
+
     // テーマ・UI
     ThemeToggled,
     AdvancedToggled,
@@ -371,8 +353,9 @@ pub enum Message {
     // v1.10.2: ヘッダの閉じるアイコンボタン用 — アプリを終了する。
     AppCloseRequested,
 
-    // v1.10.3: 詳細設定アコーディオンの開閉。 グループは 3 種類のみ。
-    AdvancedGroupToggled(AdvancedGroup),
+    // v1.17.0: 旧 `AdvancedGroupToggled` Message は削除。 アコーディオン構造
+    // 廃止に伴い不要 — 「上級設定」 折りたたみのトグルは
+    // `AdvancedExtrasToggled` で代替。
 
     // v1.12.0: 編集画面の戻り動線
     /// 編集画面の「戻る」 / 「キャンセル」 ボタン。 startup 画面 (drop zone)
@@ -456,17 +439,24 @@ fn theme(state: &AppState) -> Theme {
 }
 
 fn subscription(state: &AppState) -> Subscription<Message> {
-    // 2 つのサブスクリプションを結合する:
+    // v1.17.0: 3 つのサブスクリプションを結合する:
     //   (a) snora の Toast tick — transient toast の自動消滅
     //   (b) iced のウィンドウイベント — ファイルドロップを Message::FileDropped に変換
+    //   (c) ウィンドウリサイズ — window_size を更新して Right Sheet 幅を再計算
     let toasts = snora::toast::subscription(&state.toasts, || Message::ToastTick);
 
-    let drops = iced::window::events().filter_map(|(_id, ev)| match ev {
+    // (b) と (c) を 1 つの events stream から派生させる。 iced::window::events は
+    // 全ウィンドウイベントを返すので、 ここで 2 種類に振り分ける。
+    let window_evts = iced::window::events().filter_map(|(_id, ev)| match ev {
         iced::window::Event::FileDropped(path) => Some(Message::FileDropped(path)),
+        iced::window::Event::Resized(size) => Some(Message::WindowResized(size)),
+        // v1.17.0: 起動時にも window_size を取得したいので Opened にも反応する。
+        // Opened は window::Size を含むため、 そのまま WindowResized として扱う。
+        iced::window::Event::Opened { size, .. } => Some(Message::WindowResized(size)),
         _ => None,
     });
 
-    Subscription::batch([toasts, drops])
+    Subscription::batch([toasts, window_evts])
 }
 
 fn view(state: &AppState) -> Element<'_, Message> {
@@ -667,6 +657,26 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.result_preview_open = !state.result_preview_open;
             Task::none()
         }
+
+        // v1.17.0: ウィンドウリサイズ通知 → window_size を更新
+        Message::WindowResized(size) => {
+            state.window_size = size;
+            Task::none()
+        }
+        // v1.17.0: 上級設定セクションの開閉
+        Message::AdvancedExtrasToggled => {
+            state.advanced_extras_open = !state.advanced_extras_open;
+            Task::none()
+        }
+        // v1.17.0: PNG プリセットサイズの ON/OFF (チェックボックス)
+        Message::PngPresetSizeAdded(size) => {
+            if state.export_plan.add_png_size(size) {
+                persist_settings(state);
+            }
+            Task::none()
+        }
+        // v1.17.0: placeholder トグル (現状は内部状態を持たないので何もしない)
+        Message::NoOp => Task::none(),
 
         Message::ThemeToggled => {
             state.theme = state.theme.next();
@@ -886,14 +896,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         // -----------------------------------------------------------------
-        // v1.10.3: 詳細設定アコーディオン
+        // v1.10.3 → v1.17.0: 旧アコーディオンハンドラは削除済 (上記参照)。
         // -----------------------------------------------------------------
-        // セッション内のみの状態変更。 永続化なし (詳細ドロワーは毎回ニュートラル
-        // な状態で開く意図)。
-        Message::AdvancedGroupToggled(group) => {
-            state.advanced_groups.toggle(group);
-            Task::none()
-        }
 
         // -----------------------------------------------------------------
         // v1.7.0 → v1.10.0: 透過チェッカーの実装は PreviewContextSelected に統合。

@@ -119,17 +119,11 @@ pub fn drop_zone_headline(theme: &Theme) -> Color {
 //
 // プレビューカードとドロップゾーンカードの背景/枠線は、 description が長く
 // なる container::style クロージャ内で `theme.extended_palette()` を直接参照
-// している (closure 自体が theme-aware なので二重ラップは不要)。 ここでは
-// 「at defaults」 バッジのような 1 箇所で使う特殊色だけをヘルパとして提供する。
+// している (closure 自体が theme-aware なので二重ラップは不要)。
+//
+// v1.17.0: 旧 `badge_muted_bg` ヘルパは削除 (size_subsection の「at defaults」
+// バッジが廃止されて未使用になったため)。 必要になれば 3 行で復活可能。
 
-/// 「at defaults: ...」 バッジの背景色。
-///
-/// カード背景よりさらに弱く出して「補助情報」 と分かるように。
-/// `background.strong` に対して alpha=0.4 で半透明にすることで、 ベース背景が
-/// 透けて「上のレイヤ」 と読み取れる。
-pub fn badge_muted_bg(theme: &Theme) -> Color {
-    with_alpha(theme.extended_palette().background.strong.color, 0.4)
-}
 
 // ---------------------------------------------------------------------------
 // ヘルパ
