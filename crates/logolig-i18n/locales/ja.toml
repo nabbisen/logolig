@@ -161,3 +161,9 @@ tooltip_close = "アプリを閉じる"
 # を勧める。
 toast_jpeg_input_title = "JPEG は透過を表現できません"
 toast_jpeg_input_body = "この画像も使えますが、 JPEG 形式は透過背景を保存できません。 ダーク・ライト両方のブラウザタブに馴染む favicon にするには、 ロゴを背景切り抜きの PNG として書き出してから読み込んでください。"
+
+# --- 編集画面の動線整備 + プレビュー領域刷新 (v1.12.0) ---
+page_title_edit = "プレビュー確認・Favicon ファイル作成"
+section_title_preview = "プレビュー"
+edit_cancel_button = "← 戻る"
+edit_repick_button = "↻ 再選択"

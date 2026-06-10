@@ -319,6 +319,12 @@ pub enum Message {
     // v1.10.3: 詳細設定アコーディオンの開閉。 グループは 3 種類のみ。
     AdvancedGroupToggled(AdvancedGroup),
 
+    // v1.12.0: 編集画面の戻り動線
+    /// 編集画面の「戻る」 / 「キャンセル」 ボタン。 startup 画面 (drop zone)
+    /// に戻る。 ロード済みのソース・プレビューキャッシュを破棄する。
+    /// ESC キーバインドは将来追加予定 (subscription 経由)。
+    EditCancelled,
+
     // v1.10.0: PreviewCheckerToggled は削除 (Checker は
     // PreviewContextSelected(PreviewContext::TransparencyChecker) で
     // 表現される。 既存の context picker ロジックがそのまま使える)。
@@ -419,7 +425,27 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::PickFileRequested => {
             // ネイティブファイルピッカーを Task として起動する (§12 代替経路)。
             // 結果は `Message::FilePicked(Option<PathBuf>)` として返る。
+            // v1.12.0: 「再選択」 もこの Message を再利用する (現画面を保ったまま
+            // ファイルピッカーを開き、 キャンセル時は元の編集画面のまま)。
             crate::task_queue::pick_file_task()
+        }
+
+        // v1.12.0: 編集画面の戻り動線。
+        //
+        // 編集画面 (Screen::Preview / Screen::ExportReady) から startup 画面
+        // (Screen::Empty) に戻る。 ロード済みのソースとプレビューキャッシュは
+        // 全て破棄して、 起動直後と同じ状態に戻す。
+        //
+        // 永続化される設定 (export_plan / theme / locale 等) は保持。
+        // 詳細ドロワーが開いていたら閉じる (UI 状態をニュートラルに揃える)。
+        Message::EditCancelled => {
+            state.source_asset = None;
+            state.preview = None;
+            state.preview_cache = None;
+            state.transparency = None;
+            state.screen = Screen::Empty;
+            state.advanced_open = false;
+            Task::none()
         }
         Message::IngestCompleted(Ok(asset)) => {
             // プレビュー生成タスクを起動するために asset を Arc で保持する。

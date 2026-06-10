@@ -159,3 +159,9 @@ tooltip_close = "Close the app"
 # This message is honest about the format limit and recommends PNG instead.
 toast_jpeg_input_title = "JPEG cannot have transparency"
 toast_jpeg_input_body = "Logolig will use this image, but JPEG cannot store a transparent background. For a favicon that adapts to dark and light browser tabs, export your logo to PNG with the background cut out, then load that here."
+
+# --- Edit-screen flow + preview redesign (v1.12.0) ---
+page_title_edit = "Preview & Generate Favicon"
+section_title_preview = "Preview"
+edit_cancel_button = "← Back"
+edit_repick_button = "↻ Re-select"

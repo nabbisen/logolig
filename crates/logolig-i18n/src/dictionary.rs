@@ -184,6 +184,12 @@ pub(crate) struct Dictionary {
     // JPEG support (v1.11.0)
     pub toast_jpeg_input_title: String,
     pub toast_jpeg_input_body: String,
+
+    // Edit-screen flow + preview redesign (v1.12.0)
+    pub page_title_edit: String,
+    pub section_title_preview: String,
+    pub edit_cancel_button: String,
+    pub edit_repick_button: String,
 }
 
 impl Dictionary {
@@ -353,6 +359,12 @@ impl Dictionary {
             // v1.11.0
             MessageKey::ToastJpegInputTitle => &self.toast_jpeg_input_title,
             MessageKey::ToastJpegInputBody => &self.toast_jpeg_input_body,
+
+            // v1.12.0
+            MessageKey::PageTitleEdit => &self.page_title_edit,
+            MessageKey::SectionTitlePreview => &self.section_title_preview,
+            MessageKey::EditCancelButton => &self.edit_cancel_button,
+            MessageKey::EditRepickButton => &self.edit_repick_button,
         }
     }
 }

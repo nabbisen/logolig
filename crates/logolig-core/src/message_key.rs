@@ -209,4 +209,15 @@ pub enum MessageKey {
     ToastJpegInputTitle,
     /// JPEG 入力時の教育的警告 Toast 本文。 PNG への変換を促す。
     ToastJpegInputBody,
+
+    // --- v1.12.0: 編集画面の動線整備 + プレビュー領域刷新 ---
+    /// 編集画面 (preview screen) のページタイトル。
+    /// 「プレビュー確認・Favicon ファイル作成」 / 「Preview & Generate Favicon」
+    PageTitleEdit,
+    /// プレビュー領域カードのセクションタイトル (「Preview」 / 「プレビュー」)。
+    SectionTitlePreview,
+    /// 編集画面の「戻る」 ボタン (startup 画面に戻る)。
+    EditCancelButton,
+    /// 編集画面の「再選択」 ボタン (ファイルピッカーを開き直す)。
+    EditRepickButton,
 }

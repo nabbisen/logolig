@@ -95,9 +95,19 @@ Language and theme each cycle through their three states with one click.
    (Language used to live here too; it moved to the header icon button
    in v1.10.2 so it's reachable without opening the drawer.)
 5. Click **Export**, choose an output directory, and the artifacts
-   are written atomically (all-or-nothing — see `docs/export-spec.md`)
+   are written atomically (all-or-nothing — see `docs/export-spec.md`).
+   If you want to abandon the current image without exporting, click
+   **← Back** to return to the drop screen, or **↻ Re-select** to pick
+   a different file without leaving the preview. Re-select keeps the
+   current preview if you cancel the file picker.
 
 The generated `favicon-snippet.html` is paste-ready for your `<head>`.
+
+The preview frame on the edit screen scales with your window height
+(roughly 4/7 of the available vertical space, capped at ~560px) so
+that the Export button stays in a stable position regardless of which
+View-as mode is active. Switching between Browser tab / Phone home /
+Checker mode no longer makes the layout shift.
 
 Active picker buttons (View as / Surface, vtracer preset) are
 indicated **both** with a filled background and a `▣` text prefix, so

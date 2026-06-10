@@ -10,7 +10,7 @@
 //!   (§5.2 「画像自体を破壊しない」)
 
 use iced::widget::{button, column, container, image, row, stack, text, Space};
-use iced::{Background, Border, Color, Element, Length, Theme};
+use iced::{Background, Border, Color, Element, Length, Padding, Theme};
 
 use logolig_core::{MessageKey, PreviewCache, PreviewContext, Rgba8, ThemeMode};
 
@@ -19,11 +19,8 @@ use crate::ui::accessibility::marker;
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
-    let asset_name = state
-        .source_asset
-        .as_ref()
-        .map(|a| a.display_name())
-        .unwrap_or_else(|| t.t(MessageKey::PreviewNoSource));
+    // v1.12.0: ファイル名はヘッダ左側に移動 (shell::header)。 preview_panel
+    // からは display_name 取得が不要になった。
 
     let context = state
         .preview
@@ -47,48 +44,126 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         None => loading_placeholder(state),
     };
 
-    // ----- 行構成 (v1.10.0) -----
-    // 1. Source: <ファイル名>           (ノイズを減らすため小さめ・控えめに)
-    // 2. プレビュー枠 (大)              (主役を視覚的にも主役に)
-    // 3. View as: [3 ボタン]            (タブ風 / スマホ風 / Checker)
-    // 4. Surface: [3 ボタン]            (System / Light / Dark — Checker 中は無効)
-    // 5. (右下) [Export]               (補助テキストは a11y label のみで取り除き)
-    let source_label = format!("{}: {}", t.t(MessageKey::PreviewSourceLabel), asset_name);
+    // ----- v1.12.0 編集画面の構成 -----
+    //
+    // 課題に答える:
+    // 1. 「ここはプレビューです」 をプレビュー領域の枠で視覚化 (border + soft fill)
+    // 2. 「このボタン群でいろいろな見た目を確認できます」 を view-as / surface
+    //    ピッカーをプレビュー枠の上に置くことで「枠の操作」 と直感させる
+    // 3. 「Export ボタンを押すことでファイル作成できます」 を画面下部・右寄せ・
+    //    強調スタイルで明示
+    // 4. プレビューサイズ不安定問題: container を `FillPortion(4)` で取って
+    //    画面の縦 4/7 を占めるよう統一。 max_width/max_height で過大表示を防止。
+    //    全モード (タブ風 / スマホ風 / チェッカー) で同じサイズ枠の中に center
+    //    配置する。
+    // 5. 配置: 画面タイトルは中央寄せ、 Preview ラベルは枠の左上、 ピッカーは
+    //    中央寄せ、 Export は右寄せ。 単純な左寄せ偏重を避ける。
+    //
+    // テキスト依存しすぎを避けるため、 階層は (a) フォントサイズ差 (b) 枠の
+    // 視覚的境界 (c) 配置 (上中下、 左中右) で表す。
 
-    column![
-        // 1. Source (control 上部・控えめ)
-        text(source_label).size(13).color(MUTED_TEXT),
-        // 2. プレビュー枠 — 中央寄せ、 余白控えめにして視覚的主役に
-        container(preview_area)
-            .padding(16)
-            .center_x(Length::Fill),
-        // 3. View as (3 ボタン)
-        view_as_picker(state, context),
-        // 4. Surface (3 ボタン、 Checker 中は disabled)
-        surface_picker(state, context, bg),
-        // 5. Export (右寄せ)。
-        // v1.10.0 で a11y ラベルとして `text(label::EXPORT_BTN).size(0)` を
-        // 添えていたが、 cosmic-text 0.15 で `line height cannot be 0` の panic
-        // を起こすため v1.10.1 で削除。 加えて iced 0.14 にはまだ完全な
-        // a11y API がないため、 `size(0)` で隠した text はスクリーンリーダにも
-        // 届かず、 そもそも意味のない実装だった。 `accessibility::label::*` 定数
-        // 自体は将来の a11y 対応のため残してある。
-        row![
-            Space::new().width(Length::Fill),
-            button(text(t.t(MessageKey::ExportButton)).size(15))
-                .padding([10, 22])
-                .on_press(Message::ExportRequested),
+    // 1. 画面タイトル (中央寄せ、 中程度の濃さ)
+    let page_title = container(
+        text(t.t(MessageKey::PageTitleEdit))
+            .size(20)
+            .color(PAGE_TITLE_COLOR),
+    )
+    .center_x(Length::Fill)
+    .padding(Padding::default().top(4).bottom(4));
+
+    // 2. Preview カード - 枠 + 弱い背景塗りで「プレビュー領域」 を視覚化
+    let preview_card = container(
+        column![
+            // 「Preview」 ラベル (枠内左上、 セクションタイトル相当)
+            text(t.t(MessageKey::SectionTitlePreview))
+                .size(13)
+                .color(SECTION_LABEL_COLOR),
+            // ピッカー群 (中央寄せ)
+            container(view_as_picker(state, context)).center_x(Length::Fill),
+            container(surface_picker(state, context, bg)).center_x(Length::Fill),
+            // プレビュー枠 (中身は中央配置 + サイズは画面の 4/7、 max 560 で天井)
+            container(preview_area)
+                .width(Length::Fill)
+                .height(Length::FillPortion(4))
+                .max_width(560.0)
+                .max_height(560.0)
+                .center_x(Length::Fill)
+                .center_y(Length::Fill),
         ]
-        .spacing(12)
-        .align_y(iced::Alignment::Center),
+        .spacing(10)
+        .align_x(iced::alignment::Horizontal::Center),
+    )
+    .padding(16)
+    .style(|theme: &iced::Theme| {
+        let palette = theme.extended_palette();
+        iced::widget::container::Style {
+            background: Some(iced::Background::Color(palette.background.weak.color)),
+            border: iced::Border {
+                color: palette.background.strong.color,
+                width: 1.0,
+                radius: 12.0.into(),
+            },
+            ..Default::default()
+        }
+    });
+
+    // 3. アクション行: 左に補助 (戻る / 再選択)、 右に主操作 (Export)
+    let action_row = row![
+        // 補助操作群 (controlled muted style)
+        button(text(t.t(MessageKey::EditCancelButton)).size(13))
+            .padding([8, 16])
+            .on_press(Message::EditCancelled)
+            .style(secondary_button_style),
+        button(text(t.t(MessageKey::EditRepickButton)).size(13))
+            .padding([8, 16])
+            .on_press(Message::PickFileRequested)
+            .style(secondary_button_style),
+        // 中央スペース (左補助と右主操作を分離)
+        Space::new().width(Length::Fill),
+        // 主操作: Export — 大きく、 強調スタイル (theme primary)
+        button(text(t.t(MessageKey::ExportButton)).size(15))
+            .padding([10, 28])
+            .on_press(Message::ExportRequested),
     ]
-    .spacing(14)
-    .into()
+    .spacing(8)
+    .align_y(iced::Alignment::Center);
+
+    column![page_title, preview_card, action_row]
+        .spacing(14)
+        .padding(Padding::default().left(8).right(8).top(4).bottom(8))
+        .into()
 }
 
-/// 控えめなテキスト色 (Source ラベル用)。 主役を引き立てるため、 通常テキスト
-/// より明度を落とす。 ライト/ダーク両テーマで読める中間グレー。
+/// 画面タイトルの文字色 (主役 - 中程度の濃さ)。
+const PAGE_TITLE_COLOR: Color = Color::from_rgb(0.2, 0.2, 0.2);
+/// セクションラベル ("Preview") の色 (補助だが読み落とされない程度)。
+const SECTION_LABEL_COLOR: Color = Color::from_rgb(0.4, 0.4, 0.4);
+/// 控えめなテキスト色 (旧 source ラベル用 - 後方互換のため残す)。
 const MUTED_TEXT: Color = Color::from_rgb(0.55, 0.55, 0.55);
+
+/// 補助ボタンのスタイル (戻る / 再選択用)。
+/// theme primary (Export ボタン) と差別化するため、 透明背景 + 弱い枠線、
+/// hover 時にだけ薄く塗る。
+fn secondary_button_style(
+    theme: &iced::Theme,
+    status: iced::widget::button::Status,
+) -> iced::widget::button::Style {
+    let palette = theme.extended_palette();
+    let bg = match status {
+        iced::widget::button::Status::Hovered => palette.background.weak.color,
+        _ => Color::TRANSPARENT,
+    };
+    iced::widget::button::Style {
+        background: Some(iced::Background::Color(bg)),
+        text_color: palette.background.weak.text,
+        border: iced::Border {
+            color: palette.background.strong.color,
+            width: 1.0,
+            radius: 6.0.into(),
+        },
+        ..Default::default()
+    }
+}
 
 // ---------------------------------------------------------------------------
 // コンテキスト・背景の切り替え UI (キーボード代替経路として button を使う、 §12)
