@@ -343,6 +343,6 @@ fn preset_message_key(preset: VtracerPreset) -> MessageKey {
 fn locale_message_key(loc: Locale) -> MessageKey {
     match loc {
         Locale::En => MessageKey::LanguageEnglish,
-        // v1.6 で追加: Locale::Ja => MessageKey::LanguageJapanese
+        Locale::Ja => MessageKey::LanguageJapanese,
     }
 }

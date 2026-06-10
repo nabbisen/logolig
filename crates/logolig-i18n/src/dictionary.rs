@@ -35,6 +35,7 @@ use logolig_core::MessageKey;
 use crate::locale::Locale;
 
 const EN: &str = include_str!("../locales/en.toml");
+const JA: &str = include_str!("../locales/ja.toml");
 
 /// 辞書の全フィールド。 各ロケール TOML がこの shape に一致しなければ
 /// `serde::Deserialize` でエラーになる。
@@ -148,6 +149,7 @@ impl Dictionary {
     pub fn load(locale: Locale) -> Self {
         let raw = match locale {
             Locale::En => EN,
+            Locale::Ja => JA,
         };
         toml::from_str(raw).unwrap_or_else(|err| {
             // ここに到達するのはテストで気づけなかった TOML バグの場合のみ。

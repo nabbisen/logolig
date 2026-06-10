@@ -45,7 +45,8 @@ logolig/
     │   │   ├── dictionary.rs        # bundled TOML → typed struct, exhaustive lookup
     │   │   └── translator.rs        # Translator { t(key), t_args(key, args), translate_error }
     │   ├── locales/
-    │   │   └── en.toml              # English dictionary (v1.5)
+    │   │   ├── en.toml              # English dictionary (v1.5)
+    │   │   └── ja.toml              # Japanese dictionary (v1.6)
     │   └── tests/
     └── logolig-app/                 # iced + snora GUI binary
         ├── src/
@@ -190,7 +191,7 @@ that strengthen the core for v2 reuse:
 | v1.4.1 | Internal improvements: vtracer presets (Sharp / Default / PhotoRich) for vector quality control; "Reset to defaults" button on advanced drawer; persistent success toast on export so the completion message stays visible until dismissed |
 | **v1.4.2** | **Internal refinements**: Sharp preset re-tuned to a single-parameter delta from defaults (`corner_threshold: 60 → 80`) after user testing showed the v1.4.1 multi-parameter version did not improve quality and possibly worsened it; Export success toast switched from persistent back to a 7-second transient (long enough to read the path, short enough not to linger); Sharp preset now follows an empirical-tuning approach where future adjustments will be made one parameter at a time so their effect is observable |
 | **v1.5.0** | **i18n base (English)**: new `logolig-i18n` crate with a typed `Translator` API; all UI strings keyed via `logolig_core::MessageKey` enum (compile-time exhaustiveness checking via the dictionary's `match` so translation files must satisfy the enum, or build fails); `AppError` keyed via `key()` and `args()` so error toasts translate automatically; `sys-locale` for OS locale detection with explicit override available in advanced settings ("Language" pick_list); English-only ship — Japanese arrives in v1.6.0 by adding `ja.toml` and a `Locale::Ja` variant |
-| v1.6.0 | Japanese translation (planned) |
+| **v1.6.0** | **Japanese translation**: `Locale::Ja` variant added to `logolig-i18n`, full `ja.toml` dictionary covering all ~80 `MessageKey` variants, `from_bcp47` extended to recognise `ja` / `ja-JP` / `ja_JP` / `ja_JP.UTF-8` (POSIX locale form). The work was small because v1.5.0 had set up the structure: a new locale needed only an enum variant, a TOML file, one `include_str!` arm, and one `match` arm in `locale_message_key`. UI code, advanced drawer pick_list, error toasts, and persistence picked up Japanese automatically because everything routes through `MessageKey`. 7 new tests verify Japanese parses, differs from English on UI keys, and substitutes placeholders correctly. |
 | v1.7.0 | Transparency checker (planned) |
 | v1.8.0 | Web manifest output (planned) |
 | v1.9.0 | Monochrome output set (planned): opt-in extra output that produces a black-and-white version of every artifact for use cases like single-color print or theme-aware light/dark icons. Likely realized as `ExportPlan::monochrome: Option<Monochrome>` with a saturation knob and emit alongside the colored set under a `mono/` subdirectory. |

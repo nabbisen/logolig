@@ -131,13 +131,18 @@ in **Show advanced → Language**:
 - **System default** — use the OS locale (`LANG` on Linux, `NSLocale` on macOS,
   user UI language on Windows)
 - **English** — explicit override
+- **日本語** — Japanese (since v1.6.0)
 
-The selection is persisted alongside other advanced settings. v1.5.0
-ships English only; Japanese is planned for v1.6.0.
+The selection is persisted alongside other advanced settings. Locale
+detection accepts the common forms — `en`, `en-US`, `en_US`, `ja`,
+`ja-JP`, `ja_JP`, even `ja_JP.UTF-8` from POSIX `LANG` — so most users
+need no override.
 
 If your OS locale isn't supported yet, Logolig falls back to English
 without warning. New languages are added by dropping a TOML file under
-`crates/logolig-i18n/locales/` and adding a `Locale` enum variant.
+`crates/logolig-i18n/locales/` and adding a `Locale` enum variant —
+the enum's exhaustiveness check ensures every UI string and error
+message has a translation, or the build fails.
 
 ## Tests
 
@@ -149,9 +154,11 @@ cargo test -p logolig-i18n
 logolig-core has 54 integration tests covering ingest, decode, SVG
 rasterization, vectorization, resize, preview cache, ICO writing, HTML
 snippet generation, transactional export, settings round-trip, and
-forward-compatible JSON deserialization. logolig-i18n adds 9 tests
-covering dictionary loading, placeholder substitution, error
-translation, and BCP-47 locale resolution. Total: 63 tests.
+forward-compatible JSON deserialization. logolig-i18n adds 16 tests
+covering dictionary loading (English and Japanese), placeholder
+substitution, error translation, BCP-47 locale resolution including
+POSIX forms, and a regression check that Japanese UI keys actually
+differ from English. Total: 70 tests.
 
 ## Versioning
 

@@ -1,0 +1,113 @@
+# logolig 日本語辞書 (v1.6.0)
+#
+# キーは logolig-core の `MessageKey` enum を snake_case にしたもの。
+# プレースホルダは英語版と同じ名前 ({name} 形式) を使う。
+# 翻訳ポリシー:
+#   - ラベル類は体言止め (例: 「リサイズアルゴリズム」 ではなく「Resize algorithm」 の自然訳)
+#   - 説明文は「です・ます」 体ではなく簡潔な常体 (UX文言として読みやすさ重視)
+#   - 技術用語 (PNG / SVG / vtracer / favicon / favicon.ico 等) は英語のまま
+#   - ボタンは命令形/体言止めの短い形 (例: 「閉じる」 「リセット」)
+
+# --- アプリ全体 ---
+# AppTitle はブランド名なので翻訳しない
+app_title = "Logolig"
+
+# --- ドロップゾーン ---
+drop_zone_instruction = "PNG / SVG / WebP をここにドロップ"
+drop_zone_secondary = "またはボタンからファイルを選択"
+drop_zone_accepted_formats = "対応形式: .png / .svg / .webp"
+choose_file_button = "ファイルを選択…"
+change_file_button = "ファイルを変更…"
+importing_message = "読み込み中…"
+
+# --- プレビュー画面 ---
+preview_browser_tab = "ブラウザタブ (16×16)"
+preview_smartphone_home = "スマートフォンのホーム"
+preview_background_light = "ライト"
+preview_background_dark = "ダーク"
+preview_background_system = "システム"
+preview_source_label = "元画像"
+preview_no_source = "ファイル未読み込み"
+
+# --- 詳細設定ドロワー ---
+advanced_title = "詳細設定"
+advanced_blurb = "既定値は品質と最小出力のために調整済み。 必要なときだけ変更を。"
+
+section_resize = "リサイズアルゴリズム"
+section_resize_blurb = "Lanczos3 を推奨。 ピクセルアートには Nearest を選択。"
+algorithm_label = "アルゴリズム:"
+
+section_svg = "SVG 出力"
+section_svg_blurb = "高 DPI ディスプレイでは SVG が望ましい。 写真やノイズが多い画像にはベクトル化を無効に。 プリセットで vtracer を素材に合わせて調整。"
+include_svg_label = "favicon.svg を出力"
+vectorize_on_raster_label = "ラスタ画像を SVG にベクトル化 (vtracer)"
+preset_label = "プリセット:"
+
+section_files = "出力ファイル"
+section_files_blurb = "プロジェクトに不要なものはオフに。"
+include_ico_label = "favicon.ico (旧来互換)"
+include_apple_touch_label = "apple-touch-icon.png (iOS / iPadOS のホーム画面用)"
+include_html_snippet_label = "favicon-snippet.html (<head> に貼れるマークアップ)"
+
+section_png_sizes = "PNG サイズ"
+section_png_sizes_blurb = "各サイズが favicon-{size}.png として出力される。 32 / 192 / 512 でタブ・PWA インストール・高 DPI スプラッシュをカバー。 範囲: 16〜1024 px。"
+section_ico_sizes = "ICO フレームサイズ"
+section_ico_sizes_blurb = "favicon.ico に埋め込むサイズ。 各フレームは元画像から個別にレンダリングして小サイズでも鮮明に。 範囲: 16〜256 px (ICO 形式の上限)。"
+size_add_button = "追加"
+size_chip_remove = "×"
+size_input_placeholder = "例: 64 ({min}〜{max})"
+empty_set_label = "(なし)"
+reset_button = "既定値に戻す"
+close_button = "閉じる"
+
+# --- ボタン・操作 ---
+export_button = "出力"
+toggle_advanced_button = "詳細設定"
+toggle_theme_button = "テーマ"
+
+# --- リサイズアルゴリズム名 ---
+# 固有名詞は原則そのまま、 補足のみ日本語
+algorithm_lanczos3 = "Lanczos3 (シャープ)"
+algorithm_mitchell_netravali = "Mitchell-Netravali"
+algorithm_catmull_rom = "Catmull-Rom"
+algorithm_bilinear = "Bilinear"
+algorithm_nearest = "Nearest (ピクセルアート向け)"
+
+# --- vtracer プリセット名 ---
+vtracer_preset_sharp = "Sharp (ロゴ・アイコン)"
+vtracer_preset_default = "Default (バランス)"
+vtracer_preset_photo_rich = "Photo-rich (グラデーション)"
+
+# --- 言語選択 ---
+section_language = "言語"
+section_language_blurb = "既定ではシステムの言語に追従。 別の言語を使う場合はここで変更。"
+language_english = "English"
+language_japanese = "日本語"
+language_system_default = "システム既定"
+
+# --- Toast (通知) ---
+toast_export_title = "出力完了"
+toast_export_body = "{count} ファイルを {dir} に書き出しました"
+toast_reset_title = "設定を戻しました"
+toast_reset_body = "出力プランを既定値に戻しました。"
+toast_settings_load_failed_title = "設定の読み込みに失敗"
+toast_settings_load_failed_body = "{error} — 既定値で動作中。 変更は保存されません。"
+toast_settings_save_failed_title = "設定の保存に失敗"
+toast_settings_save_failed_body = "{error} — 変更はメモリ上のみに残っています。"
+toast_size_already_in_set_title = "登録済み"
+toast_png_size_already_in_set_body = "PNG サイズ {size} px は既に登録されています。"
+toast_ico_size_already_in_set_body = "ICO サイズ {size} px は既に登録されています。"
+toast_invalid_size_title = "サイズ不正"
+toast_invalid_size_body = "「{input}」 は有効なピクセルサイズではありません。"
+toast_size_out_of_range_title = "サイズが範囲外"
+toast_png_size_out_of_range_body = "PNG サイズは {min}〜{max} px の範囲で指定してください。"
+toast_ico_size_out_of_range_body = "ICO サイズは {min}〜{max} px の範囲で指定してください (ICO 形式の上限)。"
+
+# --- エラー (AppError) ---
+error_unsupported_file = "対応していないファイル形式: {path}"
+error_io = "{path} の入出力エラー: {cause}"
+error_decode = "画像のデコードに失敗: {detail}"
+error_rasterize = "SVG のラスタライズに失敗: {detail}"
+error_resize = "リサイズに失敗: {detail}"
+error_export = "出力に失敗: {detail}"
+error_not_implemented = "未実装: {feature}"
