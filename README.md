@@ -57,8 +57,18 @@ cargo run -p logolig-app --release
 
 ## Usage
 
-1. Drop a PNG, SVG, or WebP onto the window, or click **Choose file…**
-2. Inspect the preview using the **View as** picker:
+The window has a slim header at the top with four icon buttons on the
+right — language (`文A`/`Aa`/`あ`), theme (`◐`/`☀`/`☾`), advanced (`⚙`),
+and close (`✕`). Each button shows a tooltip when you hover over it.
+Language and theme each cycle through their three states with one click.
+
+1. Drop a PNG, SVG, WebP, or JPEG onto the window, or click **Choose
+   file…** inside the bordered drop card on the empty screen.
+   - JPEG inputs work, but the format cannot store transparency, so
+     Logolig shows an educational toast suggesting you re-export your
+     logo as a PNG with the background cut out for a proper favicon
+     that adapts to dark and light browser tabs.
+2. Once an image loads, inspect the preview using the **View as** picker:
    - **Browser tab** — 16×16 in a tab-frame mock
    - **Phone home** — the icon at home-screen size on a phone-style mock
    - **Checker** — drop the framing entirely and show the icon over a
@@ -66,24 +76,30 @@ cargo run -p logolig-app --release
 3. Switch the **Surface** (System / Light / Dark) to see how the icon
    reads on each background. The Surface picker greys out automatically
    when Checker is active because background tinting doesn't apply there.
-4. (Optional) Open **Show advanced** to adjust output. The drawer is
-   organized into four labelled groups so you can find what you need
-   without scrolling:
+4. (Optional) Click the gear icon (**⚙**) to open the advanced drawer.
+   The drawer is organized into three accordion groups, each with a
+   clickable heading (`▶` collapsed, `▼` expanded). Only **What to
+   export** is open by default — Extras and Rendering quality start
+   collapsed since most users don't touch them. Click any heading to
+   show or hide its contents. The expansion state is per-session: it
+   resets to the default each time you open the drawer.
    - **What to export** — file kinds (ICO, Apple touch, SVG, HTML
      snippet) and PNG / ICO size sets. Size sets at their defaults
      (32 / 192 / 512 for PNG, 16 / 32 / 48 for ICO) display as a quiet
      "at defaults: …" badge; type a number into the adjacent input and
      the full chip editor expands.
    - **Extras** — opt-in extras (Web manifest for PWA, Monochrome
-     `mono/` set). Visually quieter — most users skip these.
+     `mono/` set). Most users skip these.
    - **Rendering quality** — resize algorithm (Lanczos3 default).
-   - **App preferences** — language.
+
+   (Language used to live here too; it moved to the header icon button
+   in v1.10.2 so it's reachable without opening the drawer.)
 5. Click **Export**, choose an output directory, and the artifacts
    are written atomically (all-or-nothing — see `docs/export-spec.md`)
 
 The generated `favicon-snippet.html` is paste-ready for your `<head>`.
 
-Active picker buttons (View as / Surface, language, vtracer preset) are
+Active picker buttons (View as / Surface, vtracer preset) are
 indicated **both** with a filled background and a `▣` text prefix, so
 the active state is conveyed without relying on color alone (ABDD §12).
 
@@ -270,16 +286,17 @@ re-vectorize via vtracer instead.
 
 ## Language
 
-Logolig follows your system language by default. Override the language
-in **Show advanced → Language**:
+Logolig follows your system language by default. Click the language icon
+in the header (top right) to cycle through the three states:
 
-- **System default** — use the OS locale (`LANG` on Linux, `NSLocale` on macOS,
-  user UI language on Windows)
-- **English** — explicit override
-- **日本語** — Japanese (since v1.6.0)
+- **System default** (`文A`) — use the OS locale (`LANG` on Linux,
+  `NSLocale` on macOS, user UI language on Windows)
+- **English** (`Aa`) — explicit override
+- **日本語** (`あ`) — Japanese (since v1.6.0)
 
-The selection is persisted alongside other advanced settings. Locale
-detection accepts the common forms — `en`, `en-US`, `en_US`, `ja`,
+The icon glyph reflects the current state, so you can tell at a glance
+which language is active. The selection persists across sessions.
+Locale detection accepts the common forms — `en`, `en-US`, `en_US`, `ja`,
 `ja-JP`, `ja_JP`, even `ja_JP.UTF-8` from POSIX `LANG` — so most users
 need no override.
 
@@ -296,17 +313,17 @@ cargo test -p logolig-core
 cargo test -p logolig-i18n
 ```
 
-logolig-core has 92 integration tests covering ingest, decode, SVG
-rasterization, vectorization, resize, preview cache, ICO writing, HTML
-snippet generation, transactional export, settings round-trip,
-forward-compatible JSON deserialization, transparency-state
+logolig-core has 101 integration tests covering ingest, decode (PNG /
+WebP / JPEG), SVG rasterization, vectorization, resize, preview cache,
+ICO writing, HTML snippet generation, transactional export, settings
+round-trip, forward-compatible JSON deserialization, transparency-state
 classification, Web manifest JSON generation, and BT.709 grayscale
 conversion (alpha preservation, coefficient precision, exporter `mono/`
 subdirectory wiring). logolig-i18n adds 16 tests covering dictionary
 loading (English and Japanese), placeholder substitution, error
 translation, BCP-47 locale resolution including POSIX forms, and a
 regression check that Japanese UI keys actually differ from English.
-Total: 108 tests.
+Total: 117 tests.
 
 ## Versioning
 

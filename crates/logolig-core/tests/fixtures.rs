@@ -49,3 +49,21 @@ pub fn webp_8x8_blue() -> Vec<u8> {
         .expect("WebP encoding for fixture should not fail");
     out
 }
+
+/// 8×8 の赤色 JPEG (v1.11.0 fixture)。
+///
+/// JPEG encoder は最低 8×8 が安全。 image crate の jpeg feature 経由で
+/// エンコードしたバイト列を埋め込む。 マジックバイト (`FF D8 FF`) +
+/// `parse_jpeg_size` の SOF marker 解析の検証に使う。
+pub fn jpeg_8x8_red() -> Vec<u8> {
+    let mut buf = image::RgbImage::new(8, 8);
+    for px in buf.pixels_mut() {
+        *px = image::Rgb([0xCC, 0x33, 0x33]);
+    }
+    let mut out = Vec::new();
+    let dynamic = image::DynamicImage::ImageRgb8(buf);
+    dynamic
+        .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Jpeg)
+        .expect("JPEG encoding for fixture should not fail");
+    out
+}

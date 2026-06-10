@@ -14,7 +14,7 @@ use std::path::PathBuf;
 
 use crate::domain::{ResizeAlgorithm, Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
-use crate::services::{decode_png, decode_webp, rasterize_svg, resize};
+use crate::services::{decode_jpeg, decode_png, decode_webp, rasterize_svg, resize};
 
 /// プレビュー専用のリサイズ済みラスタ群。
 ///
@@ -64,6 +64,10 @@ fn render_at(
         }
         SourceKind::Webp => {
             let decoded = decode_webp::decode(asset)?;
+            resize::resize(&decoded, size, size, algorithm)
+        }
+        SourceKind::Jpeg => {
+            let decoded = decode_jpeg::decode(asset)?;
             resize::resize(&decoded, size, size, algorithm)
         }
     }

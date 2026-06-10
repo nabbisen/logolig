@@ -35,9 +35,14 @@
 //! v1.9.0 で追加:
 //! - `monochrome` — Rgba8 → Rgba8 のグレースケール変換 (BT.709 輝度公式)。
 //!   モノクローム favicon セット (mono/ サブディレクトリ) の生成に使う
+//!
+//! v1.11.0 で追加:
+//! - `decode_jpeg` — JPEG → Rgba8。 favicon に不適だが入力としては受け付けて
+//!   UI 層で教育的警告を出す方針
 
 pub mod decode_png;
 pub mod decode_webp;
+pub mod decode_jpeg;
 pub mod encode_png;
 pub mod exporter;
 pub mod html_snippet;

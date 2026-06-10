@@ -59,6 +59,10 @@ name = "decode_webp"
 path = "tests/decode_webp.rs"
 
 [[test]]
+name = "decode_jpeg"
+path = "tests/decode_jpeg.rs"
+
+[[test]]
 name = "html_snippet"
 path = "tests/html_snippet.rs"
 

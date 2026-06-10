@@ -9,6 +9,10 @@ pub enum SourceKind {
     Svg,
     /// 静的 WebP (v1.1.0+)。 アニメーション WebP は最初のフレームのみ扱う。
     Webp,
+    /// JPEG (v1.11.0+)。 favicon 用途では背景透過を扱えないため、 入力後に
+    /// 教育的な警告 Toast を表示して PNG への変換を促す (`app::main_panel`
+    /// の `push_jpeg_warning` 参照)。
+    Jpeg,
 }
 
 impl SourceKind {
@@ -18,6 +22,8 @@ impl SourceKind {
             "png" => Some(Self::Png),
             "svg" => Some(Self::Svg),
             "webp" => Some(Self::Webp),
+            // JPEG は `.jpg` と `.jpeg` の 2 通りある。 OS / 慣用で両方使われる。
+            "jpg" | "jpeg" => Some(Self::Jpeg),
             _ => None,
         }
     }
@@ -27,6 +33,7 @@ impl SourceKind {
             Self::Png => "PNG",
             Self::Svg => "SVG",
             Self::Webp => "WebP",
+            Self::Jpeg => "JPEG",
         }
     }
 }

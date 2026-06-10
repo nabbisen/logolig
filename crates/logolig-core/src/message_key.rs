@@ -187,4 +187,26 @@ pub enum MessageKey {
     GroupRenderingQuality,
     /// 詳細設定: 「App preferences」 大グループ見出し。
     GroupAppPreferences,
+
+    // --- v1.10.2: メイン画面刷新 ---
+    /// アプリ名のタグライン (アプリ名の隣に薄く表示する説明)。
+    AppTagline,
+    /// ドロップ領域のスリムなアイキャッチ。
+    DropZoneHeadline,
+    /// ヘッダ言語ボタンの tooltip。
+    TooltipLanguage,
+    /// ヘッダテーマボタンの tooltip。
+    TooltipTheme,
+    /// ヘッダ詳細ボタンの tooltip。
+    TooltipAdvanced,
+    /// ヘッダ閉じるボタンの tooltip。
+    TooltipClose,
+
+    // --- v1.11.0: JPEG サポート ---
+    /// JPEG 入力時の教育的警告 Toast タイトル。
+    /// 一般的な「不透明」 警告ではなく、 JPEG 形式が透過を表現できないこと
+    /// を伝える専用文言。
+    ToastJpegInputTitle,
+    /// JPEG 入力時の教育的警告 Toast 本文。 PNG への変換を促す。
+    ToastJpegInputBody,
 }

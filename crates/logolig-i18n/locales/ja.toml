@@ -145,3 +145,19 @@ group_what_to_export = "出力するもの"
 group_extras = "追加オプション"
 group_rendering_quality = "描画品質"
 group_app_preferences = "アプリ設定"
+
+# --- メイン画面刷新 (v1.10.2) ---
+app_tagline = "favicon ジェネレータ"
+drop_zone_headline = "PNG / SVG / WebP / JPEG をドロップ"
+tooltip_language = "言語: システム → English → 日本語 を循環"
+tooltip_theme = "テーマ: システム → ライト → ダーク を循環"
+tooltip_advanced = "詳細設定を表示"
+tooltip_close = "アプリを閉じる"
+
+# --- JPEG サポート (v1.11.0) ---
+# JPEG 専用の教育的警告。 JPEG 形式は本来 alpha チャネルを持てないため、
+# 通常の「透過部分なし」 警告 (ユーザが PNG を作る時に間違えたかのように
+# 響く) ではなく、 「JPEG という形式の制約」 を率直に伝えて PNG への変換
+# を勧める。
+toast_jpeg_input_title = "JPEG は透過を表現できません"
+toast_jpeg_input_body = "この画像も使えますが、 JPEG 形式は透過背景を保存できません。 ダーク・ライト両方のブラウザタブに馴染む favicon にするには、 ロゴを背景切り抜きの PNG として書き出してから読み込んでください。"

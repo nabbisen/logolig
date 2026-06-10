@@ -40,6 +40,7 @@ pub async fn ingest(path: PathBuf) -> Result<SourceAsset, AppError> {
         SourceKind::Png => parse_png_size(&raw),
         SourceKind::Svg => parse_svg_size(&raw),
         SourceKind::Webp => parse_webp_size(&raw),
+        SourceKind::Jpeg => parse_jpeg_size(&raw),
     };
 
     Ok(SourceAsset {
@@ -69,6 +70,7 @@ pub fn ingest_bytes(
         SourceKind::Png => parse_png_size(&bytes),
         SourceKind::Svg => parse_svg_size(&bytes),
         SourceKind::Webp => parse_webp_size(&bytes),
+        SourceKind::Jpeg => parse_jpeg_size(&bytes),
     };
 
     Ok(SourceAsset {
@@ -85,6 +87,12 @@ pub fn ingest_bytes(
 
 const PNG_MAGIC: &[u8] = &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
 
+/// JPEG マジックバイト (SOI marker)。 v1.11.0+。
+/// JPEG は `FF D8 FF` で始まる (3 バイト目は `FF E0` JFIF / `FF E1` Exif など
+/// 派生があるため、 最初の 2 バイトだけで判定する流派もあるが、 偶然のマッチ
+/// を避けるため 3 バイト確認する)。
+const JPEG_MAGIC: &[u8] = &[0xFF, 0xD8, 0xFF];
+
 /// WebP は RIFF コンテナ。先頭 12 バイトの構造は:
 ///   "RIFF" (4) + ファイルサイズ LE (4) + "WEBP" (4)
 /// この時点では VP8/VP8L/VP8X どれかは判定しない (image-webp が見てくれる)。
@@ -95,6 +103,9 @@ fn looks_like_webp(bytes: &[u8]) -> bool {
 fn detect_kind(bytes: &[u8], hint: Option<SourceKind>) -> Option<SourceKind> {
     if bytes.starts_with(PNG_MAGIC) {
         return Some(SourceKind::Png);
+    }
+    if bytes.starts_with(JPEG_MAGIC) {
+        return Some(SourceKind::Jpeg);
     }
     if looks_like_webp(bytes) {
         return Some(SourceKind::Webp);
@@ -228,4 +239,83 @@ fn parse_webp_size(bytes: &[u8]) -> Option<(u32, u32)> {
         }
         _ => None,
     }
+}
+
+/// JPEG ファイルから幅と高さを読む (v1.11.0)。
+///
+/// JPEG は SOI (FF D8) の後に複数の "marker segment" が並ぶ構造。 各 segment
+/// は `FF XX` (XX は marker ID) で始まり、 直後の 2 バイトが segment 長
+/// (BE、 長さ自身も含む)。 寸法情報は SOF (Start Of Frame) marker で:
+///
+/// - SOF0 (0xC0): Baseline DCT
+/// - SOF1 (0xC1): Extended sequential DCT
+/// - SOF2 (0xC2): Progressive DCT
+/// - SOF3 (0xC3): Lossless
+/// - 0xC4 は DHT で SOF ではない (SOF は C0-C3 / C5-C7 / C9-CB / CD-CF が範囲)
+///
+/// ここでは「最初に見つかった SOF マーカー」 から幅/高さを取り出す。
+/// SOF segment の中身: [precision(1), height(2 BE), width(2 BE), ...]
+///
+/// 失敗 (壊れた JPEG / 切り詰められたファイル) は `None` を返す。 正しい寸法
+/// が取れなくてもデコード自体は image crate に任せれば成功する場合がある
+/// ため、 ここでは「best effort で寸法を返す」 という扱い。
+fn parse_jpeg_size(bytes: &[u8]) -> Option<(u32, u32)> {
+    if bytes.len() < 4 || !bytes.starts_with(JPEG_MAGIC) {
+        return None;
+    }
+    // SOI (FF D8) の後から開始。
+    let mut i = 2usize;
+    while i + 4 <= bytes.len() {
+        // marker は必ず FF で始まる。 FF が複数連続することがある (filling)
+        // ので、 0xFF を読み飛ばして次の非 0xFF バイトを marker ID とする。
+        if bytes[i] != 0xFF {
+            return None;
+        }
+        let mut j = i + 1;
+        while j < bytes.len() && bytes[j] == 0xFF {
+            j += 1;
+        }
+        if j >= bytes.len() {
+            return None;
+        }
+        let marker = bytes[j];
+        i = j + 1;
+
+        // Standalone marker (segment 長フィールドを持たない):
+        // - SOI (D8), EOI (D9), TEM (01), RST0..RST7 (D0-D7)
+        if marker == 0xD8 || marker == 0xD9 || marker == 0x01 || (0xD0..=0xD7).contains(&marker) {
+            continue;
+        }
+
+        // segment 長を読む (2 バイト BE、 長さ自身も含む)
+        if i + 2 > bytes.len() {
+            return None;
+        }
+        let seg_len = u16::from_be_bytes([bytes[i], bytes[i + 1]]) as usize;
+        if seg_len < 2 {
+            return None;
+        }
+
+        // SOF range: C0-C3, C5-C7, C9-CB, CD-CF (DHT=C4, JPG=C8, DAC=CC は除外)
+        let is_sof = match marker {
+            0xC0..=0xC3 | 0xC5..=0xC7 | 0xC9..=0xCB | 0xCD..=0xCF => true,
+            _ => false,
+        };
+        if is_sof {
+            // SOF segment の data 部分は seg_len バイト分続く (seg_len 自身を含む)。
+            // 中身: precision(1) + height(2 BE) + width(2 BE) + ...
+            // i は seg_len の先頭を指している。 data の開始は i+2、 precision を
+            // 飛ばして i+3 が height、 i+5 が width。
+            if i + 7 > bytes.len() {
+                return None;
+            }
+            let h = u16::from_be_bytes([bytes[i + 3], bytes[i + 4]]) as u32;
+            let w = u16::from_be_bytes([bytes[i + 5], bytes[i + 6]]) as u32;
+            return (w > 0 && h > 0).then_some((w, h));
+        }
+
+        // SOF でなければこの segment 全体をスキップ。
+        i += seg_len;
+    }
+    None
 }

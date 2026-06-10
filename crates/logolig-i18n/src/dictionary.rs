@@ -172,6 +172,18 @@ pub(crate) struct Dictionary {
     pub group_extras: String,
     pub group_rendering_quality: String,
     pub group_app_preferences: String,
+
+    // Main panel refresh (v1.10.2)
+    pub app_tagline: String,
+    pub drop_zone_headline: String,
+    pub tooltip_language: String,
+    pub tooltip_theme: String,
+    pub tooltip_advanced: String,
+    pub tooltip_close: String,
+
+    // JPEG support (v1.11.0)
+    pub toast_jpeg_input_title: String,
+    pub toast_jpeg_input_body: String,
 }
 
 impl Dictionary {
@@ -329,6 +341,18 @@ impl Dictionary {
             MessageKey::GroupExtras => &self.group_extras,
             MessageKey::GroupRenderingQuality => &self.group_rendering_quality,
             MessageKey::GroupAppPreferences => &self.group_app_preferences,
+
+            // v1.10.2
+            MessageKey::AppTagline => &self.app_tagline,
+            MessageKey::DropZoneHeadline => &self.drop_zone_headline,
+            MessageKey::TooltipLanguage => &self.tooltip_language,
+            MessageKey::TooltipTheme => &self.tooltip_theme,
+            MessageKey::TooltipAdvanced => &self.tooltip_advanced,
+            MessageKey::TooltipClose => &self.tooltip_close,
+
+            // v1.11.0
+            MessageKey::ToastJpegInputTitle => &self.toast_jpeg_input_title,
+            MessageKey::ToastJpegInputBody => &self.toast_jpeg_input_body,
         }
     }
 }

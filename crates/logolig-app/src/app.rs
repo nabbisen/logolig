@@ -89,6 +89,73 @@ pub struct AppState {
     // v1.10.0: `preview_checker: bool` は廃止 (PreviewContext::TransparencyChecker
     // バリアントに昇格)。 これにより「タブ風 + チェッカー」 のような無意味な
     // 同時 ON 状態を型レベルで排除。
+
+    /// 詳細設定の各グループの展開状態 (v1.10.3)。
+    /// セッション内のみ保持、 永続化対象外 — 詳細ドロワーを開き直すたびに
+    /// デフォルト (What to export のみ展開) に戻る。 これは「閉じても次回
+    /// は同じところから再開したい」 という持続性ではなく、 「毎回ニュートラル
+    /// な状態で開きたい」 という意図 (詳細設定はそもそも頻繁には触らない)。
+    pub advanced_groups: AdvancedGroupExpansion,
+}
+
+/// 詳細設定の 3 グループそれぞれの展開状態。
+///
+/// `Default` は「What to export のみ展開」 — 詳細ドロワーを初めて開いた時に
+/// 必須項目だけが見えていて、 他は折りたたまれている状態。 ユーザは興味の
+/// あるグループだけ展開して見ればよい。
+///
+/// グループが 4 つ以上に増える可能性は低い (v1.10.2 で App preferences が
+/// 削除されて 3 つに減った経緯あり) ため、 シンプルに 3 つの bool フィールド
+/// で表す。 enum + HashSet にすると追加コストが見合わない。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AdvancedGroupExpansion {
+    pub what_to_export: bool,
+    pub extras: bool,
+    pub rendering_quality: bool,
+}
+
+/// 「どのグループをトグルするか」 を識別する enum。 Message として渡される。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AdvancedGroup {
+    WhatToExport,
+    Extras,
+    RenderingQuality,
+}
+
+impl AdvancedGroupExpansion {
+    /// 指定グループの展開状態を反転 (展開↔折りたたみ)。
+    pub fn toggle(&mut self, group: AdvancedGroup) {
+        match group {
+            AdvancedGroup::WhatToExport => self.what_to_export = !self.what_to_export,
+            AdvancedGroup::Extras => self.extras = !self.extras,
+            AdvancedGroup::RenderingQuality => self.rendering_quality = !self.rendering_quality,
+        }
+    }
+
+    /// 指定グループが展開されているか。
+    pub fn is_expanded(&self, group: AdvancedGroup) -> bool {
+        match group {
+            AdvancedGroup::WhatToExport => self.what_to_export,
+            AdvancedGroup::Extras => self.extras,
+            AdvancedGroup::RenderingQuality => self.rendering_quality,
+        }
+    }
+}
+
+impl Default for AdvancedGroupExpansion {
+    fn default() -> Self {
+        Self {
+            // What to export はほぼ全ユーザが触る項目 (PNG sizes, ICO, SVG など)
+            // のため初期展開。
+            what_to_export: true,
+            // Extras (Web manifest / Monochrome) は opt-in 機能で多くのユーザは
+            // スルーするため折りたたみ。
+            extras: false,
+            // Rendering quality (Resize algorithm) も既定値で十分な人が大半の
+            // ため折りたたみ。 興味あるユーザだけ展開する。
+            rendering_quality: false,
+        }
+    }
 }
 
 impl AppState {
@@ -169,6 +236,7 @@ impl Default for AppState {
             translator: Translator::default(),
             locale_override: None,
             transparency: None,
+            advanced_groups: AdvancedGroupExpansion::default(),
         }
     }
 }
@@ -241,6 +309,15 @@ pub enum Message {
     // v1.5.0: i18n
     /// 言語選択。 `None` で OS デフォルトに戻す。
     LocaleChanged(Option<Locale>),
+
+    // v1.10.2: ヘッダの言語アイコンボタン用 — System → English → 日本語 → System の循環。
+    LocaleCycled,
+
+    // v1.10.2: ヘッダの閉じるアイコンボタン用 — アプリを終了する。
+    AppCloseRequested,
+
+    // v1.10.3: 詳細設定アコーディオンの開閉。 グループは 3 種類のみ。
+    AdvancedGroupToggled(AdvancedGroup),
 
     // v1.10.0: PreviewCheckerToggled は削除 (Checker は
     // PreviewContextSelected(PreviewContext::TransparencyChecker) で
@@ -381,7 +458,21 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     let report = audit_transparency(&cache.icon_120);
                     state.transparency = Some(report);
                     if report.needs_warning() {
-                        push_transparency_warning(state, report);
+                        // v1.11.0: JPEG 入力は形式上 alpha を持てないので
+                        // `FullyOpaque` 判定が必ず出るが、 ユーザの「やり方が
+                        // 間違っている」 のではなく「JPEG という形式の制約」 で
+                        // ある。 通常の透過警告ではなく JPEG 専用の教育的警告
+                        // に振り替える。 source_kind を見て分岐:
+                        let is_jpeg = state
+                            .source_asset
+                            .as_ref()
+                            .map(|a| a.kind == logolig_core::SourceKind::Jpeg)
+                            .unwrap_or(false);
+                        if is_jpeg {
+                            push_jpeg_input_warning(state);
+                        } else {
+                            push_transparency_warning(state, report);
+                        }
                     }
                 }
                 state.preview_cache = Some(cache);
@@ -598,6 +689,39 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let resolved = opt.unwrap_or_else(detect_system_locale);
             state.translator = Translator::for_locale(resolved);
             persist_settings(state);
+            Task::none()
+        }
+
+        // v1.10.2: 言語アイコン (ヘッダ) — System → English → 日本語 → System の 3 状態循環。
+        // None (System default) も状態の 1 つとして含める。
+        Message::LocaleCycled => {
+            let next = match state.locale_override {
+                None => Some(Locale::En),
+                Some(Locale::En) => Some(Locale::Ja),
+                Some(Locale::Ja) => None,
+            };
+            state.locale_override = next;
+            let resolved = next.unwrap_or_else(detect_system_locale);
+            state.translator = Translator::for_locale(resolved);
+            persist_settings(state);
+            Task::none()
+        }
+
+        // v1.10.2: ヘッダの閉じるボタン。 主ウィンドウを閉じる。
+        // iced 0.14 の `window::latest()` は `Task<Option<Id>>` を返し、
+        // `Task<Option<T>>::and_then` は `Some` のときだけクロージャを呼び出す
+        // (`None` のときは Task::none を発行する)。
+        Message::AppCloseRequested => {
+            iced::window::latest().and_then(|id| iced::window::close(id))
+        }
+
+        // -----------------------------------------------------------------
+        // v1.10.3: 詳細設定アコーディオン
+        // -----------------------------------------------------------------
+        // セッション内のみの状態変更。 永続化なし (詳細ドロワーは毎回ニュートラル
+        // な状態で開く意図)。
+        Message::AdvancedGroupToggled(group) => {
+            state.advanced_groups.toggle(group);
             Task::none()
         }
 
@@ -906,6 +1030,18 @@ fn push_transparency_warning(state: &mut AppState, report: TransparencyReport) {
     };
     let title = state.translator.t(title_key);
     let body = state.translator.t(body_key);
+    push_warning_toast(state, &title, &body);
+}
+
+/// v1.11.0: JPEG 入力時の教育的警告。
+///
+/// JPEG 形式は alpha チャネルを持てないため、 v1.7 の transparency audit は
+/// 必ず `FullyOpaque` を返す。 一般の `FullyOpaque` 警告 (PNG で背景を切り
+/// 抜き忘れた等) と異なり、 JPEG では「形式の制約」 が原因なので、 専用の
+/// 教育的トーンの文言で「PNG にすると favicon に適する」 と伝える。
+fn push_jpeg_input_warning(state: &mut AppState) {
+    let title = state.translator.t(MessageKey::ToastJpegInputTitle);
+    let body = state.translator.t(MessageKey::ToastJpegInputBody);
     push_warning_toast(state, &title, &body);
 }
 

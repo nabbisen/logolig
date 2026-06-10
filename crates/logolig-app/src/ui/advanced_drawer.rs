@@ -22,9 +22,8 @@ use logolig_core::{
     ExportPlan, MessageKey, ResizeAlgorithm, VtracerPreset, ICO_SIZE_MAX, ICO_SIZE_MIN,
     PNG_SIZE_MAX, PNG_SIZE_MIN,
 };
-use logolig_i18n::Locale;
 
-use crate::app::{AppState, Message};
+use crate::app::{AdvancedGroup, AppState, Message};
 
 /// 大グループ見出し用テキスト色 (主見出しを目立たせる主張色相当の濃さ)。
 const HEADING_COLOR: Color = Color::from_rgb(0.15, 0.15, 0.15);
@@ -42,86 +41,102 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         text(t.t(MessageKey::AdvancedBlurb)).size(12).color(MUTED_COLOR),
 
         // ━━━ Group 1: What to export ━━━━━━━━━━━━━━━━━━━━━
-        group_heading(&t.t(MessageKey::GroupWhatToExport)),
-        // ファイル種別
-        column![
-            checkbox(state.export_plan.include_ico)
-                .label(t.t(MessageKey::IncludeIcoLabel))
-                .on_toggle(Message::IncludeIcoToggled)
-                .text_size(13),
-            checkbox(state.export_plan.include_apple_touch)
-                .label(t.t(MessageKey::IncludeAppleTouchLabel))
-                .on_toggle(Message::IncludeAppleTouchToggled)
-                .text_size(13),
-            // SVG はチェックボックス + 配下のオプション (vectorize, preset)
-            // をインデントして従属関係を視覚化
-            svg_subsection(state),
-            checkbox(state.export_plan.include_html_snippet)
-                .label(t.t(MessageKey::IncludeHtmlSnippetLabel))
-                .on_toggle(Message::IncludeHtmlSnippetToggled)
-                .text_size(13),
-        ]
-        .spacing(8),
-        // PNG / ICO サイズ
-        size_subsection(
-            &t.t(MessageKey::SectionPngSizes),
-            &state.export_plan.png_sizes,
-            ExportPlan::default_png_sizes(),
-            &state.png_size_input,
-            Message::PngSizeRemoveRequested,
-            Message::PngSizeInputChanged,
-            Message::PngSizeAddRequested,
-            PNG_SIZE_MIN,
-            PNG_SIZE_MAX,
-            state,
-        ),
-        size_subsection(
-            &t.t(MessageKey::SectionIcoSizes),
-            &state.export_plan.ico_sizes,
-            ExportPlan::default_ico_sizes(),
-            &state.ico_size_input,
-            Message::IcoSizeRemoveRequested,
-            Message::IcoSizeInputChanged,
-            Message::IcoSizeAddRequested,
-            ICO_SIZE_MIN,
-            ICO_SIZE_MAX,
-            state,
+        accordion_group(
+            &t.t(MessageKey::GroupWhatToExport),
+            state.advanced_groups.is_expanded(AdvancedGroup::WhatToExport),
+            Message::AdvancedGroupToggled(AdvancedGroup::WhatToExport),
+            column![
+                // ファイル種別
+                column![
+                    checkbox(state.export_plan.include_ico)
+                        .label(t.t(MessageKey::IncludeIcoLabel))
+                        .on_toggle(Message::IncludeIcoToggled)
+                        .text_size(13),
+                    checkbox(state.export_plan.include_apple_touch)
+                        .label(t.t(MessageKey::IncludeAppleTouchLabel))
+                        .on_toggle(Message::IncludeAppleTouchToggled)
+                        .text_size(13),
+                    // SVG はチェックボックス + 配下のオプション (vectorize, preset)
+                    // をインデントして従属関係を視覚化
+                    svg_subsection(state),
+                    checkbox(state.export_plan.include_html_snippet)
+                        .label(t.t(MessageKey::IncludeHtmlSnippetLabel))
+                        .on_toggle(Message::IncludeHtmlSnippetToggled)
+                        .text_size(13),
+                ]
+                .spacing(8),
+                // PNG / ICO サイズ
+                size_subsection(
+                    &t.t(MessageKey::SectionPngSizes),
+                    &state.export_plan.png_sizes,
+                    ExportPlan::default_png_sizes(),
+                    &state.png_size_input,
+                    Message::PngSizeRemoveRequested,
+                    Message::PngSizeInputChanged,
+                    Message::PngSizeAddRequested,
+                    PNG_SIZE_MIN,
+                    PNG_SIZE_MAX,
+                    state,
+                ),
+                size_subsection(
+                    &t.t(MessageKey::SectionIcoSizes),
+                    &state.export_plan.ico_sizes,
+                    ExportPlan::default_ico_sizes(),
+                    &state.ico_size_input,
+                    Message::IcoSizeRemoveRequested,
+                    Message::IcoSizeInputChanged,
+                    Message::IcoSizeAddRequested,
+                    ICO_SIZE_MIN,
+                    ICO_SIZE_MAX,
+                    state,
+                ),
+            ]
+            .spacing(12)
+            .into(),
         ),
 
         // ━━━ Group 2: Extras (普段触らない追加機能) ━━━━━━
-        group_heading(&t.t(MessageKey::GroupExtras)),
-        // Web manifest
-        subsection(
-            &t.t(MessageKey::SectionWebManifest),
-            Some(&t.t(MessageKey::SectionWebManifestBlurb)),
-            web_manifest_body(state),
-        ),
-        // Monochrome
-        subsection(
-            &t.t(MessageKey::SectionMonochrome),
-            Some(&t.t(MessageKey::SectionMonochromeBlurb)),
-            checkbox(state.export_plan.monochrome)
-                .label(t.t(MessageKey::IncludeMonochromeLabel))
-                .on_toggle(Message::IncludeMonochromeToggled)
-                .text_size(13)
-                .into(),
+        accordion_group(
+            &t.t(MessageKey::GroupExtras),
+            state.advanced_groups.is_expanded(AdvancedGroup::Extras),
+            Message::AdvancedGroupToggled(AdvancedGroup::Extras),
+            column![
+                // Web manifest
+                subsection(
+                    &t.t(MessageKey::SectionWebManifest),
+                    Some(&t.t(MessageKey::SectionWebManifestBlurb)),
+                    web_manifest_body(state),
+                ),
+                // Monochrome
+                subsection(
+                    &t.t(MessageKey::SectionMonochrome),
+                    Some(&t.t(MessageKey::SectionMonochromeBlurb)),
+                    checkbox(state.export_plan.monochrome)
+                        .label(t.t(MessageKey::IncludeMonochromeLabel))
+                        .on_toggle(Message::IncludeMonochromeToggled)
+                        .text_size(13)
+                        .into(),
+                ),
+            ]
+            .spacing(12)
+            .into(),
         ),
 
         // ━━━ Group 3: Rendering quality ━━━━━━━━━━━━━━━━━━
-        group_heading(&t.t(MessageKey::GroupRenderingQuality)),
-        subsection(
-            &t.t(MessageKey::SectionResize),
-            Some(&t.t(MessageKey::SectionResizeBlurb)),
-            algorithm_row(state),
+        accordion_group(
+            &t.t(MessageKey::GroupRenderingQuality),
+            state.advanced_groups.is_expanded(AdvancedGroup::RenderingQuality),
+            Message::AdvancedGroupToggled(AdvancedGroup::RenderingQuality),
+            subsection(
+                &t.t(MessageKey::SectionResize),
+                Some(&t.t(MessageKey::SectionResizeBlurb)),
+                algorithm_row(state),
+            ),
         ),
 
-        // ━━━ Group 4: App preferences ━━━━━━━━━━━━━━━━━━━━
-        group_heading(&t.t(MessageKey::GroupAppPreferences)),
-        subsection(
-            &t.t(MessageKey::SectionLanguage),
-            Some(&t.t(MessageKey::SectionLanguageBlurb)),
-            language_row(state),
-        ),
+        // ━━━ Group 4 (廃止): v1.10.2 で Language はヘッダのアイコンボタンに
+        //                        移動したため、 App preferences グループは空に
+        //                        なり廃止。 将来別の app-wide 設定が増えたら復活。
 
         // フッタ: Reset と Close を横並び
         row![
@@ -137,15 +152,76 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .into()
 }
 
-/// 大グループ見出し。 太字 + 上に余白 + 上下に控えめな分割線色のテキスト。
-fn group_heading<'a>(label: &str) -> Element<'a, Message> {
-    container(
-        text(label.to_string())
-            .size(13)
-            .color(HEADING_COLOR),
-    )
-    .padding(Padding::default().top(8).bottom(2))
-    .into()
+/// アコーディオン式の大グループ (v1.10.3)。
+///
+/// 見出しを clickable なボタンとしてレンダーし、 `expanded == true` のとき
+/// 中身を続けて描画する。 折りたたみ時はボタンだけ表示。
+///
+/// ## 表示
+///
+/// ```text
+/// ▼ What to export    ← expanded のとき (中身が下に展開)
+/// ▶ Extras            ← collapsed のとき (中身は描画しない)
+/// ```
+///
+/// chevron (`▼` / `▶`) は state を 2 つの方法で示す:
+/// 1. 視覚的記号 (シルエット差)
+/// 2. 文字方向 (下向き = 下に展開、 右向き = まだ展開していない)
+///
+/// 色覚に依存しないため ABDD §12 と整合。
+fn accordion_group<'a>(
+    label: &str,
+    expanded: bool,
+    on_toggle: Message,
+    body: Element<'a, Message>,
+) -> Element<'a, Message> {
+    // chevron + 見出しを横並びにしたボタン。 ボタン全体がクリック領域になり、
+    // ヒットエリアを広く取れる。
+    let chevron = if expanded { "▼" } else { "▶" };
+    let heading_row = row![
+        text(chevron).size(11).color(HEADING_COLOR),
+        text(label.to_string()).size(13).color(HEADING_COLOR),
+    ]
+    .spacing(8)
+    .align_y(Alignment::Center);
+
+    let header_button = button(heading_row)
+        .padding(Padding::default().top(8).bottom(8).left(0).right(0))
+        .width(Length::Fill)
+        .on_press(on_toggle)
+        // ボタンの背景は透明、 hover 時だけうっすら塗る (見出しが「ボタン」 と
+        // 主張しすぎないように、 でもクリック可能であることは伝える)。
+        .style(|theme: &iced::Theme, status| {
+            let palette = theme.extended_palette();
+            let bg = match status {
+                iced::widget::button::Status::Hovered => palette.background.weak.color,
+                _ => Color::TRANSPARENT,
+            };
+            iced::widget::button::Style {
+                background: Some(iced::Background::Color(bg)),
+                text_color: HEADING_COLOR,
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 4.0.into(),
+                },
+                ..Default::default()
+            }
+        });
+
+    if expanded {
+        // 展開時: ボタン + 本体を縦に並べて返す。 本体は左に少し余白を取って
+        // 「見出しの中身」 であることを示す。
+        column![
+            header_button,
+            container(body).padding(Padding::default().left(16).top(4).bottom(4)),
+        ]
+        .spacing(2)
+        .into()
+    } else {
+        // 折りたたみ時: ヘッダーボタンのみ。
+        header_button.into()
+    }
 }
 
 /// SVG セクション: チェックボックス + 配下のオプションをインデント表示。
@@ -415,32 +491,6 @@ fn vtracer_preset_row<'a>(state: &'a AppState) -> Element<'a, Message> {
         .into()
 }
 
-fn language_row<'a>(state: &'a AppState) -> Element<'a, Message> {
-    // System default に加え、 各 Locale を選択肢として並べる。
-    // 内部表現は Option<Locale>: None = system default。
-    let mut options: Vec<LocalizedLocaleChoice> = Vec::new();
-    options.push(LocalizedLocaleChoice {
-        value: None,
-        label: state.translator.t(MessageKey::LanguageSystemDefault),
-    });
-    for loc in Locale::all() {
-        options.push(LocalizedLocaleChoice {
-            value: Some(loc),
-            label: state.translator.t(locale_message_key(loc)),
-        });
-    }
-    let selected = options
-        .iter()
-        .find(|opt| opt.value == state.locale_override)
-        .cloned();
-    let picker = pick_list(options, selected, |opt: LocalizedLocaleChoice| {
-        Message::LocaleChanged(opt.value)
-    })
-    .text_size(13);
-
-    row![picker].into()
-}
-
 fn size_set_editor<'a>(
     state: &'a AppState,
     sizes: &'a [u32],
@@ -533,18 +583,6 @@ impl std::fmt::Display for LocalizedPreset {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct LocalizedLocaleChoice {
-    value: Option<Locale>,
-    label: String,
-}
-
-impl std::fmt::Display for LocalizedLocaleChoice {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.label)
-    }
-}
-
 // ---------------------------------------------------------------------------
 // enum → MessageKey マップ (UI 層に置く: core を i18n から独立させるため)
 // ---------------------------------------------------------------------------
@@ -564,12 +602,5 @@ fn preset_message_key(preset: VtracerPreset) -> MessageKey {
         VtracerPreset::Sharp => MessageKey::VtracerPresetSharp,
         VtracerPreset::Default => MessageKey::VtracerPresetDefault,
         VtracerPreset::PhotoRich => MessageKey::VtracerPresetPhotoRich,
-    }
-}
-
-fn locale_message_key(loc: Locale) -> MessageKey {
-    match loc {
-        Locale::En => MessageKey::LanguageEnglish,
-        Locale::Ja => MessageKey::LanguageJapanese,
     }
 }

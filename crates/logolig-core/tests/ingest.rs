@@ -71,3 +71,40 @@ fn ingest_async_round_trip_via_tempfile() {
 
     let _ = std::fs::remove_file(&tmp);
 }
+
+// ---------------------------------------------------------------------------
+// v1.11.0: JPEG サポート
+// ---------------------------------------------------------------------------
+
+#[test]
+fn ingest_recognizes_jpeg_magic_bytes() {
+    // JPEG SOI (FF D8 FF) で始まるバイト列を JPEG と判定すること
+    let asset = ingest_bytes("photo.jpg", fixtures::jpeg_8x8_red()).unwrap();
+    assert_eq!(asset.kind, SourceKind::Jpeg);
+}
+
+#[test]
+fn ingest_recognizes_jpeg_via_jpeg_extension() {
+    // .jpeg 拡張子も .jpg と同じく JPEG として扱われること
+    let asset = ingest_bytes("photo.jpeg", fixtures::jpeg_8x8_red()).unwrap();
+    assert_eq!(asset.kind, SourceKind::Jpeg);
+}
+
+#[test]
+fn ingest_parses_jpeg_intrinsic_size_from_sof_marker() {
+    // SOF marker から幅/高さが正しく取り出されること
+    let asset = ingest_bytes("photo.jpg", fixtures::jpeg_8x8_red()).unwrap();
+    assert_eq!(asset.intrinsic_size, Some((8, 8)));
+}
+
+#[test]
+fn ingest_rejects_corrupt_jpeg_with_only_soi() {
+    // SOI だけで以降が無効なバイト列は intrinsic_size が None になっても
+    // ingest は通る (image crate がデコード時に拒絶する想定。 ここでは
+    // ingest 段階の振る舞いだけ確認)。
+    let bytes = vec![0xFF, 0xD8, 0xFF, 0xE0, 0x00];
+    let asset = ingest_bytes("broken.jpg", bytes).unwrap();
+    assert_eq!(asset.kind, SourceKind::Jpeg);
+    // truncated → SOF が見つからない → intrinsic_size = None
+    assert_eq!(asset.intrinsic_size, None);
+}

@@ -17,9 +17,8 @@ use std::path::{Path, PathBuf};
 use crate::domain::{ExportPlan, Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
 use crate::services::{
-    decode_png, decode_webp, encode_png, html_snippet, ico_writer, manifest_writer, monochrome,
-    rasterize_svg, resize,
-    vectorize,
+    decode_jpeg, decode_png, decode_webp, encode_png, html_snippet, ico_writer, manifest_writer,
+    monochrome, rasterize_svg, resize, vectorize,
 };
 
 /// 書き出し結果。 UI に「何が作られたか」を伝えるために使う。
@@ -45,11 +44,12 @@ pub fn run(
         )));
     }
 
-    // 1. ラスタソース (PNG / WebP) なら 1 度だけデコードして使い回す
+    // 1. ラスタソース (PNG / WebP / JPEG) なら 1 度だけデコードして使い回す
     //    (無駄な再デコードを避ける)。 SVG はサイズごとに再ラスタライズ (§6.2)。
     let decoded_raster: Option<Rgba8> = match asset.kind {
         SourceKind::Png => Some(decode_png::decode(asset)?),
         SourceKind::Webp => Some(decode_webp::decode(asset)?),
+        SourceKind::Jpeg => Some(decode_jpeg::decode(asset)?),
         SourceKind::Svg => None,
     };
 
@@ -67,8 +67,8 @@ pub fn run(
     //
     // 振る舞い:
     // - SVG ソース    → 入力 raw をそのまま `favicon.svg` として書く
-    // - PNG/WebP ソース + `vectorize_on_raster=true` → vtracer でベクトル化
-    // - PNG/WebP ソース + `vectorize_on_raster=false` → スキップ
+    // - PNG/WebP/JPEG ソース + `vectorize_on_raster=true` → vtracer でベクトル化
+    // - PNG/WebP/JPEG ソース + `vectorize_on_raster=false` → スキップ
     // - `include_svg=false`  → スキップ
     let svg_actually_emitted = if plan.include_svg {
         match asset.kind {
@@ -79,7 +79,7 @@ pub fn run(
                 artifacts.push(output_dir.join("favicon.svg"));
                 true
             }
-            SourceKind::Png | SourceKind::Webp => {
+            SourceKind::Png | SourceKind::Webp | SourceKind::Jpeg => {
                 if plan.vectorize_on_raster {
                     // ベクトル化はソース解像度のまま実行する (細部温存のため)。
                     let src = decoded_raster.as_ref().ok_or_else(|| {
@@ -247,7 +247,7 @@ fn render_at_size(
     plan: &ExportPlan,
 ) -> Result<Rgba8, AppError> {
     match asset.kind {
-        SourceKind::Png | SourceKind::Webp => {
+        SourceKind::Png | SourceKind::Webp | SourceKind::Jpeg => {
             let src = decoded_raster
                 .ok_or_else(|| AppError::export("internal: missing decoded raster"))?;
             resize::resize(src, size, size, plan.algorithm)

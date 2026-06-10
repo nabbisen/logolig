@@ -15,7 +15,7 @@ use iced::{Background, Border, Color, Element, Length, Theme};
 use logolig_core::{MessageKey, PreviewCache, PreviewContext, Rgba8, ThemeMode};
 
 use crate::app::{AppState, Message};
-use crate::ui::accessibility::{label, marker};
+use crate::ui::accessibility::marker;
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
@@ -66,15 +66,18 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         view_as_picker(state, context),
         // 4. Surface (3 ボタン、 Checker 中は disabled)
         surface_picker(state, context, bg),
-        // 5. Export (右寄せ)
+        // 5. Export (右寄せ)。
+        // v1.10.0 で a11y ラベルとして `text(label::EXPORT_BTN).size(0)` を
+        // 添えていたが、 cosmic-text 0.15 で `line height cannot be 0` の panic
+        // を起こすため v1.10.1 で削除。 加えて iced 0.14 にはまだ完全な
+        // a11y API がないため、 `size(0)` で隠した text はスクリーンリーダにも
+        // 届かず、 そもそも意味のない実装だった。 `accessibility::label::*` 定数
+        // 自体は将来の a11y 対応のため残してある。
         row![
             Space::new().width(Length::Fill),
             button(text(t.t(MessageKey::ExportButton)).size(15))
                 .padding([10, 22])
                 .on_press(Message::ExportRequested),
-            // a11y 用 hidden ラベル (画面読み上げ向け)。 視覚的にはノイズに
-            // なるので最小サイズで添える (UI の主役は Export ボタン本体)
-            text(label::EXPORT_BTN).size(0),
         ]
         .spacing(12)
         .align_y(iced::Alignment::Center),
