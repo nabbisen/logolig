@@ -19,18 +19,14 @@ use snora::{AppLayout, LayoutDirection, Sheet, SheetSize, render};
 use logolig_core::{MessageKey, ThemeMode};
 use logolig_i18n::Locale;
 
-use crate::app::{AppState, Message, Screen};
-use crate::ui::{accessibility::marker, advanced_drawer, drop_zone, preview_panel};
+use crate::app::{resolve_theme, AppState, Message, Screen};
+use crate::ui::{accessibility::marker, advanced_drawer, colors, drop_zone, preview_panel};
 
-/// アプリ名の文字色 (controlled muted、 主役を引き立てる)。
-const APP_NAME_COLOR: Color = Color::from_rgb(0.35, 0.35, 0.35);
-/// タグライン (アプリ名の隣の説明文) の色 — さらに薄く。
-const TAGLINE_COLOR: Color = Color::from_rgb(0.55, 0.55, 0.55);
-/// 編集画面でヘッダ左に表示するファイル名の色 (v1.12.0)。
-/// アプリ名より暗く・濃く出して「画面の主役 = 今扱っているファイル」 を強調。
-/// アプリ名 (#595959) より黒に近い #404040 で、 周囲の controlled muted から
-/// 浮き上がる。
-const FILE_NAME_COLOR: Color = Color::from_rgb(0.25, 0.25, 0.25);
+// v1.14.0: 旧 APP_NAME_COLOR / TAGLINE_COLOR / FILE_NAME_COLOR の hardcoded
+// 定数は `crate::ui::colors` モジュールの theme-aware ヘルパに移行した。
+// dark テーマでも適切なコントラストを保ち、 light/dark の切替時に自動的に
+// 追従する。
+
 /// アイコンボタンの padding 周りで使う余白 (横並び時のクリック誤爆防止)。
 const ICON_BUTTON_PADDING: [u16; 2] = [6, 10];
 
@@ -75,6 +71,7 @@ fn body(state: &AppState) -> Element<'_, Message> {
 /// 閉じる)。 ボタン間に小さな Space を挟んで誤クリックを防ぐ。
 fn header(state: &AppState) -> Element<'_, Message> {
     let t = &state.translator;
+    let theme = resolve_theme(state);
 
     // ----- ヘッダ左のタイトル領域 -----
     //
@@ -85,8 +82,11 @@ fn header(state: &AppState) -> Element<'_, Message> {
     //
     // 編集画面時にアプリ名を出さないのは「画面の主役は今ロード中の画像で、
     // アプリの自己紹介はもう済んだ」 という遷移を視覚化するため。 ファイル名
-    // を controlled でない強めの色 (FILE_NAME_COLOR) で出して、 編集画面の
-    // 「対象画像」 がここだと一目で分かるようにする。
+    // を本文相当の濃さで出して、 編集画面の「対象画像」 がここだと一目で
+    // 分かるようにする。
+    //
+    // v1.14.0: 色は `crate::ui::colors` の theme-aware ヘルパ経由。 light/dark
+    // 切替時に自動追従する。
     let title_block: Element<'_, Message> = match state.screen {
         Screen::Preview | Screen::ExportReady => {
             let file_name = state
@@ -96,18 +96,17 @@ fn header(state: &AppState) -> Element<'_, Message> {
                 .unwrap_or_default();
             text(file_name)
                 .size(16)
-                .color(FILE_NAME_COLOR)
+                .color(colors::file_name(&theme))
                 .into()
         }
         Screen::Empty | Screen::Importing | Screen::Exporting => {
-            // 字間を少し広げて (letter-spacing 相当)、 控えめな色で表示する。
-            // iced 0.14 には letter-spacing が無いため、 サイズと太さで「アプリ名
-            // らしさ」 を出す。 さらに横に小さい 「— favicon ジェネレータ」 を添える。
+            // サイズで「アプリ名らしさ」 を出す。 さらに横に小さい
+            // 「— favicon ジェネレータ」 を添える。
             let app_name = text(t.t(MessageKey::AppTitle))
                 .size(20)
-                .color(APP_NAME_COLOR);
+                .color(colors::app_name(&theme));
             let tagline_text = format!("— {}", t.t(MessageKey::AppTagline));
-            let tagline = text(tagline_text).size(13).color(TAGLINE_COLOR);
+            let tagline = text(tagline_text).size(13).color(colors::tagline(&theme));
             row![app_name, tagline]
                 .spacing(8)
                 .align_y(iced::Alignment::Center)

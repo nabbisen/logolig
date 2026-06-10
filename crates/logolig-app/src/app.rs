@@ -383,12 +383,21 @@ fn window_title(state: &AppState) -> String {
     state.translator.t(MessageKey::AppTitle)
 }
 
-fn theme(state: &AppState) -> Theme {
+/// 現在の状態から iced の `Theme` を解決する。
+///
+/// v1.14.0: ui モジュールが theme palette ベースの色解決をするため、
+/// `pub(crate)` で公開する (元は private fn だった)。
+pub(crate) fn resolve_theme(state: &AppState) -> Theme {
     match state.theme {
         // System は Step 3 で OS テーマを覗くようにする。Step 1 では Light を採用。
         ThemeMode::System | ThemeMode::Light => Theme::Light,
         ThemeMode::Dark => Theme::Dark,
     }
+}
+
+/// iced の `application().theme()` から呼び出される旧シグネチャの薄いラッパ。
+fn theme(state: &AppState) -> Theme {
+    resolve_theme(state)
 }
 
 fn subscription(state: &AppState) -> Subscription<Message> {

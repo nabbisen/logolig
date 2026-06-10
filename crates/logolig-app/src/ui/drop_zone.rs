@@ -19,23 +19,25 @@
 //! - Choose file… ボタンとアイキャッチだけを領域内に配置
 
 use iced::widget::{button, column, container, text};
-use iced::{Background, Border, Color, Element, Length, Theme};
+use iced::{Background, Border, Element, Length, Theme};
 
 use logolig_core::MessageKey;
 
-use crate::app::{AppState, Message};
+use crate::app::{resolve_theme, AppState, Message};
+use crate::ui::colors;
 
-/// ドロップ領域内のアイキャッチ色 (主役)。
-const HEADLINE_COLOR: Color = Color::from_rgb(0.3, 0.3, 0.3);
+// v1.14.0: 旧 HEADLINE_COLOR の hardcoded 定数は colors::drop_zone_headline
+// に移行した。 dark/light 切替に追従。
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
+    let theme = resolve_theme(state);
 
     // ドロップ領域内のコンテンツ: アイキャッチ + Choose file… ボタンのみ
     let inner = column![
         text(t.t(MessageKey::DropZoneHeadline))
             .size(22)
-            .color(HEADLINE_COLOR),
+            .color(colors::drop_zone_headline(&theme)),
         button(text(t.t(MessageKey::ChooseFileButton)).size(15))
             .padding([10, 22])
             .on_press(Message::PickFileRequested),
@@ -47,6 +49,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // 提供されていないため、 実線の細いボーダーと柔らかい背景塗りで「ここに
     // 落とせる領域」 を視覚化する。 角丸を大きめに取って box-y にしすぎず、
     // padding を多めに取って中身を中央に浮かせる。
+    //
+    // この container::style はクロージャ形式で、 描画時に呼ばれるたびに
+    // `&Theme` を受け取って色を解決するため、 既に theme-aware。
     let bordered = container(inner)
         .padding(48)
         .center_x(Length::Fill)

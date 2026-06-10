@@ -23,22 +23,21 @@ use logolig_core::{
     PNG_SIZE_MAX, PNG_SIZE_MIN,
 };
 
-use crate::app::{AdvancedGroup, AppState, Message};
+use crate::app::{resolve_theme, AdvancedGroup, AppState, Message};
+use crate::ui::colors;
 
-/// 大グループ見出し用テキスト色 (主見出しを目立たせる主張色相当の濃さ)。
-const HEADING_COLOR: Color = Color::from_rgb(0.15, 0.15, 0.15);
-/// blurb / 補足説明用 (主役を引き立てる控えめな中間グレー)。
-const MUTED_COLOR: Color = Color::from_rgb(0.5, 0.5, 0.5);
-/// 既定値時の "at defaults" バッジ色 (PNG/ICO サイズが初期値のときに添える)。
-const BADGE_MUTED_BG: Color = Color::from_rgb(0.92, 0.92, 0.92);
+// v1.14.0: HEADING_COLOR / MUTED_COLOR / BADGE_MUTED_BG の hardcoded 定数は
+// `crate::ui::colors` の theme-aware ヘルパに移行した。 dark テーマ時に
+// 「グレー文字がグレー背景に同化して読めない」 問題が解消される。
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
+    let theme = resolve_theme(state);
 
     column![
         // ヘッダ
         text(t.t(MessageKey::AdvancedTitle)).size(22),
-        text(t.t(MessageKey::AdvancedBlurb)).size(12).color(MUTED_COLOR),
+        text(t.t(MessageKey::AdvancedBlurb)).size(12).color(colors::muted_text(&theme)),
 
         // ━━━ Group 1: What to export ━━━━━━━━━━━━━━━━━━━━━
         accordion_group(
@@ -93,6 +92,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             ]
             .spacing(12)
             .into(),
+            colors::group_heading(&theme),
         ),
 
         // ━━━ Group 2: Extras (普段触らない追加機能) ━━━━━━
@@ -106,6 +106,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
                     &t.t(MessageKey::SectionWebManifest),
                     Some(&t.t(MessageKey::SectionWebManifestBlurb)),
                     web_manifest_body(state),
+                    colors::muted_text(&theme),
                 ),
                 // Monochrome
                 subsection(
@@ -116,10 +117,12 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
                         .on_toggle(Message::IncludeMonochromeToggled)
                         .text_size(13)
                         .into(),
+                    colors::muted_text(&theme),
                 ),
             ]
             .spacing(12)
             .into(),
+            colors::group_heading(&theme),
         ),
 
         // ━━━ Group 3: Rendering quality ━━━━━━━━━━━━━━━━━━
@@ -131,7 +134,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
                 &t.t(MessageKey::SectionResize),
                 Some(&t.t(MessageKey::SectionResizeBlurb)),
                 algorithm_row(state),
+                colors::muted_text(&theme),
             ),
+            colors::group_heading(&theme),
         ),
 
         // ━━━ Group 4 (廃止): v1.10.2 で Language はヘッダのアイコンボタンに
@@ -169,18 +174,23 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 /// 2. 文字方向 (下向き = 下に展開、 右向き = まだ展開していない)
 ///
 /// 色覚に依存しないため ABDD §12 と整合。
+///
+/// v1.14.0: 見出し文字色は `heading_color` パラメータで受け取る (呼び出し側で
+/// `colors::group_heading(&theme)` を解決して渡す)。 ボタンの hover 背景塗りは
+/// closure 内で `&Theme` を直接参照する。
 fn accordion_group<'a>(
     label: &str,
     expanded: bool,
     on_toggle: Message,
     body: Element<'a, Message>,
+    heading_color: Color,
 ) -> Element<'a, Message> {
     // chevron + 見出しを横並びにしたボタン。 ボタン全体がクリック領域になり、
     // ヒットエリアを広く取れる。
     let chevron = if expanded { "▼" } else { "▶" };
     let heading_row = row![
-        text(chevron).size(11).color(HEADING_COLOR),
-        text(label.to_string()).size(13).color(HEADING_COLOR),
+        text(chevron).size(11).color(heading_color),
+        text(label.to_string()).size(13).color(heading_color),
     ]
     .spacing(8)
     .align_y(Alignment::Center);
@@ -191,6 +201,9 @@ fn accordion_group<'a>(
         .on_press(on_toggle)
         // ボタンの背景は透明、 hover 時だけうっすら塗る (見出しが「ボタン」 と
         // 主張しすぎないように、 でもクリック可能であることは伝える)。
+        // text_color はテーマ palette の標準テキスト色 (background.base.text)
+        // を採用 — 見出しテキスト自体の色は上の `heading_row` で既に明示的に
+        // 設定済みのため、 button style 側はテーマに任せる。
         .style(|theme: &iced::Theme, status| {
             let palette = theme.extended_palette();
             let bg = match status {
@@ -199,7 +212,7 @@ fn accordion_group<'a>(
             };
             iced::widget::button::Style {
                 background: Some(iced::Background::Color(bg)),
-                text_color: HEADING_COLOR,
+                text_color: palette.background.base.text,
                 border: iced::Border {
                     color: Color::TRANSPARENT,
                     width: 0.0,
@@ -263,17 +276,20 @@ fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
 /// サブセクション (グループの中の小単位)。 タイトル + 任意の blurb + 中身。
 /// 旧 `section` ヘルパの後継だが、 v1.10 でグループ階層が増えた都合で名前を
 /// 変えた。
+///
+/// v1.14.0: blurb の色を呼び出し側で解決した `muted_color` で受け取る。
 fn subsection<'a>(
     title: &str,
     blurb: Option<&str>,
     body: Element<'a, Message>,
+    muted_color: Color,
 ) -> Element<'a, Message> {
     let mut col = column![
         text(title.to_string()).size(13),
     ]
     .spacing(2);
     if let Some(b) = blurb {
-        col = col.push(text(b.to_string()).size(11).color(MUTED_COLOR));
+        col = col.push(text(b.to_string()).size(11).color(muted_color));
     }
     col = col.push(container(body).padding(Padding::default().top(4)));
     container(col).padding(Padding::default().top(2).bottom(2)).into()
@@ -304,14 +320,18 @@ fn size_subsection<'a>(
             .map(u32::to_string)
             .collect::<Vec<_>>()
             .join(" / ");
+        // v1.14.0: theme は呼び出し時に解決して、 「at defaults」 テキストの
+        // 色とバッジ背景色のどちらにも反映する。 background_color を closure
+        // 内でも `&Theme` ベースに置く。
+        let theme = resolve_theme(state);
         let body = container(
             text(format!("at defaults: {summary}"))
                 .size(12)
-                .color(MUTED_COLOR),
+                .color(colors::muted_text(&theme)),
         )
         .padding(Padding::default().top(2).bottom(2).left(8).right(8))
-        .style(|_theme| iced::widget::container::Style {
-            background: Some(iced::Background::Color(BADGE_MUTED_BG)),
+        .style(|theme: &iced::Theme| iced::widget::container::Style {
+            background: Some(iced::Background::Color(colors::badge_muted_bg(theme))),
             border: iced::Border {
                 radius: 4.0.into(),
                 ..Default::default()

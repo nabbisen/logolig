@@ -14,11 +14,13 @@ use iced::{Background, Border, Color, Element, Length, Padding, Theme};
 
 use logolig_core::{MessageKey, PreviewCache, PreviewContext, Rgba8, ThemeMode};
 
-use crate::app::{AppState, Message};
+use crate::app::{resolve_theme, AppState, Message};
 use crate::ui::accessibility::marker;
+use crate::ui::colors;
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
+    let theme = resolve_theme(state);
     // v1.12.0: ファイル名はヘッダ左側に移動 (shell::header)。 preview_panel
     // からは display_name 取得が不要になった。
 
@@ -66,7 +68,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let page_title = container(
         text(t.t(MessageKey::PageTitleEdit))
             .size(20)
-            .color(PAGE_TITLE_COLOR),
+            .color(colors::page_title(&theme)),
     )
     .center_x(Length::Fill)
     .padding(Padding::default().top(4).bottom(4));
@@ -77,7 +79,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             // 「Preview」 ラベル (枠内左上、 セクションタイトル相当)
             text(t.t(MessageKey::SectionTitlePreview))
                 .size(13)
-                .color(SECTION_LABEL_COLOR),
+                .color(colors::section_label(&theme)),
             // ピッカー群 (中央寄せ)
             container(view_as_picker(state, context)).center_x(Length::Fill),
             container(surface_picker(state, context, bg)).center_x(Length::Fill),
@@ -134,12 +136,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         .into()
 }
 
-/// 画面タイトルの文字色 (主役 - 中程度の濃さ)。
-const PAGE_TITLE_COLOR: Color = Color::from_rgb(0.2, 0.2, 0.2);
-/// セクションラベル ("Preview") の色 (補助だが読み落とされない程度)。
-const SECTION_LABEL_COLOR: Color = Color::from_rgb(0.4, 0.4, 0.4);
-/// 控えめなテキスト色 (旧 source ラベル用 - 後方互換のため残す)。
-const MUTED_TEXT: Color = Color::from_rgb(0.55, 0.55, 0.55);
+// v1.14.0: PAGE_TITLE_COLOR / SECTION_LABEL_COLOR / MUTED_TEXT の hardcoded
+// 定数は `crate::ui::colors` の theme-aware ヘルパに移行した。 dark/light の
+// 切替に追従。
 
 /// 補助ボタンのスタイル (戻る / 再選択用)。
 /// theme primary (Export ボタン) と差別化するため、 透明背景 + 弱い枠線、
@@ -200,7 +199,7 @@ fn view_as_picker<'a>(state: &'a AppState, current: PreviewContext) -> Element<'
         text(t.t(MessageKey::PickerLabelViewAs))
             .size(13)
             .width(Length::Fixed(80.0))
-            .color(MUTED_TEXT),
+            .color(colors::muted_text(&resolve_theme(state))),
         buttons,
     ]
     .spacing(8)
@@ -237,7 +236,7 @@ fn surface_picker<'a>(
         text(t.t(MessageKey::PickerLabelSurface))
             .size(13)
             .width(Length::Fixed(80.0))
-            .color(MUTED_TEXT),
+            .color(colors::muted_text(&resolve_theme(state))),
         buttons,
     ]
     .spacing(8)
