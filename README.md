@@ -59,8 +59,13 @@ cargo run -p logolig-app --release
 1. Drop a PNG, SVG, or WebP onto the window, or click **Choose file…**
 2. Inspect the **Browser tab (16×16)** and **Smartphone home** previews;
    toggle background between System / Light / Dark to spot contrast issues
-3. (Optional) Open **Show advanced** to pick a different resize algorithm
-4. Click **Export**, choose an output directory, and the six artifacts
+3. (Optional) Open **Show advanced** to:
+   - pick a different resize algorithm (Lanczos3 default)
+   - turn off SVG output or vectorization for unsuitable sources
+   - skip individual artifact types (ICO, Apple touch, HTML snippet)
+   - add or remove PNG / ICO sizes (chip-style editor, validated to
+     16–1024 px for PNG and 16–256 px for ICO)
+4. Click **Export**, choose an output directory, and the artifacts
    are written atomically (all-or-nothing — see `docs/export-spec.md`)
 
 The generated `favicon-snippet.html` is paste-ready for your `<head>`.

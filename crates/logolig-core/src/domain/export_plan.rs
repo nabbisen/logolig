@@ -7,6 +7,19 @@ use std::path::PathBuf;
 
 use crate::domain::resize_algorithm::ResizeAlgorithm;
 
+/// PNG サイズの実用下限 (px)。 これ以下は描画破綻する。
+pub const PNG_SIZE_MIN: u32 = 16;
+/// PNG サイズの実用上限 (px)。 これ以上はファイルサイズが過大で favicon 用途で意味がない。
+pub const PNG_SIZE_MAX: u32 = 1024;
+
+/// ICO サイズの実用下限 (px)。
+pub const ICO_SIZE_MIN: u32 = 16;
+/// ICO サイズの実用上限 (px)。
+///
+/// 256 は ICO のフォーマット仕様上の上限である (BMP モードの寸法フィールドが
+/// `u8` であり、 256 は `0` で表現される慣習)。 ico crate もこれを尊重する。
+pub const ICO_SIZE_MAX: u32 = 256;
+
 /// 個別サイズに対するソース画像の差し替え指定。
 #[derive(Debug, Clone)]
 pub struct SizeOverride {
@@ -68,5 +81,48 @@ impl ExportPlan {
         let html = usize::from(self.include_html_snippet);
         let svg = usize::from(self.include_svg);
         ico + apple + html + svg + self.png_sizes.len()
+    }
+
+    /// PNG サイズ集合への追加 (v1.3.0)。 重複や範囲外を弾き、 昇順を保つ。
+    /// 戻り値は **追加されたかどうか**: 既に存在する / 範囲外なら `false`。
+    pub fn add_png_size(&mut self, size: u32) -> bool {
+        Self::add_into_sorted_set(&mut self.png_sizes, size, PNG_SIZE_MIN, PNG_SIZE_MAX)
+    }
+
+    /// PNG サイズの削除 (v1.3.0)。 戻り値は **削除されたかどうか**。
+    pub fn remove_png_size(&mut self, size: u32) -> bool {
+        Self::remove_from_set(&mut self.png_sizes, size)
+    }
+
+    /// ICO サイズ集合への追加 (v1.3.0)。
+    pub fn add_ico_size(&mut self, size: u32) -> bool {
+        Self::add_into_sorted_set(&mut self.ico_sizes, size, ICO_SIZE_MIN, ICO_SIZE_MAX)
+    }
+
+    /// ICO サイズの削除 (v1.3.0)。
+    /// `ico_sizes` を空にすることは許容する (`include_ico=false` 相当の運用)。
+    pub fn remove_ico_size(&mut self, size: u32) -> bool {
+        Self::remove_from_set(&mut self.ico_sizes, size)
+    }
+
+    fn add_into_sorted_set(set: &mut Vec<u32>, size: u32, min: u32, max: u32) -> bool {
+        if size < min || size > max {
+            return false;
+        }
+        if set.contains(&size) {
+            return false;
+        }
+        set.push(size);
+        set.sort_unstable();
+        true
+    }
+
+    fn remove_from_set(set: &mut Vec<u32>, size: u32) -> bool {
+        if let Some(pos) = set.iter().position(|s| *s == size) {
+            set.remove(pos);
+            true
+        } else {
+            false
+        }
     }
 }

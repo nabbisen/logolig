@@ -54,6 +54,11 @@ pub struct AppState {
     pub toasts: Vec<Toast<Message>>,
     /// Toast の id を発行するためのカウンタ。
     pub next_toast_id: u64,
+
+    // v1.3.0: 詳細設定でサイズを追加するためのテキストバッファ。
+    // 「入力中」 のローカル状態は core ではなく UI 層が持つ責務。
+    pub png_size_input: String,
+    pub ico_size_input: String,
 }
 
 impl Default for AppState {
@@ -70,6 +75,8 @@ impl Default for AppState {
             busy: false,
             toasts: Vec::new(),
             next_toast_id: 0,
+            png_size_input: String::new(),
+            ico_size_input: String::new(),
         }
     }
 }
@@ -112,6 +119,26 @@ pub enum Message {
     IncludeSvgToggled(bool),
     /// v1.2.0: ラスタソースのベクトル化をオン/オフ
     VectorizeOnRasterToggled(bool),
+
+    // v1.3.0: 詳細設定の編集 UI
+    /// favicon.ico を出力するか
+    IncludeIcoToggled(bool),
+    /// apple-touch-icon.png を出力するか
+    IncludeAppleTouchToggled(bool),
+    /// favicon-snippet.html を出力するか
+    IncludeHtmlSnippetToggled(bool),
+    /// PNG サイズ集合の入力テキスト変更
+    PngSizeInputChanged(String),
+    /// PNG サイズ集合への追加実行 (Add ボタン or Enter)
+    PngSizeAddRequested,
+    /// PNG サイズ集合からの削除 (チップの × ボタン)
+    PngSizeRemoveRequested(u32),
+    /// ICO サイズ集合の入力テキスト変更
+    IcoSizeInputChanged(String),
+    /// ICO サイズ集合への追加実行
+    IcoSizeAddRequested,
+    /// ICO サイズ集合からの削除
+    IcoSizeRemoveRequested(u32),
 
     // 書き出し
     ExportRequested,
@@ -261,6 +288,107 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
+        // -----------------------------------------------------------------
+        // v1.3.0: 詳細設定の編集 UI ハンドラ
+        // -----------------------------------------------------------------
+        Message::IncludeIcoToggled(on) => {
+            state.export_plan.include_ico = on;
+            Task::none()
+        }
+        Message::IncludeAppleTouchToggled(on) => {
+            state.export_plan.include_apple_touch = on;
+            Task::none()
+        }
+        Message::IncludeHtmlSnippetToggled(on) => {
+            state.export_plan.include_html_snippet = on;
+            Task::none()
+        }
+        Message::PngSizeInputChanged(s) => {
+            // 数字のみに簡易フィルタ。 全文置換は許容するが、 数字以外は無視
+            // (ペースト時のスペースなどを許容するため文字種フィルタは後で trim 時)。
+            state.png_size_input = s;
+            Task::none()
+        }
+        Message::PngSizeAddRequested => {
+            let raw = state.png_size_input.trim().to_string();
+            match parse_size(&raw, logolig_core::PNG_SIZE_MIN, logolig_core::PNG_SIZE_MAX) {
+                Ok(size) => {
+                    if state.export_plan.add_png_size(size) {
+                        state.png_size_input.clear();
+                    } else {
+                        // 範囲外は parse_size で捕捉済みなので、 ここに来るのは重複のみ
+                        push_warning_toast(
+                            state,
+                            "Already in set",
+                            &format!("PNG size {size} px is already configured."),
+                        );
+                    }
+                }
+                Err(SizeParseError::Empty) => {
+                    // 空入力での Add は無視 (UX: Enter 連打で迷子にしない)
+                }
+                Err(SizeParseError::NotANumber) => {
+                    push_warning_toast(
+                        state,
+                        "Invalid size",
+                        &format!("'{raw}' is not a valid pixel size."),
+                    );
+                }
+                Err(SizeParseError::OutOfRange { min, max }) => {
+                    push_warning_toast(
+                        state,
+                        "Size out of range",
+                        &format!("PNG sizes must be between {min} and {max} px."),
+                    );
+                }
+            }
+            Task::none()
+        }
+        Message::PngSizeRemoveRequested(size) => {
+            state.export_plan.remove_png_size(size);
+            Task::none()
+        }
+        Message::IcoSizeInputChanged(s) => {
+            state.ico_size_input = s;
+            Task::none()
+        }
+        Message::IcoSizeAddRequested => {
+            let raw = state.ico_size_input.trim().to_string();
+            match parse_size(&raw, logolig_core::ICO_SIZE_MIN, logolig_core::ICO_SIZE_MAX) {
+                Ok(size) => {
+                    if state.export_plan.add_ico_size(size) {
+                        state.ico_size_input.clear();
+                    } else {
+                        push_warning_toast(
+                            state,
+                            "Already in set",
+                            &format!("ICO size {size} px is already configured."),
+                        );
+                    }
+                }
+                Err(SizeParseError::Empty) => {}
+                Err(SizeParseError::NotANumber) => {
+                    push_warning_toast(
+                        state,
+                        "Invalid size",
+                        &format!("'{raw}' is not a valid pixel size."),
+                    );
+                }
+                Err(SizeParseError::OutOfRange { min, max }) => {
+                    push_warning_toast(
+                        state,
+                        "Size out of range",
+                        &format!("ICO sizes must be between {min} and {max} px (ICO format limit)."),
+                    );
+                }
+            }
+            Task::none()
+        }
+        Message::IcoSizeRemoveRequested(size) => {
+            state.export_plan.remove_ico_size(size);
+            Task::none()
+        }
+
         Message::ExportRequested => {
             // ソースが無ければ何もしない (UI 側でボタン無効化済みだが念のため)。
             if state.source_asset.is_none() {
@@ -369,4 +497,42 @@ fn next_id(state: &mut AppState) -> u64 {
     let id = state.next_toast_id;
     state.next_toast_id += 1;
     id
+}
+
+// ----------------------------------------------------------------------
+// v1.3.0: サイズ入力のパース + Warning トースト
+// ----------------------------------------------------------------------
+
+#[derive(Debug)]
+enum SizeParseError {
+    Empty,
+    NotANumber,
+    OutOfRange { min: u32, max: u32 },
+}
+
+/// 数字文字列を u32 に変換し、 範囲チェックも行う。
+/// `add_*_size` も内部で範囲を弾くが、 ここで弾くことでユーザに具体的な
+/// エラー文言 (range / not a number / 重複) を出し分けられる。
+fn parse_size(raw: &str, min: u32, max: u32) -> Result<u32, SizeParseError> {
+    if raw.is_empty() {
+        return Err(SizeParseError::Empty);
+    }
+    let n: u32 = raw.parse().map_err(|_| SizeParseError::NotANumber)?;
+    if n < min || n > max {
+        return Err(SizeParseError::OutOfRange { min, max });
+    }
+    Ok(n)
+}
+
+/// Warning 用 Toast (transient)。 入力検証失敗を伝える。
+/// 既存の push_error_toast (persistent) と push_success_toast の中間。
+fn push_warning_toast(state: &mut AppState, title: &str, body: &str) {
+    let id = next_id(state);
+    state.toasts.push(Toast::new(
+        id,
+        ToastIntent::Warning,
+        title.to_string(),
+        body.to_string(),
+        Message::DismissToast(id),
+    ));
 }

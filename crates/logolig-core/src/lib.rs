@@ -18,7 +18,7 @@ pub mod services;
 // 短く参照できるよう、頻出型はクレート直下に re-export する。
 pub use domain::{
     ExportPlan, PreviewContext, PreviewProfile, ResizeAlgorithm, Rgba8, SizeOverride,
-    SourceAsset, SourceKind, ThemeMode,
+    SourceAsset, SourceKind, ThemeMode, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX, PNG_SIZE_MIN,
 };
 pub use error::AppError;
 pub use services::exporter::ExportReport;

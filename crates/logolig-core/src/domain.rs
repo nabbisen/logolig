@@ -7,7 +7,7 @@ pub mod resize_algorithm;
 pub mod source_asset;
 pub mod theme_mode;
 
-pub use export_plan::{ExportPlan, SizeOverride};
+pub use export_plan::{ExportPlan, SizeOverride, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX, PNG_SIZE_MIN};
 pub use preview_profile::{PreviewContext, PreviewProfile};
 pub use raster::Rgba8;
 pub use resize_algorithm::ResizeAlgorithm;

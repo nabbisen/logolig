@@ -162,6 +162,20 @@ want to retrace the design decisions.
 | 4 | ICO writing, export, HTML snippet generation | v0.4.0 |
 | — | Stabilization, freeze | **v1.0.0** |
 
+After v1.0.0 stabilized, the v1 line continued with feature releases
+that strengthen the core for v2 reuse:
+
+| Version | Theme |
+| --- | --- |
+| v1.1.0 | WebP input (decoder, magic-byte detection, size parser) |
+| v1.2.0 | SVG output (raw passthrough for SVG sources, vtracer for raster) |
+| **v1.3.0** | **Advanced settings UX overhaul** (chip-style size editors, per-artifact toggles, validation in core) |
+| v1.4.0 | Persisted settings (planned: `SettingsStore` trait + `app-json-settings` v2 implementation) |
+| v1.5.0 | i18n base (planned: English, `MessageKey` enum, `logolig-i18n` crate) |
+| v1.6.0 | Japanese translation (planned) |
+| v1.7.0 | Transparency checker (planned) |
+| v1.8.0 | Web manifest output (planned) |
+
 v1.0.0 is the feature-complete iced/native build. It is in
 maintenance mode: security and critical-bug fixes only.
 
