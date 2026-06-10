@@ -34,11 +34,41 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let theme = resolve_theme(state);
 
-    column![
-        // ヘッダ
-        text(t.t(MessageKey::AdvancedTitle)).size(22),
-        text(t.t(MessageKey::AdvancedBlurb)).size(12).color(colors::muted_text(&theme)),
+    // ----- v1.15.0: 3 段構成 (タイトル / スクロール / フッタ固定) -----
+    //
+    // 課題と対応:
+    // - 旧構造は 1 つの column の末尾に Reset/Close を置いていたため、 内容が
+    //   多いと フッタが画面下端から押し出されてユーザが押せなかった。
+    // - 改善指示書 §設定画面.1〜2 「フッタ固定」 + 「内部スクロール可能」
+    //   への対応として、 column を 3 段に分割:
+    //     (1) タイトル領域 (Length::Shrink) — 上に固定
+    //     (2) スクロール領域 (Length::FillPortion(1)) — 余り空間を全部食う
+    //         → 内部の column は scrollable! でラップされ、 内容が長くても
+    //           内側だけがスクロール
+    //     (3) フッタ (Length::Shrink) — 下に固定 (sticky)
+    //
+    //   フッタを最後に置いて Length::Shrink、 中段が FillPortion なので、
+    //   中段が「余り全部」 を食う結果、 フッタは自然に画面下端に張り付く。
+    //
+    // - 改善指示書 §設定画面.4 「フッタ操作の意味明確化」 への対応:
+    //   * Reset (左、 destructive 寄り): 枠線色を palette.danger.weak.color
+    //     寄りにして「破壊的だが押せる」 を視覚化
+    //   * Close (右、 補助): 中立的な secondary style
+    //
+    //   row 内で Space::new() で左右を分けて、 配置だけでも役割の違いが
+    //   伝わるようにする。
 
+    // (1) タイトル領域 (固定)
+    let title_block = column![
+        text(t.t(MessageKey::AdvancedTitle)).size(22),
+        text(t.t(MessageKey::AdvancedBlurb))
+            .size(12)
+            .color(colors::muted_text(&theme)),
+    ]
+    .spacing(4);
+
+    // (2) スクロール領域: 既存のアコーディオン群をそのまま scrollable に包む
+    let groups = column![
         // ━━━ Group 1: What to export ━━━━━━━━━━━━━━━━━━━━━
         accordion_group(
             &t.t(MessageKey::GroupWhatToExport),
@@ -142,19 +172,46 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         // ━━━ Group 4 (廃止): v1.10.2 で Language はヘッダのアイコンボタンに
         //                        移動したため、 App preferences グループは空に
         //                        なり廃止。 将来別の app-wide 設定が増えたら復活。
-
-        // フッタ: Reset と Close を横並び
-        row![
-            button(text(t.t(MessageKey::ResetButton)))
-                .on_press(Message::ExportPlanResetRequested),
-            button(text(t.t(MessageKey::CloseButton))).on_press(Message::AdvancedToggled),
-        ]
-        .spacing(8)
-        .align_y(Alignment::Center),
     ]
-    .spacing(14)
-    .padding(20)
-    .into()
+    .spacing(14);
+
+    // scrollable! ラッパ。 デフォルトのスクロールバーを採用 (改善指示書
+    // §設定画面.2 「初期表示で全体像を把握」 のため、 hover-only ではなく
+    // 常時表示にして「下にもっと項目がある」 ことを視覚化する)。
+    let scrollable_groups = container(
+        iced::widget::scrollable(groups)
+            .width(Length::Fill)
+            .height(Length::Fill),
+    )
+    .height(Length::FillPortion(1))
+    .width(Length::Fill);
+
+    // (3) フッタ (固定)。 左に Reset (destructive 寄り)、 右に Close (補助)。
+    // Space::new() で左右を分離 — レイアウトだけで役割の違いを伝える。
+    let footer = row![
+        // Reset: 「初期値に戻す」 destructive 寄り。 secondary base + danger
+        // 寄りの枠線で「押せるが慎重に」 を表現。
+        button(text(t.t(MessageKey::ResetButton)).size(13))
+            .padding([8, 16])
+            .on_press(Message::ExportPlanResetRequested)
+            .style(reset_button_style),
+        // 中央スペース: 左右の役割差を視覚化
+        iced::widget::Space::new()
+            .width(Length::Fill),
+        // Close: 中立的な離脱
+        button(text(t.t(MessageKey::CloseButton)).size(13))
+            .padding([8, 16])
+            .on_press(Message::AdvancedToggled)
+            .style(close_button_style),
+    ]
+    .spacing(8)
+    .align_y(Alignment::Center);
+
+    column![title_block, scrollable_groups, footer]
+        .spacing(14)
+        .padding(20)
+        .height(Length::Fill)
+        .into()
 }
 
 /// アコーディオン式の大グループ (v1.10.3)。
@@ -622,5 +679,69 @@ fn preset_message_key(preset: VtracerPreset) -> MessageKey {
         VtracerPreset::Sharp => MessageKey::VtracerPresetSharp,
         VtracerPreset::Default => MessageKey::VtracerPresetDefault,
         VtracerPreset::PhotoRich => MessageKey::VtracerPresetPhotoRich,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// v1.15.0: フッタ用ボタンスタイル
+// ---------------------------------------------------------------------------
+
+/// Reset ボタン (左、 destructive 寄り)。
+///
+/// 「初期値に戻す」 = 入力データの破壊なので、 通常の secondary より一段強い
+/// 注意喚起が必要。 ただし「ファイル削除」 のような irreversible 行為では
+/// ないため、 完全な danger スタイル (palette.danger.base 塗り) は重すぎる。
+///
+/// 落とし所として:
+/// - 透明背景 + danger.weak.color の枠線で「警告寄り」 を示す
+/// - text_color は通常テキスト相当 (palette.background.base.text) で読める強さ
+/// - hover 時は danger.weak.color を薄く塗って「押下対象」 を強調
+fn reset_button_style(
+    theme: &iced::Theme,
+    status: iced::widget::button::Status,
+) -> iced::widget::button::Style {
+    let palette = theme.extended_palette();
+    let bg = match status {
+        iced::widget::button::Status::Hovered => Color {
+            a: 0.15,
+            ..palette.danger.weak.color
+        },
+        _ => Color::TRANSPARENT,
+    };
+    iced::widget::button::Style {
+        background: Some(iced::Background::Color(bg)),
+        text_color: palette.background.base.text,
+        border: iced::Border {
+            color: palette.danger.weak.color,
+            width: 1.0,
+            radius: 6.0.into(),
+        },
+        ..Default::default()
+    }
+}
+
+/// Close ボタン (右、 補助)。
+///
+/// 中立的な離脱動作。 controlled muted style — preview_panel.rs の
+/// `secondary_button_style` と視覚的に揃える (戻る/再選択ボタンと同じ
+/// 強度で「補助操作」 と認識される)。
+fn close_button_style(
+    theme: &iced::Theme,
+    status: iced::widget::button::Status,
+) -> iced::widget::button::Style {
+    let palette = theme.extended_palette();
+    let bg = match status {
+        iced::widget::button::Status::Hovered => palette.background.weak.color,
+        _ => Color::TRANSPARENT,
+    };
+    iced::widget::button::Style {
+        background: Some(iced::Background::Color(bg)),
+        text_color: palette.background.weak.text,
+        border: iced::Border {
+            color: palette.background.strong.color,
+            width: 1.0,
+            radius: 6.0.into(),
+        },
+        ..Default::default()
     }
 }
