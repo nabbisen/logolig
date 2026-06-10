@@ -15,7 +15,7 @@ use snora::{Toast, ToastIntent};
 
 use logolig_core::{
     AppError, ExportPlan, ExportReport, PreviewCache, PreviewContext, PreviewProfile,
-    ResizeAlgorithm, SourceAsset, ThemeMode,
+    ResizeAlgorithm, SettingsStore, SourceAsset, ThemeMode,
 };
 
 // ----------------------------------------------------------------------
@@ -59,6 +59,48 @@ pub struct AppState {
     // 「入力中」 のローカル状態は core ではなく UI 層が持つ責務。
     pub png_size_input: String,
     pub ico_size_input: String,
+
+    // v1.4.0: 設定永続化ストア。 起動時に load_or_default() で AppState を初期化し、
+    // ユーザ操作で設定が変わるたびに store.update() を呼ぶ即時保存戦略。
+    //
+    // - `Option<>` で持つのは初期化失敗時に「アプリは普通に動かしつつ、 永続化
+    //   だけ無効」 を成立させるため。 例えば config dir が読み取り専用の場合
+    //   などにアプリ自体が落ちないようにする。
+    // - `locale` は v1.5 の i18n で使う伏線として PersistedSettings に含めて
+    //   いる。 v1.4 では読み書きするだけで何にも反映しない。
+    pub store: Option<crate::native_store::NativeStore>,
+}
+
+impl AppState {
+    /// boot 関数。 NativeStore で設定を load_or_default() し、 内容を AppState に反映。
+    ///
+    /// 失敗時はエラー Toast を出した上で default の AppState を返す。 永続化が
+    /// 効かない状態でもアプリ自体は動くようにする (§ABDD: 機能が縮退しても止まらない)。
+    pub fn boot() -> Self {
+        let mut state = Self::default();
+        let store = crate::native_store::NativeStore::new();
+        match store.load_or_default() {
+            Ok(persisted) => {
+                state.export_plan = persisted.export_plan;
+                state.theme = persisted.theme;
+                // locale は v1.4 では未使用 (v1.5 で活きる伏線)。
+                let _ = persisted.locale;
+                state.store = Some(store);
+            }
+            Err(err) => {
+                // 永続化の初期化に失敗してもアプリは続行する。
+                push_warning_toast(
+                    &mut state,
+                    "Settings could not be loaded",
+                    &format!(
+                        "{err} — running with defaults. Your changes won't be persisted."
+                    ),
+                );
+                // store は None のまま。 後続の persist_settings() は no-op になる。
+            }
+        }
+        state
+    }
 }
 
 impl Default for AppState {
@@ -77,6 +119,7 @@ impl Default for AppState {
             next_toast_id: 0,
             png_size_input: String::new(),
             ico_size_input: String::new(),
+            store: None,
         }
     }
 }
@@ -162,7 +205,7 @@ pub enum Message {
 /// iced 0.14 の `application` は第 1 引数を **boot 関数** (`Fn() -> State`) として取る。
 /// タイトルは builder メソッド `.title(...)` で渡す。
 pub fn run() -> iced::Result {
-    iced::application(AppState::default, update, view)
+    iced::application(AppState::boot, update, view)
         .title("Logolig")
         .theme(theme)
         .subscription(subscription)
@@ -259,14 +302,17 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         Message::ThemeToggled => {
             state.theme = state.theme.next();
+            persist_settings(state);
             Task::none()
         }
         Message::AdvancedToggled => {
+            // advanced_open は永続化対象外 (UI 状態)。 保存しない。
             state.advanced_open = !state.advanced_open;
             Task::none()
         }
         Message::AlgorithmChanged(alg) => {
             state.export_plan.algorithm = alg;
+            persist_settings(state);
             // algorithm 変更を反映するためプレビュー再生成。
             // 既存キャッシュは古いので破棄する (UI は cache=None のあいだ
             // ローディング表示にフォールバックする)。
@@ -281,10 +327,12 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::IncludeSvgToggled(on) => {
             // 出力プランの変更だけ。 プレビュー (16×16 / 120×120) には影響しない。
             state.export_plan.include_svg = on;
+            persist_settings(state);
             Task::none()
         }
         Message::VectorizeOnRasterToggled(on) => {
             state.export_plan.vectorize_on_raster = on;
+            persist_settings(state);
             Task::none()
         }
 
@@ -293,14 +341,17 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // -----------------------------------------------------------------
         Message::IncludeIcoToggled(on) => {
             state.export_plan.include_ico = on;
+            persist_settings(state);
             Task::none()
         }
         Message::IncludeAppleTouchToggled(on) => {
             state.export_plan.include_apple_touch = on;
+            persist_settings(state);
             Task::none()
         }
         Message::IncludeHtmlSnippetToggled(on) => {
             state.export_plan.include_html_snippet = on;
+            persist_settings(state);
             Task::none()
         }
         Message::PngSizeInputChanged(s) => {
@@ -315,6 +366,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Ok(size) => {
                     if state.export_plan.add_png_size(size) {
                         state.png_size_input.clear();
+                        persist_settings(state);
                     } else {
                         // 範囲外は parse_size で捕捉済みなので、 ここに来るのは重複のみ
                         push_warning_toast(
@@ -345,7 +397,9 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::PngSizeRemoveRequested(size) => {
-            state.export_plan.remove_png_size(size);
+            if state.export_plan.remove_png_size(size) {
+                persist_settings(state);
+            }
             Task::none()
         }
         Message::IcoSizeInputChanged(s) => {
@@ -358,6 +412,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Ok(size) => {
                     if state.export_plan.add_ico_size(size) {
                         state.ico_size_input.clear();
+                        persist_settings(state);
                     } else {
                         push_warning_toast(
                             state,
@@ -385,7 +440,9 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::IcoSizeRemoveRequested(size) => {
-            state.export_plan.remove_ico_size(size);
+            if state.export_plan.remove_ico_size(size) {
+                persist_settings(state);
+            }
             Task::none()
         }
 
@@ -535,4 +592,43 @@ fn push_warning_toast(state: &mut AppState, title: &str, body: &str) {
         body.to_string(),
         Message::DismissToast(id),
     ));
+}
+
+// ----------------------------------------------------------------------
+// v1.4.0: 設定永続化
+// ----------------------------------------------------------------------
+
+/// 現在の AppState に対応する `PersistedSettings` を組み立てる。
+/// `locale` は v1.4 では未使用 (v1.5 で活きる伏線) のため、 既存値を保つ
+/// (= store から読み戻して維持) のが筋だが、 v1.4 では None 固定で書き戻す。
+/// v1.5 で locale UI を入れる時にここを修正する。
+fn snapshot_persisted(state: &AppState) -> logolig_core::PersistedSettings {
+    logolig_core::PersistedSettings {
+        export_plan: state.export_plan.clone(),
+        theme: state.theme,
+        locale: None,
+    }
+}
+
+/// 設定を即時保存する (即時保存戦略, §1.4.0)。
+///
+/// `state.store` が `None` の場合 (= 起動時に永続化初期化に失敗) は no-op。
+/// 保存失敗時はエラー Toast を出すが、 アプリ自体は続行する。
+///
+/// 注意: 即時保存はユーザ操作のたびに `update()` を呼ぶ。 現状の
+/// `PersistedSettings` は数 KB 以下で I/O コストが無視できるが、 将来データが
+/// 肥大化した時は debounce / lazy save に切り替える必要がある。
+fn persist_settings(state: &mut AppState) {
+    let Some(store) = state.store.as_ref() else {
+        return;
+    };
+    let snapshot = snapshot_persisted(state);
+    if let Err(err) = store.save(&snapshot) {
+        // 保存失敗を transient warning として通知 (毎操作 persistent では UI が埋まる)。
+        push_warning_toast(
+            state,
+            "Settings save failed",
+            &format!("{err} — your change is in memory only."),
+        );
+    }
 }

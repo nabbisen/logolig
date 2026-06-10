@@ -106,27 +106,49 @@ Documentation lives under `docs/`:
 - `ui-a11y.md` — Accessible-by-Default-and-by-Design (ABDD) commitments
 - `export-spec.md` — output artifacts and HTML snippet shape
 
+## Settings persistence
+
+Your advanced settings (resize algorithm, output toggles, PNG / ICO sizes,
+theme) are saved automatically as you change them. Storage location:
+
+- Linux: `$XDG_CONFIG_HOME/logolig/settings.json` (or `~/.config/logolig/settings.json`)
+- macOS: `~/Library/Application Support/logolig/settings.json`
+- Windows: `%APPDATA%/logolig/settings.json`
+
+The file is plain JSON; you can hand-edit it or delete it to reset to
+defaults. Logolig reads it on startup and falls back to defaults if it
+doesn't exist or can't be parsed (older logolig versions can read newer
+files because of `serde(default)` forward compatibility).
+
+If saving fails (read-only config dir, etc.), a warning toast is shown
+and the app keeps running — your changes stay in memory for the session.
+
 ## Tests
 
 ```sh
 cargo test -p logolig-core
 ```
 
-logolig-core has 32 integration tests covering ingest, decode, SVG
-rasterization, resize, preview cache, ICO writing, HTML snippet
-generation, and the transactional exporter.
+logolig-core has 53 integration tests covering ingest, decode, SVG
+rasterization, vectorization, resize, preview cache, ICO writing, HTML
+snippet generation, transactional export, settings round-trip, and
+forward-compatible JSON deserialization.
 
 ## Versioning
 
 This repository contains **v1**: the iced-based native desktop
-build. v1 is feature-complete against the original specification and
-is now in **maintenance mode** — only security and critical-bug fixes
-will land here.
+build. v1.0.0 was the feature-complete release against the original
+specification; subsequent v1.x releases (WebP input, SVG output,
+advanced settings UX, persistence) extended it without breaking
+compatibility.
 
 A separate **v2** branch is planned that retargets the same
 `logolig-core` to a leptos-based WebAssembly build for
 privacy-preserving in-browser use. The split is possible because
-`logolig-core` carries no GUI-framework dependency.
+`logolig-core` carries no GUI-framework dependency. The v1.4.0
+`SettingsStore` trait is the seam: v2 will provide a `BrowserStore`
+implementation backed by `localStorage` while reusing the same
+`PersistedSettings` schema.
 
 ## License
 

@@ -24,5 +24,9 @@ snora.workspace = true
 # ファイルピッカー (キーボード代替経路, §5.1, §12)
 rfd.workspace = true
 
+# v1.4.0: 設定永続化のネイティブ実装。
+# OS 標準 config dir 自動解決 + typed ConfigManager<T> + read-modify-write update()。
+app-json-settings.workspace = true
+
 [lints]
 workspace = true

@@ -30,11 +30,18 @@ tokio.workspace = true
 # v1.2.0: ラスタ → SVG ベクトル化
 vtracer.workspace = true
 
+# v1.4.0: ドメイン型の serialize/deserialize (永続化のため)
+serde.workspace = true
+
 [dev-dependencies]
 # 非同期 ingest テストでランタイムが必要
 tokio = { workspace = true, features = ["rt", "macros"] }
 # v1.2.0: vectorize 出力の round-trip テストで使う (usvg で読み戻せること)
 usvg = { workspace = true }
+# v1.4.0: PersistedSettings の round-trip / default テストで使う。
+# テスト固有の InMemoryStore が serde_json を必要とするため dev-dep。
+# logolig-core 自体は serde_json を使わない (実装は呼び出し側 = logolig-app に委ねる)。
+serde_json = "1"
 
 # 各 integration test を明示宣言する (autotests = false の補完)。
 # `fixtures.rs` は意図的にここに含めない。
@@ -73,6 +80,10 @@ path = "tests/resize.rs"
 [[test]]
 name = "vectorize"
 path = "tests/vectorize.rs"
+
+[[test]]
+name = "persisted_settings"
+path = "tests/persisted_settings.rs"
 
 [lints]
 workspace = true

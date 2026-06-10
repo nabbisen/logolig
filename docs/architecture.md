@@ -169,8 +169,8 @@ that strengthen the core for v2 reuse:
 | --- | --- |
 | v1.1.0 | WebP input (decoder, magic-byte detection, size parser) |
 | v1.2.0 | SVG output (raw passthrough for SVG sources, vtracer for raster) |
-| **v1.3.0** | **Advanced settings UX overhaul** (chip-style size editors, per-artifact toggles, validation in core) |
-| v1.4.0 | Persisted settings (planned: `SettingsStore` trait + `app-json-settings` v2 implementation) |
+| v1.3.0 | Advanced settings UX overhaul (chip-style size editors, per-artifact toggles, validation in core) |
+| **v1.4.0** | **Persisted settings** (`SettingsStore` trait in core; `NativeStore` wraps `app-json-settings` v2 ConfigManager; immediate-save on every user change; `PersistedSettings { export_plan, theme, locale }` with `serde(default)` for forward compat) |
 | v1.5.0 | i18n base (planned: English, `MessageKey` enum, `logolig-i18n` crate) |
 | v1.6.0 | Japanese translation (planned) |
 | v1.7.0 | Transparency checker (planned) |

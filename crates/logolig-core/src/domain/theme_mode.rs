@@ -3,7 +3,9 @@
 //! - アプリ全体のテーマ（背景色など）と、プレビューの背景の両方で使う。
 //! - `System` は OS テーマに追従する想定（Step 1 ではプレースホルダ）。
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum ThemeMode {
     #[default]
     System,

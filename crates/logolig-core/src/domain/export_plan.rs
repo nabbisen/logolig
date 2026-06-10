@@ -2,8 +2,14 @@
 //!
 //! 「何を、どのサイズで、どのアルゴリズムで出力するか」を宣言的に保持する。
 //! デフォルトは「必要最小限のモダン構成」。詳細はオプトイン (§5.3)。
+//!
+//! v1.4.0 から `Serialize` / `Deserialize` を実装し、 `PersistedSettings` の
+//! 一部としてディスクに保存可能。 既知のフィールドが欠ける旧バージョン JSON
+//! に出会った時のための `serde(default)` を全フィールドに付ける (前方互換)。
 
 use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
 
 use crate::domain::resize_algorithm::ResizeAlgorithm;
 
@@ -21,13 +27,14 @@ pub const ICO_SIZE_MIN: u32 = 16;
 pub const ICO_SIZE_MAX: u32 = 256;
 
 /// 個別サイズに対するソース画像の差し替え指定。
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SizeOverride {
     pub size: u32,
     pub source_path: PathBuf,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct ExportPlan {
     pub include_ico: bool,
     pub include_apple_touch: bool,
