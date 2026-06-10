@@ -222,3 +222,20 @@ that strengthen the core for v2 reuse:
 | **v1.20.0** | **モバイルレイアウト対応**: ウィンドウ幅 `< 768px` (Q1-a、 Bootstrap `md` ブレークポイント / 旧 iPad mini portrait の境界に合致) で UI を「モバイル」 として再配置する。 判定は `app::is_mobile(state) -> bool` ヘルパで一元化、 各 UI モジュールでこれを呼んで分岐する (Q2-b ハイブリッド方針)。 主な変化: (1) **左サイドバー (90px) → 下部ナビ (64px 高、 横並び 3 等分セル)** に変形 (Q3-b)。 新モジュール `ui::bottom_nav` を追加 (`ui::sidebar` の双子)、 同じ Message を発火し同じアクティブ判定 / 視覚スタイルを使う — 「同じ機能の場所が変わるだけ」 のメンタルモデル。 `shell.rs` で `is_mobile(state)` をチェックして `AppLayout::side_bar()` (デスクトップ) と `AppLayout::footer()` (モバイル) を排他切替。 (2) **設定 Right Sheet の幅**: モバイル時は `[280, window_width - 16]` で clamp (Q4-a、 画面幅をほぼ占有、 16px の margin だけ残してコンテンツが背後に少し見える程度)。 デスクトップは v1.17.0 の `[280, 480]` clamp を維持。 `drawer_pixel_width(window_width, mobile)` シグネチャに変更。 (3) **アセットカードグリッド**: モバイル時 2 列、 デスクトップ時 3 列 (Q5-b)。 1 列だと縦に長くなりすぎ (favicon 一式は 7-12 アイテム)、 一画面にちょうど 4-6 個収まる 2 列が許容スクロール量との折り合い。 `result_view::build_grid` のシグネチャに `columns: usize` を追加。 (4) **ヘッダーパディング**: モバイル時は左右 padding を 20→8 に縮小 (画面幅の節約)、 上下は 12 維持。 ピッカーポップアップの幅 (220px) は現状維持で `iPhone SE 第 2 世代の 375px` でも中央に収まる (Q6-c)。 PNG モックの「モバイル時は下部ナビに移行」 という明示挙動を実現しつつ、 既存のデスクトップ UI は完全互換を保つ (= モバイル分岐の追加のみ、 既存の振る舞いは変えない)。 起動直後 (まだ resize_events が来ていない時点) は AppState::window_size がデフォルト 1280×720 でデスクトップ判定になるが、 リサイズイベントで遅延訂正される (実害なし、 表示が一瞬デスクトップで描画されてからモバイルに切り替わるだけ)。 |
 | **v1.21.0** | **透過維持トグルの本実装**: v1.17.0 で UI のみ用意していた「透過 (アルファ) を維持する」 チェックボックス (placeholder、 常時 ON 固定) を、 実際に動作する設定として完成させた。 `ExportPlan::keep_transparency: bool` フィールドを新設 (Q3-a でデフォルト `true` = favicon の現代的標準 + 旧 logolig 完全互換)。 旧バージョンの設定 JSON との互換性は struct-level の `#[serde(default)]` が担保 (= 不存在フィールドは `Default::default()` で埋まり `true` になる)。 OFF 時の挙動は **白背景でのフラット化** (Q1-a で確定: シンプルさ + favicon ツールの慣例): 各ピクセルを Porter-Duff "over" 合成で白背景と混合し、 全ピクセル alpha=255 (完全不透明) の `Rgba8` を返す。 新モジュール `services::flatten` に `flatten_to_white(rgba) -> Rgba8` を実装、 unit tests 5 個 (完全不透明 / 完全透明 / 半透明 / アルファ飽和 / 寸法保存)。 適用箇所は `exporter::render_at_size` の最終段 — これにより PNG / ICO フレーム / apple-touch / mono PNG / mono ICO frames の **全 raster 出力が一括でフラット化** される (mono は flatten 後に `to_grayscale` がかかるので「不透明グレースケール」 という期待通りの結果)。 SVG は影響を受けない (Q2-a)。 JPEG ソースは元から alpha=255 なので両設定で結果は同じ。 `Message::KeepTransparencyToggled(bool)` 新設 + handler、 旧 placeholder の `NoOp` バインディングを置換。 永続化対象 (Q4-a)。 統合テスト 4 個追加 (`tests/exporter.rs`): keep_transparency=true で半透明入力のアルファ < 255 が PNG に残る / =false で全 PNG ピクセル alpha=255 + RGB が赤と白の中間に / =false でも SVG は asset.raw と byte-identical / =false で ICO フレーム も全 alpha=255。 新規テスト fixture `png_4x4_half_alpha_red()` 追加。 ホットパス最適化として alpha=255 / alpha=0 ケースは f32 演算をスキップ。 |
 | v1.22.0+ (option) | 残るオプション機能群 (planned): (a) **モバイル UX の追加調整** — ピッカーポップアップ幅のモバイル拡張 (220px → `window_width - 32px` への動的化)、 サイドバーアイコン隣への正確な配置 (overlay positioning)、 `Bottom Sheet` 風ピッカー、 ハンバーガーメニュー (PNG モック明示、 4 つ目以降のアイコン追加時に検討)。 (b) **透過フラット化のユーザ指定背景色** — v1.21.0 では白固定だが、 黒や任意色 (`flatten_color: [u8; 3]`) への拡張余地あり。 (c) **BMP 入力対応** — `image` crate の `bmp` feature を有効化するだけで実装は軽い。 (d) **中国語 (簡体中文) ロケール追加** — v1.6.0 と同じ規模 (~100 翻訳キー) の作業。 |
+
+### Implementation handoff: `rfcs/`
+
+Detailed implementation specs for the `v1.22.0+ (option)` themes above
+live in [`rfcs/`](../rfcs/). Each priority sub-bullet (a–d) has its own
+RFC document covering external design (where applicable), internal
+design, requirements, test plan, and security considerations. The RFC
+folder is the canonical handoff artifact for an implementer picking up
+one of these themes; this ROADMAP row is intentionally a one-paragraph
+summary.
+
+| Sub-bullet | RFC |
+| --- | --- |
+| (a) Mobile UX refinements | [`rfcs/0001-mobile-ux-refinements.md`](../rfcs/0001-mobile-ux-refinements.md) |
+| (b) User-specified flatten color | [`rfcs/0002-user-specified-flatten-color.md`](../rfcs/0002-user-specified-flatten-color.md) |
+| (c) BMP input support | [`rfcs/0003-bmp-input-support.md`](../rfcs/0003-bmp-input-support.md) |
+| (d) Simplified Chinese locale | [`rfcs/0004-locale-zh-cn.md`](../rfcs/0004-locale-zh-cn.md) |
