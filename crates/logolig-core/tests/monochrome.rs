@@ -1,13 +1,12 @@
-//! `monochrome` サービスの挙動確認 (v1.9.0)。
+//! `monochrome` service behaviour tests (v1.9.0).
 //!
-//! 検証する性質:
-//! 1. RGB すべて同値 (グレー) のピクセルは同じ値で出てくる
-//! 2. アルファチャネルが保持される
-//! 3. 純赤 / 純緑 / 純青 が BT.709 係数に従って正しく輝度化される
-//! 4. 出力画像のサイズ (width, height) が入力と一致する
-//! 5. 透明部分は透明のまま (mono 化で黒く塗られない)
-//! 6. 全黒入力 → 全黒出力
-//! 7. 全白入力 → 全白出力
+//! Properties verified:
+//! 1. An already-grey pixel (R=G=B) is unchanged
+//! 2. The alpha channel is preserved
+//! 3. Pure red / green / blue are correctly luminance-mapped via BT.709
+//! 4. Output dimensions match input
+//! 5. Transparent pixels remain transparent (not blackened by mono conversion)
+//! 6. All-black input → all-black output
 
 use std::sync::Arc;
 
@@ -30,15 +29,15 @@ fn dimensions_are_preserved() {
 
 #[test]
 fn alpha_is_preserved_per_pixel() {
-    // alpha が 4 種類混在する画像を作って、 mono 化後も同じ alpha が出るか確認
+    // Build an image with four distinct alpha values; verify they are preserved after mono conversion.
     let img = make(
         4,
         1,
         vec![
-            255, 0, 0, 255, // 赤・不透明
-            0, 255, 0, 128, // 緑・半透明
-            0, 0, 255, 64,  // 青・低不透明度
-            128, 128, 128, 0, // グレー・完全透明
+            255, 0, 0, 255, // red · fully opaque
+            0, 255, 0, 128, // green · half-transparent
+            0, 0, 255, 64,  // blue · low opacity
+            128, 128, 128, 0, // grey · fully transparent
         ],
     );
     let mono = to_grayscale(&img);
@@ -90,7 +89,7 @@ fn black_stays_black() {
 
 #[test]
 fn white_stays_white() {
-    // BT.709 係数の和は 1 なので、 純白は 255 のまま
+    // BT.709 coefficients sum to 1, so pure white stays 255
     let img = make(
         2,
         2,
@@ -106,7 +105,7 @@ fn white_stays_white() {
 
 #[test]
 fn already_grayscale_is_unchanged() {
-    // R=G=B=K の入力は出力も Y=K になる (BT.709 係数の和が 1 だから)
+    // R=G=B=K → Y=K (BT.709 coefficients sum to 1)
     let img = make(1, 1, vec![123, 123, 123, 200]);
     let mono = to_grayscale(&img);
     assert_eq!(mono.pixels[0], 123);
@@ -117,7 +116,7 @@ fn already_grayscale_is_unchanged() {
 
 #[test]
 fn into_grayscale_matches_to_grayscale() {
-    // owned 版と borrowed 版が同じ結果を返すこと
+    // owned and borrowed variants return the same result
     let img = make(2, 1, vec![100, 50, 200, 255, 30, 80, 250, 128]);
     let a = to_grayscale(&img);
     let b = into_grayscale(img);

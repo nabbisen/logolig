@@ -1,44 +1,44 @@
-//! サービス層。
+//! Service layer.
 //!
-//! ファイル I/O、SVG ラスタライズ、リサイズなど副作用を伴う処理。
-//! UI 層 (logolig-app) からはここを経由してのみ I/O を行う。
+//! File I/O, SVG rasterisation, resizing, and other effectful operations.
+//! The UI layer (logolig-app) performs all I/O through this layer.
 //!
-//! Step 2 で実装済み:
-//! - `ingest`         — PNG/SVG 受け入れ + 論理サイズ取得 (async)
-//! - `decode_png`     — PNG SourceAsset を RGBA8 に展開
-//! - `rasterize_svg`  — SVG SourceAsset を任意サイズの RGBA8 に展開 (個別レンダリング)
-//! - `resize`         — RGBA8 → 別サイズの RGBA8 (fast_image_resize, Lanczos3 デフォルト)
+//! Implemented in Step 2:
+//! - `ingest`         — accept PNG/SVG/WebP/JPEG and read logical size (async)
+//! - `decode_png`     — decode PNG SourceAsset to Rgba8
+//! - `rasterize_svg`  — rasterise SVG to Rgba8 at an arbitrary target size
+//! - `resize`         — Rgba8 → Rgba8 at a different size (fast_image_resize, Lanczos3 default)
 //!
-//! Step 3 で追加:
-//! - `preview`        — Source → 16×16 + 120×120 のプレビューキャッシュ
+//! Added in Step 3:
+//! - `preview`        — builds a 16×16 + 120×120 preview cache from a SourceAsset
 //!
-//! Step 4 で追加:
-//! - `encode_png`     — Rgba8 → PNG バイト列
-//! - `ico_writer`     — 複数 RGBA8 を 1 つの ICO にまとめる
-//! - `html_snippet`   — `<head>` 用 HTML 文字列の生成
-//! - `exporter`       — オーケストレータ。 SourceAsset + ExportPlan + dir → 全成果物
+//! Added in Step 4:
+//! - `encode_png`     — Rgba8 → PNG byte buffer
+//! - `ico_writer`     — packs multiple Rgba8 frames into a single ICO
+//! - `html_snippet`   — generates the `<head>` HTML snippet
+//! - `exporter`       — orchestrator: SourceAsset + ExportPlan → all artefacts
 //!
-//! v1.1.0 で追加:
-//! - `decode_webp`    — WebP SourceAsset を RGBA8 に展開 (静的 WebP, image-webp 経由)
+//! Added in v1.1.0:
+//! - `decode_webp`    — decode WebP SourceAsset to Rgba8 (static WebP via image-webp)
 //!
-//! v1.2.0 で追加:
-//! - `vectorize`      — Rgba8 → SVG 文字列 (vtracer ラッパ、 defaults 使用)
+//! Added in v1.2.0:
+//! - `vectorize`      — Rgba8 → SVG string (vtracer wrapper, default settings)
 //!
-//! v1.7.0 で追加:
-//! - `transparency_audit` — 入力 Rgba8 の透過状態を分類 (favicon 用途で起きやすい
-//!   「全不透明」 「全透明」 を検出してユーザに警告するため)
+//! Added in v1.7.0:
+//! - `transparency_audit` — classifies alpha status of an Rgba8 (detects fully-opaque /
+//!   fully-transparent, common favicon mistakes)
 //!
-//! v1.8.0 で追加:
-//! - `manifest_writer` — `WebManifestSettings` + PNG サイズから
-//!   `manifest.webmanifest` の JSON 文字列を組み立てる
+//! Added in v1.8.0:
+//! - `manifest_writer` — assembles `manifest.webmanifest` JSON from
+//!   `WebManifestSettings` + PNG sizes
 //!
-//! v1.9.0 で追加:
-//! - `monochrome` — Rgba8 → Rgba8 のグレースケール変換 (BT.709 輝度公式)。
-//!   モノクローム favicon セット (mono/ サブディレクトリ) の生成に使う
+//! Added in v1.9.0:
+//! - `monochrome` — Rgba8 → Rgba8 greyscale conversion (BT.709 luma).
+//!   Used to generate the monochrome favicon set (mono/ subdirectory).
 //!
-//! v1.11.0 で追加:
-//! - `decode_jpeg` — JPEG → Rgba8。 favicon に不適だが入力としては受け付けて
-//!   UI 層で教育的警告を出す方針
+//! Added in v1.11.0:
+//! - `decode_jpeg` — JPEG → Rgba8. Accepted as input with an educational warning;
+//!   JPEG cannot carry alpha so it is not ideal for favicons.
 
 pub mod decode_png;
 pub mod decode_webp;

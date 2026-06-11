@@ -1,11 +1,11 @@
-//! `logolig-i18n` の統合テスト (v1.5.0)。
+//! Integration tests for `logolig-i18n` (v1.5.0).
 //!
-//! 主な検証項目:
-//! - バンドル済み英語辞書がパースできること(キー漏れがないこと)
-//! - `Translator::t()` がキーを正しい文字列にマッピングすること
-//! - `Translator::t_args()` のプレースホルダ置換が動くこと
-//! - `Translator::translate_error()` が `AppError::args()` と整合すること
-//! - `Locale::from_bcp47` の挙動
+//! Coverage:
+//! - Bundled English dictionary parses without error (no missing keys)
+//! - `Translator::t()` maps keys to the correct strings
+//! - `Translator::t_args()` placeholder substitution works
+//! - `Translator::translate_error()` is consistent with `AppError::args()`
+//! - `Locale::from_bcp47` behaviour
 
 use logolig_core::{AppError, MessageKey};
 use logolig_i18n::{Locale, Translator};
@@ -45,7 +45,7 @@ fn translator_substitutes_placeholders() {
 
 #[test]
 fn translator_leaves_unknown_placeholders_intact() {
-    // 未指定のプレースホルダは原文のまま残る (デバッグしやすい挙動)。
+    // Unspecified placeholders are left as-is (easier to debug).
     let t = Translator::for_locale(Locale::En);
     let result = t.t_args(MessageKey::ToastExportBody, &[("count", "1")]);
     assert!(
@@ -97,9 +97,9 @@ fn locale_from_bcp47_handles_common_forms() {
     assert_eq!(Locale::from_bcp47("ja"), Some(Locale::Ja));
     assert_eq!(Locale::from_bcp47("ja-JP"), Some(Locale::Ja));
     assert_eq!(Locale::from_bcp47("ja_JP"), Some(Locale::Ja));
-    // POSIX 形式 (例: macOS / Linux の `LANG=ja_JP.UTF-8`)
+    // POSIX form (e.g. macOS / Linux `LANG=ja_JP.UTF-8`)
     assert_eq!(Locale::from_bcp47("ja_JP.UTF-8"), Some(Locale::Ja));
-    // 解決不能
+    // Unresolvable
     assert_eq!(Locale::from_bcp47("xx"), None);
     assert_eq!(Locale::from_bcp47(""), None);
 }
@@ -124,13 +124,13 @@ fn translator_default_is_english() {
 }
 
 // ---------------------------------------------------------------------------
-// v1.6.0: 日本語辞書のテスト
+// v1.6.0: Japanese dictionary tests
 // ---------------------------------------------------------------------------
 
 #[test]
 fn japanese_dictionary_loads_without_panic() {
-    // ja.toml の TOML 構文 / フィールド漏れがあれば Translator::for_locale が
-    // panic する。 ここでパースが通ることが第一の検証。
+    // If ja.toml has a syntax error or missing field, Translator::for_locale
+    // will panic at startup. Successful parse is the first assertion.
     let _t = Translator::for_locale(Locale::Ja);
 }
 
@@ -142,16 +142,16 @@ fn japanese_translator_locale_is_ja() {
 
 #[test]
 fn japanese_app_title_is_logolig() {
-    // ブランド名なので英語のまま「Logolig」 が返ることを保証
+    // Brand name is not localised; verify "Logolig" is returned in Japanese too
     let t = Translator::for_locale(Locale::Ja);
     assert_eq!(t.t(MessageKey::AppTitle), "Logolig");
 }
 
 #[test]
 fn japanese_translation_differs_from_english_for_ui_text() {
-    // ブランド名でないキー (説明文など) は英訳と異なるはず。
-    // この性質が壊れたら、 「ja.toml が en.toml をコピーしただけ」 のような
-    // 退行を catch できる。
+    // Non-brand keys (descriptions etc.) should differ from their English equivalents.
+    // Catching this property would reveal a regression like "ja.toml is just a copy
+    // of en.toml".
     let en = Translator::for_locale(Locale::En);
     let ja = Translator::for_locale(Locale::Ja);
     let differing_keys = [
@@ -175,9 +175,9 @@ fn japanese_translation_differs_from_english_for_ui_text() {
 
 #[test]
 fn japanese_every_key_has_non_empty_translation() {
-    // en と同じキーセットを ja で確認。 これは TOML レベルの欠落 (フィールド
-    // 漏れ) は serde で検出されるが、 ここでは「空文字列で埋めてしまった」 を
-    // catch する補完テスト。
+    // Verify the same key set in Japanese. TOML-level missing fields are caught
+    // by serde, but this test catches "filled with empty string"
+    // as an additional guard.
     let t = Translator::for_locale(Locale::Ja);
     let keys = [
         MessageKey::AppTitle,

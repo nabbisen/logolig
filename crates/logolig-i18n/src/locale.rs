@@ -1,40 +1,36 @@
-//! ロケール (v1.6.0)。
+//! Locale enum (v1.6.0).
 //!
-//! v1.5.0 で英語のみで導入し、 v1.6.0 で日本語 (`Ja`) を追加。 v1.6.0 以降の
-//! ロケール追加手順は:
+//! English-only in v1.5.0; Japanese (`Ja`) added in v1.6.0.
+//! Steps to add a new locale:
 //!
-//! 1. `Locale` 列挙に新バリアントを追加
-//! 2. `Locale::all()` の配列長と要素を更新
-//! 3. `as_bcp47` と `from_bcp47` の match に追加
-//! 4. `crates/logolig-i18n/locales/<tag>.toml` を新設
-//! 5. `dictionary::load` の match で `include_str!` を分岐
-//! 6. `advanced_drawer.rs` の `locale_message_key` で `MessageKey` をマップ
-//!
-//! 1〜3 と 5 のいずれかを忘れるとコンパイルが通らないため、 「実装漏れ」 は
-//! 構造的に防げる設計になっている。 6 と 4 はテストで検出する。
+//! 1. Add a variant to the `Locale` enum
+//! 2. Update `Locale::all()` array length and elements
+//! 3. Add a match arm to `as_bcp47` and `from_bcp47`
+//! 4. Create `crates/logolig-i18n/locales/<tag>.toml`
+//! 5. Add an `include_str!` branch in `dictionary::load`
 
 use serde::{Deserialize, Serialize};
 
-/// サポートしているロケール。
+/// Supported locales.
 ///
-/// 列挙にバリアントを足すと `Translator::for_locale` の dictionary 解決と
-/// `Locale::all()` / `as_bcp47` / `from_bcp47` の match が連鎖的にコンパイル
-/// エラーになる。 「ロケールを足したら全箇所追従する」 が型レベルで強制される。
+/// Adding a variant forces compile errors in `Translator::for_locale`,
+/// `Locale::all()`, `as_bcp47`, and `from_bcp47` match arms,
+/// ensuring all sites are updated when a locale is added.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum Locale {
     #[default]
     En,
-    /// 日本語 (v1.6.0)。
+    /// Japanese (v1.6.0).
     Ja,
 }
 
 impl Locale {
-    /// pick_list 用の全列挙。
+    /// All variants in order, for pick_list display.
     pub fn all() -> [Self; 2] {
         [Self::En, Self::Ja]
     }
 
-    /// IETF BCP-47 風のタグ。 `PersistedSettings.locale` の値と対応する。
+    /// IETF BCP-47-style tag, matching the value stored in `PersistedSettings.locale`.
     pub fn as_bcp47(self) -> &'static str {
         match self {
             Self::En => "en",
@@ -42,15 +38,15 @@ impl Locale {
         }
     }
 
-    /// BCP-47 タグ (もしくはそれに似た文字列) から Locale を解決する。
-    /// 未知のタグや言語コード前半部分のみ ("en-US" → "en") で照合する。
-    /// 解決できない場合は `None` を返す(呼び出し側でフォールバックする)。
+    /// Resolve a `Locale` from a BCP-47 tag string.
+    /// Matches on the language subtag only (e.g. `"en-US"` → `"en"`).
+    /// Returns `None` when unrecognised; the caller applies a fallback.
     ///
-    /// macOS の `ja_JP.UTF-8`、 Linux の `ja_JP`、 ブラウザの `ja-JP` など、
-    /// 主要な揺れをすべて吸収する。
+    /// Handles the major variations: `ja_JP.UTF-8` (macOS), `ja_JP` (Linux),
+    /// `ja-JP` (browser), etc.
     pub fn from_bcp47(tag: &str) -> Option<Self> {
-        // "en-US" / "en_US" / "en" すべてマッチさせるため、 先頭の言語タグだけ見る。
-        // また `ja_JP.UTF-8` のような POSIX ロケール形式に備え、 `.` でも分割。
+        // Match on the language subtag only to catch "en-US" / "en_US" / "en" etc.
+        // Split on "." as well to handle POSIX locale strings like `ja_JP.UTF-8`.
         let primary = tag
             .split(|c: char| c == '-' || c == '_' || c == '.')
             .next()
@@ -64,13 +60,13 @@ impl Locale {
     }
 }
 
-/// OS のロケールを検出して `Locale` に解決する。
+/// Detect the OS locale and resolve it to a `Locale`.
 ///
-/// `sys-locale::get_locale()` は LANG / macOS API / Windows API を吸収する。
-/// 検出失敗または未サポートロケールの場合は `Locale::default()` (英語) を返す。
+/// `sys-locale::get_locale()` abstracts LANG, macOS API, and Windows API.
+/// Returns `Locale::default()` (English) when detection fails or the locale is unsupported.
 ///
-/// v2 ブラウザ環境では `sys-locale` が `navigator.language` を返すため、
-/// 同じコードでブラウザでも動く。
+/// In a v2 browser environment, `sys-locale` returns `navigator.language`,
+/// so the same code works in the browser.
 pub fn detect_system_locale() -> Locale {
     sys_locale::get_locale()
         .as_deref()

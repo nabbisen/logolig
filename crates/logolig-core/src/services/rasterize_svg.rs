@@ -1,20 +1,21 @@
-//! SVG ラスタライザ。
+//! SVG rasteriser.
 //!
-//! 仕様 §6.2「文字や細線の潰れを最小化する」を守るため、
-//! ターゲットサイズに対して **個別に** レンダリングする。
-//! 大きいサイズで 1 度ラスタライズして縮小すると、結局縮小由来のジャギーが
-//! 出てしまうため、各サイズで Transform をかけ直して描く。
+//! To honour spec §6.2 "minimise blur and aliasing on characters and fine
+//! lines", each target size is rendered **individually** from the SVG
+//! source. Rasterising once at a large size and then downscaling still
+//! produces resize-induced artefacts, so we re-apply the transform for
+//! each size.
 
 use std::sync::Arc;
 
 use crate::domain::{Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
 
-/// SVG ソースを指定サイズの正方形 RGBA8 ビットマップに展開する。
+/// Render an SVG source into a square RGBA8 bitmap at the given size.
 ///
-/// - 出力は `target_size × target_size` の正方形 (favicon 用途のため)
-/// - SVG の論理 viewBox を `target_size` に合わせて等比拡縮する
-///   (アスペクト比が 1:1 でない場合は中央に配置し余白は透明)
+/// - Output is `target_size × target_size` (square, for favicon use)
+/// - The SVG logical viewBox is scaled proportionally to `target_size`
+///   (non-square SVGs are centred with transparent padding)
 pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppError> {
     if asset.kind != SourceKind::Svg {
         return Err(AppError::unsupported_file(format!(
@@ -26,7 +27,7 @@ pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppErro
         return Err(AppError::rasterize("target_size must be > 0"));
     }
 
-    // 1. usvg でツリーを得る
+    // 1. Parse into a usvg tree
     let opt = usvg::Options::default();
     let tree = usvg::Tree::from_data(&asset.raw, &opt)
         .map_err(|e| AppError::rasterize(format!("usvg parse: {e}")))?;
@@ -38,7 +39,7 @@ pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppErro
         return Err(AppError::rasterize("SVG has zero or negative size"));
     }
 
-    // 2. アスペクト比を保ったまま target_size に収まる scale を選ぶ
+    // 2. Choose a scale that fits target_size while preserving aspect ratio
     let target = target_size as f32;
     let scale = (target / svg_w).min(target / svg_h);
     let drawn_w = svg_w * scale;
@@ -46,7 +47,7 @@ pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppErro
     let tx = (target - drawn_w) * 0.5;
     let ty = (target - drawn_h) * 0.5;
 
-    // 3. Pixmap を確保して resvg で描く
+    // 3. Allocate a Pixmap and render with resvg
     let mut pixmap = tiny_skia::Pixmap::new(target_size, target_size).ok_or_else(|| {
         AppError::rasterize(format!(
             "tiny_skia: cannot allocate pixmap {target_size}x{target_size}"
@@ -56,8 +57,8 @@ pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppErro
     let transform = tiny_skia::Transform::from_scale(scale, scale).post_translate(tx, ty);
     resvg::render(&tree, transform, &mut pixmap.as_mut());
 
-    // 4. tiny-skia は **premultiplied alpha** を返すため、
-    //    そのまま PNG/ICO に渡すと色が暗く見える。straight alpha に戻す。
+    // 4. tiny-skia returns **premultiplied alpha**;
+    //    convert to straight alpha before passing to PNG/ICO encoders.
     let pixels: Vec<u8> = pixmap
         .pixels()
         .iter()

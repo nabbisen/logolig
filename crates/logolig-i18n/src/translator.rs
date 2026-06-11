@@ -1,17 +1,17 @@
-//! `Translator` (v1.5.0)。
+//! `Translator` (v1.5.0).
 //!
-//! UI 層が呼び出す主要 API。 `MessageKey` と必要なら placeholder 引数を
-//! 受け取り、 翻訳済み `String` を返す。
+//! Primary API for the UI layer. Accepts a `MessageKey` and optional
+//! placeholder arguments; returns a translated `String`.
 
 use logolig_core::{AppError, MessageKey};
 
 use crate::dictionary::Dictionary;
 use crate::locale::Locale;
 
-/// 翻訳機能の中心。
+/// Central translation object.
 ///
-/// `AppState::translator` として保持される。 ロケール変更時は
-/// `state.translator = Translator::for_locale(new_locale)` で入れ替える。
+/// Held as `AppState::translator`. On locale change,
+/// replace with `Translator::for_locale(new_locale)`.
 #[derive(Debug, Clone)]
 pub struct Translator {
     locale: Locale,
@@ -19,7 +19,7 @@ pub struct Translator {
 }
 
 impl Translator {
-    /// 指定ロケール用の Translator を構築。
+    /// Construct a `Translator` for the given locale.
     pub fn for_locale(locale: Locale) -> Self {
         Self {
             locale,
@@ -27,23 +27,23 @@ impl Translator {
         }
     }
 
-    /// 現在の Locale を返す (UI で「現在何語か」 を表示する用途)。
+    /// Return the current `Locale` (used by the UI to show the active language).
     pub fn locale(&self) -> Locale {
         self.locale
     }
 
-    /// プレースホルダなしの単純翻訳。
+    /// Simple translation with no placeholder substitution.
     ///
-    /// テンプレートに `{name}` プレースホルダが含まれていてもそのまま返す
-    /// (置換は `t_args` で行う)。 引数なしのキーで呼ぶことを想定。
+    /// Returns the raw template string even if it contains `{name}` placeholders
+    /// (substitution is done by `t_args`). Intended for keys with no arguments.
     pub fn t(&self, key: MessageKey) -> String {
         self.dict.lookup(key).to_string()
     }
 
-    /// 引数付きの翻訳。 テンプレート内の `{name}` を args に従って置換する。
+    /// Translation with argument substitution. Replaces `{name}` in the template.
     ///
-    /// args は順序を持つので、 同じプレースホルダが複数回現れても全て置換
-    /// される。 未指定のプレースホルダは原文のまま残る (デバッグしやすい挙動)。
+    /// All occurrences of each placeholder are replaced.
+    /// Unspecified placeholders are left as-is (easier to debug).
     pub fn t_args(&self, key: MessageKey, args: &[(&str, &str)]) -> String {
         let mut s = self.dict.lookup(key).to_string();
         for (name, value) in args {
@@ -53,8 +53,8 @@ impl Translator {
         s
     }
 
-    /// `AppError` を翻訳済みエラー文言にする糖衣。 `key()` と `args()` を
-    /// 自動で展開するので、 呼び出し側は `translator.translate_error(&err)` で済む。
+    /// Convenience wrapper: translate an `AppError`. Calls `key()` and `args()`
+    /// automatically so call sites only need `translator.translate_error(&err)`.
     pub fn translate_error(&self, err: &AppError) -> String {
         let owned = err.args();
         let refs: Vec<(&str, &str)> = owned.iter().map(|(k, v)| (*k, v.as_str())).collect();
@@ -63,7 +63,7 @@ impl Translator {
 }
 
 impl Default for Translator {
-    /// デフォルトは英語。 `Locale::default()` と整合する。
+    /// Default is English, consistent with `Locale::default()`.
     fn default() -> Self {
         Self::for_locale(Locale::default())
     }

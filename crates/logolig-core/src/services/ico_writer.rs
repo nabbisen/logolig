@@ -1,12 +1,10 @@
-//! 複数の RGBA8 ラスタを 1 つの `.ico` バイト列にまとめる。
+//! Pack multiple RGBA8 rasters into a single `.ico` byte stream.
 //!
-//! 設計上の重要点 (§7.1):
-//! - **各サイズはソースから個別にレンダリング** されたものを受け取ること
-//!   (これは呼び出し側 `exporter::run` の責務)。 ICO writer は受け取った
-//!   フレームをそのまま詰めるだけで、 自前で縮小はしない
-//! - `IconDirEntry::encode()` はフレームの寸法を見て BMP / PNG を自動選択。
-//!   小さいサイズ (16/32/48 等) は BMP、 大きいサイズ (256以上) は PNG。
-//!   後方互換性が最も高い
+//! Key design points (§7.1):
+//! - **Each frame is pre-rendered by the caller** (`exporter::run`).
+//!   The ICO writer packs frames it receives; it never downsamples.
+//! - `IconDirEntry::encode()` auto-selects BMP (≤48 px) or PNG (≥256 px)
+//!   per frame, maximising backward compatibility.
 
 use std::io::Cursor;
 
@@ -15,10 +13,10 @@ use ico::{IconDir, IconDirEntry, IconImage, ResourceType};
 use crate::domain::Rgba8;
 use crate::error::AppError;
 
-/// フレーム群を 1 つの ICO バイト列にまとめる。
+/// Pack a list of frames into a single ICO byte stream.
 ///
-/// `frames` は (size, RGBA8) のリスト。 サイズと RGBA8 の縦横が一致しない
-/// 場合は `Err(Export(_))` を返す (誤った組み立てを防ぐためのガード)。
+/// `frames` is a list of (size, RGBA8) pairs. Returns `Err` if a declared
+/// size does not match the RGBA8 dimensions (guards against mis-assembly).
 pub fn build(frames: &[(u32, &Rgba8)]) -> Result<Vec<u8>, AppError> {
     if frames.is_empty() {
         return Err(AppError::export("ICO requires at least one frame"));
@@ -32,7 +30,7 @@ pub fn build(frames: &[(u32, &Rgba8)]) -> Result<Vec<u8>, AppError> {
                 rgba.width, rgba.height
             )));
         }
-        // ico 0.4 は所有バッファ (Vec<u8>) を要求する。
+        // ico 0.4 requires an owned buffer (Vec<u8>).
         let pixels = rgba.as_bytes().to_vec();
         let image = IconImage::from_rgba_data(rgba.width, rgba.height, pixels);
         let entry = IconDirEntry::encode(&image)

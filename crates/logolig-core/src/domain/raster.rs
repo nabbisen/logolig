@@ -1,25 +1,24 @@
-//! ラスタライズ結果の不変表現。
+//! Immutable raster result type.
 //!
-//! 仕様 §6.4「変換結果は内部生成物として扱う」を素直に表現するための型。
-//! `Arc<[u8]>` でクローン安価に持ち、UI スレッドへ受け渡してもバッファの
-//! 重複コピーが起きない (Step 3 のプレビュー描画で使う想定)。
+//! Embodies §6.4 "treat conversion results as internal artifacts".
+//! `Arc<[u8]>` makes cloning cheap; no buffer copies when handing to the UI thread.
 
 use std::sync::Arc;
 
-/// RGBA8 ピクセルバッファ。`width * height * 4` バイトを保持。
+/// RGBA8 pixel buffer. Holds `width * height * 4` bytes.
 ///
-/// この型はサービス層が出力し、UI 層は参照するだけで書き換えない。
+/// Written by the service layer; the UI layer only reads, never modifies.
 #[derive(Debug, Clone)]
 pub struct Rgba8 {
     pub width: u32,
     pub height: u32,
-    /// RGBA, 1 ピクセル = 4 バイト, ストライド = `width * 4`。
+    /// RGBA bytes, 4 per pixel, stride = `width * 4`.
     pub pixels: Arc<[u8]>,
 }
 
 impl Rgba8 {
-    /// バイト列が `width * height * 4` であることを保証する。
-    /// 違反時は `None` を返し、 サービス側で Decode/Resize エラーへ変換する。
+    /// Construct from raw bytes, validating `len == width * height * 4`.
+    /// Returns `None` on violation; callers convert to a Decode/Resize error.
     pub fn try_from_raw(width: u32, height: u32, pixels: Arc<[u8]>) -> Option<Self> {
         let expected = (width as usize) * (height as usize) * 4;
         if pixels.len() == expected {
@@ -29,7 +28,7 @@ impl Rgba8 {
         }
     }
 
-    /// バッファ末尾のスライス。テストや書き出しから読みたい時用。
+    /// View the pixel buffer as a byte slice (for tests and serialisation).
     pub fn as_bytes(&self) -> &[u8] {
         &self.pixels
     }

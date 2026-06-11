@@ -1,9 +1,9 @@
-//! HTML スニペット生成テスト (§7.2)。
+//! HTML snippet generation tests (§7.2).
 //!
-//! - デフォルトプランから期待される `<link>` 群が生成される
-//! - 計画から外された成果物への参照は出ない
-//! - base パスの正規化 (末尾スラッシュ補完)
-//! - 出力にレガシーな `msapplication-*` や `browserconfig.xml` が**含まれない**
+//! - Default plan produces the expected `<link>` elements
+//! - Artifacts excluded from the plan are not referenced
+//! - Base-path normalisation (trailing-slash insertion)
+//! - Output contains no legacy `msapplication-*` or `browserconfig.xml`
 
 use logolig_core::services::html_snippet::{render, DEFAULT_BASE};
 use logolig_core::ExportPlan;
@@ -11,18 +11,18 @@ use logolig_core::ExportPlan;
 #[test]
 fn default_plan_renders_modern_minimal_set() {
     let html = render(&ExportPlan::default(), DEFAULT_BASE);
-    // SVG が最初に来る (v1.2.0 — モダンブラウザに優先選択させる)
+    // SVG link comes first (v1.2.0 — preferred by modern browsers)
     assert!(html.contains(r#"<link rel="icon" type="image/svg+xml" href="/favicon.svg">"#));
-    // ICO は古い後方互換性のため SVG の次
+    // ICO link is second, for legacy compatibility
     assert!(html.contains(r#"<link rel="icon" href="/favicon.ico" sizes="any">"#));
-    // PNG サイズ (デフォルト 32 / 192 / 512) がそれぞれ出る
+    // PNG sizes (default 32 / 192 / 512) each appear
     assert!(html.contains(r#"sizes="32x32" href="/favicon-32.png""#));
     assert!(html.contains(r#"sizes="192x192" href="/favicon-192.png""#));
     assert!(html.contains(r#"sizes="512x512" href="/favicon-512.png""#));
     // Apple touch icon
     assert!(html.contains(r#"rel="apple-touch-icon" sizes="180x180""#));
 
-    // 順序検証: SVG → ICO → PNG → apple-touch
+    // Order check: SVG → ICO → PNG → apple-touch
     let pos_svg = html.find("favicon.svg").unwrap();
     let pos_ico = html.find("favicon.ico").unwrap();
     let pos_png = html.find("favicon-32.png").unwrap();
@@ -43,7 +43,7 @@ fn excluded_artifacts_do_not_appear_in_html() {
     assert!(!html.contains("apple-touch-icon"));
     assert!(!html.contains("favicon.ico"));
     assert!(!html.contains("favicon.svg"));
-    // PNG 参照は残る
+    // PNG references remain
     assert!(html.contains("favicon-32.png"));
 }
 
@@ -55,14 +55,14 @@ fn svg_omitted_when_include_svg_is_false() {
     let html = render(&plan, DEFAULT_BASE);
     assert!(!html.contains("favicon.svg"));
     assert!(!html.contains(r#"type="image/svg+xml""#));
-    // ICO と PNG は残る
+    // ICO and PNG references remain
     assert!(html.contains("favicon.ico"));
     assert!(html.contains("favicon-32.png"));
 }
 
 #[test]
 fn legacy_microsoft_tags_are_never_emitted() {
-    // §7.2 「現代的な favicon 参照構成を反映する」
+    // §7.2 "reflect a modern favicon reference set"
     let html = render(&ExportPlan::default(), DEFAULT_BASE);
     assert!(!html.contains("msapplication"));
     assert!(!html.contains("browserconfig"));
@@ -75,7 +75,7 @@ fn base_path_normalization_appends_slash() {
     let plan = ExportPlan::default();
     let html_no_slash = render(&plan, "/static/icons");
     let html_slash = render(&plan, "/static/icons/");
-    // 末尾スラッシュの有無で結果が変わってはいけない
+    // Trailing slash presence/absence must not change the output
     assert_eq!(html_no_slash, html_slash);
     assert!(html_no_slash.contains("/static/icons/favicon.ico"));
 }
@@ -92,17 +92,17 @@ fn png_sizes_are_sorted_and_deduped() {
     let mut plan = ExportPlan::default();
     plan.png_sizes = vec![512, 32, 32, 192];
     let html = render(&plan, "/");
-    // 出力中の出現順序は昇順
+    // PNG sizes appear in ascending order
     let pos_32 = html.find("favicon-32.png").unwrap();
     let pos_192 = html.find("favicon-192.png").unwrap();
     let pos_512 = html.find("favicon-512.png").unwrap();
     assert!(pos_32 < pos_192 && pos_192 < pos_512);
-    // 32 が 1 度しか登場しないことの確認 (重複除去)
+    // 32 appears exactly once (duplicate-free)
     assert_eq!(html.matches("favicon-32.png").count(), 1);
 }
 
 // ---------------------------------------------------------------------------
-// v1.8.0: web_manifest が <link rel="manifest"> を生成すること
+// v1.8.0: web_manifest generates <link rel="manifest">
 // ---------------------------------------------------------------------------
 
 #[test]

@@ -197,3 +197,8 @@ locale_system = "システム設定に従う"
 theme_name_light = "ライト"
 theme_name_dark = "ダーク"
 theme_system = "システム設定に従う"
+
+# v1.22.0: サイドナビ
+nav_home = "ホーム"
+nav_customize = "カスタマイズ"
+nav_settings = "設定"

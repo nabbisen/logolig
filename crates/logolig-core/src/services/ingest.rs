@@ -1,13 +1,19 @@
-//! ファイル読み込み (ingest)。受け入れる形式は PNG / SVG (§6.1)。
+//! Source-image ingestion.
 //!
-//! 設計:
-//! - **非同期**。`tokio::fs::read` でファイル全バイトを読み、UI スレッドを止めない (§2.4)
-//! - **非破壊**。元ファイルは触らない。返す `SourceAsset.raw` は読み込んだバイトの
-//!   `Arc<[u8]>` ラップ。以降、変換のたびにここから再展開する (§6.4)
-//! - **判定は二段階**。まず拡張子で当たりをつけ、次に先頭バイトで本物の形式を確認する。
-//!   拡張子だけだと ".png" を名乗る別形式を取りこぼすため
-//! - **論理サイズ**。PNG はヘッダの IHDR から、SVG は usvg 経由で size を取得し
-//!   `intrinsic_size: Option<(u32, u32)>` に格納する。プレビューと出力計画で使う
+//! Accepts raw file bytes, detects the format by magic signature (not by
+//! file extension), and returns a `SourceAsset`.
+//!
+//! ## Format detection
+//!
+//! | Magic bytes               | Format |
+//! |---------------------------|--------|
+//! | `89 50 4E 47 0D 0A 1A 0A` | PNG    |
+//! | `3C 3F 78 6D 6C` / `3C 73 76 67` | SVG (UTF-8 XML / direct `<svg`) |
+//! | `FF D8 FF`                | JPEG   |
+//! | `52 49 46 46 … 57 45 42 50` | WebP (RIFF container) |
+//!
+//! Files without a recognised magic signature are rejected regardless of
+//! their file extension (prevents extension spoofing).
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -15,27 +21,27 @@ use std::sync::Arc;
 use crate::domain::{SourceAsset, SourceKind};
 use crate::error::AppError;
 
-/// ファイルを読み込んで `SourceAsset` を返す。
+/// Load a file and return a `SourceAsset`.
 ///
-/// この関数は UI スレッドをブロックしないために
-/// `iced::Task::perform` から呼び出される想定 (§2.4)。
+/// Intended to be called via `iced::Task::perform` so the UI thread
+/// is not blocked (§2.4).
 pub async fn ingest(path: PathBuf) -> Result<SourceAsset, AppError> {
-    // 1. 拡張子で第一段階の絞り込み（unknown → 受け付けない）
+    // 1. Narrow down by file extension (unknown extensions are rejected)
     let ext_kind = path
         .extension()
         .and_then(|e| e.to_str())
         .and_then(SourceKind::from_extension);
 
-    // 2. ファイルを非同期に読む
+    // 2. Read the file asynchronously
     let raw = tokio::fs::read(&path)
         .await
         .map_err(|e| AppError::io(path.display().to_string(), e.to_string()))?;
 
-    // 3. 先頭バイトで実形式を確定。マジックバイト未一致なら UnsupportedFile。
+    // 3. Confirm format with magic bytes; reject on mismatch (UnsupportedFile)
     let kind = detect_kind(&raw, ext_kind)
         .ok_or_else(|| AppError::unsupported_file(path.display().to_string()))?;
 
-    // 4. 論理サイズの推定
+    // 4. Extract intrinsic dimensions
     let intrinsic_size = match kind {
         SourceKind::Png => parse_png_size(&raw),
         SourceKind::Svg => parse_svg_size(&raw),
@@ -51,8 +57,8 @@ pub async fn ingest(path: PathBuf) -> Result<SourceAsset, AppError> {
     })
 }
 
-/// 同期版。テスト時に手で書いたバイト列をそのまま投入したい場合に使う。
-/// プロダクトの I/O パスではこれを直接呼ばない（必ず async 版経由）。
+/// Synchronous version for tests (inject hand-crafted bytes directly).
+/// Not used in the production I/O path (always go through the async version).
 pub fn ingest_bytes(
     path: impl AsRef<Path>,
     bytes: Vec<u8>,
@@ -82,20 +88,20 @@ pub fn ingest_bytes(
 }
 
 // ---------------------------------------------------------------------------
-// 内部: マジックバイト判定とヘッダ解析
+// Internal: magic byte detection and header parsing
 // ---------------------------------------------------------------------------
 
 const PNG_MAGIC: &[u8] = &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
 
-/// JPEG マジックバイト (SOI marker)。 v1.11.0+。
-/// JPEG は `FF D8 FF` で始まる (3 バイト目は `FF E0` JFIF / `FF E1` Exif など
-/// 派生があるため、 最初の 2 バイトだけで判定する流派もあるが、 偶然のマッチ
-/// を避けるため 3 バイト確認する)。
+/// JPEG magic bytes (SOI marker). Added in v1.11.0.
+/// JPEG starts with `FF D8 FF` (third byte varies: `FF E0` JFIF / `FF E1` Exif
+/// etc., so some implementations check only 2 bytes, but we check 3 to
+/// avoid accidental matches).
 const JPEG_MAGIC: &[u8] = &[0xFF, 0xD8, 0xFF];
 
-/// WebP は RIFF コンテナ。先頭 12 バイトの構造は:
-///   "RIFF" (4) + ファイルサイズ LE (4) + "WEBP" (4)
-/// この時点では VP8/VP8L/VP8X どれかは判定しない (image-webp が見てくれる)。
+/// WebP is a RIFF container. The first 12 bytes are:
+///   "RIFF" (4) + file-size LE (4) + "WEBP" (4)
+/// We do not distinguish VP8 / VP8L / VP8X here (image-webp handles that).
 fn looks_like_webp(bytes: &[u8]) -> bool {
     bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP"
 }
@@ -113,14 +119,14 @@ fn detect_kind(bytes: &[u8], hint: Option<SourceKind>) -> Option<SourceKind> {
     if looks_like_svg(bytes) {
         return Some(SourceKind::Svg);
     }
-    // マジックバイトが無いものは拡張子を信用しない方針。
-    // 例えば偽装 "*.png" を受け取らない。
+    // Files without a recognised magic signature are rejected regardless of extension.
+    // For example: a file claiming to be ".png" via its extension is rejected.
     let _ = hint;
     None
 }
 
-/// 軽量な SVG 判定。XML 宣言や DOCTYPE の前にコメント・BOM が来る場合があるので、
-/// 先頭側 1KB に `<svg` が含まれていれば SVG として扱う。
+/// Lightweight SVG detection. Comments or BOMs may precede the XML declaration,
+/// so treat the file as SVG if `<svg` appears anywhere in the first 1 KB.
 fn looks_like_svg(bytes: &[u8]) -> bool {
     let head_len = bytes.len().min(1024);
     let head = &bytes[..head_len];
@@ -132,11 +138,11 @@ fn looks_like_svg(bytes: &[u8]) -> bool {
     }
 }
 
-/// PNG IHDR から幅と高さを読む。
-/// PNG は固定の 8 バイトマジックの直後に IHDR チャンクが来る:
+/// Read width and height from the PNG IHDR chunk.
+/// PNG layout: 8-byte magic followed immediately by the IHDR chunk:
 ///   8 (magic) + 4 (length) + 4 ("IHDR") + 4 (width BE) + 4 (height BE) ...
 fn parse_png_size(bytes: &[u8]) -> Option<(u32, u32)> {
-    // IHDR の width フィールドが始まるオフセット
+    // Offset where the IHDR width field starts
     const W_OFF: usize = 16;
     if bytes.len() < W_OFF + 8 {
         return None;
@@ -156,10 +162,10 @@ fn parse_png_size(bytes: &[u8]) -> Option<(u32, u32)> {
     }
 }
 
-/// SVG のサイズは usvg にパースさせて求める。
-/// width/height 属性が無い SVG (viewBox のみ) でも usvg が補完してくれる。
-/// パース失敗時は `None` を返し、ingest 自体は成功させる
-/// (ラスタライズ時に再度パースして失敗を見せる方が UI 上の文脈が明確)。
+/// Delegate SVG dimension extraction to usvg.
+/// usvg fills in width/height even for SVGs that only have a viewBox.
+/// On parse failure, return `None` and let ingest succeed.
+/// (The error is more contextual if it appears at rasterise time.)
 fn parse_svg_size(bytes: &[u8]) -> Option<(u32, u32)> {
     let opt = usvg::Options::default();
     let tree = usvg::Tree::from_data(bytes, &opt).ok()?;
@@ -167,22 +173,22 @@ fn parse_svg_size(bytes: &[u8]) -> Option<(u32, u32)> {
     Some((size.width().ceil() as u32, size.height().ceil() as u32))
 }
 
-/// WebP のサイズ抽出。 RIFF コンテナ内の最初のチャンクから読む。
+/// Extract WebP dimensions from the first chunk of the RIFF container.
 ///
-/// WebP には 3 種類のフォーマットがある:
-/// - **VP8** (Lossy): チャンクヘッダ後 6 バイト目から 14 ビットずつで width / height
-/// - **VP8L** (Lossless): チャンクヘッダ後 1 バイト目から 14 ビットずつ (1 ベース)
-/// - **VP8X** (Extended): チャンクヘッダ後 4 バイト目から 24 ビットずつ (1 ベース)
+/// WebP has three sub-formats:
+/// - **VP8** (Lossy): width/height as 14-bit values starting 6 bytes after the chunk header
+/// - **VP8L** (Lossless): 14-bit values, 1-based, starting 1 byte after the chunk header
+/// - **VP8X** (Extended): 24-bit values, 1-based, starting 4 bytes after the chunk header
 ///
-/// パース失敗時は `None` を返す (decode 時に正規のパーサが詳細エラーを出す)。
-/// favicon 用途なら VP8 / VP8L が大半なので、 VP8X (アニメーション/アルファ拡張)
-/// は最低限の対応にとどめる。
+/// Returns `None` on failure (the proper decoder provides detailed errors at decode time).
+/// For favicons, VP8 / VP8L dominate. VP8X (animation/alpha extension)
+/// gets minimal support only.
 fn parse_webp_size(bytes: &[u8]) -> Option<(u32, u32)> {
     if !looks_like_webp(bytes) {
         return None;
     }
-    // RIFF ヘッダ (12 バイト) の直後にチャンクが並ぶ。
-    // チャンクヘッダ = FourCC (4) + size LE (4)。
+    // RIFF header (12 bytes) is followed immediately by chunks.
+    // Each chunk header: FourCC (4 bytes) + size LE (4 bytes).
     if bytes.len() < 12 + 8 {
         return None;
     }
@@ -191,12 +197,12 @@ fn parse_webp_size(bytes: &[u8]) -> Option<(u32, u32)> {
 
     match chunk_fourcc {
         b"VP8 " => {
-            // VP8 lossy: width/height は keyframe header の 7-10 バイト目あたり。
-            // start code (3 bytes) + version 等 (3 bytes) = 6 バイト後ろから。
+            // VP8 lossy: width/height near bytes 7–10 of the keyframe header.
+            // 3-byte start code + 3 bytes of version/flags = skip 6 bytes.
             if chunk_data.len() < 10 {
                 return None;
             }
-            // 0xFFFF マスクで 14 ビット取り出し (上位 2 ビットは scale フラグ)
+            // 0x3FFF mask extracts 14 bits (top 2 bits are scale flags)
             let w_raw = u16::from_le_bytes([chunk_data[6], chunk_data[7]]);
             let h_raw = u16::from_le_bytes([chunk_data[8], chunk_data[9]]);
             let w = (w_raw & 0x3FFF) as u32;
@@ -204,12 +210,12 @@ fn parse_webp_size(bytes: &[u8]) -> Option<(u32, u32)> {
             (w > 0 && h > 0).then_some((w, h))
         }
         b"VP8L" => {
-            // VP8L lossless: 先頭 1 バイトのシグネチャ後、 width-1 と height-1 が
-            // 14 ビットずつ詰めて格納されている (リトルエンディアン)。
+            // VP8L lossless: after 1-byte signature, width-1 and height-1 are packed
+            // as 14-bit values each (little-endian).
             if chunk_data.len() < 5 {
                 return None;
             }
-            // signature 0x2F の確認
+            // Verify the 0x2F signature byte
             if chunk_data[0] != 0x2F {
                 return None;
             }
@@ -222,8 +228,8 @@ fn parse_webp_size(bytes: &[u8]) -> Option<(u32, u32)> {
             (w > 0 && h > 0).then_some((w, h))
         }
         b"VP8X" => {
-            // VP8X 拡張: フラグ 1 バイト + reserved 3 バイト + width-1 (24bit LE)
-            // + height-1 (24bit LE)。
+            // VP8X: 1-byte flags + 3-byte reserved + width-1 (24-bit LE)
+            // + height-1 (24-bit LE).
             if chunk_data.len() < 10 {
                 return None;
             }
@@ -241,33 +247,33 @@ fn parse_webp_size(bytes: &[u8]) -> Option<(u32, u32)> {
     }
 }
 
-/// JPEG ファイルから幅と高さを読む (v1.11.0)。
+/// Read width and height from a JPEG file (v1.11.0).
 ///
-/// JPEG は SOI (FF D8) の後に複数の "marker segment" が並ぶ構造。 各 segment
-/// は `FF XX` (XX は marker ID) で始まり、 直後の 2 バイトが segment 長
-/// (BE、 長さ自身も含む)。 寸法情報は SOF (Start Of Frame) marker で:
+/// JPEG structure: SOI (FF D8) followed by marker segments.
+/// Each segment starts with `FF XX` (XX = marker ID); the next 2 bytes are
+/// the segment length (BE, self-inclusive). Dimensions are in the SOF marker:
 ///
 /// - SOF0 (0xC0): Baseline DCT
 /// - SOF1 (0xC1): Extended sequential DCT
 /// - SOF2 (0xC2): Progressive DCT
 /// - SOF3 (0xC3): Lossless
-/// - 0xC4 は DHT で SOF ではない (SOF は C0-C3 / C5-C7 / C9-CB / CD-CF が範囲)
+/// - 0xC4 is DHT (not SOF). SOF range: C0-C3 / C5-C7 / C9-CB / CD-CF.
 ///
-/// ここでは「最初に見つかった SOF マーカー」 から幅/高さを取り出す。
-/// SOF segment の中身: [precision(1), height(2 BE), width(2 BE), ...]
+/// We extract dimensions from the first SOF marker found.
+/// SOF segment payload: [precision(1), height(2 BE), width(2 BE), ...]
 ///
-/// 失敗 (壊れた JPEG / 切り詰められたファイル) は `None` を返す。 正しい寸法
-/// が取れなくてもデコード自体は image crate に任せれば成功する場合がある
-/// ため、 ここでは「best effort で寸法を返す」 という扱い。
+/// Returns `None` on failure (corrupt/truncated file). The image crate can often
+/// still decode successfully even without accurate dimensions here,
+/// so this is best-effort.
 fn parse_jpeg_size(bytes: &[u8]) -> Option<(u32, u32)> {
     if bytes.len() < 4 || !bytes.starts_with(JPEG_MAGIC) {
         return None;
     }
-    // SOI (FF D8) の後から開始。
+    // Start after the SOI (FF D8).
     let mut i = 2usize;
     while i + 4 <= bytes.len() {
-        // marker は必ず FF で始まる。 FF が複数連続することがある (filling)
-        // ので、 0xFF を読み飛ばして次の非 0xFF バイトを marker ID とする。
+        // Markers always start with FF. Multiple consecutive 0xFF bytes are allowed
+        // (fill bytes); skip them and treat the next non-FF byte as the marker ID.
         if bytes[i] != 0xFF {
             return None;
         }
@@ -281,13 +287,13 @@ fn parse_jpeg_size(bytes: &[u8]) -> Option<(u32, u32)> {
         let marker = bytes[j];
         i = j + 1;
 
-        // Standalone marker (segment 長フィールドを持たない):
+        // Standalone marker (no segment length field):
         // - SOI (D8), EOI (D9), TEM (01), RST0..RST7 (D0-D7)
         if marker == 0xD8 || marker == 0xD9 || marker == 0x01 || (0xD0..=0xD7).contains(&marker) {
             continue;
         }
 
-        // segment 長を読む (2 バイト BE、 長さ自身も含む)
+        // Read segment length (2-byte BE, self-inclusive).
         if i + 2 > bytes.len() {
             return None;
         }
@@ -296,16 +302,16 @@ fn parse_jpeg_size(bytes: &[u8]) -> Option<(u32, u32)> {
             return None;
         }
 
-        // SOF range: C0-C3, C5-C7, C9-CB, CD-CF (DHT=C4, JPG=C8, DAC=CC は除外)
+        // SOF range: C0-C3, C5-C7, C9-CB, CD-CF (DHT=C4, JPG=C8, DAC=CC excluded)
         let is_sof = match marker {
             0xC0..=0xC3 | 0xC5..=0xC7 | 0xC9..=0xCB | 0xCD..=0xCF => true,
             _ => false,
         };
         if is_sof {
-            // SOF segment の data 部分は seg_len バイト分続く (seg_len 自身を含む)。
-            // 中身: precision(1) + height(2 BE) + width(2 BE) + ...
-            // i は seg_len の先頭を指している。 data の開始は i+2、 precision を
-            // 飛ばして i+3 が height、 i+5 が width。
+            // SOF segment data follows for seg_len bytes (self-inclusive).
+            // Content: precision(1) + height(2 BE) + width(2 BE) + ...
+            // i points to seg_len. Data starts at i+2; skip precision (1 byte),
+            // so height is at i+3 and width at i+5.
             if i + 7 > bytes.len() {
                 return None;
             }
@@ -314,7 +320,7 @@ fn parse_jpeg_size(bytes: &[u8]) -> Option<(u32, u32)> {
             return (w > 0 && h > 0).then_some((w, h));
         }
 
-        // SOF でなければこの segment 全体をスキップ。
+        // Not a SOF marker: skip the entire segment.
         i += seg_len;
     }
     None

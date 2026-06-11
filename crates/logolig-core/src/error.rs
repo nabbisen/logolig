@@ -1,22 +1,22 @@
-//! 共通エラー型 (v1.5.0 でキー化)。
+//! Shared error type (i18n-keyed since v1.5.0).
 //!
-//! - `Message` (logolig-app 側) で運ぶため `Clone + Send + 'static` を満たす。
-//! - そのため `std::io::Error` などはここに直接持たず、文字列に正規化して保持する。
-//! - エラーは UI 層で `Toast<Message>` 経由でユーザーに提示される。
+//! - Must satisfy `Clone + Send + 'static` to be carried in `Message` (logolig-app).
+//! - Therefore `std::io::Error` etc. are not stored directly; they are normalised to strings.
+//! - Errors are presented to the user via `Toast<Message>` in the UI layer.
 //!
-//! ## v1.5.0: i18n キー化
+//! ## v1.5.0: i18n keying
 //!
-//! `Display` 実装は **英語固定** で残す。 これは:
-//! - ログ出力 (環境固有の言語に依存しないログを残せる)
-//! - デバッグ表示 (`{:?}` などで使われる)
-//! - i18n 失敗時のフォールバック表示
+//! `Display` is kept as **English-only**. It is used for:
+//! - Log output (locale-independent)
+//! - Debug formatting (`{:?}` etc.)
+//! - Fallback display when i18n fails
 //!
-//! UI で表示する翻訳済み文言は `key()` と `args()` を `Translator` に渡して
-//! 取得する。 詳しくは `logolig_i18n::Translator::translate_error` を参照。
+//! Translated text for the UI is obtained by passing `key()` and `args()` to
+//! `Translator`. See `logolig_i18n::Translator::translate_error` for details.
 //!
-//! 各バリアントは **構造化された引数** を持つ。 例えば `Io { path, source }`
-//! は path と source を別フィールドで保持し、 翻訳テンプレートで `{path}` と
-//! `{source}` を使えるようにしている。
+//! Each variant carries **structured arguments**. For example `Io { path, cause }`
+//! stores path and cause as separate fields so that the translation template can
+//! use `{path}` and `{cause}` as placeholders.
 
 use thiserror::Error;
 
@@ -24,39 +24,39 @@ use crate::message_key::MessageKey;
 
 #[derive(Debug, Clone, Error)]
 pub enum AppError {
-    /// 受け付けられないファイル形式。
+    /// Unsupported file format.
     #[error("unsupported file format: {path}")]
     UnsupportedFile { path: String },
 
-    /// ファイル I/O エラー。
+    /// File I/O error.
     #[error("I/O error on {path}: {cause}")]
     Io { path: String, cause: String },
 
-    /// ラスタ画像のデコード失敗。
+    /// Raster image decode failure.
     #[error("image decode failed: {detail}")]
     Decode { detail: String },
 
-    /// SVG のパース/ラスタライズ失敗。
+    /// SVG parse / rasterise failure.
     #[error("SVG rasterize failed: {detail}")]
     Rasterize { detail: String },
 
-    /// リサイズ処理失敗。
+    /// Resize failure.
     #[error("resize failed: {detail}")]
     Resize { detail: String },
 
-    /// 出力 (ICO / PNG / HTML スニペット) の生成失敗。
+    /// Output generation failure (ICO / PNG / HTML snippet).
     #[error("export failed: {detail}")]
     Export { detail: String },
 
-    /// 未実装機能(段階的開発のためのプレースホルダ)。
+    /// Unimplemented feature (placeholder for incremental development).
     #[error("not implemented: {feature}")]
     NotImplemented { feature: &'static str },
 }
 
 impl AppError {
-    /// 翻訳キー。
+    /// i18n key.
     ///
-    /// `logolig_i18n::Translator` がこのキーで対応する翻訳テンプレートを引き出す。
+    /// `logolig_i18n::Translator` uses this key to look up the matching translation template.
     pub fn key(&self) -> MessageKey {
         match self {
             Self::UnsupportedFile { .. } => MessageKey::ErrorUnsupportedFile,
@@ -69,10 +69,10 @@ impl AppError {
         }
     }
 
-    /// 翻訳テンプレートに差し込む引数。
+    /// Arguments inserted into the translation template.
     ///
-    /// テンプレート側で `{path}` / `{source}` / `{detail}` / `{feature}` の
-    /// プレースホルダを使うと、 ここで返した値で置換される。
+    /// The template may use `{path}` / `{cause}` / `{detail}` / `{feature}`
+    /// as placeholders; they are replaced with the values returned here.
     pub fn args(&self) -> Vec<(&'static str, String)> {
         match self {
             Self::UnsupportedFile { path } => vec![("path", path.clone())],
@@ -88,10 +88,10 @@ impl AppError {
     }
 
     // ---------------------------------------------------------------
-    // 旧 API (タプルバリアント時代) の呼び出し箇所をスムーズに移行する
-    // ためのコンストラクタヘルパ。 v1.4.x までの呼び出しサイトはほとんど
-    // `AppError::Io(format!(...))` のような形だった。 これらを最小変更で
-    // 新形式に揃えるためのファクトリ関数群。
+    // Constructor helpers for smooth migration from the old tuple-variant API
+    // (pre-v1.5.0). Call sites used to write `AppError::Io(format!(...))`;
+    // these factory functions let those sites be updated with minimal diff.
+    // 
     // ---------------------------------------------------------------
 
     pub fn unsupported_file(path: impl Into<String>) -> Self {

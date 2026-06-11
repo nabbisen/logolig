@@ -1,19 +1,19 @@
 # Workspace root.
 #
-# 構造の意図 (§16, §3.1):
-# - logolig-core: 純粋なドメイン + 画像処理。iced/snora 非依存。
-# - logolig-app : GUI バイナリ。iced 0.14 + snora 0.8 + logolig-core を結線する。
-#                 バイナリ名は `logolig` (cargo install で `logolig` コマンドとして使える)。
+# Structural intent (§16, §3.1):
+# - logolig-core: pure domain + image processing. No iced/snora dependency.
+# - logolig-app : GUI binary. Wires together iced 0.14 + snora 0.8 + logolig-core.
+#                 Binary name is `logolig` (usable as the `logolig` command after cargo install).
 #
-# 「ドメイン/サービス/UI 分離」を慣習ではなく依存グラフで強制する。
-# logolig-core から iced を import しようとするとコンパイルエラーになる。
+# The domain/service/UI separation is enforced by the dependency graph, not by convention.
+# Importing iced from logolig-core would be a compile error.
 
 [workspace]
 resolver = "3"
 members = ["crates/logolig-core", "crates/logolig-app", "crates/logolig-i18n"]
 
 [workspace.package]
-version = "1.21.0"
+version = "1.22.0"
 edition = "2024"
 rust-version = "1.85"
 authors = ["nabbisen <nabbisen@scqr.net>"]
@@ -22,32 +22,17 @@ repository = "https://github.com/nabbisen/logolig"
 publish = false
 
 [workspace.dependencies]
-# 共通基盤
+# Shared foundation
 thiserror = "2"
 
-# GUI ランタイム + フレームワーク
-# 元の指示書は "snora (iced ベース)" を指定。snora 0.8 は iced 0.14 を要求する。
+# GUI runtime + framework
 iced  = { version = "0.14", features = ["tokio", "image"] }
-# snora 0.8 — v1.13.0 で 0.4 → 0.8 にメジャー API 移行。
-#
-# 0.8 で変わった主な点 (logolig に直接効くもの):
-# - workspace 3-crate 分割 (snora-core / snora-widgets / snora) が確立
-# - 旧 `BottomSheet` (bottom 専用) → 汎用 `Sheet` + `SheetEdge` (Top/Bottom/Start/End)
-# - `SheetHeight` → `SheetSize` (perpendicular axis に対する size を表現)
-# - `AppLayout::bottom_sheet(...)` → `AppLayout::sheet(...)` (汎用化)
-# - Toast デフォルト位置が BottomEnd → TopEnd (logolig の v1.16.0 計画が
-#   upgrade だけで達成され、 そちらの roadmap 行は不要に)
-# - lucide-icons feature 修復 (logolig では現状 Unicode 文字を使っており、
-#   lucide-icons への切替は別フェーズ — v1.13.x 以降で行う)
-# - tab UI / breadcrumb UI ウィジェットが追加 (logolig は現状単一画面構成
-#   のため未使用、 将来別画面が増えたら検討)
-#
-# default-features=false で `widgets` feature を切る。 logolig は app_header /
-# app_side_bar 等を使わず、 自前の shell.rs で AppLayout を組み立てるため。
-# vocabulary (Toast, Sheet, AppLayout) は default-features=false でも常時有効。
+# default-features=false disables the `widgets` feature. logolig does not use
+# app_header / app_side_bar etc.; it assembles AppLayout in its own shell.rs.
+# The core vocabulary (Toast, Sheet, AppLayout) is always available even with default-features=false.
 snora = { version = "0.8", default-features = false, features = ["widgets", "lucide-icons"] }
 
-# Step 2: 画像処理コア (logolig-core 専用)
+# Step 2: image-processing core (logolig-core only)
 image = { version = "0.25", default-features = false, features = ["png", "webp", "jpeg"] }
 fast_image_resize = { version = "5", features = ["image"] }
 resvg = "0.45"
@@ -56,34 +41,34 @@ usvg = "0.45"
 ico = "0.4"
 tokio = { version = "1", features = ["fs", "rt", "macros"] }
 
-# v1.2.0: ラスタ → SVG ベクトル化 (logolig-core 専用)
-# vtracer 0.6.5 + visioncortex 0.8.10。 ライセンス MIT/Apache-2.0、 WASM 互換 (公式 webapp 実績)。
+# v1.2.0: raster → SVG vectorisation (logolig-core only)
+# vtracer 0.6.5 + visioncortex 0.8.10. MIT/Apache-2.0, WASM-compatible (proven in the official web app).
 vtracer = "0.6"
 
-# v1.4.0: 設定永続化
-# serde は logolig-core で ExportPlan 等を Serialize/Deserialize するため。
-# app-json-settings v2 は logolig-app の NativeStore 実装でラップする
-# (typed ConfigManager<T> 形、 OS 標準 config dir 自動解決、 read-modify-write `update()`)。
+# v1.4.0: settings persistence
+# serde is used in logolig-core to Serialize/Deserialize ExportPlan etc.
+# app-json-settings v2 is wrapped by logolig-app's NativeStore implementation
+# (typed ConfigManager<T>, automatic OS config-dir resolution, read-modify-write `update()`).
 serde = { version = "1", features = ["derive"] }
 app-json-settings = "2"
 
-# v1.5.0: i18n 基盤
-# sys-locale: OS のロケール検出 (LANG / macOS API / Windows API を吸収)。 約 60KB、 軽量。
-# toml: logolig-i18n の辞書ファイル (en.toml 等) のパース。 v2 WASM でも問題なく動く。
+# v1.5.0: i18n foundation
+# sys-locale: OS locale detection (abstracts LANG / macOS API / Windows API). ~60 KB, lightweight.
+# toml: parses logolig-i18n dictionary files (en.toml etc.). Works fine in a v2 WASM build too.
 sys-locale = "0.3"
 toml = "0.8"
 
-# v1.8.0: Web manifest 出力で JSON シリアライズに使用。
-# logolig-core では今まで dev-dep として InMemoryStore のテストで使っていたが、
-# v1.8 で本体機能 (manifest.webmanifest) に必要となるため runtime dep へ昇格。
+# v1.8.0: used for JSON serialisation in Web manifest output.
+# Previously a dev-dep in logolig-core (InMemoryStore tests),
+# promoted to a runtime dep in v1.8 for the manifest.webmanifest feature.
 serde_json = "1"
 
-# Step 2: ファイルピッカー (logolig-app 専用、§5.1 の代替経路)
+# Step 2: file picker (logolig-app only, the §5.1 alternative path)
 rfd = "0.15"
 
-# クレート間参照
+# Inter-crate references
 logolig-core = { path = "crates/logolig-core" }
 
 [workspace.lints.rust]
-# §2.1 「unsafe は原則禁止」をビルド時強制。
+# §2.1 "unsafe is forbidden by default" — enforced at build time.
 unsafe_code = "forbid"

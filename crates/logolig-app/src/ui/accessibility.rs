@@ -1,12 +1,10 @@
-//! アクセシビリティ補助 (§12, ABDD)。
+//! Accessibility helpers (§12, ABDD).
 //!
-//! - ラベルは集約して使い回す（スクリーンリーダー一貫性）
-//! - 略語ではなく意味の通る短文にする
-//! - 状態を色だけに依存させない（マーカー文字を併用）
+//! - Labels are centralised for screen-reader consistency
+//! - Use plain short phrases, not abbreviations
+//! - Do not convey state by colour alone; pair with a text marker
 //!
-//! Step 1 では一部のラベル/マーカーは未使用 (`CHOOSE_FILE_BTN` は file picker、
-//! `TOGGLE_THEME_BTN` は将来のテーマ pick_list、`ERROR`/`READY` は失敗・成功の
-//! バッジ)。完成時の語彙を一望できるよう、最初から並べてある。
+//! Some labels are defined here for future use and are not yet wired up.
 
 #[allow(dead_code)]
 pub mod label {

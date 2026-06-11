@@ -1,19 +1,23 @@
-//! `AppState::default()` が仕様通りであることを確認する。
+//! Smoke tests for `AppState::default()`.
 //!
-//! `update` 関数の振る舞い検証は Step 2 以降で実装する。
+//! Behavioural tests for `update()` are in Step 2+.
+//!
+//! logolig-app is a binary crate; internal types (AppState, Screen) are
+//! not directly visible from tests/. Step 1 tests are therefore limited
+//! to properties that can be verified through logolig-core.
 
-// logolig-app は bin クレートのため、tests/ から直接 src/app.rs の
-// 内部型 (AppState, Screen) を見ることはできない。
+// logolig-app is a binary crate; its internal types (AppState, Screen)
+// are not directly visible from tests/.
 //
-// したがって Step 1 では logolig-core 側で再現できる初期値の確認に留め、
-// app 側の状態テストは Step 2 で必要な型を `pub` にしてから書く。
+// Step 1 tests are therefore limited to properties verifiable through logolig-core.
+// State tests for the app layer will be added in Step 2 after exposing the necessary types.
 
 use logolig_core::{ExportPlan, ResizeAlgorithm, ThemeMode};
 
 #[test]
 fn defaults_match_spec() {
-    // AppState::default() が依存する各コンポーネントの既定値が、
-    // 仕様 §4.2 / §5.3 / §6.2 / §7.1 に整合していること。
+    // Verify that the defaults depended on by AppState::default()
+    // are consistent with spec §4.2 / §5.3 / §6.2 / §7.1.
     assert_eq!(ThemeMode::default(), ThemeMode::System);
     assert_eq!(ResizeAlgorithm::default(), ResizeAlgorithm::Lanczos3);
 

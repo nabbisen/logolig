@@ -1,14 +1,14 @@
-//! プレビュー用ラスタ生成。
+//! Preview raster generation.
 //!
-//! プレビューパネル (§5.2) は、 ソース画像を **使われる文脈の解像度** で見せる。
-//! このサービスはソースから次の 2 サイズを生成する:
+//! The preview panel (§5.2) shows the source at the resolution of the
+//! target context. This service generates two sizes from the source:
 //!
-//! - **16×16** — ブラウザタブ表示の実寸 favicon
-//! - **120×120** — スマホホーム画面アイコン (60pt の高 DPI 想定)
+//! - **16 × 16** — actual-pixel browser-tab favicon
+//! - **120 × 120** — phone home-screen icon (60 pt at 2× DPI)
 //!
-//! どちらも §6.2 の品質方針通りに生成する:
-//! - SVG はターゲットサイズで個別レンダリング (拡大縮小由来の劣化を避ける)
-//! - PNG はソースをデコードしてから fast_image_resize でサイズ別に展開
+//! Both follow the §6.2 quality policy:
+//! - SVG: rendered individually per target size
+//! - PNG / WebP / JPEG: decoded once, then resized per target size
 
 use std::path::PathBuf;
 
@@ -16,24 +16,24 @@ use crate::domain::{ResizeAlgorithm, Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
 use crate::services::{decode_jpeg, decode_png, decode_webp, rasterize_svg, resize};
 
-/// プレビュー専用のリサイズ済みラスタ群。
+/// Pre-resized rasters for the preview panel.
 ///
-/// `source_path` と `algorithm` を覚えておくのは、 上位レイヤ (UI) が
-/// 「いまのキャッシュは現在の状態に対応しているか」を判定できるようにするため。
+/// Storing `source_path` and `algorithm` lets the UI check
+/// whether the current cache is still valid for the current state.
 #[derive(Debug, Clone)]
 pub struct PreviewCache {
     pub source_path: PathBuf,
     pub algorithm: ResizeAlgorithm,
-    /// ブラウザタブ用 (16×16, 実寸表示)。
+    /// Browser-tab size (16×16, shown at actual pixels).
     pub tab_16: Rgba8,
-    /// スマートフォンホーム画面用 (120×120, 高 DPI 想定)。
+    /// Phone home-screen size (120×120, assumes 2× DPI).
     pub icon_120: Rgba8,
 }
 
-/// ソースから両サイズを生成する。CPU バウンドな処理。
+/// Generate both sizes from the source. CPU-bound.
 ///
-/// 本サービスは `iced::Task::perform` から非同期に呼ばれる想定 (§2.4)。
-/// `async` ブロックで包めるが内部は同期。
+/// Intended to be called from `iced::Task::perform` (§2.4).
+/// Can be wrapped in an `async` block; internally synchronous.
 pub fn build_preview(
     asset: &SourceAsset,
     algorithm: ResizeAlgorithm,
@@ -48,9 +48,9 @@ pub fn build_preview(
     })
 }
 
-/// 単一サイズのレンダリング:
-/// - SVG          → ターゲットサイズで直接ラスタライズ
-/// - PNG / WebP   → デコード → リサイズ
+/// Single-size rendering:
+/// - SVG          → rasterise directly at the target size
+/// - PNG / WebP   → decode then resize
 fn render_at(
     asset: &SourceAsset,
     size: u32,

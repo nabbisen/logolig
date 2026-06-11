@@ -1,32 +1,17 @@
-//! 辞書 (v1.5.0)。
+//! Dictionary (v1.5.0).
 //!
-//! 各ロケールの TOML を `include_str!` でバンドルし、 起動時に serde で
-//! `Dictionary` 構造体にパースする。
+//! Bundles each locale's TOML via `include_str!` and deserialises it into
+//! a `Dictionary` struct at startup.
 //!
-//! ## なぜ「全フィールド必須」 の構造体にするか
+//! ## Why a struct with named fields (not a HashMap)?
 //!
-//! TOML をハッシュマップ (`HashMap<String, String>`) で読むことも可能だが、
-//! 「ja.toml がキーを 1 つ忘れた」 のような事故が実行時まで分からなくなる。
-//! 構造体に名前付きフィールドで持つことで:
+//! Reading TOML into a `HashMap<String, String>` would let a missing key
+//! in `ja.toml` go unnoticed until runtime. Using a named-field struct:
 //!
-//! 1. **コンパイル時に「キー漏れ」 が分かる**: `ja.toml` が `app_title` を
-//!    持っていないなら serde の `missing field` エラーで起動時にパース失敗
-//! 2. **テストでパースを走らせる**: `tests/i18n.rs` で全 locale の `include_str!`
-//!    が serde で読めることを確認すれば、 リリース前に検出できる
-//! 3. **`Translator::t()` の match が型安全**: `MessageKey::AppTitle` →
-//!    `dict.app_title` の対応が静的に解決される
-//!
-//! ## キー命名
-//!
-//! TOML 側のキーは `MessageKey::AppTitle` を snake_case にした `app_title`。
-//! serde の rename もデフォルト命名規則も `snake_case` なので、 enum バリアント
-//! を pascal、 TOML キーを snake にする変換は自動。
-//!
-//! ## なぜ単一構造体を `Translator` に直接持たせず、 `Dictionary` を経由するか
-//!
-//! `Translator` は将来「locale 切替時に辞書差し替え」 する責務を持つ。
-//! `Dictionary` をフィールドにすることで、 `Translator::for_locale(new)` で
-//! 内部の `Dictionary` を入れ替えるだけで済む。
+//! 1. **Missing keys fail at startup** (serde panics during deserialisation)
+//! 2. **All keys are visible in one place** — adding a `MessageKey` variant
+//!    means adding a struct field, which the compiler enforces
+//! 3. **No string-key typos** — the compiler rejects misspelled field names
 
 use serde::Deserialize;
 
@@ -37,8 +22,8 @@ use crate::locale::Locale;
 const EN: &str = include_str!("../locales/en.toml");
 const JA: &str = include_str!("../locales/ja.toml");
 
-/// 辞書の全フィールド。 各ロケール TOML がこの shape に一致しなければ
-/// `serde::Deserialize` でエラーになる。
+/// All dictionary fields. If a locale TOML does not match this shape,
+/// `serde::Deserialize` will error at startup.
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Dictionary {
     // App-wide
@@ -191,7 +176,7 @@ pub(crate) struct Dictionary {
     pub edit_cancel_button: String,
     pub edit_repick_button: String,
 
-    // 画面構造刷新 (v1.16.0)
+    // Screen structure revision (v1.16.0)
     pub importing_please_wait: String,
     pub result_success_headline: String,
     pub result_assets_subheading: String,
@@ -199,7 +184,7 @@ pub(crate) struct Dictionary {
     pub result_download_one: String,
     pub result_preview_toggle: String,
 
-    // 設定ドロワー Right Sheet 化 + flat 再編 (v1.17.0)
+    // Settings — right-sheet + flat section layout (v1.17.0)
     pub settings_title: String,
     pub section_png_output_sizes: String,
     pub add_custom_size: String,
@@ -210,7 +195,7 @@ pub(crate) struct Dictionary {
     pub keep_transparency: String,
     pub advanced_extras_section: String,
 
-    // 左サイドバー + ピッカーポップアップ (v1.18.0)
+    // Left sidebar + picker popups (v1.18.0)
     pub sidebar_label_settings: String,
     pub sidebar_label_locale: String,
     pub sidebar_label_theme: String,
@@ -220,23 +205,28 @@ pub(crate) struct Dictionary {
     pub theme_name_light: String,
     pub theme_name_dark: String,
     pub theme_system: String,
+
+    // v1.22.0: side nav
+    pub nav_home: String,
+    pub nav_customize: String,
+    pub nav_settings: String,
 }
 
 impl Dictionary {
-    /// バンドル済みの TOML から特定ロケール用の Dictionary を作る。
+    /// Build a `Dictionary` for the given locale from the bundled TOML.
     ///
-    /// パースは `include_str!` 経由でビルド時に取り込んだ静的な内容に対して
-    /// 行うため、 失敗するのは TOML 構文ミスかフィールド漏れの場合のみ。
-    /// テストでこれを起動時にチェックすれば本番で失敗することはない。
+    /// Parsing is applied to static content embedded at build time via `include_str!`.
+    /// at startup; failure means either a TOML syntax error or a missing field.
+    /// Checking this in a test at startup prevents production failures.
     pub fn load(locale: Locale) -> Self {
         let raw = match locale {
             Locale::En => EN,
             Locale::Ja => JA,
         };
         toml::from_str(raw).unwrap_or_else(|err| {
-            // ここに到達するのはテストで気づけなかった TOML バグの場合のみ。
-            // panic で気づきやすくする (リリースビルドでも静かに English に
-            // 戻すより、 デバッグしやすい挙動を選択)。
+            // Only reachable if a TOML bug escaped the test suite.
+            // Panic rather than silently falling back to English —
+            // easier to debug.
             panic!(
                 "logolig-i18n: bundled dictionary for {:?} failed to parse: {err}",
                 locale
@@ -244,8 +234,8 @@ impl Dictionary {
         })
     }
 
-    /// `MessageKey` から対応するテンプレート文字列を引き出す。
-    /// 網羅性は match 式によりコンパイル時に強制される。
+    /// Look up the translation template string for a `MessageKey`.
+    /// Exhaustiveness is enforced by the match expression at compile time.
     pub fn lookup(&self, key: MessageKey) -> &str {
         match key {
             MessageKey::AppTitle => &self.app_title,
@@ -425,6 +415,10 @@ impl Dictionary {
             MessageKey::ThemeNameLight => &self.theme_name_light,
             MessageKey::ThemeNameDark => &self.theme_name_dark,
             MessageKey::ThemeSystem => &self.theme_system,
+            // v1.22.0
+            MessageKey::NavHome => &self.nav_home,
+            MessageKey::NavCustomize => &self.nav_customize,
+            MessageKey::NavSettings => &self.nav_settings,
         }
     }
 }

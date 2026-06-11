@@ -1,8 +1,7 @@
-//! RGBA8 を PNG バイト列にエンコードする。
+//! Encode RGBA8 to PNG bytes.
 //!
-//! `image` クレートの `PngEncoder` を使用。 圧縮プリセットは `Default`
-//! (Rust の bindgen が選ぶ穏当な圧縮率) — favicon サイズの画像なので
-//! 強圧縮しても得は小さく、 高速・小サイズのバランスを優先。
+//! Uses `image`'s `PngEncoder` with the `Default` compression preset —
+//! favicon-sized images gain little from aggressive compression.
 
 use std::io::Cursor;
 
@@ -13,7 +12,7 @@ use image::codecs::png::PngEncoder;
 use crate::domain::Rgba8;
 use crate::error::AppError;
 
-/// `Rgba8` を PNG バイト列にエンコードして返す。
+/// Encode `Rgba8` to PNG bytes.
 pub fn encode(rgba: &Rgba8) -> Result<Vec<u8>, AppError> {
     let mut out = Vec::new();
     let encoder = PngEncoder::new(Cursor::new(&mut out));

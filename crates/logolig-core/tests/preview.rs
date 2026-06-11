@@ -1,8 +1,8 @@
-//! プレビュー生成の end-to-end テスト。
+//! End-to-end tests for preview generation.
 //!
-//! - PNG / SVG のどちらからでも `tab_16` (16×16) と `icon_120` (120×120) が得られる
-//! - キャッシュメタデータ (source_path, algorithm) が正しく保存される
-//! - SVG は **ターゲットサイズで個別レンダリング** されている (両サイズが同じバイト列にならない)
+//! - Both PNG and SVG sources produce a `tab_16` (16×16) and `icon_120` (120×120)
+//! - Cache metadata (source_path, algorithm) is stored correctly
+//! - SVG is rendered independently at each size (the two sizes are different byte sequences)
 
 mod fixtures;
 
@@ -29,7 +29,7 @@ fn build_preview_from_svg_produces_both_sizes() {
     let cache = build_preview(&asset, ResizeAlgorithm::Lanczos3).unwrap();
     assert_eq!(cache.tab_16.width, 16);
     assert_eq!(cache.icon_120.width, 120);
-    // 16×16 と 120×120 は明らかに違うバイト列であるべき (個別レンダリングされた証拠)
+    // 16×16 and 120×120 must differ in bytes (proves independent rendering)
     assert_ne!(cache.tab_16.as_bytes().len(), cache.icon_120.as_bytes().len());
 }
 

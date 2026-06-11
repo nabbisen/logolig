@@ -1,5 +1,5 @@
-//! リサイズアルゴリズム (§6.2)。
-//! 既定値は品質重視 (Lanczos3)。
+//! Resize algorithm (§6.2).
+//! Default is quality-first (Lanczos3).
 
 use std::fmt;
 
@@ -13,7 +13,7 @@ pub enum ResizeAlgorithm {
     MitchellNetravali,
     CatmullRom,
     Bilinear,
-    /// ピクセルアート向け（補間しない）。
+    /// Pixel-art / hard-edge sources (no interpolation).
     Nearest,
 }
 
@@ -28,7 +28,7 @@ impl ResizeAlgorithm {
         }
     }
 
-    /// 詳細設定 UI でループ列挙するための一覧。
+    /// Ordered list for cycling through options in the settings UI.
     pub fn all() -> [Self; 5] {
         [
             Self::Lanczos3,
@@ -39,11 +39,11 @@ impl ResizeAlgorithm {
         ]
     }
 
-    /// `fast_image_resize` の `ResizeAlg` への変換。
+    /// Convert to `fast_image_resize`'s `ResizeAlg`.
     ///
-    /// 直接 `FilterType` ではなく `ResizeAlg` を返すのは、
-    /// `Nearest` だけが Convolution ではなく独立バリアント (`ResizeAlg::Nearest`)
-    /// として表現されているため。
+    /// Returns `ResizeAlg` rather than `FilterType` because
+    /// `Nearest` is a standalone variant (`ResizeAlg::Nearest`)
+    /// rather than a convolution filter.
     pub fn to_resize_alg(self) -> ResizeAlg {
         match self {
             Self::Lanczos3 => ResizeAlg::Convolution(FilterType::Lanczos3),
@@ -55,8 +55,8 @@ impl ResizeAlgorithm {
     }
 }
 
-/// `Display` 実装は iced の `pick_list` widget が要求する (`T: ToString`)。
-/// `label()` と同じ文字列を返す。
+/// `Display` implementation required by iced's `pick_list` widget (`T: ToString`).
+/// Returns the same string as `label()`.
 impl fmt::Display for ResizeAlgorithm {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.label())

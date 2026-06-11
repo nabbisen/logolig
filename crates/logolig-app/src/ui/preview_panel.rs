@@ -1,13 +1,13 @@
-//! プレビューパネル (§5.2 コンテキストプレビュー)。
+//! Preview panel (§5.2 — contextual preview).
 //!
-//! ここでの設計原則:
-//! - **「画像を表示する」のではなく「使われる文脈の見え方を再現する」** こと
-//! - 16×16 のラスタは **実寸ピクセルで表示** し、 iced 側で再スケールしない
-//!   (`FilterMethod::Nearest` を使い、 サイズも `Length::Fixed(16.0)` で固定)
-//! - 周辺文脈 (タブ枠、 ホーム画面背景) は **CSS でいうところの "framing"**
-//!   として container + 色だけで描く。 SVG を別途用意しない
-//! - 背景色は `PreviewProfile::background` で切り替え、 ラスタ自体には触れない
-//!   (§5.2 「画像自体を破壊しない」)
+//! Design principles:
+//! - **Show how it looks in context, not just "show the image"**
+//! - 16 × 16 rasters are shown at **actual pixel size** with no iced
+//!   rescaling (`FilterMethod::Nearest`, `Length::Fixed(16.0)`)
+//! - Surrounding context (tab bar, home-screen background) is painted
+//!   with containers and colours only — no separate SVG assets
+//! - Background colour switches via `PreviewProfile::background`;
+//!   the raster itself is not touched
 
 use iced::widget::{button, column, container, image, row, stack, text, Space};
 use iced::{Background, Border, Color, Element, Length, Padding, Theme};
@@ -21,8 +21,8 @@ use crate::ui::colors;
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let theme = resolve_theme(state);
-    // v1.12.0: ファイル名はヘッダ左側に移動 (shell::header)。 preview_panel
-    // からは display_name 取得が不要になった。
+    // v1.12.0: file name moved to the header (shell::header);
+    // preview_panel no longer needs it.
 
     let context = state
         .preview
@@ -35,9 +35,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         .map(|p| p.background)
         .unwrap_or(ThemeMode::System);
 
-    // メインプレビュー領域 (キャッシュが揃ってから初めて描ける)。
-    // v1.10.0: PreviewContext::TransparencyChecker のときは framing を一切
-    // 付けず、 市松模様の上に icon_120 を実寸で重ねる専用ビューを使う。
+    // Main preview area (only drawable once the cache is ready).
+    // v1.10.0: TransparencyChecker context: no framing at all —
+    // render icon_120 at actual size over a checkerboard pattern.
     let preview_area: Element<'a, Message> = match state.preview_cache.as_ref() {
         Some(cache) => match context {
             PreviewContext::TransparencyChecker => checker_view(&cache.icon_120),
@@ -46,25 +46,25 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         None => loading_placeholder(state),
     };
 
-    // ----- v1.12.0 編集画面の構成 -----
+    // ----- v1.12.0 edit-screen layout -----
     //
-    // 課題に答える:
-    // 1. 「ここはプレビューです」 をプレビュー領域の枠で視覚化 (border + soft fill)
-    // 2. 「このボタン群でいろいろな見た目を確認できます」 を view-as / surface
-    //    ピッカーをプレビュー枠の上に置くことで「枠の操作」 と直感させる
-    // 3. 「Export ボタンを押すことでファイル作成できます」 を画面下部・右寄せ・
-    //    強調スタイルで明示
-    // 4. プレビューサイズ不安定問題: container を `FillPortion(4)` で取って
-    //    画面の縦 4/7 を占めるよう統一。 max_width/max_height で過大表示を防止。
-    //    全モード (タブ風 / スマホ風 / チェッカー) で同じサイズ枠の中に center
-    //    配置する。
-    // 5. 配置: 画面タイトルは中央寄せ、 Preview ラベルは枠の左上、 ピッカーは
-    //    中央寄せ、 Export は右寄せ。 単純な左寄せ偏重を避ける。
-    //
-    // テキスト依存しすぎを避けるため、 階層は (a) フォントサイズ差 (b) 枠の
-    // 視覚的境界 (c) 配置 (上中下、 左中右) で表す。
+    // Design goals:
+    // 1. Visualise "this is the preview" with a border + soft fill
+    // 2. Show view-as / surface pickers above the preview frame
+    //    to signal "these buttons control the frame"
+    // 3. Export button at bottom-right, emphasised,
+    //    clearly labelled as the file-creation action
+    // 4. Preview size stability: container uses `FillPortion(4)` (4/7 of height),
+    //    capped with max_width/max_height. All modes centre within the same frame.
 
-    // 1. 画面タイトル (中央寄せ、 中程度の濃さ)
+
+    // 5. Layout: title centred; "Preview" label top-left of frame; pickers centred;
+    //    Export right-aligned. Avoids a purely left-heavy layout.
+    //
+    // Hierarchy expressed via (a) font size, (b) visual frame boundaries,
+    // and (c) placement (top/mid/bottom, left/centre/right) — not text alone.
+
+    // 1. Screen title (centred, medium weight)
     let page_title = container(
         text(t.t(MessageKey::PageTitleEdit))
             .size(20)
@@ -73,17 +73,17 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .center_x(Length::Fill)
     .padding(Padding::default().top(4).bottom(4));
 
-    // 2. Preview カード - 枠 + 弱い背景塗りで「プレビュー領域」 を視覚化
+    // 2. Preview card — border + soft fill to mark the preview area
     let preview_card = container(
         column![
-            // 「Preview」 ラベル (枠内左上、 セクションタイトル相当)
+            // "Preview" label (top-left inside frame, section-title weight)
             text(t.t(MessageKey::SectionTitlePreview))
                 .size(13)
                 .color(colors::section_label(&theme)),
-            // ピッカー群 (中央寄せ)
+            // Picker buttons (centred)
             container(view_as_picker(state, context)).center_x(Length::Fill),
             container(surface_picker(state, context, bg)).center_x(Length::Fill),
-            // プレビュー枠 (中身は中央配置 + サイズは画面の 4/7、 max 560 で天井)
+            // Preview frame (content centred, 4/7 of height, max 560)
             container(preview_area)
                 .width(Length::Fill)
                 .height(Length::FillPortion(4))
@@ -109,14 +109,14 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         }
     });
 
-    // v1.19.0: 旧 action_row (戻る / 再選択 / Export) は削除。
+    // v1.19.0: old action_row (Back / Re-select / Export) removed.
     //
-    // 経緯: v1.16.0 で preview_panel は result_view の「▶ プレビューを見る」
-    // 折りたたみセクションに埋め込まれる役割になり、 戻る / 再選択 / Export の
-    // 3 ボタンは画面の主役ではなくなった (これらの操作は result_view 側の
-    // 「← Back」 や、 ファイル投入で自動的にリピックされる動線に統合された)。
-    // v1.19.0 で旧 Export* Message 系 を完全削除したため、 ここの Export
-    // ボタンも合わせて廃止。
+    // Context: v1.16.0 turned preview_panel into a collapsible section
+    // inside result_view. Back / Re-select / Export were moved to result_view.
+
+
+    // v1.19.0 removed all Export* Messages, so the Export button here was
+    // removed too.
 
     column![page_title, preview_card]
         .spacing(14)
@@ -124,31 +124,31 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         .into()
 }
 
-// v1.14.0: PAGE_TITLE_COLOR / SECTION_LABEL_COLOR / MUTED_TEXT の hardcoded
-// 定数は `crate::ui::colors` の theme-aware ヘルパに移行した。 dark/light の
-// 切替に追従。
+// v1.14.0: PAGE_TITLE_COLOR / SECTION_LABEL_COLOR / MUTED_TEXT hardcoded
+// constants moved to theme-aware helpers in `crate::ui::colors`.
 
-// v1.19.0: 旧 `secondary_button_style` (戻る / 再選択ボタン用) は削除。
-// action_row 自体が廃止されて参照箇所がなくなった。 必要になれば
-// `crate::ui::advanced_drawer::secondary_drawer_button_style` がほぼ同等の
-// ものを提供している。
 
-// ---------------------------------------------------------------------------
-// コンテキスト・背景の切り替え UI (キーボード代替経路として button を使う、 §12)
-// ---------------------------------------------------------------------------
+// v1.19.0: `secondary_button_style` (for Back / Re-select buttons) removed.
+// The action_row itself was removed; use
+// `crate::ui::advanced_drawer::secondary_drawer_button_style` as an equivalent
+// if needed.
 
 // ---------------------------------------------------------------------------
-// v1.10.0: 「View as」 / 「Surface」 ボタン群
+// Context / background switcher UI (uses buttons as keyboard-accessible §12)
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// v1.10.0: "View as" / "Surface" button groups
 //
-// 設計:
-// - 群の左にラベル (`View as:` / `Surface:`) を 80px 固定幅で揃え、 視覚的に
-//   2 つの群が同じ並列構造であることを示す
-// - active ボタンは背景塗りで強調 (ABDD §12 の color-blind 安全のため、 文字
-//   prefix `▣` も併用 — 色覚に依存せずに状態が分かる)
-// - Surface 群は Checker 表示中は disabled (背景塗りが意味を持たないため)
+// Design:
+// - 80px fixed label (`View as:` / `Surface:`) left of each group
+//   signals the two groups are parallel structures
+// - Active button has filled background; also prefixed with `▣` for
+//   colour-blind safety (ABDD §12)
+// - Surface group is disabled during Checker display (background has no effect)
 // ---------------------------------------------------------------------------
 
-/// 「View as」 群: タブ風 / スマホ風 / Checker の 3 ボタン。
+/// "View as" group: Tab / Phone / Checker — three buttons.
 fn view_as_picker<'a>(state: &'a AppState, current: PreviewContext) -> Element<'a, Message> {
     let t = &state.translator;
     let mut buttons = row![]
@@ -176,10 +176,10 @@ fn view_as_picker<'a>(state: &'a AppState, current: PreviewContext) -> Element<'
     .into()
 }
 
-/// 「Surface」 群: System / Light / Dark の 3 ボタン。
-/// Checker コンテキスト中は背景設定が描画に影響しないため、 全ボタンが
-/// 視覚的に灰色化 (押下しても効果なし) する。 disable は `on_press` を渡さない
-/// ことで実現する。
+/// "Surface" group: System / Light / Dark — three buttons.
+/// Disabled during Checker context (background has no effect on rendering).
+/// Disabled appearance: omit `on_press`.
+
 fn surface_picker<'a>(
     state: &'a AppState,
     context: PreviewContext,
@@ -213,14 +213,14 @@ fn surface_picker<'a>(
     .into()
 }
 
-/// 押下可能な picker ボタン。
+/// A pressable picker button.
 fn picker_button<'a>(label: &str, active: bool, on_press: Message) -> Element<'a, Message> {
     picker_button_optional(label, active, Some(on_press))
 }
 
-/// `on_press = None` のとき disabled な picker ボタンを返す。
-/// active ボタンは `marker::READY` プレフィックス + 塗り背景で 2 通りの方法で
-/// 強調 (色覚に依存しない原則)。
+/// When `on_press = None`, returns a visually disabled picker button.
+/// Active button uses `marker::READY` prefix + filled background
+/// for two independent visual signals (colour-blind safe).
 fn picker_button_optional<'a>(
     label: &str,
     active: bool,
@@ -229,16 +229,16 @@ fn picker_button_optional<'a>(
     let lbl = if active {
         format!("{} {}", marker::READY, label)
     } else {
-        // 非 active のとき先頭 1 文字分のスペースを確保することで、
-        // active/非 active で文字幅が違って row が揺れるのを防ぐ。
+        // Reserve space for the marker prefix even when inactive
+        // to prevent row width from shifting between states.
         format!("  {}", label)
     };
     let mut btn = button(text(lbl).size(13)).padding([6, 12]);
     if let Some(msg) = on_press {
         btn = btn.on_press(msg);
     }
-    // active 時の視覚強調: テーマの primary 色で背景を塗る。
-    // iced 0.14 の button::Style は closure で渡す。
+    // Active: fill with the theme primary colour.
+    // iced 0.14: pass button::Style as a closure.
     btn = btn.style(move |theme: &Theme, status| {
         let palette = theme.extended_palette();
         let base = if active {
@@ -251,7 +251,7 @@ fn picker_button_optional<'a>(
         } else {
             palette.background.weak.text
         };
-        // hover で少し暗くする (active のときは更に主張、 非 active は薄い色)。
+        // Hover: darken slightly (active = stronger, inactive = lighter).
         let bg = match status {
             iced::widget::button::Status::Hovered => {
                 if active {
@@ -308,22 +308,22 @@ fn background_message_key(theme: ThemeMode) -> MessageKey {
 }
 
 // ---------------------------------------------------------------------------
-// v1.7.0: 透過チェッカー (専用ビュー)
+// v1.7.0: Transparency checker view
 // ---------------------------------------------------------------------------
 
-/// 市松模様のサイズ。 240×240 で 1 タイル 12px。 ABDD §12 の「色だけに依存しない」
-/// に従い、 透明度の有無を視覚的に明示するための共通パターン。
+/// Checkerboard size: 240×240 with 12-px tiles. Per ABDD §12,
+/// visually distinguishes transparent areas without relying on colour alone.
 const CHECKER_SIDE: u32 = 240;
 const CHECKER_TILE: u32 = 12;
 
-/// 1 度生成したらアプリ実行中ずっと同じ。 毎フレーム再生成すると無駄な
-/// アロケーションが発生するため、 `OnceLock` でキャッシュする。
+/// Generated once and cached for the lifetime of the process.
+/// Repeated allocation per frame would be wasteful; use `OnceLock`.
 fn checker_handle() -> &'static image::Handle {
     use std::sync::OnceLock;
     static HANDLE: OnceLock<image::Handle> = OnceLock::new();
     HANDLE.get_or_init(|| {
-        // ライト寄りグレー 2 色の市松。 透明部分を「見やすい中間色」 で示す
-        // ことで、 ロゴが白でも黒でも輪郭が判別しやすい。
+        // Two light-grey shades. The mid-grey makes transparent areas
+        // visible whether the logo is light or dark.
         let light: [u8; 4] = [0xE6, 0xE6, 0xE6, 0xFF];
         let dark: [u8; 4] = [0xC0, 0xC0, 0xC0, 0xFF];
         let n = (CHECKER_SIDE as usize) * (CHECKER_SIDE as usize);
@@ -340,20 +340,20 @@ fn checker_handle() -> &'static image::Handle {
     })
 }
 
-/// 透過チェッカー専用ビュー。 framing (タブ枠 / スマホ枠) を一切付けず、
-/// 市松背景の上にアイコンを実寸より少し大きく拡大して重ねる。
+/// Transparency-checker view. No framing (no tab or phone border) —
+/// the icon is overlaid at actual size on the checkerboard.
 ///
-/// 設計判断:
-/// - **framing を排除**: 透過状態の確認に集中するための専用モード。 タブ枠や
-///   スマホホーム枠が同居すると「何を見てよいか」 がブレる
-/// - **アイコンを 120px で表示**: cache.icon_120 の実寸そのまま (アイコンが
-///   小さいと透明部分の存在感が薄れる)
-/// - **市松を 240×240**: アイコンの周囲に余白があり、 透過範囲が明確に分かる
+/// Design decisions:
+/// - **No framing**: dedicated mode for inspecting transparency.
+///   A tab or phone frame would distract from what to look at.
+/// - **120 px display**: icon_120 at actual size — a small icon makes
+///   transparent areas less obvious.
+/// - **240×240 checkerboard**: leaves a visible margin around the icon
 fn checker_view<'a>(rgba: &'a Rgba8) -> Element<'a, Message> {
     let icon_bytes: Vec<u8> = rgba.as_bytes().to_vec();
     let icon_handle = image::Handle::from_rgba(rgba.width, rgba.height, icon_bytes);
 
-    // 市松背景: 240×240 を実寸表示
+    // Checkerboard background: 240×240 at actual pixel size
     let checker_layer = container(
         image(checker_handle().clone())
             .width(Length::Fixed(CHECKER_SIDE as f32))
@@ -363,7 +363,7 @@ fn checker_view<'a>(rgba: &'a Rgba8) -> Element<'a, Message> {
     .center_x(Length::Fill)
     .center_y(Length::Fill);
 
-    // アイコン層: cache.icon_120 を実寸表示。 中央寄せで市松の上に重ねる
+    // Icon layer: cache.icon_120 at actual size, centred over the checkerboard
     let icon_layer = container(
         image(icon_handle)
             .width(Length::Fixed(rgba.width as f32))
@@ -373,7 +373,7 @@ fn checker_view<'a>(rgba: &'a Rgba8) -> Element<'a, Message> {
     .center_x(Length::Fill)
     .center_y(Length::Fill);
 
-    // stack で 2 層に重ねる (iced 0.14 の stack は後の要素ほど手前に描画)。
+    // stack: later elements are drawn on top (iced 0.14).
     container(stack![checker_layer, icon_layer])
         .width(Length::Fixed(CHECKER_SIDE as f32))
         .height(Length::Fixed(CHECKER_SIDE as f32))
@@ -381,7 +381,7 @@ fn checker_view<'a>(rgba: &'a Rgba8) -> Element<'a, Message> {
 }
 
 // ---------------------------------------------------------------------------
-// コンテキストごとの描画
+// Per-context rendering
 // ---------------------------------------------------------------------------
 
 fn render_context<'a>(
@@ -392,25 +392,25 @@ fn render_context<'a>(
     match context {
         PreviewContext::BrowserTab16 => browser_tab_view(&cache.tab_16, bg),
         PreviewContext::SmartphoneIcon => smartphone_view(&cache.icon_120, bg),
-        // 防御的: 上位の `view` 関数が `TransparencyChecker` を `checker_view` に
-        // 振り分けるため、 ここに来ることはない。 万一きてもアプリを落とさず
-        // checker view を返す。
+        // Defensive: the outer `view` function routes TransparencyChecker
+        // to `checker_view`, so this branch is never reached.
+        // Return checker view defensively rather than panicking.
         PreviewContext::TransparencyChecker => checker_view(&cache.icon_120),
     }
 }
 
-/// ブラウザタブの見え方を模写する。
+/// Simulate a browser tab.
 ///
-/// 重要なのは 16×16 を **実寸** で表示すること (§6.2 縮小品質を視覚的に判断)。
-/// `image::FilterMethod::Nearest` + `Length::Fixed(16.0)` で iced による
-/// 自動スケーリングを禁じている。
+/// Critical: display the 16×16 at **actual pixels** (§6.2 — visual quality check).
+/// `image::FilterMethod::Nearest` + `Length::Fixed(16.0)` prevent iced
+/// from auto-scaling.
 fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> {
     let bg_color = chrome_bg_for(bg);
     let tab_color = tab_face_for(bg);
     let text_color = text_color_for(bg);
 
-    // 16×16 を実寸表示。 image::Handle::from_rgba は Bytes (= Vec<u8>) を要求するので
-    // 1 度だけバイト列を複製する (cache 側はそのまま温存)。
+    // Render 16×16 at actual size. image::Handle::from_rgba requires Bytes (Vec<u8>):
+    // clone the byte slice once (the cache is not consumed).
     let icon_bytes: Vec<u8> = rgba.as_bytes().to_vec();
     let handle = image::Handle::from_rgba(rgba.width, rgba.height, icon_bytes);
     let icon = image(handle)
@@ -418,7 +418,7 @@ fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> 
         .width(Length::Fixed(16.0))
         .height(Length::Fixed(16.0));
 
-    // タブの中身: [favicon 16px] [Page Title text] [×]
+    // Tab content: [favicon 16 px] [Page Title] [×]
     let tab_inner = row![
         icon,
         text("logolig.example.com")
@@ -431,8 +431,8 @@ fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> 
     .align_y(iced::Alignment::Center)
     .padding([6, 10]);
 
-    // タブ "形" (上端を丸めたいが iced 0.14 の Radius は単一値型なので
-    // 全角同じ半径で代用)。視覚的にはタブとして十分通じる。
+    // Tab "shape" (rounded top — iced 0.14 Radius is uniform,
+    // so use the same radius on all corners; visually reads as a tab).
     let tab = container(tab_inner)
         .style(move |_t: &Theme| container::Style {
             background: Some(Background::Color(tab_color)),
@@ -444,12 +444,12 @@ fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> 
         })
         .width(Length::Fixed(280.0));
 
-    // ブラウザクロームの帯 (タブの下にぶら下がる空間)
+    // Browser chrome strip (space below the tab)
     let chrome = container(
         column![
-            // タブ列 (左寄せ)
+            // Tab row (left-aligned)
             row![tab, Space::new().width(Length::Fill)].spacing(0),
-            // アドレスバー風のライン
+            // Address-bar-like line
             container(
                 text("https://logolig.example.com/")
                     .size(11)
@@ -480,10 +480,10 @@ fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> 
     .into()
 }
 
-/// スマホホーム画面の見え方を模写する。
+/// Simulate a phone home screen.
 ///
-/// 60pt iOS アイコンの 2x DPI 想定で 120×120 を表示。 角丸マスクは
-/// container の Border::radius でかけている。
+/// Displays 120×120 (60 pt at 2× DPI). Rounded-corner mask via
+/// container Border::radius.
 fn smartphone_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> {
     let wallpaper = wallpaper_for(bg);
     let label_color = text_color_for(bg);
@@ -491,9 +491,9 @@ fn smartphone_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> {
     let icon_bytes: Vec<u8> = rgba.as_bytes().to_vec();
     let handle = image::Handle::from_rgba(rgba.width, rgba.height, icon_bytes);
 
-    // 角丸マスクを container の border_radius で再現。
-    // iced は image を直接クリップしないため、 image を radius 付き container に
-    // 入れることで角だけ削れて見える。
+    // Rounded corner: container border_radius acts as a clip mask.
+    // iced does not clip images directly; wrapping in a container with radius
+    // gives the rounded-corner appearance.
     let icon_card = container(
         image(handle)
             .filter_method(image::FilterMethod::Linear)
@@ -515,7 +515,7 @@ fn smartphone_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> {
         .spacing(6)
         .align_x(iced::alignment::Horizontal::Center);
 
-    // ホーム画面ぽい "壁紙" ボックス
+    // Simulated home-screen "wallpaper" box
     let home = container(icon_with_label)
         .style(move |_t: &Theme| container::Style {
             background: Some(Background::Color(wallpaper)),
@@ -540,12 +540,12 @@ fn smartphone_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> {
 }
 
 // ---------------------------------------------------------------------------
-// 色の選択
+// Background colour selection
 // ---------------------------------------------------------------------------
 //
-// `PreviewProfile::background` は **プレビュー文脈の背景色** を意味する。
-// アプリ全体の Theme とは独立。 `System` は今のところ Light 相当として扱う
-// (Step 4 で OS 設定読み込みを足す)。
+// `PreviewProfile::background` is the **preview context background**,
+// independent of the app Theme. `System` is currently treated as Light
+// (OS preference reading is planned for a later step).
 
 fn chrome_bg_for(theme: ThemeMode) -> Color {
     match theme {

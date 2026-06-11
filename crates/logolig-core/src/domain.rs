@@ -1,4 +1,4 @@
-//! ドメインモデル層。副作用なし、純粋型のみ。
+//! Domain model layer. No side effects; pure types only.
 
 pub mod export_plan;
 pub mod persisted_settings;

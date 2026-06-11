@@ -8,17 +8,17 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 description = "Pure domain types and image processing services for logolig (no GUI)."
-# tests/ 配下の自動テスト発見を無効化する。
-# `tests/fixtures.rs` を共有ヘルパとして残しつつ、 個別の integration test
-# バイナリには昇格させたくないため。 §2.1 の `mod.rs` 禁止規約と両立させる
-# ためのトレードオフ: `tests/common/mod.rs` は使わず、 `tests/fixtures.rs` を
-# `mod fixtures;` から参照する。
+# Disable automatic test discovery under tests/.
+# Keeps `tests/fixtures.rs` as a shared helper without promoting it to a
+# standalone integration-test binary. Trade-off to satisfy the §2.1 "no mod.rs" rule:
+# instead of `tests/common/mod.rs`, each test references `tests/fixtures.rs`
+# via `mod fixtures;`.
 autotests = false
 
 [dependencies]
 thiserror.workspace = true
 
-# 画像処理コア
+# Image-processing core
 image.workspace = true
 fast_image_resize.workspace = true
 resvg.workspace = true
@@ -27,25 +27,25 @@ usvg.workspace = true
 ico.workspace = true
 tokio.workspace = true
 
-# v1.2.0: ラスタ → SVG ベクトル化
+# v1.2.0: raster → SVG vectorisation
 vtracer.workspace = true
 
-# v1.4.0: ドメイン型の serialize/deserialize (永続化のため)
+# v1.4.0: serialize/deserialize for domain types (persistence)
 serde.workspace = true
 
-# v1.8.0: Web manifest (manifest.webmanifest) 生成。
-# v1.4 から dev-dep として PersistedSettings round-trip テストで使っていたが、
-# v1.8 で本体機能に格上げ。 dev-dep の重複指定は不要 (workspace で 1 度宣言)。
+# v1.8.0: Web manifest (manifest.webmanifest) generation.
+# Was a dev-dep since v1.4 (PersistedSettings round-trip tests),
+# promoted to a runtime feature in v1.8. No duplicate dev-dep needed (declared once in the workspace).
 serde_json.workspace = true
 
 [dev-dependencies]
-# 非同期 ingest テストでランタイムが必要
+# Async ingest tests require a runtime
 tokio = { workspace = true, features = ["rt", "macros"] }
-# v1.2.0: vectorize 出力の round-trip テストで使う (usvg で読み戻せること)
+# v1.2.0: used in vectorise output round-trip tests (must re-parse via usvg)
 usvg = { workspace = true }
 
-# 各 integration test を明示宣言する (autotests = false の補完)。
-# `fixtures.rs` は意図的にここに含めない。
+# Each integration test is declared explicitly (complements autotests = false).
+# `fixtures.rs` is intentionally excluded here.
 [[test]]
 name = "export_plan"
 path = "tests/export_plan.rs"

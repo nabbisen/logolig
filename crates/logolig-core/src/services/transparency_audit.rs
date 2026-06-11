@@ -1,69 +1,57 @@
-//! 透過チェッカー (v1.7.0)。
+//! Transparency auditor (v1.7.0).
 //!
-//! favicon ユースケースで起きやすい「画像の透過状態が意図とずれている」
-//! ケースを、 入力直後にユーザに知らせるための解析。
+//! Analyses the alpha channel of a loaded image and reports cases where
+//! the transparency state is likely unintentional. The result is shown
+//! as a one-time informational toast right after the file is loaded.
 //!
-//! ## 検出するケース
+//! ## Detected cases
 //!
-//! - **`FullyOpaque`** — 全ピクセルが alpha=255。 透過 PNG として書き出しても
-//!   意味がなく、 ダークテーマのブラウザタブで「白い四角の中にロゴ」 が出る
-//!   失敗パターンの典型
-//! - **`FullyTransparent`** — 全ピクセルが alpha=0。 何も描かれていない画像
-//!   (空のレイヤーや誤った素材) を選んだ可能性が高い
-//! - **`HasTransparency`** — 透明部分と不透明部分が混在する正常ケース
+//! - **`FullyOpaque`** — every pixel has alpha=255. The favicon appears
+//!   as "logo inside a white square" on dark browser tabs.
+//! - **`FullyTransparent`** — every pixel has alpha=0. The image is
+//!   invisible; the user likely dropped the wrong file.
+//! - **`HasTransparency`** — mix of opaque and transparent pixels.
+//!   This is the expected state for a proper favicon source.
 //!
-//! ## なぜハロー検出やアルファ事前乗算検査をやらないか
-//!
-//! これらの判定には閾値設計が必要で、 **正しい画像にも誤警告が出る** 可能性が
-//! 高い。 例: ロゴの細部に意図的なアンチエイリアスがあると「半透明残り」 と
-//! 誤判定される。 v1.7.0 では「判定が二値で明確 (alpha が完全に 255 か 0 か
-//! 否か)」 のケースに絞る。 誤検出のリスクが低い分、 ユーザの信頼を損ねない。
-//!
-//! 将来 (v1.7.x 以降) で実機の誤警告率を見ながら段階的に追加するか、 もしくは
-//! 入れない判断をする。
-//!
-//! ## パフォーマンス
-//!
-//! 全ピクセル走査だが、 alpha チャネル 1 バイトを順に読むだけなので 1024×1024
-//! でも 1ms 程度。 preview 生成と同じ非同期パイプラインに乗せるが、 重い処理
-//! ではない。
+//! `needs_warning()` returns `true` for `FullyOpaque` and
+//! `FullyTransparent` only.
 
 use crate::domain::Rgba8;
 
-/// 入力画像の透過状態の分類。
+/// Classification of an image's alpha-channel state.
 ///
-/// favicon ユースケースで重要な 3 ケース。 「Indeterminate」 (まだ調べていない)
-/// は持たない — `audit` を呼んだら必ずこの 3 つのうちのどれかになる。
+/// Three cases relevant to favicon use. There is no "Indeterminate" state —
+/// `audit()` always returns one of these three.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TransparencyReport {
-    /// 完全に不透明 (全ピクセル alpha=255)。 透過 PNG として書き出しても効果なし。
-    /// ダークテーマで白い背景が浮いて見える典型的な失敗パターン。
+    /// Fully opaque (every pixel has alpha=255). Exporting as a transparent PNG serves no purpose.
+    /// On dark browser tabs this produces the classic "logo in a white box" mistake.
     FullyOpaque,
-    /// 完全に透明 (全ピクセル alpha=0)。 空のレイヤーや誤った素材を選んだ可能性。
+    /// Fully transparent (every pixel has alpha=0). Likely an empty layer or wrong file.
     FullyTransparent,
-    /// 透明部分と不透明部分が混在 — 正常な favicon 素材。
+    /// Mix of transparent and opaque pixels — the expected state for a favicon.
     HasTransparency,
 }
 
 impl TransparencyReport {
-    /// 警告すべき状態か (UI 層で Toast を出すかどうかの判断に使う)。
-    /// `HasTransparency` は警告不要。
+    /// Whether to show a warning toast (used by the UI layer).
+    /// `HasTransparency` never triggers a warning.
     pub fn needs_warning(self) -> bool {
         matches!(self, Self::FullyOpaque | Self::FullyTransparent)
     }
 }
 
-/// 入力画像の透過状態を解析する。
+/// Analyse the transparency state of an image.
 ///
-/// 全ピクセルを走査して alpha の min/max を取り、 3 ケースに分類する。
-/// 空画像 (width=0 or height=0) は安全側に倒して `FullyTransparent` を返す。
+/// Scans all pixels to find the min and max alpha, then classifies into 3 cases.
+/// An empty image (width=0 or height=0) returns `FullyTransparent` conservatively.
 pub fn audit(image: &Rgba8) -> TransparencyReport {
     if image.width == 0 || image.height == 0 || image.pixels.is_empty() {
-        // ピクセル 0 個 → 「描かれていない」 と同義
+        // Zero pixels → equivalent to "nothing drawn"
         return TransparencyReport::FullyTransparent;
     }
 
-    // RGBA は 4 バイト 1 ピクセル。 alpha は 4 番目のバイト。
+    // RGBA: 4 bytes per pixel; alpha is the 4th byte.
     debug_assert!(
         image.pixels.len() == (image.width as usize) * (image.height as usize) * 4,
         "Rgba8 pixel buffer length mismatch"
@@ -72,7 +60,7 @@ pub fn audit(image: &Rgba8) -> TransparencyReport {
     let mut min_alpha: u8 = 255;
     let mut max_alpha: u8 = 0;
     for chunk in image.pixels.chunks_exact(4) {
-        // chunk[3] が alpha
+        // chunk[3] is the alpha byte
         let a = chunk[3];
         if a < min_alpha {
             min_alpha = a;
@@ -80,7 +68,7 @@ pub fn audit(image: &Rgba8) -> TransparencyReport {
         if a > max_alpha {
             max_alpha = a;
         }
-        // 早期終了 (混在を確認できたらこれ以上見る必要はない)
+        // Early exit: once we confirm a mix, no further scanning is needed
         if min_alpha == 0 && max_alpha == 255 {
             return TransparencyReport::HasTransparency;
         }
@@ -89,9 +77,9 @@ pub fn audit(image: &Rgba8) -> TransparencyReport {
     match (min_alpha, max_alpha) {
         (255, 255) => TransparencyReport::FullyOpaque,
         (0, 0) => TransparencyReport::FullyTransparent,
-        // それ以外 (例: alpha が常に 128 のような半透明一様画像) も
-        // 「混在ではない」 が favicon 用途で実害は限定的。 警告対象から外し、
-        // HasTransparency 扱いにする。 これは将来 (v1.7.x) で見直す余地あり。
+        // Other cases (e.g. uniformly half-transparent alpha=128)
+        // are not "mixed" but are harmless for favicons. No warning;
+        // classify as HasTransparency. May be revisited in v1.7.x.
         _ => TransparencyReport::HasTransparency,
     }
 }

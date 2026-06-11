@@ -1,48 +1,47 @@
-//! 翻訳キー (v1.5.0)。
+//! Translation keys (v1.5.0).
 //!
-//! UI 文言とエラーメッセージのすべてをこの enum で参照する。 `logolig-i18n`
-//! クレートが各ロケールの辞書を持ち、 `MessageKey` を引数に取って文字列を返す。
+//! Every UI string and error message is referenced through this enum.
+//! `logolig-i18n` holds per-locale dictionaries and maps `MessageKey` to strings.
 //!
-//! ## なぜ enum か
+//! ## Why an enum
 //!
-//! 文字列キー (`"error.io"` のような形式) でも実装は可能だが、 enum にする
-//! ことで:
+//! String keys (e.g. `"error.io"`) would work, but using an enum gives:
+
 //!
-//! 1. **網羅性チェック**: 翻訳辞書側で `match key { ... }` を書けば、 core が
-//!    新キーを追加した瞬間に翻訳側がコンパイルエラー。 翻訳の追従漏れが
-//!    型レベルで検出される
-//! 2. **リファクタ安全性**: `ErrorIo` を `ErrorReadFailed` に改名すると IDE
-//!    一発で全箇所更新される
-//! 3. **使われていないキー検出**: `dead_code` 警告で発見可能
+//! 1. **Exhaustiveness**: the dictionary `match` fails to compile the moment
+//!    logolig-core adds a new key — translation drift is caught at compile time.
+//! 2. **Rename safety**: renaming `ErrorIo` to `ErrorReadFailed` lets the IDE
+//!    update every reference in one step.
+//! 3. **Dead-key detection**: unused keys surface as `dead_code` warnings.
 //!
-//! ## なぜ logolig-core 配置か
+//! ## Why in logolig-core
 //!
-//! `AppError::key()` が `MessageKey` を返す責務を core が持つため。 もし
-//! logolig-i18n に置くと、 core が i18n に依存してしまい依存方向が逆になる。
+//! `AppError::key()` returns a `MessageKey`, so core owns the enum.
+//! Placing it in logolig-i18n would reverse the dependency direction.
 //!
-//! ## カテゴリ
+//! ## Structure
 //!
-//! 列挙の構造は flat。 「app.title」 のようなネスト名前空間は採らず、
-//! `AppTitle` のように prefix で表現する。 enum 1 つに全文言が並ぶことで、
-//! 翻訳作業時に「全 N 個のキー」 を一望できる。
+//! The enum is intentionally flat. Nested namespaces like `"app.title"` are
+//! avoided; prefix conventions (`AppTitle`) serve the same purpose and let
+//! translators see all N keys in one place.
 
 use serde::{Deserialize, Serialize};
 
-/// UI 文言・エラーメッセージのすべてを表すキー。
+/// Key for every UI string and error message.
 ///
-/// 新しい文言を UI に追加する時は:
-/// 1. ここにバリアントを追加
-/// 2. 各 locale 辞書 (en.toml など) にキー追加
-/// 3. `Translator` の網羅性 match がコンパイルエラーになるので埋める
+/// To add a new string:
+/// 1. Add a variant here.
+/// 2. Add the key to each locale dictionary (e.g. en.toml).
+/// 3. Fill the exhaustive match in `Translator` — it will fail to compile otherwise.
 ///
-/// この 3 ステップを型レベルで強制することで、 翻訳が漏れない仕組みになっている。
+/// This three-step process makes translation omissions a compile-time error.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MessageKey {
-    // --- アプリ全体 ---
-    /// アプリのタイトル ("Logolig")。
+    // --- Application-wide ---
+    /// App title ("Logolig").
     AppTitle,
 
-    // --- ドロップゾーン ---
+    // --- Drop zone ---
     DropZoneInstruction,
     DropZoneSecondary,
     DropZoneAcceptedFormats,
@@ -50,7 +49,7 @@ pub enum MessageKey {
     ChangeFileButton,
     ImportingMessage,
 
-    // --- プレビュー画面 ---
+    // --- Preview screen ---
     PreviewBrowserTab,
     PreviewSmartphoneHome,
     PreviewBackgroundLight,
@@ -59,7 +58,7 @@ pub enum MessageKey {
     PreviewSourceLabel,
     PreviewNoSource,
 
-    // --- 詳細設定ドロワー ---
+    // --- Advanced settings ---
     AdvancedTitle,
     AdvancedBlurb,
     SectionResize,
@@ -86,31 +85,31 @@ pub enum MessageKey {
     ResetButton,
     CloseButton,
 
-    // --- ボタン・操作 ---
+    // --- Buttons / actions ---
     ExportButton,
     ToggleAdvancedButton,
     ToggleThemeButton,
 
-    // --- リサイズアルゴリズム名 ---
+    // --- Resize algorithm names ---
     AlgorithmLanczos3,
     AlgorithmMitchellNetravali,
     AlgorithmCatmullRom,
     AlgorithmBilinear,
     AlgorithmNearest,
 
-    // --- vtracer プリセット名 ---
+    // --- vtracer preset names ---
     VtracerPresetSharp,
     VtracerPresetDefault,
     VtracerPresetPhotoRich,
 
-    // --- 言語選択 (v1.5.0) ---
+    // --- Locale selection (v1.5.0) ---
     SectionLanguage,
     SectionLanguageBlurb,
     LanguageEnglish,
     LanguageJapanese,
     LanguageSystemDefault,
 
-    // --- Toast タイトル / 内容 ---
+    // --- Toast titles / bodies ---
     ToastExportTitle,
     ToastExportBody,
     ToastResetTitle,
@@ -128,7 +127,7 @@ pub enum MessageKey {
     ToastPngSizeOutOfRangeBody,
     ToastIcoSizeOutOfRangeBody,
 
-    // --- エラー (AppError キー化) ---
+    // --- Errors (AppError key mapping) ---
     ErrorUnsupportedFile,
     ErrorIo,
     ErrorDecode,
@@ -137,16 +136,16 @@ pub enum MessageKey {
     ErrorExport,
     ErrorNotImplemented,
 
-    // --- 透過チェッカー (v1.7.0) ---
-    /// 完全不透明画像の警告タイトル。
+    // --- Transparency checker (v1.7.0) ---
+    /// Warning toast title for a fully-opaque source.
     ToastFullyOpaqueTitle,
-    /// 完全不透明画像の警告本文。
+    /// Warning toast body for a fully-opaque source.
     ToastFullyOpaqueBody,
-    /// 完全透明画像の警告タイトル。
+    /// Warning toast title for a fully-transparent source.
     ToastFullyTransparentTitle,
-    /// 完全透明画像の警告本文。
+    /// Warning toast body for a fully-transparent source.
     ToastFullyTransparentBody,
-    /// プレビュー背景の市松模様 toggle ラベル ("Show transparency checker")。
+    /// Transparency checker toggle label ("Show transparency checker").
     PreviewCheckerLabel,
 
     // --- Web manifest (v1.8.0) ---
@@ -159,120 +158,125 @@ pub enum MessageKey {
     WebManifestShortNamePlaceholder,
     WebManifestThemeColorLabel,
     WebManifestBackgroundColorLabel,
-    /// 入力した色文字列が `#RRGGBB` 形式でないときの Toast タイトル。
+    /// Toast title when a hex colour input is not valid `#RRGGBB`.
     ToastInvalidColorTitle,
-    /// 入力した色文字列が `#RRGGBB` 形式でないときの Toast 本文 (input プレースホルダ含む)。
+    /// Toast body when a hex colour input is invalid (includes the input placeholder).
     ToastInvalidColorBody,
 
-    // --- モノクローム出力 (v1.9.0) ---
-    /// 詳細設定の「モノクローム出力」 セクション見出し。
+    // --- Monochrome output (v1.9.0) ---
+    /// Monochrome output section heading in settings.
     SectionMonochrome,
-    /// セクションの説明 (`mono/` サブディレクトリ、 PNG/ICO 対象、 等)。
+    /// Monochrome section description (mono/ subdirectory, PNG/ICO targets, etc.).
     SectionMonochromeBlurb,
-    /// チェックボックスのラベル。
+    /// Checkbox label.
     IncludeMonochromeLabel,
 
-    // --- v1.10.0: UI 情報設計刷新 ---
-    /// メイン画面「View as:」 ラベル。
+    // --- v1.10.0: UI information architecture refresh ---
+    /// "View as:" label on the main screen.
     PickerLabelViewAs,
-    /// メイン画面「Surface:」 ラベル。
+    /// "Surface:" label on the main screen.
     PickerLabelSurface,
-    /// 透過チェッカー (PreviewContext バリアント名)。
+    /// "Transparency checker" preview context label.
     PreviewTransparencyChecker,
-    /// 詳細設定: 「What to export」 大グループ見出し。
+    /// "What to export" group heading in advanced settings.
     GroupWhatToExport,
-    /// 詳細設定: 「Extras」 大グループ見出し。
+    /// "Extras" group heading in advanced settings.
     GroupExtras,
-    /// 詳細設定: 「Rendering quality」 大グループ見出し。
+    /// "Rendering quality" group heading in advanced settings.
     GroupRenderingQuality,
-    /// 詳細設定: 「App preferences」 大グループ見出し。
+    /// "App preferences" group heading in advanced settings.
     GroupAppPreferences,
 
-    // --- v1.10.2: メイン画面刷新 ---
-    /// アプリ名のタグライン (アプリ名の隣に薄く表示する説明)。
+    // --- v1.10.2: Main screen refresh ---
+    /// App tagline shown in muted text next to the app name.
     AppTagline,
-    /// ドロップ領域のスリムなアイキャッチ。
+    /// Slim eye-catcher text in the drop zone.
     DropZoneHeadline,
-    /// ヘッダ言語ボタンの tooltip。
+    /// Language button tooltip in the header.
     TooltipLanguage,
-    /// ヘッダテーマボタンの tooltip。
+    /// Theme button tooltip in the header.
     TooltipTheme,
-    /// ヘッダ詳細ボタンの tooltip。
+    /// Advanced settings button tooltip in the header.
     TooltipAdvanced,
-    /// ヘッダ閉じるボタンの tooltip。
+    /// Close button tooltip in the header.
     TooltipClose,
 
-    // --- v1.11.0: JPEG サポート ---
-    /// JPEG 入力時の教育的警告 Toast タイトル。
-    /// 一般的な「不透明」 警告ではなく、 JPEG 形式が透過を表現できないこと
-    /// を伝える専用文言。
+    // --- v1.11.0: JPEG support ---
+    /// Toast title for JPEG input: explains JPEG cannot store transparency
+    /// (distinct from the generic "fully opaque" warning).
     ToastJpegInputTitle,
-    /// JPEG 入力時の教育的警告 Toast 本文。 PNG への変換を促す。
+    /// Toast body for JPEG input. Suggests converting to PNG.
     ToastJpegInputBody,
 
-    // --- v1.12.0: 編集画面の動線整備 + プレビュー領域刷新 ---
-    /// 編集画面 (preview screen) のページタイトル。
-    /// 「プレビュー確認・Favicon ファイル作成」 / 「Preview & Generate Favicon」
+    // --- v1.12.0: Edit screen navigation + preview area refresh ---
+    /// Edit/preview screen page title ("Preview & Generate Favicon").
     PageTitleEdit,
-    /// プレビュー領域カードのセクションタイトル (「Preview」 / 「プレビュー」)。
+    /// Preview panel section title.
     SectionTitlePreview,
-    /// 編集画面の「戻る」 ボタン (startup 画面に戻る)。
+    /// "Back" button on the edit screen (returns to the startup screen).
     EditCancelButton,
-    /// 編集画面の「再選択」 ボタン (ファイルピッカーを開き直す)。
+    /// "Re-select" button on the edit screen (re-opens the file picker).
     EditRepickButton,
 
-    // --- v1.16.0: 画面構造刷新 (Empty / Converting / Result の 3 状態) ---
-    /// Converting 画面の補助メッセージ (「しばらくお待ちください」)。
+    // --- v1.16.0: Screen structure revision (Empty / Converting / Result) ---
+    /// Converting screen status message ("Please wait…").
     ImportingPleaseWait,
-    /// Result 画面の見出し「✓ 変換が完了しました!」。
+    /// Result screen headline "✓ Conversion complete!".
     ResultSuccessHeadline,
-    /// Result 画面のサブヘッド「生成されたアセット一覧」。
+    /// Result screen sub-heading listing the generated assets.
     ResultAssetsSubheading,
-    /// Result 画面の「すべてダウンロード (ZIP)」 ボタン。
+    /// "Download all (ZIP)" button on the Result screen.
     ResultDownloadAllButton,
-    /// Result 画面の各カードの個別 DL ボタンの a11y ラベル / tooltip
-    /// (「保存」 / 「Save」)。
+    /// Accessibility label / tooltip for the individual download button on each asset card.
     ResultDownloadOne,
-    /// Result 画面の「プレビューを見る」 折りたたみセクションのラベル。
+    /// "View preview" collapsible section label on the Result screen.
     ResultPreviewToggle,
 
-    // --- v1.17.0: 設定ドロワー Right Sheet 化 + flat 再編 ---
-    /// ドロワーのタイトル「設定」。
+    // --- v1.17.0: Settings drawer converted to Right Sheet + flat layout ---
+    /// Drawer title "Settings".
     SettingsTitle,
-    /// 「出力サイズ (PNG)」 セクション見出し。
+    /// "PNG output sizes" section heading.
     SectionPngOutputSizes,
-    /// 「+ カスタムサイズ追加」 ボタン (出力サイズリストの末尾に置く)。
+    /// "Add custom size" button (appended to the PNG size list).
     AddCustomSize,
-    /// 「SVG 変換方式」 セクション見出し。
+    /// "SVG conversion mode" section heading.
     SectionSvgConversion,
-    /// SVG スライダーの左端ラベル (「シンプル」)。
+    /// SVG conversion slider left label ("Simple").
     SvgConversionSimple,
-    /// SVG スライダーの右端ラベル (「詳細」)。
+    /// SVG conversion slider right label ("Detailed").
     SvgConversionDetailed,
-    /// 「その他」 セクション見出し。
+    /// "Misc" section heading.
     SectionMisc,
-    /// 「透過 (アルファ) を維持する」 トグルラベル。
+    /// "Keep transparency (alpha)" toggle label.
     KeepTransparency,
-    /// 折りたたみ式の「上級設定」 セクション見出し。
+    /// "Advanced settings" collapsible section heading.
     AdvancedExtrasSection,
 
-    // --- v1.18.0: 左サイドバー + ピッカーポップアップ ---
-    /// サイドバー: 設定アイコンのラベル / tooltip。
+    // --- v1.18.0: Left sidebar + picker popups (nav redesigned in v1.22.0) ---
+    /// Sidebar Settings icon label/tooltip (legacy; nav changed in v1.22.0).
     SidebarLabelSettings,
-    /// サイドバー: 言語アイコンのラベル / tooltip。
+    /// Sidebar Language icon label/tooltip (legacy; nav changed in v1.22.0).
     SidebarLabelLocale,
-    /// サイドバー: テーマアイコンのラベル / tooltip。
+    /// Sidebar Theme icon label/tooltip (legacy; nav changed in v1.22.0).
     SidebarLabelTheme,
-    /// 言語ピッカーの「日本語」 行。
+    /// Language picker 'Japanese' row.
     LocaleNameJa,
-    /// 言語ピッカーの「English」 行。
+    /// Language picker 'English' row.
     LocaleNameEn,
-    /// 言語ピッカーの「システム設定に従う」 行 (= `LocalePicked(None)`)。
+    /// Language picker 'Follow system' row (= `LocalePicked(None)`).
     LocaleSystem,
-    /// テーマピッカーの「ライト」 行。
+    /// Theme picker 'Light' row.
     ThemeNameLight,
-    /// テーマピッカーの「ダーク」 行。
+    /// Theme picker 'Dark' row.
     ThemeNameDark,
-    /// テーマピッカーの「システム設定に従う」 行。
+    /// Theme picker 'Follow system' row.
     ThemeSystem,
+
+    // --- v1.22.0: side-nav three items ---
+    /// Side-nav 'Home' label.
+    NavHome,
+    /// Side-nav 'Customize' label.
+    NavCustomize,
+    /// Side-nav 'Settings' label.
+    NavSettings,
 }

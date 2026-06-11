@@ -1,11 +1,11 @@
-//! ingest の振る舞いテスト。
+//! Ingest behaviour tests.
 //!
-//! - PNG / SVG が正しく種別判定される
-//! - PNG のヘッダから論理サイズが取れる
-//! - SVG のサイズが usvg 経由で取れる
-//! - 種別判定不能なら `UnsupportedFile`
-//! - 拡張子が ".png" を名乗る別バイト列も拒絶する (拡張子偽装防止)
-//! - async 版がランタイム上で動く
+//! - PNG / SVG are classified correctly
+//! - PNG header yields correct logical dimensions
+//! - SVG dimensions are read via usvg
+//! - Unrecognised format returns `UnsupportedFile`
+//! - A file with a ".png" extension but wrong magic bytes is rejected
+//! - Async ingest runs correctly on the runtime
 
 mod fixtures;
 
@@ -33,8 +33,8 @@ fn detects_webp_and_reads_intrinsic_size() {
     let bytes = fixtures::webp_8x8_blue();
     let asset = ingest_bytes("dummy.webp", bytes).expect("WebP should ingest");
     assert_eq!(asset.kind, SourceKind::Webp);
-    // image クレートの encoder は VP8 / VP8L のいずれを出すか実装依存だが、
-    // どちらでも 8×8 が読めることを確認。
+    // The encoder may choose VP8 or VP8L — implementation-defined, but
+    // Both extensions should decode to 8×8.
     assert_eq!(asset.intrinsic_size, Some((8, 8)));
 }
 
@@ -53,7 +53,7 @@ fn rejects_unknown_extension_and_unknown_content() {
 
 #[test]
 fn ingest_async_round_trip_via_tempfile() {
-    // tokio runtime をテスト時にだけ立ててファイル経由の async ingest を確認。
+    // Spin up a tokio runtime for this test to verify async file-based ingestion.
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -66,45 +66,45 @@ fn ingest_async_round_trip_via_tempfile() {
     let asset = rt.block_on(ingest(tmp.clone())).expect("async ingest");
     assert_eq!(asset.kind, SourceKind::Png);
     assert_eq!(asset.intrinsic_size, Some((4, 4)));
-    // 元ファイルが書き換わっていない (§6.4 非破壊性) ことの確認
+    // Verify the source file is unchanged (§6.4 non-destructive).
     assert_eq!(std::fs::read(&tmp).unwrap(), bytes);
 
     let _ = std::fs::remove_file(&tmp);
 }
 
 // ---------------------------------------------------------------------------
-// v1.11.0: JPEG サポート
+// v1.11.0: JPEG support
 // ---------------------------------------------------------------------------
 
 #[test]
 fn ingest_recognizes_jpeg_magic_bytes() {
-    // JPEG SOI (FF D8 FF) で始まるバイト列を JPEG と判定すること
+    // Bytes starting with JPEG SOI (FF D8 FF) are classified as JPEG
     let asset = ingest_bytes("photo.jpg", fixtures::jpeg_8x8_red()).unwrap();
     assert_eq!(asset.kind, SourceKind::Jpeg);
 }
 
 #[test]
 fn ingest_recognizes_jpeg_via_jpeg_extension() {
-    // .jpeg 拡張子も .jpg と同じく JPEG として扱われること
+    // .jpeg extension is treated the same as .jpg
     let asset = ingest_bytes("photo.jpeg", fixtures::jpeg_8x8_red()).unwrap();
     assert_eq!(asset.kind, SourceKind::Jpeg);
 }
 
 #[test]
 fn ingest_parses_jpeg_intrinsic_size_from_sof_marker() {
-    // SOF marker から幅/高さが正しく取り出されること
+    // Width/height correctly extracted from the SOF marker
     let asset = ingest_bytes("photo.jpg", fixtures::jpeg_8x8_red()).unwrap();
     assert_eq!(asset.intrinsic_size, Some((8, 8)));
 }
 
 #[test]
 fn ingest_rejects_corrupt_jpeg_with_only_soi() {
-    // SOI だけで以降が無効なバイト列は intrinsic_size が None になっても
-    // ingest は通る (image crate がデコード時に拒絶する想定。 ここでは
-    // ingest 段階の振る舞いだけ確認)。
+    // SOI followed by invalid bytes → intrinsic_size = None,
+    // but ingest still succeeds (image crate will reject at decode time).
+    // Only the ingest-stage behaviour is checked here.
     let bytes = vec![0xFF, 0xD8, 0xFF, 0xE0, 0x00];
     let asset = ingest_bytes("broken.jpg", bytes).unwrap();
     assert_eq!(asset.kind, SourceKind::Jpeg);
-    // truncated → SOF が見つからない → intrinsic_size = None
+    // Truncated → no SOF found → intrinsic_size = None
     assert_eq!(asset.intrinsic_size, None);
 }

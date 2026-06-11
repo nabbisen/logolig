@@ -1,8 +1,8 @@
-//! WebP デコード + リサイズの end-to-end (v1.1.0)。
+//! WebP decode + resize end-to-end tests (v1.1.0).
 //!
-//! - 8×8 の WebP が正しく RGBA8 (32×32 = 256 バイト) に展開される
-//! - WebP ソースを 16×16 や 32×32 にリサイズしても寸法が合う
-//! - decode_webp は WebP 以外の入力を拒絶する (UnsupportedFile)
+//! - 8×8 WebP decodes to the correct RGBA8 size (32×32 = 256 bytes)
+//! - Resizing a WebP source to 16×16 or 32×32 yields correct dimensions
+//! - decode_webp rejects non-WebP input (UnsupportedFile)
 
 mod fixtures;
 
@@ -31,7 +31,7 @@ fn webp_then_resize_to_favicon_sizes() {
         assert_eq!(big.width, size);
         assert_eq!(big.height, size);
         assert_eq!(big.as_bytes().len(), (size as usize) * (size as usize) * 4);
-        // アルファチャンネルが完全不透明として保たれていること
+        // Alpha channel should be fully opaque
         for chunk in big.as_bytes().chunks_exact(4) {
             assert_eq!(chunk[3], 0xFF);
         }

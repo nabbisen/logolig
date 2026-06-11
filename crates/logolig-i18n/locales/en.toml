@@ -166,7 +166,7 @@ section_title_preview = "Preview"
 edit_cancel_button = "← Back"
 edit_repick_button = "↻ Re-select"
 
-# --- 画面構造刷新 (v1.16.0) ---
+# --- Screen structure revision (v1.16.0) ---
 importing_please_wait = "Please wait…"
 result_success_headline = "Conversion complete!"
 result_assets_subheading = "Generated assets"
@@ -174,7 +174,7 @@ result_download_all_button = "Download all (ZIP)"
 result_download_one = "Save"
 result_preview_toggle = "Preview"
 
-# --- 設定ドロワー Right Sheet 化 + flat 再編 (v1.17.0) ---
+# --- Settings drawer → Right Sheet + flat layout (v1.17.0) ---
 settings_title = "Settings"
 section_png_output_sizes = "PNG output sizes"
 add_custom_size = "+ Add custom size"
@@ -185,7 +185,7 @@ section_misc = "Other"
 keep_transparency = "Keep transparency (alpha)"
 advanced_extras_section = "Advanced settings"
 
-# --- 左サイドバー + ピッカーポップアップ (v1.18.0) ---
+# --- Left sidebar + picker popups (v1.18.0) ---
 sidebar_label_settings = "Settings"
 sidebar_label_locale = "Language"
 sidebar_label_theme = "Theme"
@@ -195,3 +195,8 @@ locale_system = "System"
 theme_name_light = "Light"
 theme_name_dark = "Dark"
 theme_system = "System"
+
+# v1.22.0: side nav
+nav_home = "Home"
+nav_customize = "Customize"
+nav_settings = "Settings"

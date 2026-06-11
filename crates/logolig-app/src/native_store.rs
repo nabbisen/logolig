@@ -1,32 +1,14 @@
-//! `SettingsStore` のネイティブ実装 (v1.4.0)。
+//! Native (file-system) implementation of `SettingsStore` (v1.4.0).
 //!
-//! `app-json-settings` v2 の `ConfigManager<T>` を薄くラップし、 logolig-core の
-//! `SettingsStore` trait を満たす。
+//! Thin wrapper around `app-json-settings` v2's `ConfigManager<T>` that
+//! satisfies the `SettingsStore` trait from logolig-core.
 //!
-//! ## なぜラップするのか
+//! ## Why a wrapper?
 //!
-//! `ConfigManager` を直接使えば動作はする。 しかし「保存方式は内部実装、
-//! UI コードは trait 経由でしか触らない」 という規律を持ち込むことで、
-//! v2 で `BrowserStore` (LocalStorage 実装) に差し替える時の影響範囲が
-//! `native_store.rs` 1 ファイルに閉じる。
-//!
-//! ## なぜ ConfigError を newtype で包むのか
-//!
-//! v2.0.2 の `app_json_settings::ConfigError` は `Debug` derive のみで
-//! `Display` も `std::error::Error` も実装していない。 logolig-core の
-//! `SettingsStore::Error` は `StdError + Send + Sync + 'static` を要求するため、
-//! ここで newtype `NativeStoreError` を挟んで両者を実装する。
-//!
-//! ## 保存場所とファイル名
-//!
-//! - 場所: OS 標準の config dir / `logolig` (バイナリ名から自動解決)
-//!   - Linux:   `$XDG_CONFIG_HOME/logolig/settings.json`
-//!     (or `~/.config/logolig/settings.json`)
-//!   - macOS:   `~/Library/Application Support/logolig/settings.json`
-//!   - Windows: `%APPDATA%/logolig/settings.json`
-//! - ファイル名: `settings.json` (default `config.json` を上書き; 「設定」 とい
-//!   う意味を明示する一般的な命名)
-//! - フォーマット: pretty JSON (default)。 ユーザが手で編集して読みやすい
+//! `ConfigManager` could be used directly and it would work. However,
+//! keeping persistence behind the trait means UI code never touches the
+//! storage implementation. When v2 adds a `BrowserStore` (LocalStorage),
+//! the change is contained to this one file.
 
 use std::fmt;
 
@@ -34,15 +16,15 @@ use app_json_settings::{ConfigError, ConfigManager};
 
 use logolig_core::{PersistedSettings, SettingsStore};
 
-/// ネイティブ環境向けの SettingsStore。
+/// SettingsStore for the native (file-system) environment.
 pub struct NativeStore {
     inner: ConfigManager<PersistedSettings>,
 }
 
 impl std::fmt::Debug for NativeStore {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // ConfigManager 自体は Debug を実装していないため、 path を出すことで
-        // 「どこに保存しているか」 だけ可視化する。
+        // ConfigManager does not impl Debug; expose path to show
+        // where the settings file is stored.
         f.debug_struct("NativeStore")
             .field("path", &self.inner.path())
             .finish()
@@ -50,7 +32,7 @@ impl std::fmt::Debug for NativeStore {
 }
 
 impl NativeStore {
-    /// 標準の場所 (OS config dir / logolig / settings.json) で初期化する。
+    /// Initialise at the standard OS config dir path (…/logolig/settings.json).
     pub fn new() -> Self {
         Self {
             inner: ConfigManager::new().with_filename("settings.json"),
@@ -77,8 +59,8 @@ impl SettingsStore<PersistedSettings> for NativeStore {
     }
 }
 
-/// `app_json_settings::ConfigError` のラッパ。 `Display` と `std::error::Error`
-/// を提供する。
+/// Wrapper around `app_json_settings::ConfigError` providing `Display` and `std::error::Error`
+/// .
 #[derive(Debug)]
 pub struct NativeStoreError(pub ConfigError);
 

@@ -1,13 +1,12 @@
-//! `manifest_writer` の挙動確認 (v1.8.0)。
+//! `manifest_writer` behaviour tests (v1.8.0).
 //!
-//! 検証する性質:
-//! 1. 出力が valid な JSON であること
-//! 2. 必須フィールド (`name` / `short_name` / `icons` / `start_url` / `display` /
-//!    `theme_color` / `background_color`) がすべて含まれていること
-//! 3. `icons` 配列が `png_sizes` と一致すること
-//! 4. ファイル名命名規約 (`favicon-{size}.png`) に従うこと
-//! 5. `start_url` と `display` が固定値 (`/` と `standalone`) であること
-//! 6. `png_sizes` が空でも壊れない (空配列が出力される)
+//! Properties verified:
+//! 1. Output is valid JSON
+//! 2. All required fields are present (`name`, `short_name`, `icons`,
+//!    `start_url`, `display`, `theme_color`, `background_color`)
+//! 3. `icons` array matches `png_sizes`
+//! 4. File names follow the `favicon-{size}.png` convention
+//! 5. `start_url` and `display` are fixed (`/` and `standalone`)
 
 use logolig_core::services::manifest_writer::{build_manifest_json, MANIFEST_FILENAME};
 use logolig_core::WebManifestSettings;
@@ -19,7 +18,7 @@ fn parse(json: &str) -> Value {
 
 #[test]
 fn manifest_filename_is_webmanifest_extension() {
-    // W3C 推奨は `.webmanifest` 拡張子。 v1.8 はこちらを採用。
+    // W3C recommends the `.webmanifest` extension; v1.8 follows that.
     assert_eq!(MANIFEST_FILENAME, "manifest.webmanifest");
 }
 
@@ -27,7 +26,7 @@ fn manifest_filename_is_webmanifest_extension() {
 fn output_is_valid_json() {
     let s = WebManifestSettings::default();
     let json_str = build_manifest_json(&s, &[32, 192, 512]);
-    let _ = parse(&json_str); // panic しなければ valid
+    let _ = parse(&json_str); // valid JSON if this does not panic
 }
 
 #[test]
@@ -90,7 +89,7 @@ fn icons_array_matches_png_sizes() {
 
 #[test]
 fn empty_png_sizes_produces_empty_icons_array() {
-    // PWA としては推奨されない構成だが、 logolig はユーザの選択を尊重する。
+    // Not recommended for a PWA, but logolig respects the user's choice.
     let s = WebManifestSettings::default();
     let v = parse(&build_manifest_json(&s, &[]));
     let icons = v["icons"].as_array().expect("icons must be an array");
@@ -99,7 +98,7 @@ fn empty_png_sizes_produces_empty_icons_array() {
 
 #[test]
 fn start_url_is_root() {
-    // v1.8 では UI から変更不可の固定値。
+    // Fixed value in v1.8; not configurable from the UI.
     let s = WebManifestSettings::default();
     let v = parse(&build_manifest_json(&s, &[]));
     assert_eq!(v["start_url"], "/");
@@ -107,7 +106,7 @@ fn start_url_is_root() {
 
 #[test]
 fn display_is_standalone() {
-    // v1.8 では UI から変更不可の固定値。
+    // Fixed value in v1.8; not configurable from the UI.
     let s = WebManifestSettings::default();
     let v = parse(&build_manifest_json(&s, &[]));
     assert_eq!(v["display"], "standalone");
@@ -115,7 +114,7 @@ fn display_is_standalone() {
 
 #[test]
 fn output_ends_with_newline() {
-    // POSIX text file の慣習。
+    // POSIX text file convention.
     let s = WebManifestSettings::default();
     let json_str = build_manifest_json(&s, &[]);
     assert!(json_str.ends_with('\n'));
@@ -123,7 +122,7 @@ fn output_ends_with_newline() {
 
 #[test]
 fn settings_default_uses_friendly_placeholders() {
-    // 「触らずに出力すれば valid な manifest」 の状態を保証。
+    // Guarantee "output as-is is a valid manifest".
     let s = WebManifestSettings::default();
     assert!(!s.name.is_empty());
     assert!(!s.short_name.is_empty());
@@ -142,7 +141,7 @@ fn is_valid_color_accepts_hex_rrggbb() {
 
 #[test]
 fn is_valid_color_rejects_other_forms() {
-    // logolig は #RRGGBB 7 文字に限定 (#RGB や名前付き色は受け付けない)。
+    // logolig restricts to #RRGGBB (rejects #RGB and named colours).
     assert!(!WebManifestSettings::is_valid_color("#FFF"));
     assert!(!WebManifestSettings::is_valid_color("FFFFFF"));
     assert!(!WebManifestSettings::is_valid_color("#GGGGGG"));
@@ -159,7 +158,7 @@ fn has_required_text_rejects_blank_strings() {
     s.name = "".to_string();
     assert!(!s.has_required_text());
 
-    s.name = "   ".to_string(); // 空白のみ
+    s.name = "   ".to_string(); // whitespace-only
     assert!(!s.has_required_text());
 
     s.name = "OK".to_string();

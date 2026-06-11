@@ -1,21 +1,22 @@
-//! WebP ソースを RGBA8 ビットマップに展開する (v1.1.0)。
+//! Decode a WebP source into an RGBA8 bitmap (v1.1.0).
 //!
-//! `image` クレートに `webp` feature を有効化することで `image-webp` 経由で
-//! 静的 WebP (VP8 / VP8L / VP8X) のいずれもデコード可能になる。
-//! アニメーション WebP は最初のフレームのみが取り出される。
+//! Enabling the `webp` feature on the `image` crate pulls in `image-webp`,
+//! which handles static WebP (VP8 / VP8L / VP8X). Animated WebP is
+//! supported by extracting the first frame only.
 //!
-//! 実装パターンは `decode_png.rs` と意図的に揃えている。 入力種別ごとの
-//! 分岐を上位 (`exporter::render_at_size`, `preview::render_at`) でだけ
-//! 行えるようにするため。
+//! The implementation pattern intentionally mirrors `decode_png.rs`.
+//! Format dispatch (which decoder to call) is handled by the caller
+//! (`exporter::render_at_size`, `preview::render_at`), keeping this
+//! module focused on a single format.
 
 use std::sync::Arc;
 
 use crate::domain::{Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
 
-/// WebP ソースを RGBA8 にデコード。
+/// Decode a WebP source to RGBA8.
 ///
-/// 入力が WebP でなければ `Err(UnsupportedFile)`。
+/// Returns `Err(UnsupportedFile)` if the input is not WebP.
 pub fn decode(asset: &SourceAsset) -> Result<Rgba8, AppError> {
     if asset.kind != SourceKind::Webp {
         return Err(AppError::unsupported_file(format!(

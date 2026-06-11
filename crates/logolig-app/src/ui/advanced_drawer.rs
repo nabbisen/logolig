@@ -1,19 +1,19 @@
-//! 詳細設定ドロワー (§5.3)。
+//! Customize page content (§5.3).
 //!
-//! 既定値は隠す。 `state.advanced_open == true` のときだけ shell が表示する。
+//! Contains all export settings. Originally a right-side sheet ("drawer"),
+//! promoted to a full-page view in v1.22.0 via the Customize nav item.
 //!
-//! ## v1.10.0: 情報設計刷新
+//! ## v1.10.0: information architecture revision
 //!
-//! セクションを 4 つの大グループに整理し、 ユーザの思考順 (何を出力するか →
-//! どう描画するか → アプリ全体) に並べる:
+//! Sections are arranged in the user's natural decision order:
 //!
-//! 1. **What to export** — アーティファクト種別 + サイズ群を集約
-//! 2. **Extras** — 追加機能 (Web manifest / Monochrome) — 控えめなトーン
-//! 3. **Rendering quality** — Resize algorithm のような描画品質設定
-//! 4. **App preferences** — Language のようなアプリ全体の好み
+//! 1. **What to export** — artifact types and size groups
+//! 2. **Extras** — Web manifest, monochrome (secondary, quieter visual weight)
+//! 3. **Rendering quality** — resize algorithm
 //!
-//! 既定値の PNG/ICO サイズは折りたたみ気味に表示し、 「普段触らなくてよい」
-//! を視覚で伝える。 Active な選択状態はボタン背景塗り分けで強調。
+//! Advanced (rarely-touched) settings are collapsed under a disclosure
+//! chevron. The default PNG / ICO sizes are shown but visually de-emphasised
+//! to signal "you probably don't need to change these".
 
 use iced::widget::{button, checkbox, column, container, pick_list, row, text, text_input};
 use iced::{Alignment, Color, Element, Length, Padding};
@@ -23,65 +23,47 @@ use logolig_core::{MessageKey, ResizeAlgorithm, VtracerPreset};
 use crate::app::{resolve_theme, AppState, Message};
 use crate::ui::colors;
 
-// v1.14.0: HEADING_COLOR / MUTED_COLOR / BADGE_MUTED_BG の hardcoded 定数は
-// `crate::ui::colors` の theme-aware ヘルパに移行した。 dark テーマ時に
-// 「グレー文字がグレー背景に同化して読めない」 問題が解消される。
+// v1.14.0: HEADING_COLOR / MUTED_COLOR / BADGE_MUTED_BG hardcoded constants
+// moved to theme-aware helpers in `crate::ui::colors`.
+// Fixes "grey text invisible on grey background" in dark mode.
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let theme = resolve_theme(state);
 
-    // ----- v1.17.0: Right Sheet 化 + flat 再編 -----
+    // ----- v1.17.0: right-sheet layout + flat section structure -----
     //
-    // PNG モック (新外部設計) に準拠した構成:
-    //  1. タイトル領域 (「設定」 + 右上の ✕)
-    //  2. 出力サイズ (PNG): チェックボックス縦並び + 「+ カスタムサイズ追加」
-    //  3. SVG 変換方式: 離散スライダー 3 段 (Sharp / Default / PhotoRich)
-    //  4. その他: 透過 (アルファ) を維持する トグル
-    //  5. ▶ 上級設定 (折りたたみ)
-    //  6. フッタ: ↻ Reset (左寄せ)
+    // Section layout per design spec:
+    //  1. Title row ("Settings" + × close button)  [removed in v1.22.0]
+    //  2. PNG output sizes: checkboxes + "add custom size"
+    //  3. SVG conversion: 3-position slider (Sharp / Default / PhotoRich)
+    //  4. Misc: keep-transparency toggle
+    //  5. ▶ Advanced settings (collapsible)
+    //  6. Footer: ↻ Reset (left-aligned)
     //
-    // 旧 v1.15 のアコーディオン 3 段構成 (`accordion_group` × 3) は廃止し、
-    // flat な縦並びセクションに整理する。 上級設定だけは「普段は触らないが
-    // 機能としては残す」 ものを集約する隠し場所として 1 つだけ折りたたみを
-    // 残す (chevron `▶` / `▼`)。
+    // The v1.15 three-accordion layout (`accordion_group` × 3) is replaced by
+    // a flat vertical layout. Only "Advanced" remains collapsible,
+    // as a place to hide settings that are rarely needed but should
+    // remain accessible (chevron `▶` / `▼`).
     //
-    // ICO 生成セクションは v1.17.0 で意図的に削除 (Q4 で確定)。 favicon.ico
-    // は内部デフォルト固定 (16/24/32/48 マルチサイズ) で常時 ON、 ユーザは
-    // 触らない。 旧 ICO sizes 編集 UI も完全削除。
+    // ICO generation section removed in v1.17.0 (confirmed in Q4). favicon.ico
+    // is always output at default sizes (16/24/32/48 multi-frame); no user toggle.
+    // Old ICO size editor removed entirely.
 
-    // ============================================================
-    // (1) タイトル領域: 「設定」 + 右上の ✕
-    // ============================================================
-    let title_row = row![
-        text(t.t(MessageKey::SettingsTitle))
-            .size(20)
-            .color(colors::page_title(&theme)),
-        iced::widget::Space::new().width(Length::Fill),
-        button(text("✕").size(16))
-            .padding([4, 10])
-            .on_press(Message::AdvancedToggled)
-            .style(title_close_button_style),
-    ]
-    .align_y(Alignment::Center);
-
-    // ============================================================
-    // (2) 出力サイズ (PNG): 6 個の固定チェックボックス + カスタム追加
-    // ============================================================
+    // ─────────────────────────────────────────────────────────────
+    // (1) PNG output sizes: 6 fixed checkboxes + custom size input
+    // ─────────────────────────────────────────────────────────────
     //
-    // PNG モック準拠の固定 6 サイズ (16/32/48/96/192/512)。 旧 logolig の
-    // `default_png_sizes()` (16/32/48/180/192/256/512) とは差分があり、
-    // 96 が追加・180 と 256 が消えた。 180 (apple-touch) は上級設定の
-    // include_apple_touch トグルで制御するためここからは外す。 256 はカス
-    // タムサイズ追加で対応可能。
+    // Six preset PNG sizes (16/32/48/96/192/512).
+    // 180 (apple-touch) is controlled separately; 256 is available via custom size.
     //
-    // ユーザの export_plan.png_sizes に対して各固定サイズの ON/OFF を
-    // 反映する: チェックを入れたら追加、 外したら削除。 内部実装は既存の
-    // PngSizeAddRequested / PngSizeRemoveRequested を流用。
+    // Each checkbox reflects whether the size is in export_plan.png_sizes:
+    // checking adds it, unchecking removes it. Uses existing
+    // PngSizeAddRequested / PngSizeRemoveRequested messages.
     let preset_sizes: [u32; 6] = [16, 32, 48, 96, 192, 512];
     let mut sizes_col = column![
         text(t.t(MessageKey::SectionPngOutputSizes))
-            .size(14)
+            .size(17)
             .color(colors::section_label(&theme)),
     ]
     .spacing(8);
@@ -102,9 +84,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         );
     }
 
-    // 固定リスト以外で既に追加されているサイズを「カスタムサイズ」 として
-    // 並べる (削除可能)。 例: ユーザが過去に 256 を追加していたらここに
-    // チェック済み状態で表示される。
+    // Show any user-added sizes not in the preset list as removable custom chips.
     let mut custom_present: Vec<u32> = state
         .export_plan
         .png_sizes
@@ -124,8 +104,8 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         );
     }
 
-    // 「+ カスタムサイズ追加」 入力欄。 既存の text_input + Add ボタンを
-    // 簡素化して 1 行に並べる。
+    // Custom size input: text_input + Add button in one row.
+
     let custom_input = row![
         text_input("e.g. 256", &state.png_size_input)
             .on_input(Message::PngSizeInputChanged)
@@ -142,21 +122,21 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .align_y(Alignment::Center);
     sizes_col = sizes_col.push(custom_input);
 
-    // ============================================================
-    // (3) SVG 変換方式: 離散スライダー 3 段
-    // ============================================================
+    // ─────────────────────────────────────────────────────────────
+    // (2) SVG conversion mode: 3-position discrete slider
+    // ─────────────────────────────────────────────────────────────
     //
-    // 旧 vtracer プリセット (Sharp / Default / PhotoRich) を「シンプル ↔
-    // 詳細」 という直感軸でスライダーに対応させる。 iced 0.14 の slider は
-    // 連続値だが、 step を整数で扱うことで実質的に離散選択にできる:
-    //   0 → Sharp (シンプル)
-    //   1 → Default (中庸)
-    //   2 → PhotoRich (詳細)
+    // Maps vtracer presets (Sharp / Default / PhotoRich) to a Simple ↔
+    // Detailed intuitive axis.
+    // iced 0.14 slider is continuous; treat step as integer for discrete selection:
+    //   0 → Sharp (Simple)
+    //   1 → Default (Balanced)
+    //   2 → PhotoRich (Detailed)
     //
-    // PNG モックには「ラスタからベクトル化」 トグルや「favicon.svg 出力
-    // ON/OFF」 は出ていないため、 これらは上級設定に隠す (= ここはあくまで
-    // 「方式の精度」 を選ぶ UI)。 ベクトル化は旧 vectorize_on_raster の値
-    // をそのまま使う (デフォルト false)。
+    // "Vectorise raster" toggle and "favicon.svg on/off" are hidden in
+    // Advanced settings (this section is only about "which mode").
+    // Vectorisation reuses the existing vectorize_on_raster value
+    // (default false).
     let preset_idx: i32 = match state.export_plan.vtracer_preset {
         VtracerPreset::Sharp => 0,
         VtracerPreset::Default => 1,
@@ -164,9 +144,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     };
     let svg_section = column![
         text(t.t(MessageKey::SectionSvgConversion))
-            .size(14)
+            .size(17)
             .color(colors::section_label(&theme)),
-        // スライダー下のラベル行 (シンプル / 詳細)
+        // Labels below the slider (Simple / Detailed)
         row![
             text(t.t(MessageKey::SvgConversionSimple))
                 .size(11)
@@ -188,18 +168,15 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     ]
     .spacing(6);
 
-    // ============================================================
-    // (4) その他: 透過 (アルファ) を維持する トグル
-    // ============================================================
+    // ─────────────────────────────────────────────────────────────
+    // (3) Misc: keep-transparency toggle
+    // ─────────────────────────────────────────────────────────────
     //
-    // v1.21.0 で本実装。 旧 v1.17.0 では UI のみ用意して常時 ON 固定の
-    // placeholder だったが、 v1.21.0 で `ExportPlan::keep_transparency` を
-    // 追加し、 OFF 時は raster 出力 (PNG / ICO / mono PNG / mono ICO) を
-    // 白背景でフラット化する処理が `services::flatten` で動く。 SVG は
-    // 影響を受けない (Q2-a)。 永続化対象 (Q4-a)。
+    // Implemented in v1.21.0. When off, raster outputs (PNG/ICO/mono) are
+    // flattened against white via services::flatten. SVG outputs are unaffected.
     let misc_section = column![
         text(t.t(MessageKey::SectionMisc))
-            .size(14)
+            .size(17)
             .color(colors::section_label(&theme)),
         checkbox(state.export_plan.keep_transparency)
             .label(t.t(MessageKey::KeepTransparency))
@@ -208,17 +185,17 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     ]
     .spacing(8);
 
-    // ============================================================
-    // (5) ▶ 上級設定 (折りたたみ): 旧設定の集約場所
-    // ============================================================
+    // ─────────────────────────────────────────────────────────────
+    // (4) ▶ Advanced settings (collapsible): rarely-needed settings
+    // ─────────────────────────────────────────────────────────────
     //
-    // PNG モックには無いが機能としては残しておきたい設定をここに集約:
+    // Advanced settings not shown in the main sections:
     // - Apple touch icon (180×180 PNG)
-    // - HTML snippet 出力
-    // - Web manifest 出力 + 各種フィールド
-    // - Monochrome (BT.709 グレースケール)
-    // - リサイズアルゴリズム
-    // - ラスタからベクトル化 (vectorize_on_raster)
+    // - HTML snippet output
+    // - Web manifest + its fields
+    // - Monochrome (BT.709 greyscale)
+    // - Resize algorithm
+    // - Vectorise raster (vectorize_on_raster)
     let extras_chevron = if state.advanced_extras_open { "▼" } else { "▶" };
     let extras_header = button(
         row![
@@ -249,9 +226,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
                 .label(t.t(MessageKey::IncludeHtmlSnippetLabel))
                 .on_toggle(Message::IncludeHtmlSnippetToggled)
                 .text_size(13),
-            // SVG 出力 + ラスタからベクトル化 (1 まとまり)
+            // SVG output toggle + vectorise-raster (grouped)
             svg_subsection(state),
-            // Web manifest (子フィールド込み)
+            // Web manifest (with child fields)
             subsection(
                 &t.t(MessageKey::SectionWebManifest),
                 Some(&t.t(MessageKey::SectionWebManifestBlurb)),
@@ -269,7 +246,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
                     .into(),
                 colors::muted_text(&theme),
             ),
-            // リサイズアルゴリズム
+            // Resize algorithm
             subsection(
                 &t.t(MessageKey::SectionResize),
                 Some(&t.t(MessageKey::SectionResizeBlurb)),
@@ -285,9 +262,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 
     let extras_section = column![extras_header, extras_body].spacing(2);
 
-    // ============================================================
-    // 中段全体: スクロール可能領域
-    // ============================================================
+    // ─────────────────────────────────────────────────────────────
+    // Main body: scrollable area
+    // ─────────────────────────────────────────────────────────────
     let scroll_content = column![
         sizes_col,
         svg_section,
@@ -304,9 +281,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .height(Length::FillPortion(1))
     .width(Length::Fill);
 
-    // ============================================================
-    // (6) フッタ: ↻ Reset のみ (Close は右上 ✕ に統合)
-    // ============================================================
+    // ─────────────────────────────────────────────────────────────
+    // (5) Footer: ↻ Reset only
+    // ─────────────────────────────────────────────────────────────
     let footer = row![
         button(
             row![
@@ -324,7 +301,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .spacing(8)
     .align_y(Alignment::Center);
 
-    column![title_row, scrollable_body, footer]
+    column![scrollable_body, footer]
         .spacing(14)
         .padding(20)
         .height(Length::Fill)
@@ -332,7 +309,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 }
 
 
-/// SVG セクション: チェックボックス + 配下のオプションをインデント表示。
+/// SVG section: checkbox + indented sub-options.
 fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let main_toggle = checkbox(state.export_plan.include_svg)
@@ -340,12 +317,12 @@ fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
         .on_toggle(Message::IncludeSvgToggled)
         .text_size(13);
 
-    // include_svg が off のときは配下のオプションも見せる必要なし
+    // When include_svg is off, no need to show sub-options
     if !state.export_plan.include_svg {
         return main_toggle.into();
     }
 
-    // 配下: vectorize toggle と preset pick_list。 段下げで従属関係を示す。
+    // Sub-options: vectorise toggle + preset pick_list, indented to show hierarchy.
     let nested = column![
         checkbox(state.export_plan.vectorize_on_raster)
             .label(t.t(MessageKey::VectorizeOnRasterLabel))
@@ -355,7 +332,7 @@ fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
     ]
     .spacing(6);
 
-    // インデント表現: 左 padding + 上下少しの padding
+    // Indentation: left padding + small top/bottom padding
     column![
         main_toggle,
         container(nested).padding(Padding::default().left(20).top(4)),
@@ -365,14 +342,14 @@ fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
 }
 
 // ---------------------------------------------------------------------------
-// 共通レイアウトヘルパ
+// Layout helpers
 // ---------------------------------------------------------------------------
 
-/// サブセクション (グループの中の小単位)。 タイトル + 任意の blurb + 中身。
-/// 旧 `section` ヘルパの後継だが、 v1.10 でグループ階層が増えた都合で名前を
-/// 変えた。
+/// Sub-section within a group: title + optional blurb + body.
+/// Successor to the old `section` helper (renamed when the group hierarchy grew).
+
 ///
-/// v1.14.0: blurb の色を呼び出し側で解決した `muted_color` で受け取る。
+/// v1.14.0: `muted_color` is resolved by the caller and passed in.
 fn subsection<'a>(
     title: &str,
     blurb: Option<&str>,
@@ -380,7 +357,7 @@ fn subsection<'a>(
     muted_color: Color,
 ) -> Element<'a, Message> {
     let mut col = column![
-        text(title.to_string()).size(13),
+        text(title.to_string()).size(15),
     ]
     .spacing(2);
     if let Some(b) = blurb {
@@ -391,16 +368,16 @@ fn subsection<'a>(
 }
 
 
-/// v1.8.0: Web manifest セクションの中身。
+/// v1.8.0: Web manifest section body.
 ///
-/// トグル off の時はラベルのみ。 on の時は 4 つのテキスト入力 (name /
-/// short_name / theme_color / background_color) を縦に並べる。
+/// When off: toggle only. When on: four text inputs (name /
+/// short_name / theme_color / background_color) stacked vertically.
 ///
-/// 設計判断:
-/// - 入力中の検証はしない (`#FF` まで打って警告を出す UX を避ける)
-/// - 検証は export 直前 (`Message::ExportRequested`) でまとめて行う
-/// - 永続化はキー入力ごと (`persist_settings`) — 既存の挙動 (size 入力など)
-///   と一貫させる
+/// Design decisions:
+/// - No validation during typing (avoids mid-input warning UX)
+/// - Validation runs at export time
+/// - Persist on every keystroke (`persist_settings`) — consistent with other inputs
+
 fn web_manifest_body<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let toggle = checkbox(state.export_plan.web_manifest.is_some())
@@ -409,14 +386,14 @@ fn web_manifest_body<'a>(state: &'a AppState) -> Element<'a, Message> {
         .text_size(13);
 
     let Some(manifest) = state.export_plan.web_manifest.as_ref() else {
-        // off 状態では toggle のみ表示。 入力フィールドを最初から見せると
-        // 「これは何?」 と認知負荷が増えるため、 on の時だけ展開する。
+        // Off: show only the toggle. Revealing all fields upfront
+        // adds cognitive load; expand only when on.
         return column![toggle].spacing(8).into();
     };
 
-    // on 状態: 4 つのフィールドを縦に並べる。
-    // 各フィールドは「ラベル + text_input」 の row。 ラベルは固定幅で揃えると
-    // 美しいが、 v1.8 では labeled_input ヘルパで row 内縦揃えを統一する。
+    // On: four fields stacked vertically.
+    // Each field is a label + text_input row.
+    // Fixed-width labels would look cleaner, but v1.8 uses labeled_input for simplicity.
     column![
         toggle,
         labeled_input(
@@ -448,8 +425,8 @@ fn web_manifest_body<'a>(state: &'a AppState) -> Element<'a, Message> {
     .into()
 }
 
-/// 「ラベル + text_input」 の 1 行 row。 v1.8 のフォーム入力で繰り返し使うので
-/// ヘルパ化。 ラベル幅は固定 (140px) でテキスト入力幅と揃える。
+/// One-row label + text_input field. Extracted as a helper for v1.8 form inputs.
+/// Fixed label width (140 px) aligned with the text input.
 fn labeled_input<'a>(
     label: &str,
     value: &str,
@@ -471,13 +448,13 @@ fn labeled_input<'a>(
 }
 
 // ---------------------------------------------------------------------------
-// 共通レイアウトヘルパ
+// Layout helpers
 // ---------------------------------------------------------------------------
 
 fn algorithm_row<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
-    // 翻訳用のラッパ。 ResizeAlgorithm に直接 Display を実装したくない (core が
-    // i18n に依存しないため) ので、 UI 層でラップする。
+    // i18n wrapper. Avoid implementing Display on ResizeAlgorithm directly
+    // (core must not depend on i18n); wrap it in the UI layer instead.
     let options: Vec<LocalizedAlgorithm> = ResizeAlgorithm::all()
         .iter()
         .map(|a| LocalizedAlgorithm {
@@ -526,12 +503,12 @@ fn vtracer_preset_row<'a>(state: &'a AppState) -> Element<'a, Message> {
 
 
 // ---------------------------------------------------------------------------
-// pick_list 用の i18n ラッパ (ResizeAlgorithm / VtracerPreset)
+// i18n wrappers for pick_list (ResizeAlgorithm / VtracerPreset)
 // ---------------------------------------------------------------------------
 //
-// `pick_list` の各オプションが `Display` を要求するが、 ResizeAlgorithm /
-// VtracerPreset 自体に `Display` を impl すると i18n 依存が core に漏れる。
-// そのため UI 層で「値 + 翻訳済ラベル」 のラッパを作って Display する。
+// `pick_list` requires `Display` on options, but implementing it on
+// ResizeAlgorithm / VtracerPreset directly would leak i18n into core.
+// Instead: UI-layer wrappers that carry a translated label string.
 
 #[derive(Debug, Clone)]
 struct LocalizedAlgorithm {
@@ -574,7 +551,7 @@ impl std::fmt::Display for LocalizedPreset {
 }
 
 // ---------------------------------------------------------------------------
-// enum → MessageKey マップ (UI 層に置く: core を i18n から独立させるため)
+// enum → MessageKey map (UI layer only, to keep core independent of i18n)
 // ---------------------------------------------------------------------------
 
 fn algorithm_message_key(alg: ResizeAlgorithm) -> MessageKey {
@@ -596,19 +573,19 @@ fn preset_message_key(preset: VtracerPreset) -> MessageKey {
 }
 
 // ---------------------------------------------------------------------------
-// v1.15.0: フッタ用ボタンスタイル
+// v1.15.0: footer button styles
 // ---------------------------------------------------------------------------
 
-/// Reset ボタン (左、 destructive 寄り)。
+/// Reset button (left-aligned, moderately destructive).
 ///
-/// 「初期値に戻す」 = 入力データの破壊なので、 通常の secondary より一段強い
-/// 注意喚起が必要。 ただし「ファイル削除」 のような irreversible 行為では
-/// ないため、 完全な danger スタイル (palette.danger.base 塗り) は重すぎる。
+/// "Restore defaults" destroys configuration, so it needs slightly more
+/// visual warning than a normal secondary button, but less than a fully
+/// destructive `danger` style (no irreversible file deletion).
 ///
-/// 落とし所として:
-/// - 透明背景 + danger.weak.color の枠線で「警告寄り」 を示す
-/// - text_color は通常テキスト相当 (palette.background.base.text) で読める強さ
-/// - hover 時は danger.weak.color を薄く塗って「押下対象」 を強調
+/// Compromise:
+/// - Transparent background + danger.weak.color border to signal caution
+/// - text_color matches normal text (readable)
+/// - On hover: light danger.weak fill to confirm it is pressable
 fn reset_button_style(
     theme: &iced::Theme,
     status: iced::widget::button::Status,
@@ -633,9 +610,9 @@ fn reset_button_style(
     }
 }
 
-/// v1.17.0: 旧 `close_button_style` の後継。 ドロワー内の補助ボタン
-/// (「+ カスタムサイズ追加」 等) で使う共通スタイル。 透明背景 + 中立の
-/// 枠線で「補助操作」 と認識される。
+/// v1.17.0: Successor to `close_button_style`. Used for auxiliary buttons
+/// (e.g. "Add custom size"). Transparent background + neutral border.
+
 fn secondary_drawer_button_style(
     theme: &iced::Theme,
     status: iced::widget::button::Status,
@@ -657,10 +634,10 @@ fn secondary_drawer_button_style(
     }
 }
 
-/// v1.17.0: タイトル領域右上の ✕ ボタン (Close = ドロワーを閉じる)。
+/// v1.17.0: The × button that was at the top-right of the drawer title row.
 ///
-/// hover 時にだけ薄く塗る。 ボタンとしての装飾は最小限 (枠線なし) — モダンな
-/// アプリの「タイトルバー右上の ✕」 の一般的な見た目に揃える。
+/// Light fill on hover only; minimal decoration (no border) — matches
+/// the common modern "title-bar × button" appearance.
 fn title_close_button_style(
     theme: &iced::Theme,
     status: iced::widget::button::Status,
@@ -682,10 +659,10 @@ fn title_close_button_style(
     }
 }
 
-/// v1.17.0: 「▶ 上級設定」 折りたたみセクションヘッダのボタンスタイル。
+/// v1.17.0: Collapsible "▶ Advanced settings" section header button style.
 ///
-/// 全幅クリック領域、 hover で背景うっすら、 枠線無し。 アコーディオンの
-/// chevron 風 UI として動く。
+/// Full-width click target, subtle hover background, no border.
+Behaves like an accordion chevron control.
 fn extras_header_style(
     theme: &iced::Theme,
     status: iced::widget::button::Status,

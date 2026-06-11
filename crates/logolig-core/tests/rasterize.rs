@@ -1,9 +1,9 @@
-//! SVG ラスタライザの end-to-end テスト。
+//! SVG rasteriser end-to-end tests.
 //!
-//! - 16×16 SVG が 16/32/64 のターゲットでそれぞれ正しいサイズで返る
-//! - 出力が straight alpha の RGBA8 (premultiplied から戻されている)
-//! - 透明背景の余白がきちんと alpha=0 になっている
-//! - PNG ソースに rasterize を呼ぶと UnsupportedFile
+//! - A 16×16 SVG renders at 16 / 32 / 64 with correct output dimensions
+//! - Output is straight-alpha RGBA8
+//! - Transparent background pixels have alpha=0
+//! - Calling rasterise on a PNG source returns `UnsupportedFile`
 
 mod fixtures;
 
@@ -25,13 +25,13 @@ fn rasterize_svg_renders_at_each_target_size() {
 
 #[test]
 fn rasterize_centers_drawn_pixels_with_transparent_padding() {
-    // SVG_16 は 16x16 でアスペクト比 1:1。target_size を同じにすると
-    // 余白なくぴったり描かれる。さらに 1 ピクセルだけ大きく (17) すると、
-    // 中央配置のため少なくとも 1 行/列の透明帯ができることを検証する。
+    // SVG_16 is 16×16, aspect 1:1. Same target_size → rendered without padding.
+    // One pixel larger (17) → at least one row/column of transparent border,
+    // because the viewBox is centred.
     let asset = ingest_bytes("tile.svg", fixtures::SVG_16.as_bytes().to_vec()).unwrap();
     let bmp = rasterize(&asset, 17).unwrap();
 
-    // 角ピクセル (0, 0) は確実に透明。
+    // Corner pixel (0,0) is guaranteed to be transparent.
     let bytes = bmp.as_bytes();
     let alpha_at = |x: u32, y: u32| -> u8 {
         let idx = (y as usize * bmp.width as usize + x as usize) * 4 + 3;

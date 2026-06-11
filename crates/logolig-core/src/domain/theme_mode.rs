@@ -1,7 +1,7 @@
-//! テーマモード。
+//! Application theme mode.
 //!
-//! - アプリ全体のテーマ（背景色など）と、プレビューの背景の両方で使う。
-//! - `System` は OS テーマに追従する想定（Step 1 ではプレースホルダ）。
+//! - Controls both the app colour scheme and the preview background.
+//! - `System` follows the OS colour scheme.
 
 use serde::{Deserialize, Serialize};
 
@@ -22,7 +22,7 @@ impl ThemeMode {
         }
     }
 
-    /// トグルボタン用の順送り。
+    /// Cycle to the next value (used by a toggle button).
     pub fn next(self) -> Self {
         match self {
             Self::System => Self::Light,

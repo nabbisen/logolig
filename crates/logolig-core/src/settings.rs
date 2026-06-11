@@ -1,72 +1,73 @@
-//! 設定の保存抽象 (v1.4.0)。
+//! Settings persistence abstraction (v1.4.0).
 //!
-//! `SettingsStore<T>` は「型 T の値を 1 つ永続化する」 ための trait。
-//! API シェイプは `app-json-settings` v2 の `ConfigManager<T>` に意図的に
-//! 揃えてある:
+//! `SettingsStore<T>` is a trait for persisting a single value of type `T`.
+//! Its API shape is intentionally aligned with `ConfigManager<T>` from
+//! `app-json-settings` v2:
 //!
-//! - `load_or_default()`: 起動時の標準ロード。 ファイル/ストレージが空なら
-//!   `T::default()` を保存して返す
-//! - `save()`:            全体置換書き込み
-//! - `update()`:          安全な read-modify-write
+//! - `load_or_default()`: standard load on startup; saves and returns
+//!   `T::default()` when the file / storage is empty
+//! - `save()`:            full-replacement write
+//! - `update()`:          safe read-modify-write
 //!
-//! ## なぜ trait なのか
+//! ## Why a trait?
 //!
-//! v1 (ネイティブ iced) は OS の標準 config dir に JSON ファイルとして
-//! 保存する。 v2 (将来の WASM ブラウザ) は LocalStorage に JSON 文字列
-//! として保存する。 保存メディアは違うが API シェイプは完全に同じにできる。
+//! v1 (native iced) persists to a JSON file in the OS config directory.
+//! v2 (future WASM browser build) would persist to LocalStorage.
+//! The storage medium differs but the API shape is identical.
 //!
-//! `logolig-core` がこの trait を所有することで、 永続化方式を 1 か所に
-//! 抽象化できる。 v2 への移行時に「実装差し替えだけ」 で済む。
+//! Defining this trait in `logolig-core` lets us abstract the persistence
+//! mechanism in one place. Migration to v2 is an implementation swap only.
 //!
-//! ## 依存方向
+//! ## Dependency direction
 //!
 //! ```text
 //!         logolig-app          (v1)
 //!          ↓
 //!   ┌────────────┐
-//!   │ logolig-   │  ←── ここで trait 定義
-//!   │  core      │      (serde には依存するが ファイル I/O には依存しない)
+//!   │ logolig-   │  ← trait defined here
+//!   │  core      │    (depends on serde, not on file I/O)
 //!   └────────────┘
 //!          ↑
-//!         logolig-web          (v2、将来)
+//!         logolig-web          (v2, future)
 //! ```
 //!
-//! `logolig-core` は **ファイル I/O も localStorage 抽象も持たない**。
-//! 実装は呼び出し側 (logolig-app または logolig-web) が提供する。
+//! `logolig-core` has **no file I/O and no localStorage abstraction**.
+//! The concrete implementation is provided by the calling crate
+//! (logolig-app or logolig-web).
 
 use std::error::Error as StdError;
 
 use serde::{de::DeserializeOwned, Serialize};
 
-/// 型 T の値を 1 つ永続化するためのストア。
+/// A store that persists exactly one value of type `T`.
 ///
-/// `T` は `Serialize + DeserializeOwned + Default` を要求する。 default 制約は
-/// `load_or_default()` が「初回起動でファイルが無い」 ケースをきれいに扱う
-/// ためのもの。 logolig での T は `PersistedSettings`。
+/// `T` must satisfy `Serialize + DeserializeOwned + Default`. The `Default`
+/// bound lets `load_or_default()` handle the "first run, no file yet" case
+/// cleanly. In logolig, `T` is always `PersistedSettings`.
 ///
-/// # 実装上のメモ
+/// # Implementation notes
 ///
-/// - `Error` は実装ごとに異なる(ファイル I/O エラー / serde エラー /
-///   localStorage アクセス権 など)。 trait レベルでは `StdError + Send + Sync`
-///   を要求するに留め、 具体的な型は実装側に委ねる
-/// - `update()` は `load_or_default()` → クロージャ適用 → `save()` の
-///   合成。 並行更新の atomicity は保証しない (logolig は単一プロセスからの
-///   逐次更新しかしないため不要)
+/// - `Error` varies per implementation (file I/O errors, serde errors,
+///   localStorage permission errors, …). The trait requires only
+///   `StdError + Send + Sync`; the concrete type is left to the implementor.
+/// - `update()` is a composition of `load_or_default()` → apply closure →
+///   `save()`. Atomicity across concurrent updates is not guaranteed
+///   (logolig uses sequential single-process updates only).
 pub trait SettingsStore<T>
 where
     T: Serialize + DeserializeOwned + Default,
 {
-    /// 実装固有のエラー型。
+    /// Implementation-specific error type.
     type Error: StdError + Send + Sync + 'static;
 
-    /// 既存値をロード。 存在しなければ default を保存して返す。
+    /// Load the existing value, or save and return the default if absent.
     fn load_or_default(&self) -> Result<T, Self::Error>;
 
-    /// 全体置換書き込み。
+    /// Write a new value, replacing whatever was stored.
     fn save(&self, config: &T) -> Result<(), Self::Error>;
 
-    /// 読み込み → クロージャでミューテーション → 書き込み。
-    /// 戻り値は更新後の T。 UI 側で「保存に成功した最新値」 を再取得する用途。
+    /// Load → mutate via closure → save. Returns the updated `T`.
+    /// The UI uses the return value to get the latest saved state.
     fn update<F>(&self, f: F) -> Result<T, Self::Error>
     where
         F: FnOnce(&mut T);

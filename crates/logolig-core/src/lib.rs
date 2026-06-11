@@ -1,14 +1,15 @@
 //! # logolig-core
 //!
-//! Local-first favicon generator の純粋ロジック層。
+//! Pure logic layer for the local-first favicon generator.
 //!
-//! このクレートは **iced や snora に依存しない**。
-//! それは慣習ではなく依存グラフ上の事実であり、これにより:
-//! - 画像処理ロジックを GUI 抜きで単体テストできる
-//! - 将来 CLI バイナリや WASM フロントエンドから再利用できる
-//! - GUI イテレーション中にここがリビルドされない
+//! This crate has **no dependency on iced or snora**.
+//! That is not a convention — it is a hard constraint enforced by the
+//! dependency graph. This gives us:
+//! - Image-processing logic that can be unit-tested without a GUI
+//! - A reusable base for a future CLI binary or WASM front-end
+//! - No rebuild of this crate during GUI iteration cycles
 //!
-//! が達成される (§3.1, §16)。
+//! (§3.1, §16)
 
 pub mod domain;
 pub mod error;
@@ -16,8 +17,9 @@ pub mod message_key;
 pub mod services;
 pub mod settings;
 
-// 上位クレート (logolig-app) から `use logolig_core::SourceAsset;` のように
-// 短く参照できるよう、頻出型はクレート直下に re-export する。
+// Re-export the most commonly used types at the crate root so that
+// upstream crates (logolig-app) can write `use logolig_core::SourceAsset`
+// instead of the full module path.
 pub use domain::{
     ExportPlan, PersistedSettings, PreviewContext, PreviewProfile, ResizeAlgorithm, Rgba8,
     SizeOverride, SourceAsset, SourceKind, ThemeMode, VtracerPreset, WebManifestSettings,

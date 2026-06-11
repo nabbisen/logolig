@@ -1,22 +1,14 @@
-//! ドロップゾーン画面 (起動直後)。
+//! Drop-zone screen (shown on launch and after editing is cancelled).
 //!
-//! §5.1:
-//! - 設定項目を見せない
-//! - シングルカラムの大きなドロップ領域
-//! - キーボード操作のみで完結する代替経路 (ファイル選択ボタン)
+//! Design principles:
+//! - Show no settings — the user hasn't chosen a file yet
+//! - Single large drop target fills the content area
+//! - Keyboard-accessible alternative path (file chooser button)
 //!
-//! ## v1.10.2: スリム化 + 視覚的なドロップ領域
+//! ## v1.10.2: slimmed down
 //!
-//! v1.10.0 までは「Drop a PNG, SVG, or WebP image here, or activate to choose
-//! a file」 のような長文 + 受け入れフォーマット一覧 + a11y 補助テキスト等で
-//! 説明過多だった。 v1.10.2 では:
-//!
-//! - アイキャッチを `Drop PNG, SVG, or WebP` (1 行) にスリム化
-//! - 受け入れフォーマット一覧を削除 (アイキャッチに含めて 1 行で完結)
-//! - a11y 補助テキストを削除 (iced 0.14 には a11y API がないので意味がなかった)
-//! - ドロップ領域を実線の角丸ボーダー + 薄い背景塗りで囲んで視覚化
-//!   (iced 0.14 は dashed/dotted ボーダーを直接サポートしないため、 実線で代替)
-//! - Choose file… ボタンとアイキャッチだけを領域内に配置
+//! Earlier versions had lengthy explanatory text and a format list.
+//! v1.10.2 replaced it with a minimal prompt and a visual drop area.
 
 use iced::widget::{button, column, container, text};
 use iced::{Background, Border, Element, Length, Theme};
@@ -26,14 +18,14 @@ use logolig_core::MessageKey;
 use crate::app::{resolve_theme, AppState, Message};
 use crate::ui::colors;
 
-// v1.14.0: 旧 HEADLINE_COLOR の hardcoded 定数は colors::drop_zone_headline
-// に移行した。 dark/light 切替に追従。
+// v1.14.0: replaced hardcoded HEADLINE_COLOR constant with colors::drop_zone_headline
+// — now tracks dark/light theme changes.
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let theme = resolve_theme(state);
 
-    // ドロップ領域内のコンテンツ: アイキャッチ + Choose file… ボタンのみ
+    // Drop area content: eye-catching prompt + Choose file… button only.
     let inner = column![
         text(t.t(MessageKey::DropZoneHeadline))
             .size(22)
@@ -45,13 +37,13 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .spacing(20)
     .align_x(iced::alignment::Horizontal::Center);
 
-    // ドロップ領域の枠 (実線 + 薄い背景塗り)。 iced 0.14 では dashed border が
-    // 提供されていないため、 実線の細いボーダーと柔らかい背景塗りで「ここに
-    // 落とせる領域」 を視覚化する。 角丸を大きめに取って box-y にしすぎず、
-    // padding を多めに取って中身を中央に浮かせる。
+    // Drop area border (solid line + light background fill). iced 0.14 has no dashed border;
+    // use a thin solid border and soft background to signal "drop here"
+    // with generous corner radius to avoid an overly boxy look.
+    // Generous padding floats the content in the centre.
     //
-    // この container::style はクロージャ形式で、 描画時に呼ばれるたびに
-    // `&Theme` を受け取って色を解決するため、 既に theme-aware。
+    // This container::style closure is called at render time with `&Theme`,
+    // so it is already theme-aware.
     let bordered = container(inner)
         .padding(48)
         .center_x(Length::Fill)
@@ -69,8 +61,8 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             }
         });
 
-    // ドロップ領域 ↔ ウィンドウ縁の余白を確保するために、 さらに外側に padding
-    // 付き container を被せる。
+    // Outer container provides margin between the drop area and the window edge.
+
     container(bordered)
         .padding(40)
         .width(Length::Fill)

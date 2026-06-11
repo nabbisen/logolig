@@ -1,15 +1,10 @@
-//! UI 層。
-//!
-//! 画面構成は状態 (`AppState`) の関数として定義する (§11.2)。
-//! 副作用は `logolig_core::services` または `crate::task_queue` に逃がす。
-
 pub mod accessibility;
 pub mod advanced_drawer;
-pub mod bottom_nav;
 pub mod colors;
 pub mod converting;
+pub mod customize_page;
 pub mod drop_zone;
-pub mod picker_overlay;
 pub mod preview_panel;
 pub mod result_view;
+pub mod settings_page;
 pub mod sidebar;

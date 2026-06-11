@@ -1,9 +1,9 @@
-//! JPEG デコード + リサイズの end-to-end (v1.11.0)。
+//! JPEG decode + resize end-to-end tests (v1.11.0).
 //!
-//! - 8×8 の JPEG が正しく RGBA8 (8×8×4 = 256 バイト) に展開される
-//! - JPEG ソースを 16×16 / 32×32 / 48×48 にリサイズしても寸法が合う
-//! - JPEG はアルファを持たないため、 デコード後の RGBA は alpha=255 で埋まる
-//! - decode_jpeg は JPEG 以外の入力を拒絶する (UnsupportedFile)
+//! - An 8×8 JPEG decodes correctly to RGBA8 (8×8×4 = 256 bytes)
+//! - Resizing to 16×16 / 32×32 / 48×48 produces correct dimensions
+//! - JPEG has no alpha channel; decoded RGBA has alpha=255 throughout
+//! - Non-JPEG input is rejected with `UnsupportedFile`
 
 mod fixtures;
 
@@ -24,8 +24,8 @@ fn jpeg_decode_returns_correct_dimensions() {
 
 #[test]
 fn jpeg_decode_fills_alpha_with_full_opacity() {
-    // JPEG は alpha チャネルを持てないので、 image crate の to_rgba8 が
-    // 不足する alpha を 255 で埋める。 全ピクセルが完全不透明であることを確認。
+    // JPEG has no alpha channel; image::to_rgba8 fills the alpha byte
+    // with 255. Verify every pixel is fully opaque.
     let asset = ingest_bytes("tile.jpg", fixtures::jpeg_8x8_red()).unwrap();
     let rgba = decode(&asset).unwrap();
     for chunk in rgba.as_bytes().chunks_exact(4) {
@@ -43,7 +43,7 @@ fn jpeg_then_resize_to_favicon_sizes() {
         assert_eq!(big.width, size);
         assert_eq!(big.height, size);
         assert_eq!(big.as_bytes().len(), (size as usize) * (size as usize) * 4);
-        // リサイズ後もアルファが保たれていること
+        // Alpha is still 255 after resize
         for chunk in big.as_bytes().chunks_exact(4) {
             assert_eq!(chunk[3], 0xFF);
         }

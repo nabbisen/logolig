@@ -1,11 +1,11 @@
-//! 出力計画 (§7)。
+//! Export plan — the complete output specification.
 //!
-//! 「何を、どのサイズで、どのアルゴリズムで出力するか」を宣言的に保持する。
-//! デフォルトは「必要最小限のモダン構成」。詳細はオプトイン (§5.3)。
+//! `ExportPlan` is a pure value type: it describes *what* to export but
+//! contains no I/O logic. The exporter service reads this struct and
+//! produces the corresponding artifacts.
 //!
-//! v1.4.0 から `Serialize` / `Deserialize` を実装し、 `PersistedSettings` の
-//! 一部としてディスクに保存可能。 既知のフィールドが欠ける旧バージョン JSON
-//! に出会った時のための `serde(default)` を全フィールドに付ける (前方互換)。
+//! `ExportPlan` is also the persisted user preference: it is serialised
+//! into `PersistedSettings` and saved on every change.
 
 use std::path::PathBuf;
 
@@ -14,20 +14,20 @@ use serde::{Deserialize, Serialize};
 use crate::domain::resize_algorithm::ResizeAlgorithm;
 use crate::domain::vtracer_preset::VtracerPreset;
 
-/// PNG サイズの実用下限 (px)。 これ以下は描画破綻する。
+/// Minimum practical PNG size in pixels (below this rendering degrades).
 pub const PNG_SIZE_MIN: u32 = 16;
-/// PNG サイズの実用上限 (px)。 これ以上はファイルサイズが過大で favicon 用途で意味がない。
+/// Maximum practical PNG size in pixels (above this the file size is excessive for favicons).
 pub const PNG_SIZE_MAX: u32 = 1024;
 
-/// ICO サイズの実用下限 (px)。
+/// Minimum practical ICO frame size in pixels.
 pub const ICO_SIZE_MIN: u32 = 16;
-/// ICO サイズの実用上限 (px)。
+/// Maximum practical ICO frame size in pixels.
 ///
-/// 256 は ICO のフォーマット仕様上の上限である (BMP モードの寸法フィールドが
-/// `u8` であり、 256 は `0` で表現される慣習)。 ico crate もこれを尊重する。
+/// 256 is the ICO format maximum (the BMP-mode dimension field is
+/// `u8`; 256 is encoded as 0 by convention). The `ico` crate respects this.
 pub const ICO_SIZE_MAX: u32 = 256;
 
-/// 個別サイズに対するソース画像の差し替え指定。
+/// Per-size source image override.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SizeOverride {
     pub size: u32,
@@ -39,61 +39,61 @@ pub struct SizeOverride {
 pub struct ExportPlan {
     pub include_ico: bool,
     pub include_apple_touch: bool,
-    /// 高解像度 PNG として出力するサイズ群。
+    /// PNG sizes to write as individual favicon-NN.png files.
     pub png_sizes: Vec<u32>,
     pub include_html_snippet: bool,
     pub algorithm: ResizeAlgorithm,
     pub overrides: Vec<SizeOverride>,
-    /// ICO に内包するサイズ群。
+    /// Frame sizes to include in the ICO file.
     pub ico_sizes: Vec<u32>,
-    /// `favicon.svg` を出力する (v1.2.0+)。
-    /// SVG ソースなら入力をそのまま、 ラスタ入力なら `vectorize_on_raster` を見て判定。
+    /// Whether to write `favicon.svg` (added in v1.2.0).
+    /// SVG source: copied as-is. Raster source: traced only when `vectorize_on_raster` is true.
     pub include_svg: bool,
-    /// ラスタ入力 (PNG / WebP) に対して vtracer でベクトル化 SVG を生成するか
-    /// (v1.2.0+)。 `false` の場合、 ラスタ入力時は `favicon.svg` 出力をスキップ
-    /// する (HTML スニペットからも `<link type="image/svg+xml">` 行が省かれる)。
+    /// Whether to trace a raster source (PNG/WebP) to SVG using vtracer (v1.2.0+).
+    /// When `false`, SVG output is skipped for raster sources
+    /// (and the `<link type="image/svg+xml">` line is omitted from the HTML snippet).
     pub vectorize_on_raster: bool,
-    /// vtracer のチューニングプリセット (v1.4.1+)。
-    /// `Sharp` はロゴ・アイコン向け、 `Default` は v1.2.0 と同じ既定値、
-    /// `PhotoRich` は写真風 / グラデーション向け。
+    /// vtracer tuning preset (v1.4.1+).
+    /// `Sharp` for logos/icons; `Default` matches the v1.2.0 behaviour;
+    /// `PhotoRich` for photo-like or gradient sources.
     pub vtracer_preset: VtracerPreset,
 
-    /// Web manifest 出力 (v1.8.0+)。 `Some(_)` のとき `manifest.webmanifest`
-    /// を生成し、 HTML スニペットに `<link rel="manifest">` を追記する。
-    /// `None` (デフォルト) なら manifest 関連の出力は一切行わない。
+    /// Web manifest output (v1.8.0+). When `Some(_)`, writes `manifest.webmanifest`
+    /// and appends `<link rel="manifest">` to the HTML snippet.
+    /// `None` (default): no manifest-related output.
     ///
-    /// `Some(WebManifestSettings::default())` でも有効化できるが、 デフォルト
-    /// 値はプレースホルダ ("My App" 等) なので、 ユーザは詳細設定で
-    /// `name`, `short_name`, `theme_color`, `background_color` を埋める想定。
+    /// `Some(WebManifestSettings::default())` enables it with placeholder values
+    /// ("My App" etc.); users should fill in real values via the Customize page
+    /// `name`, `short_name`, `theme_color`, `background_color` should be filled in.
     pub web_manifest: Option<crate::domain::WebManifestSettings>,
 
-    /// モノクローム出力セット (v1.9.0+)。 `true` のとき、 通常の出力に加えて
-    /// `mono/` サブディレクトリにグレースケール版 (BT.709 輝度) を出力する:
+    /// Monochrome output set (v1.9.0+). When `true`, writes greyscale variants
+    /// into `mono/` alongside the normal outputs:
     ///
     /// ```text
     /// mono/
-    /// ├── favicon.svg     (include_svg が true なら)
-    /// ├── favicon.ico     (include_ico が true なら)
-    /// └── favicon-{N}.png (各 png_sizes ごと)
+    /// ├── favicon.svg     (if include_svg is true)
+    /// ├── favicon.ico     (if include_ico is true)
+    /// └── favicon-{N}.png (for each png_size)
     /// ```
     ///
-    /// `apple-touch-icon` は iOS ホーム画面がカラー前提のため mono 化しない。
-    /// HTML snippet にも mono の `<link>` は自動追加しない (CSS prefers-color-scheme
-    /// と組み合わせる用途は多様で、 ユーザに委ねる方が自然)。
+    /// `apple-touch-icon` is not monochromed (iOS home screen assumes colour).
+    /// No mono `<link>` is added to the HTML snippet (CSS `prefers-color-scheme`
+    /// integration varies; left to the user).
     pub monochrome: bool,
 
-    /// 透過 (アルファチャンネル) を維持するか (v1.21.0)。
+    /// Whether to preserve the alpha channel (v1.21.0).
     ///
-    /// - `true` (デフォルト): ソース画像のアルファをそのまま保持。 PNG / ICO
-    ///   出力には透明部分が残る。 favicon の現代的標準。
-    /// - `false`: アルファを **白背景** で合成して全ピクセルを完全不透明に
-    ///   する (Q1-a で確定: シンプルさ + favicon ツールの慣例)。 SVG は
-    ///   この設定の影響を受けない (Q2-a: フラット化はラスタ用語、 SVG は
-    ///   そのまま)。 JPEG ソースは元から alpha=255 なので結果は両設定で同じ。
+    /// - `true` (default): preserve alpha as-is. PNG/ICO outputs retain
+    ///   transparent areas. The modern favicon standard.
+    /// - `false`: composite alpha against **white**, making every pixel opaque.
+    ///   SVG outputs are unaffected (flatten is a raster operation).
+
+    ///   JPEG sources have alpha=255 already; results are the same either way.
     ///
-    /// 永続化対象 (Q4-a)。 旧バージョンの設定 JSON 不存在時は struct-level の
-    /// `#[serde(default)]` (= `ExportPlan::default()`) が呼ばれるため、 自動的に
-    /// `true` で埋まる (= 既存ユーザはアップグレードしても挙動変化なし)。
+    /// Persisted. Old settings JSON without this field gets `true` via
+    /// the struct-level `#[serde(default)]` (= `ExportPlan::default()`).
+    /// Existing users see no behaviour change after upgrade.
     pub keep_transparency: bool,
 }
 
@@ -102,66 +102,64 @@ impl Default for ExportPlan {
         Self {
             include_ico: true,
             include_apple_touch: true,
-            // モダンブラウザ向けの最小構成。詳細設定で増やせる。
+            // Minimal modern set. Users can add more in the Customize page.
             png_sizes: Self::default_png_sizes().to_vec(),
             include_html_snippet: true,
             algorithm: ResizeAlgorithm::default(),
             overrides: Vec::new(),
-            // ICO は 16/32/48 を内包。各サイズを個別レンダリングして詰める。
+            // ICO contains 16/32/48, each rendered independently.
             ico_sizes: Self::default_ico_sizes().to_vec(),
-            // SVG 出力は v1.2.0 のデフォルト。 高 DPI 画面で最美。
+            // SVG output: v1.2.0 default. Best quality on HiDPI screens.
             include_svg: true,
-            // ラスタ入力に対するベクトル化もデフォルトオン。
-            // 写真など vtracer に向かない入力に対しては詳細設定でオフにする。
+            // Vectorise raster sources by default.
+            // Users can disable in Advanced for photos that vtracer handles poorly.
             vectorize_on_raster: true,
-            // vtracer プリセットは v1.2.0 互換として Default を採用 (vtracer 既定値)。
-            // Sharp / PhotoRich はユーザがオプトインで選択する。
+            // vtracer preset: Default (compatible with v1.2.0).
+            // Sharp / PhotoRich are opt-in via the Customize page.
             vtracer_preset: VtracerPreset::Default,
-            // v1.8.0: web manifest 出力はオプトイン (None がデフォルト)。
-            // 「迷いを減らす」 §5: ほとんどのユーザは PWA を作らないので、
-            // 知らない間に意図しない manifest が出力されないようにする。
+            // v1.8.0: web manifest is opt-in (None default).
+            // §5 "reduce decision fatigue": most users are not building a PWA,
+            // so no manifest is written without an explicit opt-in.
             web_manifest: None,
-            // v1.9.0: モノクローム出力もオプトイン (false がデフォルト)。
-            // 大半のユーザはカラー版だけで十分。 単色印刷やテーマ対応 mask の
-            // ような特殊用途のときだけ有効化する想定。
+            // v1.9.0: Monochrome output is opt-in (false default).
+            // Most users only need the colour version.
             monochrome: false,
-            // v1.21.0: 透過維持はデフォルト ON (favicon の現代的標準 + 旧 logolig
-            // 完全互換)。 ユーザがフラット化を望むときだけオフにする。
+            // v1.21.0: Transparency is preserved by default (modern favicon standard + backward compat).
             keep_transparency: true,
         }
     }
 }
 
 impl ExportPlan {
-    /// 既定の PNG サイズ集合 (`Default` でも使われる)。 v1.10.0 で UI が
-    /// 「at defaults: 32 / 192 / 512」 のような控えめ表示と編集モードを切り替える
-    /// 際、 「現在の値が既定と一致するか」 の比較に使う。
+    /// Default PNG size set. v1.10.0 uses this to compare "current == default"
+    /// when toggling between the compact "at defaults: 32/192/512" view
+    /// and edit mode.
     pub fn default_png_sizes() -> &'static [u32] {
         &[32, 192, 512]
     }
 
-    /// 既定の ICO サイズ集合 (`Default` でも使われる)。
+    /// Default ICO size set.
     pub fn default_ico_sizes() -> &'static [u32] {
         &[16, 32, 48]
     }
 
-    /// この計画で**確定的に**生成される出力数 (プレビュー表示用)。
+    /// **Maximum** artifact count for this plan (used for display).
     ///
-    /// 注: `include_svg` の真偽は実際の出力数を決定づけない。 ラスタ入力で
-    /// `vectorize_on_raster=false` の場合、 SVG はスキップされる。 そのため
-    /// 「最大数」を返す方針で `include_svg` も加算する。 実際の数は
-    /// `services::exporter::run` の `ExportReport.artifacts.len()` で確認する。
+    /// Note: `include_svg` may not produce SVG when `vectorize_on_raster=false`
+    /// and source is raster, so this returns the upper bound.
+    /// Actual count is `services::exporter::run`'s `ExportReport.artifacts.len()`.
+
     pub fn artifact_count(&self) -> usize {
         let ico = usize::from(self.include_ico);
         let apple = usize::from(self.include_apple_touch);
         let html = usize::from(self.include_html_snippet);
         let svg = usize::from(self.include_svg);
-        // v1.8.0: web_manifest が Some なら manifest.webmanifest が +1。
+        // v1.8.0: +1 for manifest.webmanifest when web_manifest is Some.
         let manifest = usize::from(self.web_manifest.is_some());
         let base = ico + apple + html + svg + manifest + self.png_sizes.len();
-        // v1.9.0: monochrome が ON なら、 PNG 各サイズ + SVG (if include_svg)
-        //          + ICO (if include_ico) のグレースケール版が増える。
-        //          apple-touch / html / manifest は mono 化しない。
+        // v1.9.0: when monochrome is on, add greyscale PNG + SVG (if include_svg)
+        //          + ICO (if include_ico). apple-touch / html / manifest excluded.
+
         let mono = if self.monochrome {
             self.png_sizes.len()
                 + usize::from(self.include_svg)
@@ -172,24 +170,24 @@ impl ExportPlan {
         base + mono
     }
 
-    /// PNG サイズ集合への追加 (v1.3.0)。 重複や範囲外を弾き、 昇順を保つ。
-    /// 戻り値は **追加されたかどうか**: 既に存在する / 範囲外なら `false`。
+    /// Add a PNG size (v1.3.0). Rejects duplicates and out-of-range values; keeps ascending order.
+    /// Returns `true` if added, `false` if it already existed or is out of range.
     pub fn add_png_size(&mut self, size: u32) -> bool {
         Self::add_into_sorted_set(&mut self.png_sizes, size, PNG_SIZE_MIN, PNG_SIZE_MAX)
     }
 
-    /// PNG サイズの削除 (v1.3.0)。 戻り値は **削除されたかどうか**。
+    /// Remove a PNG size (v1.3.0). Returns `true` if removed.
     pub fn remove_png_size(&mut self, size: u32) -> bool {
         Self::remove_from_set(&mut self.png_sizes, size)
     }
 
-    /// ICO サイズ集合への追加 (v1.3.0)。
+    /// Add an ICO frame size (v1.3.0).
     pub fn add_ico_size(&mut self, size: u32) -> bool {
         Self::add_into_sorted_set(&mut self.ico_sizes, size, ICO_SIZE_MIN, ICO_SIZE_MAX)
     }
 
-    /// ICO サイズの削除 (v1.3.0)。
-    /// `ico_sizes` を空にすることは許容する (`include_ico=false` 相当の運用)。
+    /// Remove an ICO frame size (v1.3.0).
+    /// Emptying `ico_sizes` is allowed (equivalent to `include_ico=false`).
     pub fn remove_ico_size(&mut self, size: u32) -> bool {
         Self::remove_from_set(&mut self.ico_sizes, size)
     }

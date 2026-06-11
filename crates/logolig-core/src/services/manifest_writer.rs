@@ -1,60 +1,31 @@
-//! Web manifest 生成 (v1.8.0)。
+//! Web manifest generator (v1.8.0).
 //!
-//! `WebManifestSettings` + `ExportPlan.png_sizes` から
-//! `manifest.webmanifest` の JSON 文字列を組み立てる。
+//! Assembles a `manifest.webmanifest` JSON string from
+//! `WebManifestSettings` and `ExportPlan.png_sizes`.
 //!
-//! ## なぜサービス層か
+//! ## Why a service?
 //!
-//! 文字列生成自体は純関数で済むので domain 寄りに見えるが、 出力ファイル名
-//! (`manifest.webmanifest`) と icon 配列に並べる PNG ファイル名のルールが
-//! `exporter` のファイル命名規約と結合している。 「icon 配列に書くファイル名」
-//! と「実際に書き出される PNG ファイル名」 は同じ規約に従う必要があるため、
-//! services 層に置いて将来 exporter と命名ロジックを共有しやすくする。
-//!
-//! ## 出力 JSON のフィールド
-//!
-//! v1.8 で出力するのは以下の固定構造:
-//!
-//! ```json
-//! {
-//!   "name": "...",
-//!   "short_name": "...",
-//!   "icons": [
-//!     {"src": "favicon-32.png", "sizes": "32x32", "type": "image/png", "purpose": "any"},
-//!     ...
-//!   ],
-//!   "start_url": "/",
-//!   "display": "standalone",
-//!   "theme_color": "#...",
-//!   "background_color": "#..."
-//! }
-//! ```
-//!
-//! `start_url` と `display` は v1.8 では UI から変更できない固定値 (前述)。
-//!
-//! ## ファイル名命名
-//!
-//! PNG サイズは `favicon-{size}.png` 形式 (例: `favicon-32.png`)。 これは
-//! `exporter` の命名規約と一致させること — UI の HTML スニペットも同じ規約
-//! を前提にしている。 v1.8 で命名を変えるならここと exporter / html_snippet
-//! の 3 箇所同時に修正が必要。
+//! The icon array must use the same file-naming convention as the exporter
+//! (`favicon-{size}.png`). Placing both in the service layer keeps the
+//! naming rule co-located and prevents drift between the manifest and
+//! the actual files written to disk.
 
 use serde_json::json;
 
 use crate::domain::WebManifestSettings;
 
-/// 出力するファイル名 (拡張子含む)。 W3C 推奨は `.webmanifest` 拡張子だが、
-/// `.json` でも各ブラウザは受け付ける。 logolig は推奨側を採用。
+/// Output file name (including extension). W3C recommends `.webmanifest`;
+/// browsers also accept `.json`, but logolig follows the recommendation.
 pub const MANIFEST_FILENAME: &str = "manifest.webmanifest";
 
-/// `WebManifestSettings` と PNG サイズ集合から `manifest.webmanifest` の
-/// JSON 文字列を生成する。 改行・インデント込みの読める形 (pretty-print)。
+/// Generate the `manifest.webmanifest` JSON string from
+/// `WebManifestSettings` and the PNG size set. Output is pretty-printed.
 ///
-/// `png_sizes` が空の場合、 `icons` 配列は空のまま出力される (PWA としては
-/// 推奨されない構成だが、 v1.8 ではユーザの選択を尊重する)。
+/// If `png_sizes` is empty, the `icons` array is empty (not recommended for
+/// a PWA, but v1.8 respects the user's choice).
 pub fn build_manifest_json(settings: &WebManifestSettings, png_sizes: &[u32]) -> String {
-    // icons 配列を組み立てる。 manifest 内のファイル名は exporter の出力と
-    // 一致する必要があるため、 命名規約 `favicon-{size}.png` をここに直書き。
+    // Build the icons array. File names in the manifest must match
+    // exporter output names; the `favicon-{size}.png` convention is inlined here.
     let icons: Vec<serde_json::Value> = png_sizes
         .iter()
         .map(|size| {
@@ -77,7 +48,7 @@ pub fn build_manifest_json(settings: &WebManifestSettings, png_sizes: &[u32]) ->
         "background_color": settings.background_color
     });
 
-    // pretty-print。 末尾改行も足す (POSIX text file の慣習)。
+    // Pretty-print; add a trailing newline (POSIX text file convention).
     let mut out = serde_json::to_string_pretty(&manifest)
         .expect("serde_json: serializing well-formed JSON should not fail");
     out.push('\n');

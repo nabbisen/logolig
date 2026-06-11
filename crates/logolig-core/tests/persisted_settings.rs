@@ -1,14 +1,13 @@
-//! 永続化された設定の round-trip + SettingsStore trait の挙動 (v1.4.0)。
+//! Persisted-settings round-trip tests + `SettingsStore` trait behaviour (v1.4.0).
 //!
-//! `InMemoryStore` を fixture として使い、 ファイル I/O 抜きで trait の
-//! 振る舞いを検証する。 これは「v2 で BrowserStore が出ても同じ trait を
-//! 満たすかどうか」 を見るための設計テストでもある。
+//! Uses `InMemoryStore` as a fixture to test the trait without file I/O.
+//! This also serves as a design test: any future `BrowserStore` must
+//! satisfy the same trait contract.
 //!
-//! テスト対象:
-//! - JSON への serialize / deserialize round-trip (フィールド欠落耐性も)
-//! - `load_or_default()` の初回・既存読み出しの両ケース
-//! - `update()` の read-modify-write が正しく作用すること
-//! - `serde(default)` による前方互換 (将来フィールド追加時の保護)
+//! Test coverage:
+//! - JSON serialise / deserialise round-trip (including missing-field tolerance)
+//! - `load_or_default()` for first-run and existing-value cases
+//! - `update()` read-modify-write correctness
 
 use std::cell::RefCell;
 use std::convert::Infallible;
@@ -19,11 +18,11 @@ use logolig_core::{
 use serde::{de::DeserializeOwned, Serialize};
 
 // ---------------------------------------------------------------------------
-// テスト用フィクスチャ: メモリ上のストア
+// Test fixture: in-memory store
 // ---------------------------------------------------------------------------
 
-/// 単一の `Option<String>` (JSON) を保持するシンプルな store。
-/// `RefCell` で内部可変性を持たせる。 並行アクセスは想定しない (テスト用)。
+/// Simple store that holds a single `Option<String>` (JSON).
+/// Uses `RefCell` for interior mutability. Not thread-safe (test use only).
 struct InMemoryStore {
     blob: RefCell<Option<String>>,
 }
@@ -43,8 +42,8 @@ where
     type Error = Infallible;
 
     fn load_or_default(&self) -> Result<T, Self::Error> {
-        // 取得は短い borrow に閉じる。 None 時の borrow_mut とぶつからないよう、
-        // clone で取り出してから match。 RefCell の常套手段。
+        // Keep the borrow short to avoid conflicting with borrow_mut for the None case;
+        // clone before matching — the standard RefCell pattern.
         let snapshot = self.blob.borrow().clone();
         match snapshot {
             Some(s) => Ok(serde_json::from_str(&s).expect("test JSON should parse")),
@@ -110,13 +109,13 @@ fn persisted_settings_round_trip_through_json() {
 fn load_or_default_returns_default_on_empty_store() {
     let store: InMemoryStore = InMemoryStore::empty();
     let loaded: PersistedSettings = store.load_or_default().unwrap();
-    // ExportPlan のデフォルト値が返ってきていること
+    // Verify default ExportPlan values are returned
     assert_eq!(loaded.export_plan.png_sizes, vec![32, 192, 512]);
     assert_eq!(loaded.theme, ThemeMode::System);
     assert!(loaded.locale.is_none());
 
-    // store には今 default が書き込まれているはず (load_or_default の副作用)。
-    // 続く load は同じ値を返す。
+    // store now contains the default (written by load_or_default as a side effect).
+    // A subsequent load returns the same value.
     let again: PersistedSettings = store.load_or_default().unwrap();
     assert_eq!(again.export_plan.png_sizes, loaded.export_plan.png_sizes);
 }
@@ -128,7 +127,7 @@ fn load_or_default_returns_default_on_empty_store() {
 #[test]
 fn update_modifies_and_persists() {
     let store: InMemoryStore = InMemoryStore::empty();
-    // 初回 load_or_default で default が書かれている前提で update を呼ぶ
+    // Call update assuming the default was written by the initial load_or_default.
     let _: PersistedSettings = store.load_or_default().unwrap();
 
     let after: PersistedSettings = store
@@ -140,21 +139,21 @@ fn update_modifies_and_persists() {
     assert_eq!(after.theme, ThemeMode::Light);
     assert!(!after.export_plan.include_apple_touch);
 
-    // 直後の load_or_default で同じ値が読める
+    // Immediately after, load_or_default returns the updated value.
     let reloaded: PersistedSettings = store.load_or_default().unwrap();
     assert_eq!(reloaded.theme, ThemeMode::Light);
     assert!(!reloaded.export_plan.include_apple_touch);
 }
 
 // ---------------------------------------------------------------------------
-// 4. 前方互換 (serde(default))
+// 4. Forward compatibility (serde(default))
 // ---------------------------------------------------------------------------
 
 #[test]
 fn missing_fields_are_filled_from_default() {
-    // 古い v1.4.0-pre のような JSON を想定: export_plan のサブフィールドが
-    // いくつか欠けている。 例えば v1.2.0 までは include_svg / vectorize_on_raster
-    // が無かった。
+    // Simulate an old v1.4.0-pre JSON where some export_plan sub-fields
+    // are missing. E.g. before v1.2.0, include_svg / vectorize_on_raster
+    // did not exist.
     let legacy_json = r#"{
         "export_plan": {
             "include_ico": true,
@@ -164,11 +163,11 @@ fn missing_fields_are_filled_from_default() {
     }"#;
 
     let restored: PersistedSettings = serde_json::from_str(legacy_json).unwrap();
-    // 欠けていたフィールドは default で埋まる
+    // Missing fields are filled with their defaults
     assert!(restored.export_plan.include_svg); // default = true
     assert!(restored.export_plan.vectorize_on_raster);
     assert_eq!(restored.theme, ThemeMode::Dark);
-    assert!(restored.locale.is_none()); // 欠けている → None
+    assert!(restored.locale.is_none()); // missing → None
 }
 
 #[test]

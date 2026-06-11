@@ -1,9 +1,9 @@
-//! ベクトル化サービスの end-to-end テスト (v1.2.0)。
+//! Vectorisation service end-to-end tests (v1.2.0).
 //!
-//! - PNG → デコード → ベクトル化が SVG 文字列を返す
-//! - WebP → デコード → ベクトル化も同様に動く
-//! - 出力 SVG が valid XML/SVG として最低限の構造を持つ
-//! - サイズ 0 のラスタは Err
+//! - PNG → decode → vectorise returns an SVG string
+//! - WebP → decode → vectorise also works
+//! - Output SVG has at minimum a valid XML declaration and `<svg>` root
+//! - Zero-size raster returns `Err`
 
 mod fixtures;
 
@@ -20,13 +20,13 @@ fn png_can_be_vectorized_to_svg_string() {
     let svg = vectorize(&rgba, VtracerPreset::Default)
         .expect("PNG vectorization should succeed");
 
-    // 最低限の SVG 構造: <?xml ... ?> 宣言と <svg ...> ルート要素
+    // Minimum SVG structure: <?xml …?> declaration and <svg …> root element
     assert!(svg.starts_with("<?xml"), "should start with XML declaration");
     assert!(svg.contains("<svg"), "should contain <svg> element");
     assert!(svg.contains("</svg>"), "should be properly closed");
-    // vtracer は generator コメントを入れる
+    // vtracer inserts a generator comment
     assert!(svg.contains("VTracer"), "should mention VTracer in generator comment");
-    // 4×4 のソースサイズが SVG の width/height に反映されているはず
+    // Source size (4×4) should be reflected in SVG width/height
     assert!(svg.contains(r#"width="4""#) && svg.contains(r#"height="4""#));
 }
 
@@ -45,8 +45,8 @@ fn webp_can_be_vectorized_to_svg_string() {
 
 #[test]
 fn vectorize_output_can_be_parsed_back_by_usvg() {
-    // 生成された SVG が usvg (resvg のパーサ) で読み戻せることを確認。
-    // これは「文法的に valid」 + 「描画パイプラインの自己整合性」の両方を保証する。
+    // Verify the generated SVG can be re-parsed by usvg (resvg's parser).
+    // This asserts both syntactic validity and self-consistency of the rendering pipeline.
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let rgba = decode_png(&asset).unwrap();
     let svg = vectorize(&rgba, VtracerPreset::Default).unwrap();
@@ -58,8 +58,8 @@ fn vectorize_output_can_be_parsed_back_by_usvg() {
     assert!(size.width() > 0.0 && size.height() > 0.0);
 }
 
-// v1.4.1: Sharp / PhotoRich プリセットでも動くことを確認。 出力品質の比較は
-// 主観的なので、 ここでは「3 種類すべてで valid SVG が生成される」 を保証する。
+// v1.4.1: verify Sharp and PhotoRich presets also produce output. Quality comparison
+// is subjective, so we only assert that all three presets produce valid SVG.
 #[test]
 fn all_presets_produce_valid_svg() {
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
@@ -70,7 +70,7 @@ fn all_presets_produce_valid_svg() {
             .unwrap_or_else(|e| panic!("vectorize with {preset:?} failed: {e}"));
         assert!(svg.starts_with("<?xml"), "preset {preset:?} should produce XML");
         assert!(svg.contains("<svg"), "preset {preset:?} should contain <svg>");
-        // usvg で読み戻し可能
+        // Re-parseable by usvg
         let opt = usvg::Options::default();
         usvg::Tree::from_data(svg.as_bytes(), &opt)
             .unwrap_or_else(|e| panic!("preset {preset:?} output rejected by usvg: {e}"));

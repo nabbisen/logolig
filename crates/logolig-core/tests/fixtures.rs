@@ -1,25 +1,25 @@
-//! テスト用の最小 fixture を集約したヘルパ。
+//! Minimal test fixtures.
 //!
-//! 実ファイル I/O テストには `ingest_bytes` (同期版) を使い、ランタイムを引き込まない。
-//! async 版は別テストで `#[tokio::test]` を介して検証する。
+//! Uses `ingest_bytes` (synchronous) to avoid pulling in an async runtime.
+//! Async ingestion is tested separately via `#[tokio::test]`.
 
 #![allow(dead_code)]
 
-/// 16×16 の青いマス目を中央に置く SVG。
-/// width / height 属性を持ち、resvg が確実にパースできる構造。
+/// 16×16 SVG with a blue grid centred.
+/// Has explicit width/height attributes for reliable resvg parsing.
 ///
-/// raw string のデリミタに `r##"..."##` を使っているのは、 SVG 中の
-/// `fill="#3366cc"` の `"#` のせいで `r#"..."#` だと早期終端するため。
+/// Uses `r##"…"##` raw-string delimiter because the SVG contains
+/// `fill="#3366cc"` — the `"#` sequence would terminate `r#"…"#` prematurely.
 pub const SVG_16: &str = r##"<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
   <rect x="2" y="2" width="12" height="12" fill="#3366cc"/>
 </svg>"##;
 
-/// 4×4 の赤色 PNG。
+/// 4×4 red PNG.
 ///
-/// `image` クレートでエンコードして得たバイト列をそのまま埋め込む。
-/// 4×4 にしているのは IHDR の幅/高さが 0x00000004 という分かりやすい値になり、
-/// `parse_png_size` の挙動を目視確認しやすいため。
+/// Raw bytes produced by encoding with the `image` crate, embedded directly.
+/// 4×4 is chosen so the IHDR width/height is 0x00000004 — easy to verify
+/// `parse_png_size` behaviour by eye.
 pub fn png_4x4_red() -> Vec<u8> {
     let mut buf = image::RgbaImage::new(4, 4);
     for px in buf.pixels_mut() {
@@ -33,10 +33,10 @@ pub fn png_4x4_red() -> Vec<u8> {
     out
 }
 
-/// 8×8 の青色 WebP (v1.1.0 fixture)。
+/// 8×8 blue WebP (v1.1.0 fixture).
 ///
-/// image クレートの WebP encoder は最低 8×8 を要求するため、 PNG fixture
-/// (4×4) より大きめになっている。 マジックバイト + intrinsic_size の検証で使う。
+/// The image crate WebP encoder requires at least 8×8,
+/// hence larger than the 4×4 PNG fixture. Used for magic-byte + intrinsic_size tests.
 pub fn webp_8x8_blue() -> Vec<u8> {
     let mut buf = image::RgbaImage::new(8, 8);
     for px in buf.pixels_mut() {
@@ -50,11 +50,11 @@ pub fn webp_8x8_blue() -> Vec<u8> {
     out
 }
 
-/// 8×8 の赤色 JPEG (v1.11.0 fixture)。
+/// 8×8 red JPEG (v1.11.0 fixture).
 ///
-/// JPEG encoder は最低 8×8 が安全。 image crate の jpeg feature 経由で
-/// エンコードしたバイト列を埋め込む。 マジックバイト (`FF D8 FF`) +
-/// `parse_jpeg_size` の SOF marker 解析の検証に使う。
+/// 8×8 is the safe minimum for JPEG. Encoded via the `jpeg` feature of the image crate.
+/// Used for magic-byte (`FF D8 FF`) + `parse_jpeg_size` SOF marker tests.
+
 pub fn jpeg_8x8_red() -> Vec<u8> {
     let mut buf = image::RgbImage::new(8, 8);
     for px in buf.pixels_mut() {
@@ -68,11 +68,11 @@ pub fn jpeg_8x8_red() -> Vec<u8> {
     out
 }
 
-/// 4×4 の **半透明** 赤 PNG (v1.21.0 fixture、 透過維持トグルテスト用)。
+/// 4×4 semi-transparent red PNG (v1.21.0 fixture for the keep-transparency tests).
 ///
-/// 全ピクセル `(R=0xCC, G=0x33, B=0x33, A=0x80)` (= 約 50% 不透明)。
-/// `keep_transparency=false` でフラット化したとき、 全ピクセルが
-/// `A=255` の ~ 中間色 (赤と白の中間) になることを確認する。
+/// All pixels `(R=0xCC, G=0x33, B=0x33, A=0x80)` (~50% opacity).
+/// When flattened with `keep_transparency=false`, all pixels should become
+/// `A=255` at a midpoint between red and white.
 pub fn png_4x4_half_alpha_red() -> Vec<u8> {
     let mut buf = image::RgbaImage::new(4, 4);
     for px in buf.pixels_mut() {

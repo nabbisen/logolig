@@ -1,85 +1,59 @@
-//! v1.16.0 — メモリ上に保持する変換結果アセット束。
+//! In-memory conversion result bundle (v1.16.0).
 //!
-//! 旧モデル (v1.15 まで):
-//! ```text
-//! ファイル投入 → Preview 確認 → ディレクトリ選択 → 一括書き出し
-//! ```
+//! ## v1.16.0 model change
 //!
-//! 新モデル (v1.16):
-//! ```text
-//! ファイル投入 → 自動変換 (メモリ完結) → Result 画面で個別 DL or ZIP DL
-//! ```
+//! Old model (≤ v1.15):
+//!   file dropped → Preview confirmed → directory chosen → bulk write
 //!
-//! Result 画面では各アセットがカードとして並び、 ユーザは:
-//! - 個別の DL ボタンで「単一ファイル」 をファイルダイアログで保存
-//! - 「すべてダウンロード (ZIP)」 ボタンで全アセットを zip に固めて保存
+//! New model (v1.16+):
+//!   file dropped → auto-convert (in memory) → Result screen
+//!   → individual download or ZIP download
 //!
-//! このため AppState は変換が終わった全アセットをメモリ上に保持する必要が
-//! ある。 favicon 一式の合計は通常 1 MB 未満なので、 メモリ保持は実質コスト
-//! ゼロ。
-//!
-//! ## 設計判断
-//!
-//! - 各アセットは「ファイル名 + バイト列 + 表示用メタ情報」 のセットで保持。
-//!   メタ情報には: 種別 (PNG / ICO / SVG / HTML / Webmanifest)、 ピクセル寸法
-//!   (画像系のみ)、 概算サイズ表示 (`46 KB` 等)、 サムネ用ラスタ画像 (画像
-//!   系のみ、 表示プレビュー用に既に decode 済みのもの)。
-//!
-//! - 表示順序は Vec の順序で固定 (favicon.ico → apple-touch → favicon-16 →
-//!   ... → snippet → manifest)。 export plan で OFF にされた成果物は単に
-//!   含まれない。
-//!
-//! - サムネは「カードに表示するための小さな decode 済みラスタ」 で、
-//!   PreviewCache とは別物 (PreviewCache は元画像の固定サイズキャッシュ)。
-//!
-//! ## v1.16 phase A の段階性
-//!
-//! 本モジュールは v1.16.0 phase A では型定義のみ。 実際にこの構造体を埋め
-//! ->表示する流れは phase B で実装する (Converting 完了時に変換結果をここ
-//! に詰めて Screen::Result に遷移)。 そのため現状は dead code として扱い、
-//! `#[allow(dead_code)]` を付与してコンパイラ警告を抑止している。
+//! On the Result screen each asset is shown as a card. The user can:
+//! - Click a per-card download button to save a single file via a dialog
+//! - Click "Download all (ZIP)" to bundle everything into a zip
 
 #![allow(dead_code)]
 
 use logolig_core::Rgba8;
 
-/// 変換結果一式 (メモリ上保持)。
+/// Full set of conversion results held in memory.
 #[derive(Debug, Clone)]
 pub struct ResultAssets {
-    /// 個々のアセット (表示順)。
+    /// Individual assets in display order.
     pub items: Vec<ResultAssetItem>,
 }
 
 impl ResultAssets {
-    /// 全アセットの合計バイト数 (UI 表示用)。
+    /// Total byte size of all assets (for UI display).
     pub fn total_bytes(&self) -> usize {
         self.items.iter().map(|i| i.bytes.len()).sum()
     }
 
-    /// アセット件数。
+    /// Asset count.
     pub fn count(&self) -> usize {
         self.items.len()
     }
 }
 
-/// 個別アセット 1 件分。
+/// One asset item.
 #[derive(Debug, Clone)]
 pub struct ResultAssetItem {
-    /// 出力ファイル名 (例: `favicon.ico`、 `favicon-16.png`、 `manifest.webmanifest`)。
+    /// Output file name (e.g. `favicon.ico`, `favicon-16.png`, `manifest.webmanifest`).
     pub file_name: String,
-    /// 出力バイト列 (これが個別 DL / ZIP DL の中身)。
+    /// Raw output bytes (used for individual download and ZIP bundle).
     pub bytes: Vec<u8>,
-    /// 種別。 カード表示の判別に使う。
+    /// Kind, used to decide how to render the card thumbnail.
     pub kind: ResultAssetKind,
-    /// 画像系アセットの寸法 (例: `(16, 16)`)。 テキスト系は None。
+    /// Image dimensions (e.g. `(16, 16)`). `None` for non-image assets.
     pub dimensions: Option<(u32, u32)>,
-    /// カード上のサムネ用にあらかじめ decode 済みの小さなラスタ。
-    /// 画像系のみ Some。 テキスト系 (snippet / manifest) は None でアイコン表示。
+    /// Pre-decoded small raster for the card thumbnail.
+    /// `Some` for image assets; `None` for text assets (snippet, manifest).
     pub thumbnail: Option<Rgba8>,
 }
 
 impl ResultAssetItem {
-    /// 「46 KB」 「1.2 KB」 のような human-readable な size 表示。
+    /// Human-readable size string (e.g. "46 KB", "1.2 KB").
     pub fn size_display(&self) -> String {
         let bytes = self.bytes.len();
         if bytes < 1024 {
@@ -93,34 +67,34 @@ impl ResultAssetItem {
         }
     }
 
-    /// 寸法 (幅×高さ) の表示文字列。 画像系のみ意味を持つ。
+    /// Dimensions as a display string. Meaningful for image assets only.
     pub fn dimensions_display(&self) -> Option<String> {
         self.dimensions.map(|(w, h)| format!("{} × {}", w, h))
     }
 }
 
-/// アセットの種別。
+/// Asset kind.
 ///
-/// カードのサムネ表示で「画像のラスタを直接表示する」 か「文書アイコンで
-/// プレースホルダ」 かを切り替えるために使う。
+/// Determines whether the card thumbnail shows the actual raster image
+/// or a document icon placeholder.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResultAssetKind {
-    /// PNG (各サイズの favicon-N.png、 apple-touch-icon.png)
+    /// PNG (per-size favicon-NN.png, apple-touch-icon.png)
     Png,
-    /// ICO (favicon.ico、 マルチサイズの可能性あり)
+    /// ICO (favicon.ico, may contain multiple sizes)
     Ico,
-    /// SVG (favicon.svg、 元 SVG をそのまま or vtracer 経由)
+    /// SVG (favicon.svg — source copy or vtracer output)
     Svg,
-    /// PNG monochrome (mono サブディレクトリ相当)
+    /// PNG monochrome (files under the mono/ subdirectory)
     PngMono,
-    /// HTML snippet (favicon-snippet.html)
+    /// HTML snippet file (favicon-snippet.html)
     HtmlSnippet,
     /// Web manifest (manifest.webmanifest)
     WebManifest,
 }
 
 impl ResultAssetKind {
-    /// カードのバッジに表示するラベル。
+    /// Short label shown on the card badge.
     pub fn badge_label(self) -> &'static str {
         match self {
             ResultAssetKind::Png => "PNG",
@@ -132,7 +106,7 @@ impl ResultAssetKind {
         }
     }
 
-    /// サムネにラスタ画像を描けるか (= 画像系か)。
+    /// Whether a raster thumbnail can be rendered for this kind.
     pub fn has_visual_thumbnail(self) -> bool {
         matches!(
             self,

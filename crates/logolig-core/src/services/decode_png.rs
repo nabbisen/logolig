@@ -1,19 +1,19 @@
-//! PNG ソースを RGBA8 ビットマップに展開する。
+//! Decode a PNG source to an RGBA8 bitmap.
 //!
-//! 仕様 §6.4「変換結果は内部生成物として扱う」「再生成可能なワークフロー」のため、
-//! ここでも `SourceAsset.raw` は読むだけ。デコード結果は新しい `Rgba8` を返す。
+//! Per spec §6.4 "treat results as internal artifacts / non-destructive workflow":
+//! `SourceAsset.raw` is read-only here; the decode result is a new `Rgba8`.
 //!
-//! `image` クレートを使い、 features = ["png"] のみ有効化することで
-//! 不要なフォーマットのコードがバイナリに入らないようにしている (Cargo.toml)。
+//! Uses the `image` crate with only the `"png"` feature enabled
+//! to keep unused format code out of the binary (see Cargo.toml).
 
 use std::sync::Arc;
 
 use crate::domain::{Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
 
-/// PNG ソースを RGBA8 にデコード。
+/// Decode a PNG source to RGBA8.
 ///
-/// 入力が PNG でなければ `Err(UnsupportedFile)`。
+/// Returns `Err(UnsupportedFile)` if the input is not PNG.
 pub fn decode(asset: &SourceAsset) -> Result<Rgba8, AppError> {
     if asset.kind != SourceKind::Png {
         return Err(AppError::unsupported_file(format!(
@@ -22,7 +22,7 @@ pub fn decode(asset: &SourceAsset) -> Result<Rgba8, AppError> {
         )));
     }
 
-    // image クレートの load_from_memory は extension を見ず Magic で判定するため安全。
+    // image::load_from_memory detects format by magic bytes, not extension — safe.
     let img = image::load_from_memory(&asset.raw)
         .map_err(|e| AppError::decode(format!("PNG decode: {e}")))?;
 

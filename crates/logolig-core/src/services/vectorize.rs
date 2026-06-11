@@ -1,38 +1,31 @@
-//! ラスタ → SVG ベクトル化 (v1.2.0、 v1.4.1 でプリセット対応)。
+//! Raster-to-SVG vectorisation (v1.2.0; presets added in v1.4.1).
 //!
-//! `vtracer` 0.6 をラップし、 `Rgba8` を SVG 文字列に変換する。
+//! Wraps `vtracer` 0.6 to convert an `Rgba8` bitmap into an SVG string.
 //!
-//! ## 設計判断
+//! ## Design decisions
 //!
-//! - **入力サイズはソース解像度のまま**。 ベクトル化前のリサイズはしない。
-//!   元画像の細部をできるだけ保ったまま輪郭抽出する方が結果が良い
-//! - **3 つのプリセット**で挙動を切り替える (v1.4.1)。 `VtracerPreset` enum に
-//!   応じて vtracer `Config` を組み立てる。 ユーザに生パラメータを露出しない (§5)
-//! - **失敗は `AppError::export(_)` に集約**。 vtracer は `Result<_, String>` を
-//!   返すのでメッセージをそのまま埋め込む
-//!
-//! ## 適性の限界 (呼び出し側への注意)
-//!
-//! ベクトル化は写真や複雑なグラデーションには向かない。 v1.2.0 から
-//! `ExportPlan::vectorize_on_raster` でユーザがオフにできる。 v1.4.1 で
-//! プリセット選択肢を追加した目的の一つは、 `Sharp` プリセットでロゴの輪郭が
-//! 鋭く出るようにすること (vtracer 既定の `corner_threshold=60` ではロゴで
-//! 角が丸まりがち)。
+//! - **Input at source resolution** — no resize before vectorisation.
+//!   Preserving original detail produces better contour extraction.
+//! - **Three presets** control behaviour (`VtracerPreset`). Raw vtracer
+//!   parameters are not exposed to the user (§5).
+//! - **Failures map to `AppError::export(_)`**. vtracer returns
+//!   `Result<_, String>`; this module normalises that into `AppError`.
+//! - **CPU-bound**: the caller dispatches via `iced::Task::perform`.
 
 use vtracer::{ColorImage, ColorMode, Config, Hierarchical};
 
 use crate::domain::{Rgba8, VtracerPreset};
 use crate::error::AppError;
 
-/// `Rgba8` をベクトル化し、 SVG 文字列を返す。
-/// プリセットに応じて vtracer の `Config` を組み立てる。
+/// Vectorise an `Rgba8` bitmap and return an SVG string.
+/// Assembles a vtracer `Config` for the given preset.
 pub fn vectorize(rgba: &Rgba8, preset: VtracerPreset) -> Result<String, AppError> {
     if rgba.width == 0 || rgba.height == 0 {
         return Err(AppError::export("vectorize: zero-sized raster"));
     }
 
-    // ColorImage は RGBA 4-byte/pixel。 Rgba8 と完全互換。
-    // pixels は所有バッファを取られるので 1 度だけコピー。
+    // ColorImage is RGBA 4 bytes/pixel — fully compatible with Rgba8.
+    // pixels takes ownership, so clone once.
     let color_image = ColorImage {
         pixels: rgba.as_bytes().to_vec(),
         width: rgba.width as usize,
@@ -44,43 +37,43 @@ pub fn vectorize(rgba: &Rgba8, preset: VtracerPreset) -> Result<String, AppError
     let svg_file = vtracer::convert(color_image, config)
         .map_err(|e| AppError::export(format!("vtracer: {e}")))?;
 
-    // SvgFile は Display 実装で SVG 文字列を出す。
+    // SvgFile yields the SVG string via its Display impl.
     Ok(format!("{svg_file}"))
 }
 
-/// プリセットに対応する vtracer `Config` を生成する。
+/// Build a vtracer `Config` for the given preset.
 ///
-/// ユーザの生 Config 直接編集は受け付けない方針 (§5「迷いを減らす」)。
-/// プリセット → Config の対応はここで一元管理し、 必要なら将来カスタム
-/// プリセット (`Custom { ... }` バリアント) を増やす。
+/// Raw `Config` editing is not exposed to users (§5 "reduce decision fatigue").
+/// The preset→Config mapping is centralised here. A future `Custom { … }` variant
+/// could be added without changing call sites.
 ///
-/// ## v1.4.2 における Sharp の調整方針
+/// ## v1.4.2 Sharp calibration approach
 ///
-/// v1.4.1 では `filter_speckle=2`、 `path_precision=Some(3)` を含む 4 パラメータ
-/// 同時変更だった。 実機検証の結果、 `filter_speckle=2` (細部を残す) と
-/// `path_precision=3` (制御点増加) はロゴ用途で輪郭を荒らす方向に作用していた
-/// 可能性が高いと判明した。
+/// v1.4.1 changed 4 parameters simultaneously (including `filter_speckle=2`,
+/// `path_precision=Some(3)`). Testing found that `filter_speckle=2` and
+/// `path_precision=3` likely degraded logo contour quality.
+
 ///
-/// v1.4.2 では Default との差分を `corner_threshold` 1 つだけに絞り、
-/// 「角を丸めない」 効果のみを単独で観察可能にする。 これは「実証ベースで
-/// プリセットを詰める」 アプローチ — 1 パラメータ変更なら効果が判定しやすい。
+/// v1.4.2 reduces the diff to a single parameter (`corner_threshold`)
+/// so the effect of "no corner rounding" can be observed in isolation.
+/// Evidence-based preset tuning: one parameter change = clear causal attribution.
 fn config_for(preset: VtracerPreset) -> Config {
     match preset {
         VtracerPreset::Sharp => Config {
-            // ロゴ向け: 角を丸めない。 他は default 維持で副作用を避ける。
-            // v1.4.1 で `filter_speckle=2`/`path_precision=3` を入れていたが、
-            // ロゴ品質を下げる方向に働いた可能性があり、 v1.4.2 で削除。
+            // Logo preset: no corner rounding. All other params at default.
+            // v1.4.1 included filter_speckle=2 / path_precision=3, but they
+            // likely degraded logo quality and were removed in v1.4.2.
             corner_threshold: 80, // default 60 → 80
             ..Config::default()
         },
         VtracerPreset::Default => {
-            // v1.2.0 の挙動と完全互換 (vtracer の defaults を尊重)
+            // Exact v1.2.0 behaviour (vtracer defaults respected)
             Config::default()
         }
         VtracerPreset::PhotoRich => Config {
-            // 写真風: 色階層を細かく残す、 小ノイズは無視して面を綺麗に
-            color_precision: 8, // 最大精度
-            filter_speckle: 8,  // 小さなノイズは無視
+            // Photo preset: fine colour gradations preserved; small noise ignored
+            color_precision: 8, // maximum precision
+            filter_speckle: 8,  // ignore small noise
             corner_threshold: 45,
             hierarchical: Hierarchical::Stacked,
             color_mode: ColorMode::Color,

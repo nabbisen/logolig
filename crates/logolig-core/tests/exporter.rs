@@ -1,7 +1,7 @@
-//! エクスポートオーケストレータの end-to-end テスト。
+//! End-to-end tests for the export orchestrator.
 //!
-//! 一時ディレクトリに対して export を走らせ、 期待される全ファイルが
-//! 「正しい中身」で存在することを確認する。
+//! Runs the exporter against a temporary directory and verifies that all
+//! expected files are present with correct contents.
 
 mod fixtures;
 
@@ -11,7 +11,7 @@ use logolig_core::services::exporter::run;
 use logolig_core::services::ingest::ingest_bytes;
 use logolig_core::ExportPlan;
 
-/// 一意の一時ディレクトリを作る。 std::env::temp_dir + nanos.
+/// Create a unique temporary directory (temp_dir + nanoseconds).
 fn fresh_tmp_dir(label: &str) -> PathBuf {
     use std::time::{SystemTime, UNIX_EPOCH};
     let nanos = SystemTime::now()
@@ -32,7 +32,7 @@ fn exports_default_artifact_set_from_png_source() {
 
     let report = run(&asset, &plan, &dir).expect("export should succeed");
 
-    // v1.2.0 のデフォルトは 7 ファイル: favicon.svg (vectorized) を追加。
+    // v1.2.0 default: 7 files — adds favicon.svg (vectorised from raster source).
     let expected_names = [
         "favicon.svg",
         "favicon.ico",
@@ -48,7 +48,7 @@ fn exports_default_artifact_set_from_png_source() {
     }
     assert_eq!(report.artifacts.len(), expected_names.len());
 
-    // staging 残骸が無いこと (transactional rollback / cleanup の確認)
+    // No staging artefacts left behind (transactional rollback / cleanup check)
     let leftovers: Vec<_> = std::fs::read_dir(&dir)
         .unwrap()
         .filter_map(|e| e.ok())
@@ -56,7 +56,7 @@ fn exports_default_artifact_set_from_png_source() {
         .collect();
     assert!(leftovers.is_empty(), "staging directory should be cleaned up");
 
-    // 後始末
+    // Cleanup
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -67,7 +67,7 @@ fn exports_default_artifact_set_from_svg_source() {
     let plan = ExportPlan::default();
 
     run(&asset, &plan, &dir).expect("svg export should succeed");
-    // SVG ソースのときは入力 SVG をそのまま `favicon.svg` としてコピー (v1.2.0)
+    // SVG source: input is copied as-is to `favicon.svg` (v1.2.0)
     assert!(dir.join("favicon.svg").is_file(), "SVG output expected");
     let svg_content = std::fs::read(dir.join("favicon.svg")).unwrap();
     assert_eq!(
@@ -91,14 +91,14 @@ fn vectorize_off_omits_svg_file_for_raster_source() {
 
     let report = run(&asset, &plan, &dir).expect("export should succeed");
 
-    // ラスタソース + vectorize オフ → SVG は出力されない
+    // Raster source + vectorise off → no SVG output
     assert!(!dir.join("favicon.svg").exists());
-    // HTML スニペットも `<link type="image/svg+xml">` を含まない
+    // HTML snippet also omits the `<link type="image/svg+xml">` line
     let html = std::fs::read_to_string(dir.join("favicon-snippet.html")).unwrap();
     assert!(!html.contains(r#"type="image/svg+xml""#));
     assert!(!html.contains("favicon.svg"));
 
-    // 報告される artifact count から SVG 1 件が引かれている
+    // Artifact count is one less (no SVG)
     assert_eq!(report.artifacts.len(), 6); // 7 - 1 (favicon.svg)
 
     let _ = std::fs::remove_dir_all(&dir);
@@ -106,7 +106,7 @@ fn vectorize_off_omits_svg_file_for_raster_source() {
 
 #[test]
 fn include_svg_off_omits_svg_for_svg_source_too() {
-    // SVG 入力でも `include_svg=false` なら出力しない
+    // SVG source with include_svg=false → no SVG output either
     let asset = ingest_bytes("tile.svg", fixtures::SVG_16.as_bytes().to_vec()).unwrap();
     let dir = fresh_tmp_dir("include-svg-off");
     let mut plan = ExportPlan::default();
@@ -143,7 +143,7 @@ fn ico_can_be_read_back_with_correct_frames() {
 
     run(&asset, &plan, &dir).unwrap();
 
-    // 書き戻した ICO を ico crate で読み直して、 16/32/48 のフレームが揃っていること
+    // Re-parse the ICO with the ico crate and verify all three frames (16/32/48) are present
     let f = std::fs::File::open(dir.join("favicon.ico")).unwrap();
     let icondir = ico::IconDir::read(std::io::BufReader::new(f)).unwrap();
     let mut sizes: Vec<u32> = icondir
@@ -164,7 +164,7 @@ fn html_snippet_file_contains_link_tags() {
     run(&asset, &ExportPlan::default(), &dir).unwrap();
 
     let html = std::fs::read_to_string(dir.join("favicon-snippet.html")).unwrap();
-    // v1.2.0 default では SVG が先頭に来る
+    // v1.2.0 default: SVG comes first
     assert!(html.contains(r#"<link rel="icon" type="image/svg+xml" href="/favicon.svg">"#));
     assert!(html.contains(r#"<link rel="icon" href="/favicon.ico""#));
     assert!(html.contains(r#"rel="apple-touch-icon""#));
@@ -178,7 +178,7 @@ fn fails_cleanly_when_output_dir_does_not_exist() {
     let bad = std::env::temp_dir().join("logolig-this-path-must-not-exist-yet-xyz");
     let _ = std::fs::remove_dir_all(&bad);
     let err = run(&asset, &ExportPlan::default(), &bad).expect_err("should fail");
-    // エラー内容は AppError::Export { .. }
+    // Error is AppError::Export { .. }
     let s = err.to_string();
     assert!(s.contains("output directory"));
 }
@@ -194,7 +194,7 @@ fn no_apple_touch_omits_that_file() {
     let report = run(&asset, &plan, &dir).unwrap();
     assert!(!dir.join("apple-touch-icon.png").exists());
     assert!(!dir.join("favicon-snippet.html").exists());
-    // SVG (vectorized) と PNG と ICO は残る (v1.2.0 default で SVG が増えた)
+    // SVG (vectorised), PNG, and ICO remain (SVG was added in v1.2.0 default)
     assert!(dir.join("favicon.svg").is_file());
     assert!(dir.join("favicon.ico").is_file());
     assert!(dir.join("favicon-32.png").is_file());
@@ -208,7 +208,7 @@ fn no_apple_touch_omits_that_file() {
 }
 
 // ---------------------------------------------------------------------------
-// v1.9.0: モノクローム出力セット (mono/ サブディレクトリ)
+// v1.9.0: monochrome output set (mono/ subdirectory)
 // ---------------------------------------------------------------------------
 
 #[test]
@@ -222,7 +222,7 @@ fn monochrome_emits_mono_subdir_with_png_and_ico() {
 
     let report = run(&asset, &plan, &dir).expect("export should succeed");
 
-    // 通常出力 + mono/ サブディレクトリの全ファイル
+    // Normal outputs + all files in the mono/ subdirectory
     let expected_color = [
         "favicon.svg",
         "favicon.ico",
@@ -247,13 +247,13 @@ fn monochrome_emits_mono_subdir_with_png_and_ico() {
         let p = dir.join(name);
         assert!(p.is_file(), "missing mono artifact: {}", p.display());
     }
-    // mono/ 自体がディレクトリとして存在する
+    // mono/ directory exists
     assert!(dir.join("mono").is_dir());
 
-    // artifacts の合計は color 7 + mono 4 = 11 (v1.9.0 の SVG mono は無し)
+    // Total: colour 7 + mono 4 = 11 (no SVG mono in v1.9.0)
     assert_eq!(report.artifacts.len(), expected_color.len() + expected_mono.len());
 
-    // mono/favicon-32.png は通常 favicon-32.png と異なるバイト列 (グレースケール化)
+    // mono/favicon-32.png must differ from favicon-32.png in bytes (greyscale)
     let color_bytes = std::fs::read(dir.join("favicon-32.png")).unwrap();
     let mono_bytes = std::fs::read(dir.join("mono/favicon-32.png")).unwrap();
     assert_ne!(
@@ -266,8 +266,8 @@ fn monochrome_emits_mono_subdir_with_png_and_ico() {
 
 #[test]
 fn monochrome_off_does_not_create_mono_dir() {
-    // monochrome=false のとき (デフォルト) は mono/ ディレクトリが
-    // 一切作られないことを確認 — 既存ユーザの出力が破壊されないことの保証。
+    // When monochrome=false (default), no mono/ directory is created
+    // — guarantees existing users' output is not broken by the feature.
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let dir = fresh_tmp_dir("mono-off");
     let plan = ExportPlan::default(); // monochrome = false
@@ -283,8 +283,8 @@ fn monochrome_off_does_not_create_mono_dir() {
 
 #[test]
 fn monochrome_with_ico_off_skips_mono_ico() {
-    // include_ico=false なら mono/favicon.ico も出ないこと。
-    // ユーザが「ICO は要らない」 と決めたなら mono/ICO も要らないはず。
+    // include_ico=false → no mono/favicon.ico either.
+    // User's "no ICO" preference applies to the mono set too.
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let dir = fresh_tmp_dir("mono-no-ico");
     let plan = ExportPlan {
@@ -296,28 +296,28 @@ fn monochrome_with_ico_off_skips_mono_ico() {
     run(&asset, &plan, &dir).expect("export should succeed");
     assert!(dir.join("mono").is_dir());
     assert!(!dir.join("mono/favicon.ico").exists());
-    // PNG は出ているはず
+    // PNG should still be present
     assert!(dir.join("mono/favicon-32.png").is_file());
 
     let _ = std::fs::remove_dir_all(&dir);
 }
 
 // ---------------------------------------------------------------------------
-// v1.19.0: run_in_memory のユニットテスト群
+// v1.19.0: run_in_memory unit tests
 // ---------------------------------------------------------------------------
 //
-// `run_in_memory` は `run` の in-memory 版で、 v1.16.0 で導入された
-// 「ファイル投入 → 自動変換 → 結果画面で個別 DL or ZIP 一括 DL」 動線で
-// 使われる。 ディスク I/O を一切しないため、 一時ディレクトリも不要。
+// `run_in_memory` is the in-memory variant of `run`, introduced in v1.16.0
+// for the "drop file → auto-convert → Result screen" flow.
+// Zero disk I/O; no temp directory needed.
 //
-// 既存 12 テストは `run` (ディスク書き出し版) を引き続き対象とする — `run`
-// は v1.19.0 で `run_in_memory` の薄いラッパに整理されたので、 既存テストが
-// 通れば in-memory ロジックの大半も間接的に検証される。 ここでは追加で:
-// - 戻り値の本数 / 順序 / 相対パス
-// - 中身が `run` 版と byte-for-byte 一致すること
-// - サブディレクトリ (mono/) が `relative_path` で表現されること
-// - 失敗ケース (空 ico_sizes) で何も書かれない (= ディスクに副作用なし)
-// を確認する。
+// The existing 12 tests continue to cover `run` (disk version) — since `run`
+// is now a thin wrapper around `run_in_memory`, passing tests for `run`
+// also covers most of the in-memory logic. These additional tests verify:
+// - Artifact count / order / relative paths
+// - Byte-for-byte match with `run` output
+// - Subdirectories (mono/) expressed in relative_path
+// - Failure (empty ico_sizes) → nothing written (zero disk side-effects)
+
 
 use logolig_core::services::exporter::run_in_memory;
 
@@ -328,7 +328,7 @@ fn run_in_memory_returns_default_artifact_set_from_png_source() {
 
     let artifacts = run_in_memory(&asset, &plan).expect("in-memory run should succeed");
 
-    // v1.2.0 のデフォルトは 7 ファイル (run と同じ集合)。
+    // v1.2.0 default: 7 files (same set as run).
     let expected_names = [
         "favicon.svg",
         "favicon.ico",
@@ -355,9 +355,9 @@ fn run_in_memory_returns_default_artifact_set_from_png_source() {
 
 #[test]
 fn run_in_memory_bytes_match_disk_run_byte_for_byte() {
-    // 同じ asset + plan で run_in_memory と run を両方走らせ、 各成果物の
-    // バイト列が完全一致することを確認する。 これで `run` のラッパとしての
-    // 整合性 (in-memory → ディスクへの書き出しで内容が変わらない) を検証。
+    // Run both run_in_memory and run with the same asset + plan;
+    // verify every artifact matches byte-for-byte. Confirms `run`
+    // is a faithful wrapper (in-memory content survives the disk round-trip).
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let plan = ExportPlan::default();
 
@@ -385,8 +385,8 @@ fn run_in_memory_bytes_match_disk_run_byte_for_byte() {
 
 #[test]
 fn run_in_memory_encodes_mono_subdirectory_in_relative_path() {
-    // monochrome を有効化した場合、 mono/favicon-{size}.png のように
-    // サブディレクトリ付きの relative_path で表現されることを確認。
+    // When monochrome is enabled, verify artifacts have subdirectory-prefixed
+    // relative paths like `mono/favicon-{size}.png`.
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let mut plan = ExportPlan::default();
     plan.monochrome = true;
@@ -407,16 +407,16 @@ fn run_in_memory_encodes_mono_subdirectory_in_relative_path() {
             .collect::<Vec<_>>()
     );
 
-    // 少なくとも mono/favicon.ico と mono/favicon-{size}.png のいずれかが存在
-    // することを確認 (ico は include_ico=true なので前者が必ず含まれる)。
+    // At least one of mono/favicon.ico or mono/favicon-NN.png must be present
+    // (ico is always present since include_ico=true).
     assert!(mono_paths.iter().any(|p| p.ends_with("favicon.ico")));
 }
 
 #[test]
 fn run_in_memory_returns_err_on_empty_ico_sizes() {
-    // 不正な plan (ico_sizes が空 + include_ico=true) で Err を返すことを
-    // 確認。 in-memory なのでディスクには絶対に副作用が無いことが保証される
-    // (ファイルは 1 つも書かれない)。
+    // An invalid plan (empty ico_sizes + include_ico=true) should return Err.
+    // Being in-memory, zero disk side-effects are guaranteed
+    // (no files are written).
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let mut plan = ExportPlan::default();
     plan.ico_sizes.clear();
@@ -428,7 +428,7 @@ fn run_in_memory_returns_err_on_empty_ico_sizes() {
 #[test]
 fn run_in_memory_skips_optional_artifacts_when_disabled() {
     // include_apple_touch=false / include_html_snippet=false / include_svg=false
-    // / include_ico=false のとき、 該当する relative_path が含まれない。
+    // include_ico=false → the ICO relative_path is absent.
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let mut plan = ExportPlan::default();
     plan.include_apple_touch = false;
@@ -464,25 +464,24 @@ fn run_in_memory_skips_optional_artifacts_when_disabled() {
         names
     );
 
-    // PNG は残る (デフォルトの 32/192/512)。
+    // PNG remains (default 32/192/512).
     assert!(names.iter().any(|n| n == "favicon-32.png"));
     assert!(names.iter().any(|n| n == "favicon-192.png"));
     assert!(names.iter().any(|n| n == "favicon-512.png"));
 }
 
 // ---------------------------------------------------------------------------
-// v1.21.0: keep_transparency トグルの統合テスト
+// v1.21.0: keep_transparency integration tests
 // ---------------------------------------------------------------------------
 //
-// `ExportPlan::keep_transparency` が PNG / ICO 出力に正しく反映されることを
-// 確認する。 `flatten` 単体のロジックは services/flatten.rs の unit tests に
-// あり、 ここでは「export パイプライン全体を通して」 期待した挙動になるかを
-// 統合的にチェックする。
+// Verifies that `ExportPlan::keep_transparency` is reflected correctly in
+// PNG and ICO outputs. Unit logic for flatten is tested in services/flatten.rs;
+// these tests check the full export pipeline end to end.
 
 #[test]
 fn keep_transparency_true_preserves_alpha_in_png_output() {
-    // 半透明赤 PNG を投入 → keep_transparency=true (デフォルト) → 出力 PNG の
-    // ピクセルにアルファ < 255 が残っている。
+    // Semi-transparent red PNG → keep_transparency=true (default) →
+    // output PNG pixels retain alpha < 255.
     let asset = ingest_bytes(
         "halftransp.png",
         fixtures::png_4x4_half_alpha_red(),
@@ -498,7 +497,7 @@ fn keep_transparency_true_preserves_alpha_in_png_output() {
 
     let artifacts = run_in_memory(&asset, &plan).expect("should succeed");
 
-    // PNG をデコードして alpha チャンネルを確認。
+    // Decode the PNG and inspect the alpha channel.
     let png_art = artifacts
         .iter()
         .find(|a| a.relative_path.to_string_lossy() == "favicon-32.png")
@@ -506,8 +505,8 @@ fn keep_transparency_true_preserves_alpha_in_png_output() {
     let img = image::load_from_memory_with_format(&png_art.bytes, image::ImageFormat::Png)
         .unwrap();
     let rgba = img.to_rgba8();
-    // 入力は alpha=0x80 (128)。 リサイズ (Lanczos3) でアルファが多少ぶれる
-    // 可能性があるため、 「255 ではない」 で十分とする。
+    // Input alpha=0x80 (128). Lanczos3 may shift alpha slightly on resize;
+    // "not 255" is sufficient.
     let alpha_sample = rgba.get_pixel(0, 0)[3];
     assert!(
         alpha_sample < 255,
@@ -518,8 +517,8 @@ fn keep_transparency_true_preserves_alpha_in_png_output() {
 
 #[test]
 fn keep_transparency_false_flattens_to_fully_opaque_png() {
-    // 半透明赤 PNG を投入 → keep_transparency=false → 出力 PNG の全ピクセル
-    // alpha=255 になっている。
+    // Semi-transparent red PNG → keep_transparency=false →
+    // every output PNG pixel has alpha=255.
     let asset = ingest_bytes(
         "halftransp.png",
         fixtures::png_4x4_half_alpha_red(),
@@ -531,7 +530,7 @@ fn keep_transparency_false_flattens_to_fully_opaque_png() {
     plan.include_apple_touch = false;
     plan.include_html_snippet = false;
     plan.include_svg = false;
-    plan.keep_transparency = false; // フラット化 ON
+    plan.keep_transparency = false; // enable flattening
 
     let artifacts = run_in_memory(&asset, &plan).expect("should succeed");
 
@@ -542,7 +541,7 @@ fn keep_transparency_false_flattens_to_fully_opaque_png() {
     let img = image::load_from_memory_with_format(&png_art.bytes, image::ImageFormat::Png)
         .unwrap();
     let rgba = img.to_rgba8();
-    // 全ピクセルで alpha=255 になっているはず。
+    // Every pixel should now have alpha=255.
     for px in rgba.pixels() {
         assert_eq!(
             px[3], 255,
@@ -550,9 +549,8 @@ fn keep_transparency_false_flattens_to_fully_opaque_png() {
             px[3]
         );
     }
-    // 入力の半透明赤 (A=128) が白でフラット化されると、 RGB は赤と白の
-    // 中間色になる: R は 0xCC + (255-0xCC)*128/255 ≈ 0xE6 程度。
-    // 厳密値は浮動小数の丸めに依存するので幅で許容。
+    // Half-alpha red (A=128) flattened against white:
+    // R ≈ 0xCC + (255-0xCC)*128/255 ≈ 0xE6. Allow a range for float rounding.
     let center = rgba.get_pixel(2, 2);
     assert!(
         center[0] >= 0xD0 && center[0] <= 0xF0,
@@ -563,16 +561,16 @@ fn keep_transparency_false_flattens_to_fully_opaque_png() {
 
 #[test]
 fn keep_transparency_false_does_not_affect_svg_output() {
-    // SVG ソースを投入 → keep_transparency=false → SVG は asset.raw を
-    // そのまま push する経路を通るため、 出力 SVG は入力と完全一致する
-    // (= フラット化の影響を受けない、 Q2-a)。
+    // SVG source → keep_transparency=false → SVG output copies asset.raw
+    // as-is, so output matches input exactly
+    // (flattening does not affect SVG — Q2-a).
     let asset = ingest_bytes(
         "tile.svg",
         fixtures::SVG_16.as_bytes().to_vec(),
     )
     .unwrap();
     let mut plan = ExportPlan::default();
-    plan.png_sizes = vec![]; // PNG は出さない
+    plan.png_sizes = vec![]; // suppress PNG output
     plan.include_ico = false;
     plan.include_apple_touch = false;
     plan.include_html_snippet = false;
@@ -585,21 +583,21 @@ fn keep_transparency_false_does_not_affect_svg_output() {
         .iter()
         .find(|a| a.relative_path.to_string_lossy() == "favicon.svg")
         .expect("favicon.svg should exist");
-    // SVG ソースは asset.raw (= 入力バイト列) がそのまま出力されることを確認。
-    // フラット化の影響を受けていない。
+    // SVG source: output is asset.raw (input bytes) unchanged.
+    // Not affected by flattening.
     assert_eq!(svg_art.bytes, fixtures::SVG_16.as_bytes());
 }
 
 #[test]
 fn keep_transparency_false_makes_ico_frames_fully_opaque() {
-    // ICO 出力でも全フレームが alpha=255 になることを確認。
+    // ICO output: all frames should also have alpha=255.
     let asset = ingest_bytes(
         "halftransp.png",
         fixtures::png_4x4_half_alpha_red(),
     )
     .unwrap();
     let mut plan = ExportPlan::default();
-    plan.png_sizes = vec![]; // PNG は不要
+    plan.png_sizes = vec![]; // no PNG needed for this test
     plan.include_apple_touch = false;
     plan.include_html_snippet = false;
     plan.include_svg = false;
@@ -611,11 +609,11 @@ fn keep_transparency_false_makes_ico_frames_fully_opaque() {
         .iter()
         .find(|a| a.relative_path.to_string_lossy() == "favicon.ico")
         .expect("favicon.ico should exist");
-    // ICO の各フレームを decode してアルファを確認。 ico crate (logolig-core
-    // の既存依存、 ico_writer で使用中) で BMP / PNG エンコードを問わず
-    // 統一的に読み戻せる。 image crate の `ico` feature は workspace の
-    // 標準では有効化していないので使えない (= image::load_from_memory_with_format
-    // (_, Ico) は Unsupported になる)。
+    // Decode each ICO frame and check alpha. Use the ico crate
+    // (already a workspace dep, used by ico_writer) — handles both BMP
+    // and PNG frames uniformly.
+    // The image crate's `ico` feature is not enabled in the workspace,
+    // so image::load_from_memory_with_format(_, Ico) would return Unsupported.
     use std::io::Cursor;
     let dir = ico::IconDir::read(Cursor::new(&ico_art.bytes))
         .expect("ico parse should succeed");
@@ -623,7 +621,7 @@ fn keep_transparency_false_makes_ico_frames_fully_opaque() {
     for entry in dir.entries() {
         let img = entry.decode().expect("ICO frame decode should succeed");
         let rgba = img.rgba_data();
-        // rgba は連続バイト列 (RGBA 形式)。 アルファチャンネルは index % 4 == 3。
+        // rgba is a flat byte slice (RGBA); alpha is at index % 4 == 3.
         for (i, byte) in rgba.iter().enumerate() {
             if i % 4 == 3 {
                 assert_eq!(

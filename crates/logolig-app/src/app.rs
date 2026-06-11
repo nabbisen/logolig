@@ -1,11 +1,11 @@
-//! アプリケーションの中心 (§11)。
+//! Application core (§11).
 //!
-//! - `AppState` を保持する
-//! - `Message` を受けて状態遷移する
-//! - `view` / `update` / `theme` / `subscription` を iced に接続する
-//! - エラーは画面遷移ではなく snora の `Toast` (persistent) として表現する
-//!   (§12「色だけに依存しない状態表現」「ABDD」に整合)
-//! - 重い処理は `iced::Task` で逃がし UI スレッドをブロックしない (§2.4)
+//! - holds `AppState`
+//! - receives `Message` and drives state transitions
+//! - wires `view` / `update` / `theme` / `subscription` into iced
+//! - errors are surfaced as snora `Toast` notifications, not screen transitions
+//!   (aligns with §12 ABDD: state is not expressed through colour alone)
+//! - heavy work is offloaded via `iced::Task` to avoid blocking the UI thread (§2.4)
 
 use std::path::PathBuf;
 use std::time::Instant;
@@ -21,24 +21,24 @@ use logolig_core::{
 use logolig_i18n::{detect_system_locale, Locale, Translator};
 
 // ----------------------------------------------------------------------
-// 状態モデル
+// State model
 // ----------------------------------------------------------------------
 
-/// 画面遷移ステート (§4.2)。
+/// Screen state (§4.2).
 ///
-/// 旧設計の `Failed` は削除した。エラーは Toast で表現するため、
-/// 画面状態は v1.16.0 で **3 状態に簡素化**:
+/// The former `Failed` variant has been removed. Errors are expressed as toasts.
+/// Since v1.16.0 the screen state is simplified to three variants:
 ///
-/// - `Empty`: ファイル投入待ち。 中央にドロップゾーン。
-/// - `Converting`: ファイル投入直後の自動変換中。 円形プログレス + メッセージ。
-///   v1.15 までは `Importing` (decode + preview) と `Exporting` (write to disk)
-///   の 2 状態に分かれていたが、 v1.16 は「投入したらメモリ上で全部変換」 の
-///   一段モデルなので統合。
-/// - `Result`: 変換完了。 アセットカード一覧 + 個別 DL + ZIP 一括 DL。
+/// - `Empty`: waiting for file input. Drop zone shown.
+/// - `Converting`: conversion in progress after file input.
+///   Prior to v1.15 this was split into `Importing` and `Exporting`;
+///   v1.16 unified them into a single in-memory conversion step.
+
+/// - `Result`: conversion complete. Asset cards and download buttons shown.
 ///
-/// 旧 `Preview` 状態 (View as / Surface ピッカーで見え方を確認する画面) は
-/// v1.16.0 で **廃止**。 新設計では「投入 → 即変換 → 結果確認」 の流れで、
-/// プレビューは Result 画面の任意展開セクションとして残る (Q1 b)。
+/// The former `Preview` screen (context preview with surface picker) was removed
+/// in v1.16.0. The new flow is drop → convert → inspect result.
+/// A collapsible preview panel remains on the Result screen.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Screen {
     #[default]
@@ -47,148 +47,157 @@ pub enum Screen {
     Result,
 }
 
-/// アプリ全体の状態 (§4.1)。
+/// Application-wide state (§4.1).
 #[derive(Debug)]
 pub struct AppState {
     pub screen: Screen,
     pub theme: ThemeMode,
+    /// Vestigial since v1.22.0. The Customize page is now a nav page;
+    /// this field is reset to `false` on `CloseModals` and `EditCancelled`
+    /// but never set to `true` by any handler. Kept for future use.
     pub advanced_open: bool,
     pub source_path: Option<PathBuf>,
     pub source_asset: Option<SourceAsset>,
     pub preview: Option<PreviewProfile>,
-    /// プレビュー表示用にリサイズ済みのラスタキャッシュ (§5.2 コンテキストプレビュー用)。
-    /// ソースを読み込んだ時、 algorithm が変わった時に再生成される。
+    /// Resized raster cache for context preview rendering (§5.2).
+    /// Rebuilt when the source asset is loaded or the resize algorithm changes.
     pub preview_cache: Option<PreviewCache>,
     pub export_plan: ExportPlan,
     pub busy: bool,
-    /// snora の Toast キュー。エラー・成功通知はすべてここを経由する。
+    /// snora toast queue. All error and success notifications go through this.
     pub toasts: Vec<Toast<Message>>,
-    /// Toast の id を発行するためのカウンタ。
+    /// Monotonic counter used to assign unique IDs to toasts.
     pub next_toast_id: u64,
 
-    // v1.3.0: 詳細設定でサイズを追加するためのテキストバッファ。
-    // 「入力中」 のローカル状態は core ではなく UI 層が持つ責務。
+    // v1.3.0: text buffer for the custom-size input in the Customize page.
+    // Transient UI state: belongs in the app layer, not in logolig-core.
     pub png_size_input: String,
     pub ico_size_input: String,
 
-    // v1.4.0: 設定永続化ストア。 起動時に load_or_default() で AppState を初期化し、
-    // ユーザ操作で設定が変わるたびに store.update() を呼ぶ即時保存戦略。
+    // v1.4.0: settings persistence store. Loaded at startup via load_or_default();
+    // updated immediately on every settings change.
     //
-    // - `Option<>` で持つのは初期化失敗時に「アプリは普通に動かしつつ、 永続化
-    //   だけ無効」 を成立させるため。 例えば config dir が読み取り専用の場合
-    //   などにアプリ自体が落ちないようにする。
-    // - `locale` は v1.5 の i18n で使う伏線として PersistedSettings に含めて
-    //   いる。 v1.4 では読み書きするだけで何にも反映しない。
+    // Kept as `Option<>` so that a storage-init failure degrades gracefully:
+    // the app continues to work; only persistence is disabled. E.g. if the
+    // config directory is read-only.
+    // `locale` is stored in PersistedSettings for i18n (v1.5) even though
+    // v1.4 only reads and writes it without applying it.
     pub store: Option<crate::native_store::NativeStore>,
 
     // v1.5.0: i18n
-    /// 現在の Translator。 ロケール切替時はこれを `Translator::for_locale(new)` で
-    /// 入れ替えるだけで再描画 1 回で UI 全体が新言語になる。
+    /// Active translator. Swap this with `Translator::for_locale(new)` on locale
+    /// change; the entire UI reflects the new language after one repaint.
     pub translator: Translator,
-    /// ユーザによるロケール上書き。 `None` なら OS ロケール検出値を使う。
-    /// 詳細設定の Language pick_list で変更され、 `PersistedSettings.locale`
-    /// として保存される。
+    /// User-selected locale override. `None` means use the OS locale.
+    /// Changed via the Settings page; persisted in `PersistedSettings.locale`.
+
     pub locale_override: Option<Locale>,
 
-    // v1.7.0: 透過チェッカー
-    /// 直近に読み込んだ画像の透過状態。 `None` はまだ画像が読み込まれていないか、
-    /// audit を実行していない状態。 ingest 完了時に audit を走らせて埋める。
-    /// 警告 Toast の重複発行を防ぐため、 同じ画像で再度 audit しないように使う。
+    // v1.7.0: transparency audit
+    /// Transparency status of the most recently loaded image.
+    /// `None` means no image is loaded or the audit has not run yet.
+    /// Used to prevent duplicate warning toasts for the same image.
     pub transparency: Option<logolig_core::TransparencyReport>,
-    // v1.10.0: `preview_checker: bool` は廃止 (PreviewContext::TransparencyChecker
-    // バリアントに昇格)。 これにより「タブ風 + チェッカー」 のような無意味な
-    // 同時 ON 状態を型レベルで排除。
+    // v1.10.0: `preview_checker: bool` was replaced by a PreviewContext variant
+    // to prevent meaningless combined states (e.g. tab + checker simultaneously).
 
-    // v1.17.0: 旧 `advanced_groups` フィールド (AdvancedGroupExpansion) は削除。
-    // 詳細設定ドロワーが flat 構造になったため、 アコーディオン展開状態の
-    // 管理は不要になった。 唯一の折りたたみ「上級設定」 は
-    // `advanced_extras_open` で管理する。
+
+    // v1.17.0: `advanced_groups` (AdvancedGroupExpansion) removed;
+    // Settings became flat in v1.17.0; accordion state no longer needed.
+
+
 
     // ---------------------------------------------------------------
-    // v1.16.0: 新画面構造 (Empty / Converting / Result) 用の状態
+    // v1.16.0: state for the new screen structure (Empty / Converting / Result)
     // ---------------------------------------------------------------
-    /// 変換結果のアセット一式 (メモリ上保持)。
+    /// In-memory conversion result.
     ///
-    /// `Screen::Result` の間だけ `Some(...)`。 ファイル投入時にクリアされ、
-    /// 変換完了時に埋まる。 個別 DL ボタンや「ZIP 一括」 ボタンはこの値から
-    /// バイト列を取り出して `rfd` でユーザに保存先を聞いて書き出す。
+    /// `Some` only while on the Result screen. Cleared on new file input;
+    /// populated when conversion completes. Download and ZIP buttons read
+    /// byte slices from here and write them via `rfd`.
     ///
-    /// v1.15 までは「変換 = ディスク書出」 だったので状態は不要だったが、
-    /// v1.16 は「変換はメモリ完結、 保存はユーザ任意」 のため、 アプリ状態
-    /// にアセット束を持つ必要が出た。
+    /// Prior to v1.16 conversion wrote directly to disk so no in-memory state
+    /// was needed. v1.16 made conversion memory-only; the user triggers saves
+    /// explicitly.
     pub result_assets: Option<crate::result::ResultAssets>,
 
-    /// Result 画面のプレビューパネル (Browser tab / Phone home / Checker) の
-    /// 開閉状態。 Q1 (b) の方針で「結果画面に小さく残す + 任意に開く」 を
-    /// 実現するためのトグル。 デフォルト false (折りたたみ)。
-    /// セッション内のみ保持、 永続化対象外。
+    /// Whether the collapsible preview panel on the Result screen is open.
+    /// Session-only; not persisted.
+
+
     pub result_preview_open: bool,
 
     // ---------------------------------------------------------------
-    // v1.17.0: 設定ドロワー Right Sheet 化用の状態
+    // v1.17.0 → v1.22.0: window state
     // ---------------------------------------------------------------
-    /// 現在のウィンドウサイズ (logical pixels)。
+    /// Current window size in logical pixels.
     ///
-    /// Right Sheet の幅を `画面幅 / 3` をベースに clamp で `[280, 480]` に
-    /// 抑える計算に使う。 これによりウィンドウサイズによらずドロワーが
-    /// 「狭すぎてラベルが読めない」 「広すぎて中央コンテンツを圧迫する」 の
-    /// 両極端を避けられる。
+    /// Used for the mobile breakpoint check (`is_mobile`).
+    /// The former use to compute the Right Sheet width is no longer relevant;
+    /// the Customize page now spans the full body width.
+
+
     ///
-    /// 起動時の値は仮 (1280x720)、 `Message::WindowResized(size)` で更新。
-    /// セッション内のみ保持、 永続化対象外。
+    /// Defaults to 1280×720; updated by `Message::WindowResized`.
+
     pub window_size: iced::Size<f32>,
 
-    /// 詳細設定ドロワーの「上級設定」 折りたたみセクションの開閉状態。
-    /// PNG モックに無い旧設定 (Apple touch / HTML snippet / Web manifest /
-    /// Monochrome / リサイズアルゴリズム / vectorize_on_raster) をここに
-    /// 集約する。 デフォルト false (折りたたみ)。
-    /// セッション内のみ保持、 永続化対象外。
+    /// Whether the 'Advanced extras' collapsible in the Customize page is open.
+    /// Groups the less-common settings (apple-touch, HTML snippet, web manifest,
+    /// monochrome, resize algorithm, vectorize_on_raster). Session-only.
+
+
     pub advanced_extras_open: bool,
 
     // ---------------------------------------------------------------
-    // v1.18.0: 左サイドバー + ピッカーポップアップ
+    // v1.18.0 → v1.22.0: side nav
     // ---------------------------------------------------------------
-    /// 左サイドバーから出るピッカーポップアップの状態。
+
+    // ---------------------------------------------------------------
+    /// Currently selected side-nav page.
     ///
-    /// PNG モック準拠で、 言語アイコン / テーマアイコンをクリックすると
-    /// 選択肢のオーバーレイポップアップが出る (旧 cycle UI を廃止)。 同時に
-    /// 1 種類しか開けない (snora の `context_menu` slot が単数のため)。
-    pub active_picker: Option<SidebarPicker>,
+    /// - `Home`      — core app flow (drop zone / converting / result).
+    /// - `Customize` — output settings (replaces the former right-side drawer).
+    /// - `Settings`  — language and theme (replaces the former popup pickers).
+    pub nav_page: NavPage,
 }
 
-/// v1.18.0: 左サイドバーから出るピッカーの種類。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SidebarPicker {
-    /// 言語選択ポップアップ (English / 日本語)。
-    Locale,
-    /// テーマ選択ポップアップ (System / Light / Dark)。
-    Theme,
+/// v1.22.0: side-nav page discriminant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum NavPage {
+    /// Main app screen (drop zone → converting → result).
+    #[default]
+    Home,
+    /// Output settings (PNG sizes, ICO, apple-touch, monochrome, etc.).
+    Customize,
+    /// Language and theme selection.
+    Settings,
 }
 
-/// 詳細設定の 3 グループそれぞれの展開状態。
+/// NOTE: AdvancedGroupExpansion was removed in v1.17.0 (settings became flat).
 ///
-/// `Default` は「What to export のみ展開」 — 詳細ドロワーを初めて開いた時に
-/// 必須項目だけが見えていて、 他は折りたたまれている状態。 ユーザは興味の
-// v1.17.0: 旧 `AdvancedGroupExpansion` / `AdvancedGroup` は削除。 詳細設定
-// ドロワーが flat 構造になり、 アコーディオン展開状態を管理する必要がなく
-// なったため。 「上級設定」 折りたたみ 1 個のみ AppState の
-// `advanced_extras_open` で管理する (v1.16.0 phase B で追加)。
+
+
+// v1.17.0: AdvancedGroupExpansion / AdvancedGroup removed; settings are flat now.
+
+
+
 
 
 impl AppState {
-    /// boot 関数。 NativeStore で設定を load_or_default() し、 内容を AppState に反映。
+    /// Boot function. Loads persisted settings via NativeStore and applies them to AppState.
     ///
-    /// 失敗時はエラー Toast を出した上で default の AppState を返す。 永続化が
-    /// 効かない状態でもアプリ自体は動くようにする (§ABDD: 機能が縮退しても止まらない)。
+    /// On failure shows an error toast and falls back to a default AppState.
+    /// The app remains functional even if persistence is unavailable (§ABDD).
     ///
-    /// ## v1.5.0: i18n 初期化
+    /// ## i18n initialisation (v1.5.0)
     ///
-    /// 1. `PersistedSettings.locale` (BCP-47 風タグ "en" 等) があればそれを使う
-    /// 2. なければ OS ロケールを `sys-locale` で検出
-    /// 3. それも未対応なら英語 (Locale::default())
+    /// 1. Use `PersistedSettings.locale` (BCP-47 tag, e.g. "en") if present.
+    /// 2. Otherwise detect the OS locale via `sys-locale`.
+    /// 3. Fall back to English if neither is supported.
     ///
-    /// 検出後の Translator が `state.translator` に入り、 各 view が
-    /// `state.translator.t(MessageKey::AppTitle)` のように使う。
+    /// The resolved Translator is stored in `state.translator`; views call
+    /// `state.translator.t(MessageKey::...)` to get localised strings.
     pub fn boot() -> Self {
         let mut state = Self::default();
         let store = crate::native_store::NativeStore::new();
@@ -201,10 +210,10 @@ impl AppState {
                 state.store = Some(store);
             }
             Err(err) => {
-                // 永続化の初期化に失敗してもアプリは続行する。
-                // ここではまだ Translator が default (英語) なので英語の Toast を出す。
-                // 後で Translator が確定したら locale 反映の再描画で UI 全体が
-                // 揃った言語になる (この Toast は次の dismiss/expire まで英語のまま)。
+                // Storage init failure is non-fatal — the app continues.
+                // Translator is still default (English) at this point.
+                // Once the locale is resolved the next repaint updates all UI strings.
+                // This toast stays in English until it expires.
                 let title = state
                     .translator
                     .t(MessageKey::ToastSettingsLoadFailedTitle);
@@ -213,14 +222,14 @@ impl AppState {
                     &[("error", &err.to_string())],
                 );
                 push_warning_toast(&mut state, &title, &body);
-                // store は None のまま。 後続の persist_settings() は no-op になる。
+                // store stays None; subsequent persist_settings() calls are no-ops.
             }
         }
 
-        // ロケール解決:
-        //   1. PersistedSettings.locale があれば優先 (B2: ユーザ上書き)
-        //   2. なければ OS 検出
-        //   3. どちらもダメなら英語 (Locale::default())
+        // Locale resolution:
+        //   1. PersistedSettings.locale (user override) takes priority.
+        //   2. Fall back to OS detection.
+        //   3. Use English if nothing resolves.
         let resolved_locale = persisted_locale_tag
             .as_deref()
             .and_then(Locale::from_bcp47)
@@ -259,202 +268,201 @@ impl Default for AppState {
             // v1.17.0
             window_size: iced::Size::new(1280.0, 720.0),
             advanced_extras_open: false,
-            // v1.18.0
-            active_picker: None,
+            // v1.18.0 → v1.22.0
+            nav_page: NavPage::Home,
         }
     }
 }
 
 // ----------------------------------------------------------------------
-// メッセージ
+// Messages
 // ----------------------------------------------------------------------
 
-/// UI / サービス層が発火する全イベント (§4.3)。
+/// All events fired by the UI and service layers (§4.3).
 ///
-/// `snora::AppLayout<Element, Message>` は `Message: Clone` を要求するため
-/// 全バリアントが Clone 可能であること。
+/// `snora::AppLayout<Element, Message>` requires `Message: Clone`, so
+/// every variant must be cloneable.
 ///
-/// # 段階的開発について
-/// Step 1 ではスケルトンのため、いくつかのバリアントはまだ
-/// **構築箇所が無い** (`ExportCompleted` は出力完了)。
-/// Step 4 で生成側を実装する。
-/// 完成形のメッセージ集合を最初から見せるためここで宣言しておく。
+
+
+
+
+
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum Message {
-    // 入力
+    // Input
     FileDropped(PathBuf),
     PickFileRequested,
     FilePicked(Option<PathBuf>),
 
-    // 読み込み
+    // Loading
     IngestCompleted(Result<SourceAsset, AppError>),
 
-    // プレビュー (Step 3)
+    // Preview
     PreviewBuilt(Result<PreviewCache, AppError>),
     PreviewContextSelected(PreviewContext),
     PreviewBackgroundSelected(ThemeMode),
 
-    // v1.16.0: 自動変換完了 (メモリ完結)。
-    /// ファイル投入後の自動変換が終わり、 ResultAssets が組み上がった通知。
-    /// 旧 `Message::ExportCompleted` (= ディスク書出し完了) とは別物で、
-    /// こちらはディスクには触らずアプリ状態にアセット束を載せるだけ。
-    /// ユーザがあとで個別 DL / ZIP DL を押したときに初めて書出が走る。
+    // v1.16.0: in-memory conversion complete.
+    /// Conversion finished; the ResultAssets bundle is ready.
+    /// Distinct from the former `Message::ExportCompleted` (which wrote to disk);
+    /// this variant only places the asset bundle into app state.
+    /// The user triggers the actual write later via individual or ZIP download.
     ConvertCompleted(Result<crate::result::ResultAssets, logolig_core::AppError>),
 
-    /// v1.16.0: 個別 DL ボタン押下。 アセット index を指定。
+    /// v1.16.0: individual download button pressed. Carries the asset index.
     DownloadOneRequested(usize),
-    /// v1.16.0: ZIP 一括 DL ボタン押下。
+    /// v1.16.0: ZIP download-all button pressed.
     DownloadAllRequested,
-    /// v1.16.0: 個別 DL のファイル保存先選択結果 (None = キャンセル)。
+    /// v1.16.0: result of the save-file dialog for individual download. None = cancelled.
     DownloadOneTargetPicked(usize, Option<std::path::PathBuf>),
-    /// v1.16.0: ZIP 一括 DL のファイル保存先選択結果 (None = キャンセル)。
+    /// v1.16.0: result of the save-file dialog for ZIP download. None = cancelled.
     DownloadAllTargetPicked(Option<std::path::PathBuf>),
-    /// v1.16.0: 個別 DL の書出完了通知。
+    /// v1.16.0: individual download write completed.
     DownloadOneCompleted(Result<std::path::PathBuf, logolig_core::AppError>),
-    /// v1.16.0: ZIP 一括 DL の書出完了通知。
+    /// v1.16.0: ZIP download-all write completed.
     DownloadAllCompleted(Result<std::path::PathBuf, logolig_core::AppError>),
 
-    /// v1.16.0: Result 画面の「プレビューを見る」 折りたたみセクションのトグル。
+    /// v1.16.0: toggles the collapsible preview panel on the Result screen.
     ResultPreviewToggled,
 
-    // v1.17.0: 詳細設定ドロワー Right Sheet 化
-    /// ウィンドウサイズ変更通知。 Right Sheet の幅を再計算するために使う。
+    // v1.17.0: settings drawer became a Right Sheet
+    /// Window resize notification. Updates `state.window_size`, used for mobile breakpoint detection.
     WindowResized(iced::Size<f32>),
-    /// 「上級設定」 折りたたみセクションのトグル (詳細設定ドロワー内)。
+    /// Toggles the 'Advanced extras' collapsible in the Customize page.
     AdvancedExtrasToggled,
-    /// PNG プリセットサイズチェックボックスを ON にしたときの追加。
-    /// 値は重複も範囲も検証済の前提 (16/32/48/96/192/512 のいずれか)。
+    /// Adds a preset PNG size (checked in the Customize page).
+    /// Expected to be one of 16/32/48/96/192/512.
     PngPresetSizeAdded(u32),
-    /// no-op (UI 上で実装途中の placeholder トグル等で使う)。
+    /// No-op placeholder for partially-implemented UI toggles.
     NoOp,
 
-    // v1.18.0: 左サイドバー + ピッカーポップアップ
-    /// サイドバーのピッカーアイコンをクリック → 該当ピッカーを開く。
-    SidebarPickerOpened(SidebarPicker),
-    /// ピッカー外をクリックなどで閉じる (snora の `on_close_menus` から発火)。
-    SidebarPickerClosed,
-    /// 言語ピッカーで選択肢を確定。 None は「OS のロケールに従う」 (auto)。
+    // v1.22.0: side-nav page switch
+    /// Side-nav item clicked — switches to the given page.
+    NavPageSelected(NavPage),
+    /// Locale confirmed in the Settings page. None = follow OS locale.
     LocalePicked(Option<Locale>),
-    /// テーマピッカーで選択肢を確定。
+    /// Theme confirmed in the Settings page.
     ThemePicked(ThemeMode),
 
-    // テーマ・UI
-    // v1.19.0: 旧 `ThemeToggled` (cycle UI 用) は削除済。 v1.18.0 で left
-    // sidebar + ピッカーポップアップに移行した際に `ThemePicked(ThemeMode)`
-    // が後継として導入された。
+    // Theme / UI
+    // v1.19.0: old `ThemeToggled` (cycle UI) removed; replaced by `ThemePicked`.
+
+
+    /// Navigate to the Customize page (replaces the former settings-drawer toggle).
     AdvancedToggled,
     AlgorithmChanged(ResizeAlgorithm),
-    /// v1.2.0: SVG 出力をオン/オフ
+    /// v1.2.0: toggle SVG output on/off.
     IncludeSvgToggled(bool),
-    /// v1.2.0: ラスタソースのベクトル化をオン/オフ
+    /// v1.2.0: toggle raster-to-vector conversion on/off.
     VectorizeOnRasterToggled(bool),
 
-    // v1.3.0: 詳細設定の編集 UI
-    /// favicon.ico を出力するか
+    // v1.3.0: Customize page editing UI
+    /// Whether to output favicon.ico.
     IncludeIcoToggled(bool),
-    /// apple-touch-icon.png を出力するか
+    /// Whether to output apple-touch-icon.png.
     IncludeAppleTouchToggled(bool),
-    /// favicon-snippet.html を出力するか
+    /// Whether to output favicon-snippet.html.
     IncludeHtmlSnippetToggled(bool),
-    /// PNG サイズ集合の入力テキスト変更
+    /// PNG size set input text changed.
     PngSizeInputChanged(String),
-    /// PNG サイズ集合への追加実行 (Add ボタン or Enter)
+    /// PNG size added (Add button or Enter).
     PngSizeAddRequested,
-    /// PNG サイズ集合からの削除 (チップの × ボタン)
+    /// PNG size removed (chip × button).
     PngSizeRemoveRequested(u32),
-    /// ICO サイズ集合の入力テキスト変更
+    /// ICO size set input text changed.
     IcoSizeInputChanged(String),
-    /// ICO サイズ集合への追加実行
+    /// ICO size added.
     IcoSizeAddRequested,
-    /// ICO サイズ集合からの削除
+    /// ICO size removed.
     IcoSizeRemoveRequested(u32),
 
-    // v1.4.1: vtracer プリセット切り替え + ExportPlan リセット
-    /// vtracer プリセット選択の変更 (Sharp / Default / PhotoRich)。
+    // v1.4.1: vtracer preset switch + ExportPlan reset
+    /// vtracer preset changed (Sharp / Default / PhotoRich).
     VtracerPresetChanged(logolig_core::VtracerPreset),
-    /// ExportPlan を default に戻す。 theme / locale など他の設定には影響しない。
+    /// Resets ExportPlan to defaults. Does not affect theme or locale.
     ExportPlanResetRequested,
 
     // v1.5.0: i18n
-    /// 言語選択。 `None` で OS デフォルトに戻す。
+    /// Locale selected. `None` resets to the OS default.
     LocaleChanged(Option<Locale>),
 
-    // v1.19.0: 旧 `LocaleCycled` (ヘッダ言語アイコン cycle UI 用) と
-    // `AppCloseRequested` (ヘッダ ✕ ボタン用) は削除済。
-    // - `LocaleCycled` は v1.18.0 で left sidebar + 言語ピッカーポップアップ
-    //   に置き換わり、 `LocalePicked(Option<Locale>)` が後継。
-    // - `AppCloseRequested` は v1.18.0 で ✕ ボタン自体が完全撤去 (= OS の
-    //   ネイティブウィンドウチャートに任せる方針) されたため不要。
+    // v1.19.0: old `LocaleCycled` and `AppCloseRequested` removed.
 
-    // v1.17.0: 旧 `AdvancedGroupToggled` Message は削除。 アコーディオン構造
-    // 廃止に伴い不要 — 「上級設定」 折りたたみのトグルは
-    // `AdvancedExtrasToggled` で代替。
+    // `LocaleCycled` → replaced by `LocalePicked` in v1.18.0.
 
-    // v1.12.0: 編集画面の戻り動線
-    /// 編集画面の「戻る」 / 「キャンセル」 ボタン。 startup 画面 (drop zone)
-    /// に戻る。 ロード済みのソース・プレビューキャッシュを破棄する。
-    /// ESC キーバインドは将来追加予定 (subscription 経由)。
+    // `AppCloseRequested` → removed when the ✕ button was dropped in v1.18.0.
+
+
+    // v1.17.0: `AdvancedGroupToggled` removed (accordion structure replaced by flat layout).
+
+
+
+    // v1.12.0: back navigation
+    /// Back / Cancel button. Returns to the drop zone (Empty screen),
+    /// discarding the loaded source and preview cache.
+    /// ESC key binding may be added in a future version.
     EditCancelled,
 
-    // v1.10.0: PreviewCheckerToggled は削除 (Checker は
-    // PreviewContextSelected(PreviewContext::TransparencyChecker) で
-    // 表現される。 既存の context picker ロジックがそのまま使える)。
+    // v1.10.0: PreviewCheckerToggled removed; checker state lives in PreviewContext.
+
+
 
     // v1.8.0: Web manifest
-    /// `manifest.webmanifest` 出力の有効/無効 toggle。 ON で
-    /// `WebManifestSettings::default()` が `state.export_plan.web_manifest`
-    /// に挿入される。
+    /// Toggles web manifest output. When turned on, inserts
+    /// `WebManifestSettings::default()` into `state.export_plan.web_manifest`.
+
     IncludeWebManifestToggled(bool),
-    /// `name` フィールドの編集。
+    /// Web manifest `name` field edited.
     WebManifestNameChanged(String),
-    /// `short_name` フィールドの編集。
+    /// Web manifest `short_name` field edited.
     WebManifestShortNameChanged(String),
-    /// `theme_color` フィールドの編集 (リアルタイムで state に反映、
-    /// 検証は値確定時 — text_input::on_submit またはフォーカス外し時に行う)。
+    /// Web manifest `theme_color` edited. Applied immediately;
+    /// validated on submit / focus-loss.
     WebManifestThemeColorChanged(String),
-    /// `background_color` フィールドの編集。
+    /// Web manifest `background_color` edited.
     WebManifestBackgroundColorChanged(String),
 
-    // v1.9.0: モノクローム出力
-    /// `mono/` グレースケール出力セットの有効/無効 toggle。
+    // v1.9.0: monochrome output
+    /// Toggles the `mono/` grayscale output set.
     IncludeMonochromeToggled(bool),
 
-    // v1.21.0: 透過維持トグル
-    /// 透過 (アルファチャンネル) を維持するか / 白背景でフラット化するか。
-    /// `true` で維持 (favicon の現代的標準)、 `false` でフラット化。
-    /// PNG / ICO / mono PNG / mono ICO の全 raster 出力に影響、 SVG は不変
-    /// (Q2-a 方針)。
+    // v1.21.0: keep-transparency toggle
+    /// Whether to preserve alpha or flatten against a white background.
+    /// `true` = preserve (modern favicon standard); `false` = flatten.
+    /// Affects all raster outputs (PNG / ICO / mono); SVG is unaffected
+    /// (flattening is a raster concept).
     KeepTransparencyToggled(bool),
 
-    // v1.19.0: 旧 Export* Message 系は削除済。 v1.16.0 で
-    // `ConvertCompleted` 経路に移行 (ファイル投入 → 自動変換 → Result 画面 →
-    // 個別 DL or ZIP DL)、 旧の「Export ボタン → ディレクトリ選択 → 一括書出」
-    // 動線は廃止された。 削除済 Message:
-    // - `ExportRequested` (Export ボタン押下、 ボタン自体が無くなった)
-    // - `ExportDirPicked(Option<PathBuf>)` (出力先ディレクトリ選択結果)
-    // - `ExportCompleted(Result<ExportReport, AppError>)` (一括書出完了通知)
-    // 個別 DL / ZIP DL の完了通知は `DownloadOneCompleted` /
-    // `DownloadAllCompleted` で別途実装済 (v1.16.0)。
+    // v1.19.0: old Export* messages removed. v1.16.0 moved to the
+    // ConvertCompleted path (drop → auto-convert → Result → per-asset DL).
+    // The old 'Export button → directory picker → bulk write' flow is gone.
+    // Deleted messages:
+    // - ExportRequested (button removed)
+    // - ExportDirPicked(Option<PathBuf>)
+    // - ExportCompleted(Result<ExportReport, AppError>)
+    // Individual / ZIP-all completion notifications use DownloadOneCompleted /
+    // DownloadAllCompleted (v1.16.0).
 
-    // Toast ライフサイクル
+    // Toast lifecycle
     ToastTick,
     DismissToast(u64),
 
-    // snora モーダル外クリック (BottomSheet/Dialog)
+    // snora: outside-click to close modals
     CloseModals,
 }
 
 // ----------------------------------------------------------------------
-// エントリポイント
+// Entry point
 // ----------------------------------------------------------------------
 
-/// `main` から呼ばれる起動関数。
+/// Entry function called from `main`.
 ///
-/// iced 0.14 の `application` は第 1 引数を **boot 関数** (`Fn() -> State`) として取る。
-/// タイトルは builder メソッド `.title(...)` で渡す。
-/// v1.5.0: タイトルもキー化 — `state.translator.t(MessageKey::AppTitle)` 経由で
-/// ロケール変更にも追従する。
+/// iced 0.14's `application` takes a boot function as its first argument.
+/// The window title is supplied via the `.title(...)` builder method.
+/// v1.5.0: title is localised via `state.translator.t(MessageKey::AppTitle)`
+/// so it updates automatically on locale change.
 pub fn run() -> iced::Result {
     iced::application(AppState::boot, update, view)
         .title(window_title)
@@ -467,61 +475,61 @@ fn window_title(state: &AppState) -> String {
     state.translator.t(MessageKey::AppTitle)
 }
 
-/// 現在の状態から iced の `Theme` を解決する。
+/// Resolves the iced `Theme` from current app state.
 ///
-/// v1.14.0: ui モジュールが theme palette ベースの色解決をするため、
-/// `pub(crate)` で公開する (元は private fn だった)。
+/// v1.14.0: exposed as `pub(crate)` so UI modules can resolve theme-palette colours.
+
 pub(crate) fn resolve_theme(state: &AppState) -> Theme {
     match state.theme {
-        // System は Step 3 で OS テーマを覗くようにする。Step 1 では Light を採用。
+        // System: will query OS theme in a future step; currently falls back to Light.
         ThemeMode::System | ThemeMode::Light => Theme::Light,
         ThemeMode::Dark => Theme::Dark,
     }
 }
 
-/// iced の `application().theme()` から呼び出される旧シグネチャの薄いラッパ。
+/// Thin wrapper matching the `application().theme()` signature.
 fn theme(state: &AppState) -> Theme {
     resolve_theme(state)
 }
 
-/// v1.20.0: モバイル/デスクトップ判定。
+/// Returns `true` when the window is narrow enough to be treated as mobile (v1.20.0).
 ///
-/// ウィンドウ幅が `MOBILE_BREAKPOINT_PX` (768px) 未満ならモバイル扱いとする。
-/// 768px は Bootstrap の `md` ブレークポイントや旧 iPad mini portrait の
-/// 横幅 (768×1024) など、 web アクセシビリティ業界で広く採用されている
-/// 「タブレットの境界」 と一致するため、 ユーザの一般的なメンタルモデルに
-/// 馴染む。
+/// Window width below `MOBILE_BREAKPOINT_PX` (768 px) is considered mobile.
+/// 768 px matches Bootstrap's `md` breakpoint and the original iPad mini portrait
+/// width — a threshold widely used in web accessibility work.
+
+
 ///
-/// この判定値は UI の各所 (sidebar / bottom_nav の出し分け、 result_view の
-/// グリッド列数、 advanced_drawer の幅、 ヘッダーパディング) で使う。
+/// Used throughout the UI: sidebar vs. bottom-nav selection, result-view column count,
+/// Customize page width, and header padding.
 ///
-/// なお、 Window 起動直後 (まだ resize_events が来ていない時点) では
-/// `AppState::window_size` がデフォルト 1280×720 になっているので、
-/// 起動直後の判定はデスクトップ (false) になる。 リサイズイベントで遅延
-/// 訂正される (実害なし — 表示が一瞬デスクトップで描画されてからモバイル
-/// に切り替わるだけ)。
+/// On first frame `AppState::window_size` defaults to 1280×720, so the check
+/// initially returns `false` (desktop). A resize event corrects it shortly after.
+
+
+
 pub(crate) fn is_mobile(state: &AppState) -> bool {
     state.window_size.width < MOBILE_BREAKPOINT_PX
 }
 
-/// v1.20.0: モバイル/デスクトップ境界 (px)。 詳細は [`is_mobile`] のドキュメント
-/// 参照。
+/// Mobile breakpoint in logical pixels. See [`is_mobile`] for details.
+
 pub(crate) const MOBILE_BREAKPOINT_PX: f32 = 768.0;
 
 fn subscription(state: &AppState) -> Subscription<Message> {
-    // v1.17.0: 3 つのサブスクリプションを結合する:
-    //   (a) snora の Toast tick — transient toast の自動消滅
-    //   (b) iced のウィンドウイベント — ファイルドロップを Message::FileDropped に変換
-    //   (c) ウィンドウリサイズ — window_size を更新して Right Sheet 幅を再計算
+    // Combine three subscriptions:
+    //   (a) snora Toast tick — auto-dismisses transient toasts
+    //   (b) iced window events — converts file drops to Message::FileDropped
+    //   (c) window resize — updates window_size for responsive layout
     let toasts = snora::toast::subscription(&state.toasts, || Message::ToastTick);
 
-    // (b) と (c) を 1 つの events stream から派生させる。 iced::window::events は
-    // 全ウィンドウイベントを返すので、 ここで 2 種類に振り分ける。
+    // (b) and (c) share one event stream; window::events returns all window events.
+
     let window_evts = iced::window::events().filter_map(|(_id, ev)| match ev {
         iced::window::Event::FileDropped(path) => Some(Message::FileDropped(path)),
         iced::window::Event::Resized(size) => Some(Message::WindowResized(size)),
-        // v1.17.0: 起動時にも window_size を取得したいので Opened にも反応する。
-        // Opened は window::Size を含むため、 そのまま WindowResized として扱う。
+        // v1.17.0: also respond to Opened so window_size is set at startup,
+        // not just after the first explicit resize.
         iced::window::Event::Opened { size, .. } => Some(Message::WindowResized(size)),
         _ => None,
     });
@@ -534,7 +542,7 @@ fn view(state: &AppState) -> Element<'_, Message> {
 }
 
 // ----------------------------------------------------------------------
-// update（状態遷移）
+// Update (state transitions)
 // ----------------------------------------------------------------------
 
 fn update(state: &mut AppState, message: Message) -> Task<Message> {
@@ -543,24 +551,24 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             start_ingest(state, path)
         }
         Message::FilePicked(None) => {
-            // ピッカーをキャンセルされただけ。状態は変えない。
+            // File picker cancelled — no state change.
             Task::none()
         }
         Message::PickFileRequested => {
-            // ネイティブファイルピッカーを Task として起動する (§12 代替経路)。
-            // 結果は `Message::FilePicked(Option<PathBuf>)` として返る。
-            // v1.12.0: 「再選択」 もこの Message を再利用する (現画面を保ったまま
-            // ファイルピッカーを開き、 キャンセル時は元の編集画面のまま)。
+            // Launch the native file picker as a Task (§12 accessibility alternative).
+            // Result arrives as Message::FilePicked(Option<PathBuf>).
+            // v1.12.0: re-select also reuses this message (keeps current screen,
+            // cancelling returns to whatever screen was active).
             crate::task_queue::pick_file_task()
         }
 
-        // v1.12.0: 編集画面の戻り動線。
+        // v1.12.0: back navigation.
         //
-        // v1.16.0: 旧 Preview/ExportReady → 新 Result/Converting の状態どこから
-        // でも Empty に戻す統一動線。 「← Back」 ボタンの実装。
+        // v1.16.0: returns to Empty from any screen (Result, Converting, etc.).
+
         //
-        // 永続化される設定 (export_plan / theme / locale 等) は保持。
-        // 詳細ドロワーが開いていたら閉じる (UI 状態をニュートラルに揃える)。
+        // Persisted settings (export_plan, theme, locale) are preserved.
+        // Resets transient UI state (nav page, extras open, etc.).
         Message::EditCancelled => {
             state.source_asset = None;
             state.preview = None;
@@ -573,26 +581,26 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::IngestCompleted(Ok(asset)) => {
-            // プレビュー生成タスクを起動するために asset を Arc で保持する。
-            // SourceAsset 自体は Clone (Arc<[u8]> ベース) なので軽量。
+            // Arc the asset so it can be moved into the async preview task.
+            // SourceAsset is Clone (Arc<[u8]>-backed) so this is cheap.
             let arc = std::sync::Arc::new(asset.clone());
             state.source_asset = Some(asset);
             state.preview = Some(PreviewProfile::default());
             state.preview_cache = None;
-            // v1.16.0: ingest 完了 → 自動変換へ進む。 旧 v1.15 では Preview 状態
-            // でユーザの確認を待っていたが、 v1.16 は「投入したら自動変換」 の
-            // モデル。 Converting 状態を維持したまま、 並行で:
-            //   (a) preview build (Result 画面の折りたたみプレビュー用)
-            //   (b) convert (メモリ完結変換、 ResultAssets を組む)
-            // を走らせる。 (b) の完了で Screen::Result に遷移する。
+            // v1.16.0: ingest complete → auto-convert. Prior to v1.15 the app
+            // waited on the Preview screen; v1.16 converts immediately.
+            // Two parallel tasks are launched:
+            //   (a) preview build (for the collapsible preview panel)
+            //   (b) conversion (in-memory, assembles ResultAssets)
+            // (b) completion transitions to Screen::Result.
             state.screen = Screen::Converting;
             state.busy = false;
-            // v1.7.0: 新しい画像 → 透過状態は未確定に戻す。
-            // PreviewBuilt で audit を走らせて確定する。 これにより:
-            // - 再読み込み時に過去の警告が引き継がれない
-            // - 同じ画像で警告 Toast が複数回出ないように制御できる
+            // v1.7.0: reset transparency status for the new image.
+            // Audit runs in PreviewBuilt; this prevents:
+            // - stale warnings carrying over on re-load
+            // - duplicate warning toasts for the same image
             state.transparency = None;
-            // (a) と (b) を並行実行
+            // Launch (a) and (b) in parallel.
             Task::batch([
                 crate::task_queue::build_preview_task(arc.clone(), state.export_plan.algorithm),
                 crate::task_queue::convert_task(arc, state.export_plan.clone()),
@@ -601,28 +609,28 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::IngestCompleted(Err(err)) => fail(state, err),
 
         Message::PreviewBuilt(Ok(cache)) => {
-            // 受け取った cache が「現在の状態」 と整合しているか確認する。
-            // 古いソース・古い algorithm のキャッシュなら破棄。
+            // Verify the cache matches the current source and algorithm.
+            // Discard stale cache (wrong source or algorithm).
             let asset_path = state.source_asset.as_ref().map(|a| a.path.clone());
             let still_valid = asset_path.as_ref() == Some(&cache.source_path)
                 && cache.algorithm == state.export_plan.algorithm;
             if still_valid {
-                // v1.7.0: 透過チェッカー
-                // この cache が「この画像で初めて」 構築されたなら audit を走らせる。
-                // 既に audit 済 (state.transparency が Some) なら警告を再表示しない
-                // — 例えば algorithm 変更で preview が再構築された場合に Toast が
-                // 何度も出ないように。 audit 自体は idempotent なのでバグはないが、
-                // UX として 1 画像 1 警告にする。
+                // v1.7.0: transparency audit
+                // Run the transparency audit on the first cache built for this image.
+                // Skip if already audited (state.transparency is Some) to avoid
+                // duplicate warning toasts when the preview is rebuilt (e.g. after
+                // changing the resize algorithm). The audit itself is idempotent,
+                // but showing it once per image is the right UX.
                 let needs_audit = state.transparency.is_none();
                 if needs_audit {
                     let report = audit_transparency(&cache.icon_120);
                     state.transparency = Some(report);
                     if report.needs_warning() {
-                        // v1.11.0: JPEG 入力は形式上 alpha を持てないので
-                        // `FullyOpaque` 判定が必ず出るが、 ユーザの「やり方が
-                        // 間違っている」 のではなく「JPEG という形式の制約」 で
-                        // ある。 通常の透過警告ではなく JPEG 専用の教育的警告
-                        // に振り替える。 source_kind を見て分岐:
+                        // v1.11.0: JPEG cannot carry alpha so the audit always returns
+                        // FullyOpaque. This is a format constraint, not a user mistake;
+                        // show the JPEG-specific educational warning instead of the
+                        // generic fully-opaque warning.
+
                         let is_jpeg = state
                             .source_asset
                             .as_ref()
@@ -640,8 +648,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::PreviewBuilt(Err(err)) => {
-            // プレビュー生成失敗は致命的ではない (元データは健在)。
-            // 画面遷移はせず、 Toast でだけ知らせる。
+            // Preview build failure is non-fatal (source data is intact).
+            // Stay on the current screen; notify via toast only.
             push_error_toast(state, err);
             Task::none()
         }
@@ -658,7 +666,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        // v1.16.0: 自動変換完了
+        // v1.16.0: in-memory conversion complete
         Message::ConvertCompleted(Ok(assets)) => {
             state.result_assets = Some(assets);
             state.screen = Screen::Result;
@@ -667,9 +675,9 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::ConvertCompleted(Err(err)) => fail(state, err),
 
-        // v1.16.0: DL ボタン群
+        // v1.16.0: download buttons
         Message::DownloadOneRequested(idx) => {
-            // ファイル名を取り出して、 デフォルト拡張子付きの保存ダイアログを開く
+            // Extract the filename and open a save dialog with the right extension.
             let Some(assets) = state.result_assets.as_ref() else {
                 return Task::none();
             };
@@ -697,7 +705,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let Some(assets) = state.result_assets.as_ref() else {
                 return Task::none();
             };
-            // ZIP 化はメインスレッドの邪魔にならないよう task に逃がす。
+            // ZIP assembly runs as a task to avoid blocking the UI thread.
             let items_clone = assets.items.clone();
             crate::task_queue::write_zip_task(path, items_clone)
         }
@@ -722,78 +730,61 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        // v1.16.0: Result 画面のプレビュー折りたたみトグル
+        // v1.16.0: toggle the collapsible preview panel on the Result screen
         Message::ResultPreviewToggled => {
             state.result_preview_open = !state.result_preview_open;
             Task::none()
         }
 
-        // v1.17.0: ウィンドウリサイズ通知 → window_size を更新
+        // v1.17.0: window resize → update window_size
         Message::WindowResized(size) => {
             state.window_size = size;
             Task::none()
         }
-        // v1.17.0: 上級設定セクションの開閉
+        // v1.17.0: toggle the Advanced extras collapsible
         Message::AdvancedExtrasToggled => {
             state.advanced_extras_open = !state.advanced_extras_open;
             Task::none()
         }
-        // v1.17.0: PNG プリセットサイズの ON/OFF (チェックボックス)
+        // v1.17.0: PNG preset size checkbox toggled
         Message::PngPresetSizeAdded(size) => {
             if state.export_plan.add_png_size(size) {
                 persist_settings(state);
             }
             Task::none()
         }
-        // v1.17.0: placeholder トグル (現状は内部状態を持たないので何もしない)
+        // v1.17.0: placeholder toggle — currently a no-op
         Message::NoOp => Task::none(),
 
-        // v1.18.0: 左サイドバーの言語/テーマピッカー
-        //
-        // クリックで `active_picker` をセット。 既に同じピッカーが開いていれば
-        // トグルで閉じる (連打挙動)。 別のピッカーが開いていれば即座に切替
-        // (= 1 種類しか開けない、 snora の `context_menu` slot 単数性に対応)。
-        Message::SidebarPickerOpened(picker) => {
-            state.active_picker = if state.active_picker == Some(picker) {
-                None
-            } else {
-                Some(picker)
-            };
-            Task::none()
-        }
-        Message::SidebarPickerClosed => {
-            state.active_picker = None;
+        // v1.22.0: side-nav page switch
+        Message::NavPageSelected(page) => {
+            state.nav_page = page;
             Task::none()
         }
         Message::LocalePicked(opt) => {
             state.locale_override = opt;
             let resolved = opt.unwrap_or_else(detect_system_locale);
             state.translator = Translator::for_locale(resolved);
-            state.active_picker = None;
             persist_settings(state);
             Task::none()
         }
         Message::ThemePicked(theme) => {
             state.theme = theme;
-            state.active_picker = None;
             persist_settings(state);
             Task::none()
         }
 
-        // v1.19.0: 旧 `Message::ThemeToggled` ハンドラは削除済 (上記 Message
-        // 列挙宣言箇所のコメント参照)。 後継は `ThemePicked(ThemeMode)`。
-
         Message::AdvancedToggled => {
-            // advanced_open は永続化対象外 (UI 状態)。 保存しない。
-            state.advanced_open = !state.advanced_open;
+            // Navigate to the Customize page.
+            state.nav_page = NavPage::Customize;
             Task::none()
         }
         Message::AlgorithmChanged(alg) => {
             state.export_plan.algorithm = alg;
             persist_settings(state);
-            // algorithm 変更を反映するためプレビュー再生成。
-            // 既存キャッシュは古いので破棄する (UI は cache=None のあいだ
-            // ローディング表示にフォールバックする)。
+            // Resize algorithm changed — rebuild the preview cache.
+            // Discard stale cache (UI shows a loading state while cache is None).
+
             state.preview_cache = None;
             if let Some(asset) = state.source_asset.as_ref() {
                 let arc = std::sync::Arc::new(asset.clone());
@@ -803,7 +794,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
         }
         Message::IncludeSvgToggled(on) => {
-            // 出力プランの変更だけ。 プレビュー (16×16 / 120×120) には影響しない。
+            // Output plan change only; does not affect the preview.
             state.export_plan.include_svg = on;
             persist_settings(state);
             Task::none()
@@ -815,7 +806,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         // -----------------------------------------------------------------
-        // v1.3.0: 詳細設定の編集 UI ハンドラ
+        // v1.3.0: Customize page editing UI handlers
         // -----------------------------------------------------------------
         Message::IncludeIcoToggled(on) => {
             state.export_plan.include_ico = on;
@@ -833,8 +824,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::PngSizeInputChanged(s) => {
-            // 数字のみに簡易フィルタ。 全文置換は許容するが、 数字以外は無視
-            // (ペースト時のスペースなどを許容するため文字種フィルタは後で trim 時)。
+            // Lightweight digit filter — digits pass through; non-digits are ignored.
+            // Whitespace from pastes is stripped at parse time.
             state.png_size_input = s;
             Task::none()
         }
@@ -846,7 +837,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         state.png_size_input.clear();
                         persist_settings(state);
                     } else {
-                        // 範囲外は parse_size で捕捉済みなので、 ここに来るのは重複のみ
+                        // parse_size already caught out-of-range; duplicates reach here.
                         let title = state.translator.t(MessageKey::ToastSizeAlreadyInSetTitle);
                         let body = state.translator.t_args(
                             MessageKey::ToastPngSizeAlreadyInSetBody,
@@ -856,7 +847,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     }
                 }
                 Err(SizeParseError::Empty) => {
-                    // 空入力での Add は無視 (UX: Enter 連打で迷子にしない)
+                    // Ignore Add on empty input (prevents accidental Enter-key repeats).
                 }
                 Err(SizeParseError::NotANumber) => {
                     let title = state.translator.t(MessageKey::ToastInvalidSizeTitle);
@@ -929,7 +920,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         // -----------------------------------------------------------------
-        // v1.4.1: vtracer プリセット + ExportPlan リセット
+        // v1.4.1: vtracer preset + ExportPlan reset
         // -----------------------------------------------------------------
         Message::VtracerPresetChanged(preset) => {
             state.export_plan.vtracer_preset = preset;
@@ -937,21 +928,21 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::ExportPlanResetRequested => {
-            // ExportPlan のみ default に戻す。 theme / locale / advanced_open など
-            // 他の状態は触らない (§v1.4.1 Reset スコープ判断)。
+            // Reset ExportPlan only. theme, locale, and nav state are unaffected
+            // (§v1.4.1 reset scope decision).
             state.export_plan = ExportPlan::default();
-            // 入力中の文字列バッファもクリア (リセット直後に変な値が残らないように)
+            // Also clear text input buffers so stale values don't reappear.
             state.png_size_input.clear();
             state.ico_size_input.clear();
-            // プレビューのアルゴリズムが変わった可能性 (Reset 時に Lanczos3 に戻る)。
-            // キャッシュは破棄して再生成しないと色合わせが古いまま。
+            // Algorithm may have changed (reset restores Lanczos3); rebuild preview.
+            // Discard stale cache; rebuild with the restored algorithm.
             state.preview_cache = None;
             persist_settings(state);
-            // 完了通知 (transient): UX として「ボタン押した → 何が起きた」 を明示
+            // Transient success toast confirms the reset happened.
             let title = state.translator.t(MessageKey::ToastResetTitle);
             let body = state.translator.t(MessageKey::ToastResetBody);
             push_success_toast(state, &title, &body);
-            // プレビューがあるなら algorithm 変更後と同じ要領で再生成
+            // Rebuild preview cache if a source is loaded.
             if let Some(asset) = state.source_asset.as_ref() {
                 let arc = std::sync::Arc::new(asset.clone());
                 crate::task_queue::build_preview_task(arc, state.export_plan.algorithm)
@@ -961,10 +952,10 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         // -----------------------------------------------------------------
-        // v1.5.0: ロケール変更
+        // v1.5.0: locale change
         // -----------------------------------------------------------------
         Message::LocaleChanged(opt) => {
-            // None ならシステムロケールに戻す。 Some(loc) ならそれを採用。
+            // None = revert to OS locale; Some(loc) = use that locale.
             state.locale_override = opt;
             let resolved = opt.unwrap_or_else(detect_system_locale);
             state.translator = Translator::for_locale(resolved);
@@ -972,29 +963,29 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        // v1.19.0: 旧 `Message::LocaleCycled` / `Message::AppCloseRequested`
-        // ハンドラは削除済 (上記 Message 列挙宣言箇所のコメント参照)。
-        // 後継:
-        // - LocaleCycled → `LocalePicked(Option<Locale>)` (left sidebar の
-        //   言語ピッカーポップアップで直接選択)
-        // - AppCloseRequested → ✕ ボタン廃止により不要 (OS ネイティブに任せる)
+        // v1.19.0: old LocaleCycled / AppCloseRequested handlers removed.
+
+
+
+
+
 
         // -----------------------------------------------------------------
-        // v1.10.3 → v1.17.0: 旧アコーディオンハンドラは削除済 (上記参照)。
-        // -----------------------------------------------------------------
-
-        // -----------------------------------------------------------------
-        // v1.7.0 → v1.10.0: 透過チェッカーの実装は PreviewContextSelected に統合。
-        // 専用 Message は廃止。
+        // v1.10.3 → v1.17.0: accordion handlers removed; settings are flat now.
         // -----------------------------------------------------------------
 
         // -----------------------------------------------------------------
-        // v1.8.0: Web manifest 設定
+        // v1.7.0 → v1.10.0: transparency checker merged into PreviewContextSelected.
+        // Dedicated message removed.
+        // -----------------------------------------------------------------
+
+        // -----------------------------------------------------------------
+        // v1.8.0: web manifest settings
         // -----------------------------------------------------------------
         Message::IncludeWebManifestToggled(on) => {
-            // ON → デフォルト値で構造体を挿入。 OFF → None に戻す。
-            // ユーザが入力した値があっても OFF 時は破棄する (シンプルな状態遷移)。
-            // 必要なら v1.8.x で「OFF にしてもメモリ上の値は保持」 を検討。
+            // On: insert WebManifestSettings::default(). Off: set to None.
+            // Any user-entered values are discarded on toggle-off (simple state model).
+            // Preserving values across toggle-off can be added in a future version.
             state.export_plan.web_manifest = if on {
                 Some(logolig_core::WebManifestSettings::default())
             } else {
@@ -1018,9 +1009,9 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::WebManifestThemeColorChanged(s) => {
-            // 入力中の検証は行わない (ユーザがタイプしている途中で警告を出すと UX が悪い)。
-            // `is_valid_color` 検証は実行時 export まで遅延する — この時点では
-            // ユーザが #FF や #FFFFF のような途中状態でも自由に編集できる。
+            // No live validation — interrupting the user mid-type is poor UX.
+            // `is_valid_color` is validated at export time, not here,
+            // so partial values like #FF or #FFFFF are accepted while typing.
             if let Some(m) = state.export_plan.web_manifest.as_mut() {
                 m.theme_color = s;
                 persist_settings(state);
@@ -1036,42 +1027,42 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         // -----------------------------------------------------------------
-        // v1.9.0: モノクローム出力セット
+        // v1.9.0: monochrome output set
         // -----------------------------------------------------------------
         Message::IncludeMonochromeToggled(on) => {
-            // 単純な bool フラグ操作。 既存の include_ico / include_apple_touch
-            // などと同じ流儀で persist_settings まで行う。
+            // Simple bool flag. Same persist_settings pattern as include_ico
+            // and include_apple_touch.
             //
-            // 既存のプレビューや preview_cache に副作用なし — モノクロームは
-            // 出力時にのみ生成され、 プレビュー画面の表示には影響しない
-            // (プレビューでの mono 表示は v1.11 IA 刷新と合わせて検討)。
+            // No effect on the preview cache — monochrome output is generated
+            // only at export time and has no preview representation.
+
             state.export_plan.monochrome = on;
             persist_settings(state);
             Task::none()
         }
 
         // -----------------------------------------------------------------
-        // v1.21.0: 透過維持トグル
+        // v1.21.0: keep-transparency toggle
         // -----------------------------------------------------------------
         Message::KeepTransparencyToggled(on) => {
-            // 永続化対象 (Q4-a)。 旧 Settings JSON との互換性は ExportPlan の
-            // struct-level `#[serde(default)]` で確保されており、 旧バージョン
-            // 出身の設定でも自動的に true を補って読み込める。
+            // Persisted (Q4-a). Backward compat with older settings JSON is handled
+            // by the struct-level `#[serde(default)]` on ExportPlan; missing fields
+            // default to true.
             //
-            // プレビュー画面 (preview_cache) は keep_transparency の影響を
-            // 受けるべきだが、 v1.21.0 ではプレビュー側の合成は変更しない
-            // (プレビューは「ソースの見え方の確認」 が主目的、 出力時の
-            // フラット化は別レイヤ)。 ユーザは Result 画面のサムネで実際の
-            // 出力を確認できる。
+            // The preview cache does not reflect keep_transparency in v1.21.0.
+            // The setting's effect is visible in Result card thumbnails and
+            // downloaded files only.
+
+
             state.export_plan.keep_transparency = on;
             persist_settings(state);
             Task::none()
         }
 
-        // v1.19.0: 旧 `Message::ExportRequested` / `ExportDirPicked` /
-        // `ExportCompleted` ハンドラは削除済 (上記 Message 列挙宣言箇所の
-        // コメント参照)。 v1.16.0 の `convert_task` 経路 + 個別 DL / ZIP DL に
-        // 完全移行された。
+        // v1.19.0: ExportRequested / ExportDirPicked / ExportCompleted handlers removed.
+        // v1.16.0 moved to the ConvertCompleted + per-asset download path.
+
+
 
         Message::ToastTick => {
             snora::toast::sweep_expired(&mut state.toasts, Instant::now());
@@ -1082,35 +1073,36 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::CloseModals => {
+            // Reset advanced_open for safety (vestigial but harmless since v1.22.0).
             state.advanced_open = false;
             Task::none()
         }
     }
 }
 
-/// ファイルパスを受け取って ingest タスクを起動する共通処理。
+/// Shared helper: starts an ingest task for the given file path.
 ///
-/// v1.16.0: 旧 `Screen::Importing` は v1.16 で `Screen::Converting` に統合。
-/// ingest → preview build → asset bundle build までの全フェーズが Converting
-/// 状態にまとまる。
+/// v1.16.0: the former Screen::Importing was merged into Screen::Converting.
+/// All phases (ingest, preview build, asset bundle) now share the Converting state.
+
 fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message> {
     state.source_path = Some(path.clone());
     state.screen = Screen::Converting;
     state.busy = true;
-    // 古いソースのプレビューキャッシュとアセット束は破棄。 新しい ingest
-    // 完了で再生成される。
+    // Discard stale preview cache and asset bundle; they will be rebuilt
+    // when the new ingest completes.
     state.preview_cache = None;
     state.result_assets = None;
     state.result_preview_open = false;
     crate::task_queue::ingest_task(path)
 }
 
-/// エラー発生時の共通遷移。
+/// Common error handler.
 ///
-/// - busy フラグを下ろす
-/// - 画面は「ソースがあれば Result、なければ Empty」に戻す
-///   (v1.16: 旧 Preview 状態は廃止されたため、 ソース有 → Result に直す)
-/// - Persistent な Error toast を積む（読まないと消えない）
+/// - clears the busy flag
+/// - returns to Result if a source is loaded, otherwise Empty
+///   (v1.16: the former Preview state was removed)
+/// - pushes a persistent error toast (stays until dismissed)
 fn fail(state: &mut AppState, err: AppError) -> Task<Message> {
     state.busy = false;
     state.screen = if state.result_assets.is_some() {
@@ -1122,14 +1114,14 @@ fn fail(state: &mut AppState, err: AppError) -> Task<Message> {
     Task::none()
 }
 
-/// エラーを persistent な Toast として通知。ユーザーが閉じるまで残る。
-/// v1.5.0: AppError の `key()` + `args()` を Translator で翻訳する。
+/// Pushes a persistent error toast. Stays until the user dismisses it.
+/// v1.5.0: translates the error via `AppError::key()` + `args()`.
 fn push_error_toast(state: &mut AppState, err: AppError) {
     let id = next_id(state);
     let body = state.translator.translate_error(&err);
-    // タイトルは「操作失敗」 のような汎用文言。 これも翻訳キー化したいが、
-    // v1.5.0 では「Operation failed」 を英語で固定しておく。 v1.6 以降で
-    // 必要なら ToastOperationFailedTitle のような MessageKey を増やす。
+    // Title is a generic 'operation failed' string.
+    // Currently hardcoded to English; a dedicated MessageKey could be added later.
+
     state.toasts.push(
         Toast::new(
             id,
@@ -1142,7 +1134,7 @@ fn push_error_toast(state: &mut AppState, err: AppError) {
     );
 }
 
-/// 成功通知。デフォルトの transient lifetime で自動消滅する。
+/// Pushes a short-lived success toast (auto-dismisses after the default lifetime).
 fn push_success_toast(state: &mut AppState, title: &str, body: &str) {
     let id = next_id(state);
     state.toasts.push(Toast::new(
@@ -1154,19 +1146,19 @@ fn push_success_toast(state: &mut AppState, title: &str, body: &str) {
     ));
 }
 
-/// 長め (7 秒) の transient 成功通知 (v1.4.2)。
+/// Pushes a longer (7-second) transient success toast (v1.4.2).
 ///
-/// v1.4.1 では Export 完了を `persistent()` にしてユーザの dismiss 待ちにして
-/// いたが、 ユーザフィードバックで「persistent は不要、 ただし default の 4 秒
-/// では短い」 と判明。 v1.4.2 では 7 秒の transient に変更。
+/// v1.4.1 originally used a persistent toast that required manual dismiss.
+/// User feedback showed persistent was overkill but 4 s was too short.
+/// v1.4.2 settled on a 7-second transient.
 ///
-/// 7 秒の根拠: snora の default 4 秒は短いメッセージ向け。 Export 通知は
-/// 「N files written to /長い/path/to/dir」 のように読み切るのに時間が要るので、
-/// その分長めにする。 ただし 10 秒以上は「画面に居座っている」 印象になるため
-/// 避ける。 7 秒は「読んで頷いて目を逸らす」 までの時間として妥当な落とし所。
+/// 7 s rationale: snora's default 4 s suits short messages; export notifications
+/// can include long paths and need extra read time. 10+ s feels intrusive,
+/// so 7 s is the pragmatic middle ground.
+
 ///
-/// Toast 表示位置の問題 (snora が右下固定) は別途 ROADMAP で snora 拡張依頼として
-/// 扱う。 位置改善が入れば 7 秒でも見落としリスクはさらに下がる見込み。
+/// Toast position is bottom-right (snora default). Improving this is tracked
+/// as a future snora upstream request.
 fn push_long_success_toast(state: &mut AppState, title: &str, body: &str) {
     let id = next_id(state);
     state.toasts.push(
@@ -1188,7 +1180,7 @@ fn next_id(state: &mut AppState) -> u64 {
 }
 
 // ----------------------------------------------------------------------
-// v1.3.0: サイズ入力のパース + Warning トースト
+// v1.3.0: size input parsing + warning toast
 // ----------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -1198,9 +1190,9 @@ enum SizeParseError {
     OutOfRange { min: u32, max: u32 },
 }
 
-/// 数字文字列を u32 に変換し、 範囲チェックも行う。
-/// `add_*_size` も内部で範囲を弾くが、 ここで弾くことでユーザに具体的な
-/// エラー文言 (range / not a number / 重複) を出し分けられる。
+/// Parses a digit string to `u32` and validates the range.
+/// `add_*_size` also validates, but doing it here lets us show a specific
+/// error (out-of-range / not a number / duplicate) to the user.
 fn parse_size(raw: &str, min: u32, max: u32) -> Result<u32, SizeParseError> {
     if raw.is_empty() {
         return Err(SizeParseError::Empty);
@@ -1212,8 +1204,8 @@ fn parse_size(raw: &str, min: u32, max: u32) -> Result<u32, SizeParseError> {
     Ok(n)
 }
 
-/// Warning 用 Toast (transient)。 入力検証失敗を伝える。
-/// 既存の push_error_toast (persistent) と push_success_toast の中間。
+/// Pushes a transient warning toast for input validation failures.
+/// Sits between push_error_toast (persistent) and push_success_toast in severity.
 fn push_warning_toast(state: &mut AppState, title: &str, body: &str) {
     let id = next_id(state);
     state.toasts.push(Toast::new(
@@ -1225,10 +1217,10 @@ fn push_warning_toast(state: &mut AppState, title: &str, body: &str) {
     ));
 }
 
-/// v1.7.0: 透過チェッカー警告。 完全不透明 / 完全透明な画像が読み込まれた時に
-/// 表示する Warning Toast。 通常の入力検証 Toast (transient 4 秒) より少し長め
-/// にしたいところだが、 v1.7 では既存の transient ライフタイムをそのまま使う
-/// (ユーザに「重大ではない注意」 と伝える意図)。
+/// v1.7.0: transparency audit warning. Shown when the loaded image is fully opaque
+/// or fully transparent. Uses the standard transient lifetime — this is an advisory
+/// notice, not a blocking error.
+
 fn push_transparency_warning(state: &mut AppState, report: TransparencyReport) {
     let (title_key, body_key) = match report {
         TransparencyReport::FullyOpaque => (
@@ -1240,7 +1232,7 @@ fn push_transparency_warning(state: &mut AppState, report: TransparencyReport) {
             MessageKey::ToastFullyTransparentBody,
         ),
         TransparencyReport::HasTransparency => {
-            // needs_warning() == false なので呼ばれないはずだが、 防御的に no-op
+            // needs_warning() == false here; defensive no-op.
             return;
         }
     };
@@ -1249,12 +1241,12 @@ fn push_transparency_warning(state: &mut AppState, report: TransparencyReport) {
     push_warning_toast(state, &title, &body);
 }
 
-/// v1.11.0: JPEG 入力時の教育的警告。
+/// v1.11.0: educational warning for JPEG input.
 ///
-/// JPEG 形式は alpha チャネルを持てないため、 v1.7 の transparency audit は
-/// 必ず `FullyOpaque` を返す。 一般の `FullyOpaque` 警告 (PNG で背景を切り
-/// 抜き忘れた等) と異なり、 JPEG では「形式の制約」 が原因なので、 専用の
-/// 教育的トーンの文言で「PNG にすると favicon に適する」 と伝える。
+/// JPEG cannot carry alpha, so the v1.7 transparency audit always returns
+/// FullyOpaque. Unlike the generic opaque warning (forgot to remove background),
+/// this is a format constraint. A dedicated educational message suggests
+/// using PNG for better favicon quality.
 fn push_jpeg_input_warning(state: &mut AppState) {
     let title = state.translator.t(MessageKey::ToastJpegInputTitle);
     let body = state.translator.t(MessageKey::ToastJpegInputBody);
@@ -1262,36 +1254,36 @@ fn push_jpeg_input_warning(state: &mut AppState) {
 }
 
 // ----------------------------------------------------------------------
-// v1.4.0: 設定永続化
+// v1.4.0: settings persistence
 // ----------------------------------------------------------------------
 
-/// 現在の AppState に対応する `PersistedSettings` を組み立てる。
+/// Assembles a `PersistedSettings` snapshot from the current `AppState`.
 fn snapshot_persisted(state: &AppState) -> logolig_core::PersistedSettings {
     logolig_core::PersistedSettings {
         export_plan: state.export_plan.clone(),
         theme: state.theme,
-        // v1.5.0: ユーザによるロケール上書きがあれば BCP-47 タグとして保存。
-        // None なら次回起動時も OS ロケール検出にフォールバックする。
+        // v1.5.0: save the user locale override as a BCP-47 tag.
+        // None means fall back to OS detection on next launch.
         locale: state.locale_override.map(|loc| loc.as_bcp47().to_string()),
     }
 }
 
-/// 設定を即時保存する (即時保存戦略, §1.4.0)。
+/// Saves settings immediately (eager-save strategy, §1.4.0).
 ///
-/// `state.store` が `None` の場合 (= 起動時に永続化初期化に失敗) は no-op。
-/// 保存失敗時はエラー Toast を出すが、 アプリ自体は続行する。
+/// No-op if `state.store` is `None` (storage init failed at startup).
+/// Shows a warning toast on save failure; the app continues running.
 ///
-/// 注意: 即時保存はユーザ操作のたびに `update()` を呼ぶ。 現状の
-/// `PersistedSettings` は数 KB 以下で I/O コストが無視できるが、 将来データが
-/// 肥大化した時は debounce / lazy save に切り替える必要がある。
+/// Note: this is called on every settings change. The current
+/// `PersistedSettings` payload is a few KB so I/O cost is negligible,
+/// but a debounce / lazy-save strategy may be needed if it grows.
 fn persist_settings(state: &mut AppState) {
     let Some(store) = state.store.as_ref() else {
         return;
     };
     let snapshot = snapshot_persisted(state);
     if let Err(err) = store.save(&snapshot) {
-        // 保存失敗を transient warning として通知 (毎操作 persistent では UI が埋まる)。
-        // v1.5.0: i18n 対応。
+        // Use a transient warning (not persistent) to avoid flooding the UI.
+        // v1.5.0: uses the active Translator.
         let title = state
             .translator
             .t(MessageKey::ToastSettingsSaveFailedTitle);
@@ -1300,5 +1292,71 @@ fn persist_settings(state: &mut AppState) {
             &[("error", &err.to_string())],
         );
         push_warning_toast(state, &title, &body);
+    }
+}
+
+// ----------------------------------------------------------------------
+// Tests
+// ----------------------------------------------------------------------
+//
+// Smoke tests for the `update` state machine. They exercise the
+// synchronous state transitions only; the returned `Task` is dropped,
+// since each handler tested here either returns `Task::none()` or applies
+// its state change synchronously before returning.
+//
+// No GUI test harness (e.g. iced_test) is used. `update` takes
+// `&mut AppState` and `AppState: Default`, so plain construction plus
+// assertion is sufficient. `persist_settings` is a no-op when
+// `state.store` is `None` (the default), so these tests never touch disk.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nav_page_selected_switches_page() {
+        let mut state = AppState::default();
+        assert_eq!(state.nav_page, NavPage::Home); // precondition
+
+        let _ = update(&mut state, Message::NavPageSelected(NavPage::Settings));
+        assert_eq!(state.nav_page, NavPage::Settings);
+
+        let _ = update(&mut state, Message::NavPageSelected(NavPage::Home));
+        assert_eq!(state.nav_page, NavPage::Home);
+    }
+
+    #[test]
+    fn advanced_toggled_routes_to_customize() {
+        // v1.22.0 behaviour pin: the former settings-drawer toggle now
+        // navigates to the Customize page rather than flipping a bool.
+        let mut state = AppState::default();
+        let _ = update(&mut state, Message::AdvancedToggled);
+        assert_eq!(state.nav_page, NavPage::Customize);
+    }
+
+    #[test]
+    fn theme_picked_updates_theme() {
+        let mut state = AppState::default();
+        assert_eq!(state.theme, ThemeMode::System); // default
+        let _ = update(&mut state, Message::ThemePicked(ThemeMode::Dark));
+        assert_eq!(state.theme, ThemeMode::Dark);
+    }
+
+    #[test]
+    fn keep_transparency_toggle_sets_plan() {
+        let mut state = AppState::default();
+        assert!(state.export_plan.keep_transparency); // default true
+        let _ = update(&mut state, Message::KeepTransparencyToggled(false));
+        assert!(!state.export_plan.keep_transparency);
+        let _ = update(&mut state, Message::KeepTransparencyToggled(true));
+        assert!(state.export_plan.keep_transparency);
+    }
+
+    #[test]
+    fn png_preset_size_add_inserts_sorted() {
+        let mut state = AppState::default();
+        assert_eq!(state.export_plan.png_sizes, vec![32, 192, 512]); // default
+        let _ = update(&mut state, Message::PngPresetSizeAdded(64));
+        assert_eq!(state.export_plan.png_sizes, vec![32, 64, 192, 512]);
     }
 }
