@@ -1,97 +1,113 @@
-# snora 機能改善リクエスト: BottomSheet のスクロール対応 + フッター固定
+# snora Feature Request: BottomSheet Internal Scroll + Sticky Footer
 
-> **状態 (logolig v1.13.0 時点): 部分的に解決済み・歴史的文書**
+> **Status (as of logolig v1.13.0): Partially resolved — historical document**
 >
-> snora 0.8.0 で旧 `BottomSheet` は汎用 `Sheet` に再構成され、 「pure content carrier」 という設計意図が docstring で明文化されました。 これにより:
+> In snora 0.8.0 the old `BottomSheet` was restructured into the generic
+> `Sheet` widget, with its "pure content carrier" design intent documented
+> explicitly in the API. As a result:
 >
-> - **内部スクロール**: アプリケーション側で `iced::widget::scrollable` を使ってコンテンツをラップする責務が明確化され、 logolig 自身で対応可能になりました (v1.15.0 で実施予定)
-> - **sticky フッター**: 同じく `Sheet` の content に column を渡して、 上に scrollable 領域、 下に固定行を置く形でアプリ側で実現可能
+> - **Internal scroll**: the responsibility of wrapping content in
+>   `iced::widget::scrollable` was clarified as the application's own, so
+>   logolig can handle this itself (implemented in v1.15.0).
+> - **Sticky footer**: likewise achievable on the application side by
+>   placing a `scrollable` region above a fixed row inside `Sheet`'s
+>   content column.
 >
-> snora 側に追加 API を要望する必要はなくなり、 本文書は当時の課題整理として残します。
+> No additional API from snora is required. This document is retained as
+> a record of the original problem statement.
 
-## 課題
+## Problem
 
-snora の `BottomSheet` ウィジェットは、 設定画面のような「項目数が多い補助 UI」 に最適な構造を提供してくれます。 ロゴジェネレータ logolig でも詳細設定の表示にこのコンポーネントを採用しています。
+snora's `BottomSheet` widget is well-suited for auxiliary UIs with many
+settings items. logolig uses it for the advanced settings drawer.
 
-しかし、 内容がシートの高さを超えるユースケースにおいて、 以下 2 点の問題が発生しています。
+However, when the content exceeds the sheet's allocated height, two
+problems arise.
 
-### 課題 1: 内容が多いとき下部が切れて到達できない
+### Problem 1: Content below the visible area is unreachable
 
-シート内のコンテンツがシートの表示高さを超える場合、 内容の下部 (例えば「Reset」 や「Close」 のような操作ボタン) が画面外にはみ出して、 ユーザがそこに到達できない状態になります。
+When sheet content is taller than the sheet's display height, the bottom
+of the content — for example the "Reset" and "Close" action buttons — is
+clipped and cannot be reached. The sheet occupies a fixed portion of the
+screen (for example 50%); content that overflows is simply cut off.
+Users experience the sheet as broken.
 
-シート全体には画面の縦方向のうち一部 (例えば 50%) が割り当てられているため、 内部コンテンツが縦方向にそれを超えて伸びても、 オーバーフロー部分が単純にクリップされてしまいます。 結果として:
+### Problem 2: Footer actions are buried in the scroll area
 
-- シート下部の操作ボタンが見えない / 押せない
-- 内容を最後まで確認できない
-- ユーザはシートを「壊れている」 と感じる
+Action buttons at the bottom of a sheet (confirm / cancel / close) should
+always be visible regardless of how long the content is. The current
+`BottomSheet` has no mechanism for pinning a footer, so these buttons end
+up in the same scrollable column as the other content and disappear when
+the content is long.
 
-### 課題 2: フッター操作部分がコンテンツに埋もれる
+## Expected behaviour
 
-シートの下部には通常「適用」 「キャンセル」 「閉じる」 のような確定/離脱操作が配置されます。 これらは内容の長短にかかわらず、 ユーザが「この操作で確定 / 離脱できる」 と認識できる位置に常時表示されているべきです。
+### Expected 1: Internal content scroll
 
-現状の `BottomSheet` ではフッター位置を特別扱いする仕組みがないため、 上記の操作群が他のコンテンツと同列に並び、 内容が多いと一緒にスクロール領域に入って見えなくなります。 これは UI 上の重要な役割 (主操作の発見性) が失われる問題です。
+The content area inside `BottomSheet` should scroll independently when it
+exceeds the sheet's height:
 
-## 期待する挙動
+- The sheet's outer geometry (position, size, overlay backdrop) is
+  unchanged.
+- Only the content region scrolls.
+- The user can reach the bottom of the content via scrollbar or scroll
+  gesture.
+- The sheet does not overflow or shift during scrolling.
 
-### 期待 1: コンテンツ領域の内部スクロール
+### Expected 2: Sticky footer
 
-`BottomSheet` の内部コンテンツ領域は、 そのコンテンツがシート割当高さを超えた場合、 シートの内側だけでスクロール可能であってほしい。
+`BottomSheet` should support an optional footer slot whose contents are
+always pinned to the bottom edge of the sheet regardless of scroll
+position:
 
-具体的には:
+- The footer is independent of content scrolling.
+- Footer buttons (e.g. "Reset", "Close") are always pressable.
+- When a footer is present, the content region's height is reduced by the
+  footer's height (no content hidden behind the footer).
 
-- シート自体の外形 (位置・サイズ・背後の overlay 等) は変えない
-- シート内のコンテンツ領域だけが縦スクロール可能になる
-- スクロールバー or スクロールジェスチャでコンテンツの最後まで到達できる
-- スクロール中もシートがはみ出したり位置がずれたりしない
+### Expected 3: Footer is optional
 
-### 期待 2: フッターの sticky 配置
+Not all `BottomSheet` usages need a footer. When omitted, the entire sheet
+is a scrollable content area (Expected 1 applies; no layout change
+otherwise).
 
-シートには「フッター」 という概念を導入し、 そこに置かれた要素はスクロールに関係なく常にシート下部に固定表示されてほしい。
+## Illustration
 
-具体的には:
-
-- フッターはコンテンツのスクロールから独立している
-- コンテンツ領域をいくらスクロールしても、 フッターは画面下に常に見える
-- フッター内の要素 (例: 「Reset」 「Close」 ボタン) は常に押下可能
-- フッターがある場合、 コンテンツ領域はフッターの分だけ縦サイズが減る (フッターの裏にコンテンツが隠れない)
-
-### 期待 3: フッターは任意
-
-すべての `BottomSheet` 利用箇所がフッターを必要とするわけではないため、 フッターの指定は任意 (省略可) であってほしい。 フッター未指定の場合は、 シート全体がコンテンツ領域となり、 内部スクロール (期待 1) だけが効く挙動が望ましい。
-
-## 想定される利用シーン
-
-logolig の詳細設定画面の例:
+Desired layout for logolig's advanced settings sheet:
 
 ```
-┌──────────────────────────────────┐  ← シートの上端 (snora が固定)
+┌──────────────────────────────────┐  ← sheet top (managed by snora)
 │ ▼ What to export                 │
-│   [ ] favicon.ico                │
-│   [ ] apple-touch-icon.png       │  ↕ ここから下が縦スクロール可能領域
-│   [ ] favicon.svg                │
-│       └ Vectorize raster sources │
-│       └ Preset: Sharp ▾          │
-│   [ ] favicon-snippet.html       │
-│   PNG sizes: at defaults: ...    │
-│   ICO sizes: at defaults: ...    │
-│ ▶ Extras                         │
-│ ▶ Rendering quality              │
-│   ...続く                         │
-├──────────────────────────────────┤  ← フッター (sticky、 常時表示)
+│   [ ] favicon.ico                │  ↕ scrollable content region
+│   [ ] apple-touch-icon.png       │  ↕
+│   [ ] favicon.svg                │  ↕
+│       └ Vectorize raster sources │  ↕
+│       └ Preset: Sharp ▾          │  ↕
+│   [ ] favicon-snippet.html       │  ↕
+│   PNG sizes: at defaults: ...    │  ↕
+│   ICO sizes: at defaults: ...    │  ↕
+│ ▶ Extras                         │  ↕
+│ ▶ Rendering quality              │  ↕
+├──────────────────────────────────┤  ← footer (sticky, always visible)
 │  [ Reset ]              [ Close ]│
-└──────────────────────────────────┘  ← シートの下端
+└──────────────────────────────────┘  ← sheet bottom
 ```
 
-スクロールしてもフッター行は常に画面下に固定されており、 ユーザはいつでも「Reset」 「Close」 にアクセスできる。 上のコンテンツは縦に長くなり得るが、 内部スクロールで全体を見渡せる。
+Scrolling the content area leaves the footer row in place; the user can
+always reach "Reset" and "Close".
 
-## 互換性に関する希望
+## Compatibility preferences
 
-- 既存の `BottomSheet` の API (`new(content)` や `with_height` 等) と後方互換であってほしい
-- フッター指定なしの場合の表示は、 内部スクロール対応 (期待 1) を除いて従来と同じであってほしい
-- セマンティックバージョニングの minor バージョン (例: 0.5) で導入されることを想定
+- The existing `BottomSheet` API (`new(content)`, `with_height`, etc.)
+  should remain backward-compatible.
+- When no footer is specified, behaviour should match the current
+  implementation except for the addition of internal scroll (Expected 1).
+- Intended for a minor version release (e.g. 0.5).
 
-## 補足
+## Background
 
-logolig の詳細設定は v1.10.x で 4 つのアコーディオングループに整理し、 v1.10.3 で初期表示時のグループ展開状態をデフォルト「What to export のみ展開」 に絞ることでシート高内に収める努力をしました。 しかしユーザがすべてのグループを展開した場合や、 将来項目が増えた場合に備え、 内部スクロール + sticky フッターはコンポーネントレベルでサポートされていることが望ましいと考えます。
-
-snora をご検討いただける場合、 上記の挙動について API の検討をお願いできれば幸いです。 内部実装には立ち入らず、 振る舞いとしての仕様のみご相談する形で本リクエストを提出します。
+logolig's advanced settings were reorganised into four accordion groups
+in v1.10.x, and v1.10.3 reduced the default-expanded group to one
+("What to export") to keep the sheet within its height budget. However,
+when the user expands all groups, or as more settings are added, in-sheet
+scroll and a sticky footer would be the correct component-level solution.

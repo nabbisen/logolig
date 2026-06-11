@@ -1,459 +1,323 @@
-# Logolig 機能仕様書
+# Logolig Functional Specification
 
-> v1.15.0 時点の logolig が **何をできて、 どう振る舞うか** を、 実装詳細
-> ではなく観察可能な振る舞いとして整理した文書。 外部設計の見直し / UX
-> 検討の素材として使用する。
+> This document describes **what logolig can do and how it behaves** at
+> v1.15.0, as observable behaviour rather than implementation detail.
+> It is intended as input for UX review and external design decisions.
 >
-> 本書は「機能仕様」 (= 何をするか) と「現在の UI 構成」 (= どう見せて
-> いるか) を分離して記述する。 後者はあくまで現時点の選択であり、 機能
-> 仕様を維持したまま再設計の対象になりうる。
+> The document separates **functional specification** (what it does) from
+> **current UI layout** (how it presents it). The latter is the current
+> design choice and is open to revision without changing the functional
+> contract.
 
-## 1. アプリの目的
+## 1. Purpose
 
-ローカルで動作する favicon ジェネレータ。 1 つの画像 (ロゴ素材) を入力
-として、 Web サイトの favicon として使うための **複数フォーマット・
-複数サイズ** を一括生成する。 ABDD 原則に従い、 アクセシブル・国際化
-対応・ローカル完結を満たす。
+A local-first favicon generator. Takes a single image (logo source) as
+input and produces a **multi-format, multi-size** favicon bundle for web
+use. Follows ABDD principles: accessible, internationalised, fully local.
 
-### スコープ外
+### Out of scope
 
-- 画像の編集 (色補正、 切り抜き、 描画) — Logolig は「favicon 化」 の
-  責務のみで、 画像エディタの機能は持たない
-- クラウドアップロード / SaaS — 全てのファイル I/O はローカルディスク
-- バッチ処理 (複数画像の一括投入) — 1 画像 = 1 セッション
+- Image editing (colour correction, cropping, painting) — logolig handles
+  "favicon generation" only; it is not an image editor.
+- Cloud upload / SaaS — all file I/O is on the local disk.
+- Batch processing (multiple source images) — one image per session.
 
-## 2. 入力
+## 2. Input
 
-### 受け付ける形式
+### Accepted formats
 
-| 形式 | 拡張子 | マジックバイト | 備考 |
+| Format | Extension | Magic bytes | Notes |
 |---|---|---|---|
-| PNG | `.png` | `89 50 4E 47` | 透過対応 |
-| SVG | `.svg` | `<?xml`/`<svg` | ベクター素材 (resvg でラスタ化) |
-| WebP | `.webp` | `RIFF...WEBP` | 透過対応 |
-| JPEG | `.jpg` / `.jpeg` | `FF D8 FF` | **透過不可** (alpha 強制 255) |
+| PNG | `.png` | `89 50 4E 47` | Transparency supported |
+| SVG | `.svg` | `<?xml` / `<svg` | Vector source (rasterised by resvg) |
+| WebP | `.webp` | `RIFF...WEBP` | Transparency supported |
+| JPEG | `.jpg` / `.jpeg` | `FF D8 FF` | **No transparency** (alpha forced to 255) |
 
-### 投入経路
+### Ingestion paths
 
-1. **ファイルダイアログ**: 「ファイルを選択」 ボタン
-2. **ドラッグ & ドロップ**: ウィンドウ全体に対して
+1. **File dialog** — "Choose file" button
+2. **Drag and drop** — anywhere on the window
 
-### バリデーション
+### Validation
 
-- マジックバイトと拡張子の整合性をチェック (拡張子だけの偽装を拒絶)
-- 不明な形式は `UnsupportedFile` エラー
+- Magic bytes and file extension must agree (prevents extension spoofing).
+- Unrecognised formats produce an `UnsupportedFile` error.
 
-## 3. 出力 (生成成果物)
+## 3. Output (generated artifacts)
 
-ユーザの選択により以下を生成。 デフォルトは括弧内が ON。
+The following artifacts are produced depending on user settings.
+Items marked ON are enabled by default.
 
-| 成果物 | 内容 | デフォルト |
+| Artifact | Content | Default |
 |---|---|---|
-| `favicon.ico` | 16/24/32/48 px (デフォルト) を含むマルチサイズ ICO | ON |
-| `apple-touch-icon.png` | 180×180 px の単一 PNG | ON |
-| `favicon-16.png` … `favicon-512.png` | 個別サイズの PNG (16/32/48/180/192/256/512 デフォルト) | ON |
-| `favicon.svg` | (a) 元 SVG をそのまま (b) ラスタ画像から vtracer でベクトル化 | ON |
-| `apple-touch-icon.html` (snippet) | `<link>` タグの貼付用断片 | ON |
-| `manifest.webmanifest` | PWA 用 Web App Manifest JSON | ON |
-| `mono/` 以下 | 上記の monochrome (BT.709 グレースケール) 版 | OFF |
+| `favicon.ico` | Multi-size ICO containing 16/24/32/48 px frames | ON |
+| `apple-touch-icon.png` | Single 180×180 px PNG | ON |
+| `favicon-16.png` … `favicon-512.png` | Per-size PNGs (default: 16/32/48/180/192/256/512) | ON |
+| `favicon.svg` | (a) original SVG copied as-is, or (b) vtracer-vectorised from raster | ON |
+| `favicon-snippet.html` | Ready-to-paste `<link>` tag block | ON |
+| `manifest.webmanifest` | PWA Web App Manifest JSON | ON |
+| `mono/` subdirectory | Monochrome (BT.709 greyscale) versions of the above | OFF |
 
-### Export の原子性 (atomic)
+### Atomic export
 
-成功時のみ全成果物がディレクトリに現れる (失敗時は中途半端なファイル
-が残らない)。 一時ディレクトリに全ファイルを作成 → アトミックな rename
-で公開ディレクトリに移動、 という方式。
+All artifacts appear together on success; no partial output is left on
+failure. The implementation writes to a staging directory, then renames
+atomically into the output directory.
 
-### サイズのカスタマイズ
+### Size customisation
 
-PNG / ICO のサイズリストは UI で編集可能 (16-1024 px の範囲)。 デフォルト
-からのカスタマイズ状態は永続化される。
+PNG and ICO size lists are editable in the UI (16–1024 px). Customisations
+are persisted across sessions.
 
-### vtracer プリセット (SVG 生成時)
+### vtracer presets (SVG generation from raster)
 
-ラスタ → SVG 変換時のプリセット選択肢:
+- **Sharp** (default): crisp contours for logos and icons
+- **Default**: balanced
+- **PhotoRich**: smooth curves for photo-like or gradient sources
 
-- **Sharp** (デフォルト): 線がクッキリしたロゴ向け
-- **Default**: 中庸
-- **PhotoRich**: 写真風画像に適した滑らかな曲線
+### Resize algorithm
 
-### リサイズアルゴリズム
+- **Lanczos3** (default): highest quality
+- **Bilinear**: faster
+- **Nearest**: pixel art
 
-PNG / ICO の各サイズ生成時の縮小品質:
+## 4. UI structure
 
-- **Lanczos3** (デフォルト): 高品質
-- **Bilinear**: 高速
-- **Nearest**: ピクセルアート向け
+### Screen states
 
-## 4. UI 全体構成
-
-### 画面状態 (Screen)
-
-5 つの状態で遷移する。
+The app moves through three states (v1.16.0):
 
 ```
-       ┌─────────────────┐
-       │  Empty (起動時)   │
-       │  (drop_zone)    │
-       └────────┬────────┘
-                │ ファイル投入
-                ▼
-       ┌─────────────────┐
-       │   Importing     │  ← 短時間 (decode + preview build 中)
-       └────────┬────────┘
-                │ プレビュー生成完了
-                ▼
-       ┌─────────────────┐
-       │   Preview       │  ← 編集画面 (preview_panel)
-       └────────┬────────┘
-        ╱       │       ╲
-       ╱        │        ╲
-   Cancel/    Export    Repick
-   Back     │           │
-   ▲        ▼           │
-   │   ┌─────────────────┐│
-   │   │  Exporting     ││
-   │   └────────┬────────┘│
-   │            │         │
-   │            ▼         │
-   │   ┌─────────────────┐│
-   │   │  ExportReady   ││
-   │   └────────┬────────┘│
-   │            │         │
-   └────────────┴─────────┘
+  ┌──────────────────┐
+  │  Empty (startup) │
+  └────────┬─────────┘
+           │ file dropped / chosen
+           ▼
+  ┌──────────────────┐
+  │   Converting     │  ← brief (decode + conversion)
+  └────────┬─────────┘
+           │ conversion complete
+           ▼
+  ┌──────────────────┐
+  │     Result       │  ← asset cards + download buttons
+  └──────────────────┘
 ```
 
-### 遷移トリガ
+### Transition triggers
 
-| 操作 | 結果 |
+| Action | Result |
 |---|---|
-| ドロップ / ファイル選択 | Empty / Preview → Importing → Preview |
-| **Re-select** (編集画面) | ファイル選択ダイアログを開く。 キャンセルで現画面維持 |
-| **Back** (編集画面) | Preview → Empty (ロード状態を破棄) |
-| **Export** | Preview → Exporting → ExportReady (成果物書出後) |
-| ウィンドウクローズボタン (✕) | アプリ終了 |
-| ESC キー | **未実装** (改善指示書 §編集画面.3 — 将来回し) |
+| Drop / choose file | Empty → Converting → Result |
+| Individual download | Save dialog → single file written |
+| Download all (ZIP) | Save dialog → zip bundle written |
+| ← Back (Result screen) | Result → Empty (source cleared) |
+| ESC key | **Not implemented** (deferred) |
 
-## 5. ヘッダー (全画面共通)
+## 5. Navigation (v1.22.0 side nav)
 
-ウィンドウ上部に常時表示。 4 つのアイコンボタンが右端に並ぶ。
+A three-item side navigation bar is always visible. Each item swaps the
+main body:
 
-| アイコン | 機能 | 動作 |
+| Nav item | Body content |
+|---|---|
+| **Home** | Main app flow (drop zone / converting / result) |
+| **Customize** | Full-page output settings (was the right-side drawer) |
+| **Settings** | Language and theme selection |
+
+On mobile (window width < 768 px), the side nav moves to the bottom
+of the screen.
+
+## 6. Drop zone (Empty state)
+
+- Central drop area with a soft-bordered card and a weak fill background.
+- Headline: "Drop PNG, SVG, WebP, or JPEG" and a "Choose file…" button.
+- The entire window accepts drag-and-drop.
+
+## 7. Result screen
+
+After conversion, assets are shown in a grid (3 columns desktop /
+2 columns mobile). Each card shows:
+
+- File name and badge (PNG / ICO / SVG / HTML / JSON)
+- Raster thumbnail (image assets) or document icon placeholder
+- Dimensions (image assets only) and human-readable file size
+- Per-card download button (↓)
+
+Below the grid: a "▶ Preview" collapsible section and a
+"↓ Download all (ZIP)" button.
+
+### Preview panel
+
+The collapsible preview offers three modes:
+
+| Mode | Content |
+|---|---|
+| **Browser tab** | 16×16 icon at actual pixel size inside a simulated tab bar |
+| **Phone home** | 120×120 icon inside a simulated home screen |
+| **Checker** | Icon over a checkerboard (for inspecting transparency) |
+
+A Surface picker (White / Grey / Black) controls the preview background.
+The Surface picker is disabled in Checker mode (background has no effect
+on the checkerboard).
+
+Active state is indicated by both background fill and the `▣` prefix
+(colour-blind safe per ABDD §12).
+
+## 8. Customize page
+
+Replaces the former right-side settings drawer (v1.22.0). Full-window
+width, always reachable via the Customize nav item.
+
+### Sections
+
+**PNG output sizes** — six preset checkboxes (16/32/48/96/192/512) plus
+a custom-size input. Checked sizes are included in the export.
+
+**SVG conversion mode** — three-position slider (Simple ↔ Detailed)
+mapping to vtracer presets Sharp / Default / PhotoRich.
+
+**Misc** — "Keep transparency (alpha)" toggle. When off, raster outputs
+are composited against white (Porter-Duff over) before writing.
+
+**Advanced** (collapsible) — infrequently-changed settings:
+- Include SVG output / vectorise raster sources
+- Apple touch icon (180×180 PNG)
+- HTML snippet file
+- Web manifest (name, short name, theme colour, background colour)
+- Monochrome output set
+- Resize algorithm
+
+**Footer** — ↻ Reset button restores all settings to defaults.
+
+## 9. Settings page
+
+Language and theme selection, reachable via the Settings nav item.
+
+### Language
+
+Supported locales: **English** / **Japanese**. The OS locale is detected
+at startup (BCP-47 and POSIX `ja_JP.UTF-8` forms both supported). The
+selection is persisted.
+
+### Theme
+
+System / Light / Dark cycle. Persisted across sessions.
+
+## 10. Notifications (toasts)
+
+Toasts appear at the top-right corner (TopEnd) for a short duration.
+
+| Event | Content |
+|---|---|
+| Download complete | "Saved N files to `<path>`" |
+| Transparency warning (PNG/SVG/WebP) | Advisory when the source is fully opaque |
+| **JPEG educational warning** | "JPEG cannot store transparency. Consider converting to PNG." |
+| Error | Decode failure, write failure, etc. |
+
+### JPEG vs. generic transparency warning
+
+JPEG sources always trigger the JPEG-specific toast (format limitation),
+not the generic "fully opaque" warning (which implies the user may have
+accidentally removed transparency). The tone encourages switching to PNG
+rather than assigning blame.
+
+## 11. Internationalisation
+
+`logolig-i18n` manages all UI strings as a dictionary.
+
+- Supported locales: English / Japanese.
+- Locale selection is persisted.
+- `MessageKey` enum + exhaustive match ensures no translation can be
+  missing at compile time.
+
+## 12. Theme colours
+
+`crate::ui::colors` provides theme-reactive helper functions. All text,
+card borders, badges, and muted descriptions follow the active theme via
+`iced::extended_palette()`.
+
+### Intentionally hardcoded colours (not theme-reactive)
+
+| Colour | Reason |
+|---|---|
+| Checkerboard greys (`#E6E6E6` / `#C0C0C0`) | These indicate transparency itself; making them theme-reactive would imply transparency changed when the theme changed. |
+| Browser tab / phone / wallpaper preview colours | Controlled by the Surface picker — an independent axis. Linking to app theme would break useful combinations like Surface=Light + App=Dark. |
+
+## 13. Persisted settings
+
+Stored as JSON in the OS standard config directory.
+
+- Locale selection
+- Theme selection
+- Full export plan (checkboxes, PNG/ICO sizes, vtracer preset, resize
+  algorithm, web manifest fields, monochrome toggle, keep-transparency
+  toggle)
+
+Not persisted: the Advanced accordion's expanded/collapsed state
+(session-only).
+
+## 14. Accessibility (ABDD §12)
+
+- Active state (current nav item, current language/theme) is indicated
+  by both a visual fill **and** the `▣` prefix (not colour alone).
+- Keyboard alternative path: the "Choose file…" button covers users who
+  cannot use drag and drop.
+- Accessibility labels are defined as constants in `ui::accessibility`
+  for future screen-reader support (iced 0.14 does not yet expose a full
+  a11y API).
+
+## 15. Offline operation
+
+No network communication. All processing runs on the local CPU.
+
+| Task | Library |
+|---|---|
+| Image decode (PNG / WebP / JPEG) | `image` crate |
+| SVG rasterisation | `resvg` (uses OS fonts) |
+| Vectorisation | `vtracer` |
+| Resize | `fast_image_resize` (SIMD-accelerated) |
+| ICO assembly | `ico` crate |
+| Settings persistence | `app-json-settings` (OS config dir) |
+
+## 16. Version history summary (v1.10+)
+
+| Version | Theme | Summary |
 |---|---|---|
-| **文A / Aa / あ** | 言語切替 | None → English → 日本語 → None (Locale サイクル) |
-| **◐ / ☀ / ☾** | テーマ切替 | System → Light → Dark → System |
-| **⚙** | 詳細設定 | 詳細ドロワーの開閉トグル |
-| **✕** | ウィンドウを閉じる | アプリ終了 |
-
-### ヘッダー左側 (画面状態によって切替)
-
-| 画面 | 表示内容 |
-|---|---|
-| Empty / Importing / Exporting | アプリ名 (大) + タグライン (小) |
-| Preview / ExportReady | 現在処理中のファイル名 (中) |
-
-「画面の主役は今扱っているファイル」 という視覚化が意図。
-
-## 6. 起動画面 (drop_zone)
-
-- 画面中央に**点線風の枠**で囲まれた「ドロップ可能領域」 (実装は実線
-  2px + 薄い背景塗り)
-- 枠の中央に「Drop PNG, SVG, WebP, or JPEG」 / 「PNG / SVG / WebP /
-  JPEG をドロップ」 のヘッドライン
-- その下に「ファイルを選択」 ボタン
-- ドラッグオーバー時の視覚フィードバックは**未対応** (改善指示書 §
-  startup 画面 — v1.16.0 で対応予定)
-
-## 7. 編集画面 (preview_panel)
-
-### 構成 (上から下へ)
-
-1. **画面タイトル** (中央寄せ): 「プレビュー確認・Favicon ファイル
-   作成」 / 「Preview & Generate Favicon」
-2. **プレビューカード** (枠 + 薄い背景塗り):
-   - カード左上: 「Preview」 セクションラベル
-   - 中央: View as ピッカー (3 ボタン、 中央寄せ)
-   - 中央: Surface ピッカー (3 ボタン、 中央寄せ)
-   - 中央 (主役): プレビューフレーム (画面の縦 4/7、 max 560×560)
-3. **アクション行**:
-   - 左: ← Back / ↻ Re-select (controlled muted style)
-   - 中央: Space::new() (左右の役割差を視覚化)
-   - 右: **Export** (theme primary、 強調)
-
-### View as ピッカー (プレビューモード)
-
-3 つの「favicon の見え方」 を提示:
-
-| ボタン | 内容 |
-|---|---|
-| **Browser tab** | 16×16 アイコンを薄いブラウザタブ枠の中に配置。 タブの色は Surface ピッカーで切替 |
-| **Phone home** | 120×120 アイコンをスマホホーム画面風枠に配置。 壁紙色は Surface ピッカーで切替 |
-| **Checker** | 240×240 アイコンを市松模様の上に直接配置 (透過の有無を確認するため、 市松グレーは Surface に依存しない固定色) |
-
-active 状態は (a) 背景塗り + (b) `▣` プレフィックスの 2 軸で視覚化
-(色覚に依存しない)。
-
-### Surface ピッカー (プレビュー背景色)
-
-| ボタン | 内容 |
-|---|---|
-| **System** | OS のテーマ追従 |
-| **Light** | 明るい背景 |
-| **Dark** | 暗い背景 |
-
-**Checker モード時は無効化** (市松模様の意味的に背景設定が無関係なため)。
-
-### プレビューフレームのサイズ挙動
-
-- 縦サイズ: `Length::FillPortion(4)` で画面の縦 4/7 を取得
-- 横サイズ: `Length::Fill` (利用可能幅いっぱい)
-- 上限: 縦横とも 560 px
-- View as モードを切り替えても枠サイズは変わらない (= Export ボタン
-  位置が固定で安定)
-
-### Repick の挙動
-
-「↻ Re-select」 ボタンはファイルダイアログを開く。 ファイルダイアログ
-で:
-- 別ファイルを選択 → 新しい画像で編集画面を継続
-- キャンセル → 元の編集画面のまま (プレビュー破棄しない)
-
-### Back の挙動
-
-「← Back」 ボタンは現在のソース・プレビューキャッシュを全て破棄して
-Empty 画面に戻る。 export plan の設定は永続化されているため失われない。
-
-## 8. 詳細設定ドロワー (advanced_drawer)
-
-### 開閉
-
-ヘッダーの ⚙ ボタンでトグル。 開くと画面下半分にスライドアップで出現
-(snora 0.8 の `Sheet` を使用、 edge=Bottom, size=Half)。
-
-### 構成 (3 段)
-
-```
-┌──────────────────────────────┐ ← Sheet 上端 (固定)
-│ 詳細設定                       │  タイトル + 説明
-├──────────────────────────────┤
-│ ▼ What to export              │  ↕ スクロール領域
-│   ☑ favicon.ico              │  ↕  (常時スクロールバー)
-│   ☑ apple-touch-icon.png      │  ↕
-│   ☑ favicon.svg              │  ↕
-│       ☐ Vectorize raster      │  ↕
-│       Preset: ◯Sharp ▣Default│  ↕
-│   ☑ favicon-snippet.html     │  ↕
-│   PNG sizes: 16, 32, …       │  ↕
-│   ICO sizes: 16, 24, 32, 48  │  ↕
-│ ▶ Extras                     │  ↕
-│ ▶ Rendering quality          │  ↕
-├──────────────────────────────┤
-│ [↻ Reset]            [Close] │ ← フッタ (固定 / sticky)
-└──────────────────────────────┘
-```
-
-### 3 つのアコーディオンセクション
-
-#### What to export (デフォルト展開)
-
-各成果物の有効/無効と、 PNG / ICO サイズリストの編集。 SVG は配下に
-「ラスタからベクトル化」 と vtracer プリセットを持つ階層構造。
-
-#### Extras (デフォルト折りたたみ)
-
-- Web manifest 生成設定 (アプリ名、 short name、 テーマ色等)
-- monochrome 生成 (BT.709 グレースケール)
-
-#### Rendering quality (デフォルト折りたたみ)
-
-- リサイズアルゴリズム選択 (Lanczos3 / Bilinear / Nearest)
-
-### サイズリストの編集
-
-PNG / ICO サイズのカスタマイズには 2 つのモード:
-
-- **at defaults** バッジ: 既定値時は折りたたまれて「at defaults: 16
-  / 32 / 48 / 180 / 192 / 256 / 512」 のような 1 行表示
-- **編集モード**: ユーザが入力欄に数値を打つと展開され、 既存サイズ
-  を ✕ で削除、 新規追加可能
-
-### フッタ操作
-
-| ボタン | 配置 | スタイル | 動作 |
-|---|---|---|---|
-| **↻ Reset** | 左 | 透明 + danger 寄り枠線 + hover で danger 色薄塗り | export plan を全項目初期値に戻す |
-| **Close** | 右 | 透明 + 中立的枠線 + hover で background.weak 薄塗り | ドロワーを閉じる (設定は維持) |
-
-Reset と Close の役割差は **配置 + 枠線色 + hover フィードバック** の
-3 軸で視覚化。
-
-## 9. 通知 (Toast)
-
-`snora 0.8` の Toast 機構を使用。 画面右上 (TopEnd) に短時間表示。
-
-### 通知が出る場面
-
-| イベント | 内容 |
-|---|---|
-| Export 完了 | 「N 個のファイルを `<dir>` に保存しました」 |
-| 透過素材警告 (PNG/SVG/WebP のとき) | 完全不透明の場合に「favicon は透過があるとブラウザタブで馴染みやすい」 旨を案内 |
-| **JPEG 教育的警告** | 「JPEG は透過を表現できません。 透過 PNG への変換をおすすめ」 (1 画像 1 回) |
-| エラー | デコード失敗、 書出失敗等 |
-
-### 透過警告の差別化
-
-JPEG は透過を**形式上持てない**ため、 通常の「不透明素材」 警告とは
-別の **JPEG 専用 toast** を出す (PNG/SVG/WebP の不透明素材は「ユーザ
-が透過を消した」 可能性があるが、 JPEG は形式制約)。 ユーザを責めず
-PNG への変換を勧めるトーン。
-
-## 10. 国際化 (i18n)
-
-`logolig-i18n` クレートで全 UI 文言を辞書管理。
-
-- 対応ロケール: **English** / **日本語**
-- ヘッダーの言語ボタンで切替
-- システムロケール (BCP-47) を起動時に自動検出 (POSIX 形式 `ja_JP.UTF-8`
-  も対応)
-- ロケール選択は永続化 (次回起動時に復元)
-
-### 翻訳の網羅性
-
-`MessageKey` 列挙型に対する `match` を `Dictionary` の lookup で行うため、
-キー追加時にコンパイルが「全ロケールで翻訳が揃っているか」 を強制
-チェック。
-
-## 11. テーマ (Light / Dark / System)
-
-### テーマ切替
-
-ヘッダーの ◐ ボタンで System → Light → Dark → System サイクル。
-
-### テーマで変わる色 (v1.14.0 で整備)
-
-`crate::ui::colors` モジュールが役割関数を提供:
-
-- アプリ名 / タグライン / ファイル名
-- 画面タイトル / セクションラベル / グループ見出し
-- 補助説明文 (muted)
-- ドロップゾーンヘッドライン
-- カード背景 / カード枠線
-- 「at defaults」 バッジ背景
-- アクティブピッカーボタン背景
-- secondary / reset / close ボタンスタイル (枠線色含む)
-
-切替は iced 標準の `extended_palette()` 経由で、 light/dark の自動
-追従。
-
-### テーマで変わらない色 (意図的に hardcoded)
-
-| 色 | 理由 |
-|---|---|
-| 透過チェッカーの市松グレー (`#E6E6E6` / `#C0C0C0`) | 透明度の有無を示す指標そのもの。 テーマで変わると「テーマ変えたら透明度が変わった」 という誤解を生む |
-| ブラウザタブ枠 / スマホ枠 / 壁紙の色 | Surface ピッカーで切替する独立軸。 アプリテーマと連動すると「Surface=Light、 App=Dark」 のような有用な組合せが破壊される |
-
-## 12. 永続化される設定
-
-ユーザ設定は OS 標準の config ディレクトリに JSON で保存。
-
-- ロケール選択
-- テーマ選択
-- export plan (チェック有無、 PNG/ICO サイズ、 vtracer プリセット、
-  リサイズアルゴリズム、 Web manifest 詳細、 monochrome 有無)
-- 詳細ドロワーのアコーディオン展開状態は**永続化しない** (セッション
-  内のみ)
-
-## 13. アクセシビリティ (ABDD §12)
-
-- アクティブ状態 (ピッカーのカレント、 言語/テーマの現在値) は **色 +
-  記号 (`▣`)** の 2 軸で表現
-- 色覚に依存する判断を避ける
-- a11y label は将来の screen reader 対応のため定数で保持 (現状の iced
-  0.14 は完全な a11y API 未対応)
-
-## 14. オフライン動作
-
-外部ネットワーク通信なし。 全処理はローカル CPU で完結。
-
-- 画像デコード: `image` crate (PNG / WebP / JPEG)
-- SVG ラスタ化: `resvg` (フォント描画は OS フォント直接)
-- ベクトル化: `vtracer`
-- リサイズ: `fast_image_resize` (SIMD 高速化)
-- ICO 書出: `ico` crate
-- 設定永続化: `app-json-settings` (OS の標準 config パス)
-
-## 15. 開発履歴サマリ (v1.10 系以降)
-
-| Version | テーマ | 概要 |
-|---|---|---|
-| v1.10.0 | UI 情報設計 | メイン画面の UI 整理 |
-| v1.10.1 | クラッシュ修正 | cosmic-text の line height 0 panic 回避 |
-| v1.10.2 | メイン画面刷新 | ヘッダーアイコン 4 種、 tooltip、 ドロップ領域整理 |
-| v1.10.3 | アコーディオン化 | 詳細ドロワーを 3 グループに整理、 デフォルト展開 1 つ |
-| v1.11.0 | JPEG サポート | 入力フォーマット拡張 + 教育的透過警告 |
-| v1.12.0 | 編集画面の動線 | Back / Re-select 動線追加、 プレビューカード化、 サイズ固定 (4/7 + 560 cap) |
-| v1.13.0 | snora 0.8 移行 | 依存更新、 Sheet API 一般化、 Toast デフォルトが TopEnd に |
-| v1.14.0 | Dark mode 整合 | 全テキスト/枠線/バッジを theme palette 経由に、 視覚階層整理 |
-| **v1.15.0** | **詳細設定スクロール + sticky フッタ** | **ドロワー 3 段構成、 Reset/Close の役割差別化** |
-
-## 16. 残課題 (v1.16.0 以降の予定)
-
-### v1.16.0: スタートアップ画面刷新
-
-- 起動時のヘッダーを軽くして「ファイルを選ぶこと」 が画面の主目的
-  だと一目で分かるように
-- ドロップカードの存在感を更に上げる
-- ドラッグオーバー時の視覚フィードバック (背景 tint or border 色変化)
-  — iced 0.14 の対応状況に依存
-
-### 未対応の改善指示
-
-- **ESC キーで Back** (改善指示書 §編集画面.3) — `iced::keyboard::on_key_press`
-  subscription の追加が必要
-- **アコーディオン依存しすぎ** (改善指示書 §設定画面.3) — 現状は v1.10.3
-  の整理 + v1.15.0 のスクロール導入で「全展開しても収まる」 ことで対応
-  したが、 折りたたみ自体への根本的な再考は別軸
-- **a11y 完全対応** (改善指示書 §操作性) — iced 0.14 が screen reader
-  API 未対応のため待ち
-
-## 17. 外部設計の見直しに使える観点
-
-本書を踏まえて再検討するなら、 以下の軸が候補。
-
-### 軸 1: 画面の主目的の見せ方
-
-- 起動画面: 「ファイルを選ぶ」 が主目的だが、 ヘッダーが目立ちすぎ?
-- 編集画面: 「Export する」 が主目的だが、 プレビュー切替の楽しさが
-  Export の重要性を相対的に薄めていないか?
-
-### 軸 2: 詳細設定の頻度と発見性
-
-- 多くのユーザは設定を変えずに Export するだけ → 詳細ドロワーは
-  「気付かなくてよい」 のか「もっと案内すべき」 か?
-- 「at defaults」 バッジの存在は気付かれているか?
-
-### 軸 3: プレビューモードの意味
-
-- 3 モード (Browser tab / Phone home / Checker) は機能としては妥当
-  だが、 ユーザは「どれを見るべき」 か分かるか?
-- Surface ピッカーが一部モードで無効化される挙動は理解されているか?
-
-### 軸 4: フィードバックの粒度
-
-- Toast 通知は適切なタイミング・期間で出ているか?
-- Export 完了通知は十分目立つか? 失敗時のリカバリ手段は?
-
-### 軸 5: 言語/テーマの混在
-
-- ヘッダーのアイコンは現在の値を表示しているが、 「次のクリックで何
-  になるか」 は分からない。 これは意図的 (cycle UI として一般的) だが
-  迷子になる可能性は?
-
-### 軸 6: 単一画像 vs 複数画像
-
-- 現状は 1 画像 = 1 セッション。 複数画像のバッチ処理ニーズはあるか?
-- あった場合の UI 構造は現状の延長で対応可能か、 別アーキテクチャが
-  必要か?
-
----
-
-以上が v1.15.0 時点の機能仕様。 外部設計の見直しに活用してください。
+| v1.10.0 | UI information architecture | Main screen reorganised |
+| v1.10.1 | Crash fix | cosmic-text line-height=0 panic avoided |
+| v1.10.2 | Main screen refresh | Four header icons, tooltips, slim drop zone |
+| v1.10.3 | Accordion layout | Advanced drawer reorganised into 3 groups |
+| v1.11.0 | JPEG support | New input format + educational transparency toast |
+| v1.12.0 | Edit screen flow | Back / Re-select paths, preview card, size stable |
+| v1.13.0 | snora 0.8 migration | Dependency update, Sheet API generalised |
+| v1.14.0 | Dark mode colour integrity | All text/borders/badges theme-reactive |
+| v1.15.0 | Advanced drawer scroll + sticky footer | 3-section layout, Reset/Close differentiated |
+| v1.16.0 | Screen structure revision | Empty / Converting / Result; in-memory conversion |
+| v1.17.0 | Settings drawer → Right Sheet + flat layout | PNG-mock section structure, ICO section removed |
+| v1.18.0 | Left sidebar + picker popups | lucide icons, context-menu pickers |
+| v1.19.0 | Dead code removal + `run_in_memory` API | Direct in-memory export API in logolig-core |
+| v1.20.0 | Mobile layout | Sidebar ↔ bottom nav, responsive grid |
+| v1.21.0 | Keep-transparency toggle | Flatten service, full test coverage |
+| **v1.22.0** | **Side-nav redesign** | **Three-page nav: Home / Customize / Settings** |
+
+## 17. Design review axes
+
+The following questions may be useful when reviewing the external design.
+
+**Screen purpose clarity** — Is "drop a file" immediately obvious on the
+startup screen? Does the Result screen make "Download" the clear primary
+action?
+
+**Settings discoverability** — Most users export without changing any
+settings. Is the Customize page easy to ignore when not needed, and easy
+to find when it is?
+
+**Preview mode utility** — Do users know which of the three preview modes
+to use, and when?
+
+**Toast timing** — Are toasts shown at the right moment and visible long
+enough?
+
+**Single image per session** — If batch processing of multiple sources
+is ever needed, can the current architecture accommodate it, or would it
+require a structural change?

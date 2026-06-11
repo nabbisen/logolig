@@ -2,7 +2,7 @@
 #
 # Structural intent (§16, §3.1):
 # - logolig-core: pure domain + image processing. No iced/snora dependency.
-# - logolig-app : GUI binary. Wires together iced 0.14 + snora 0.8 + logolig-core.
+# - logolig-app : GUI binary. Wires together iced 0.14 + snora 0.18 + logolig-core.
 #                 Binary name is `logolig` (usable as the `logolig` command after cargo install).
 #
 # The domain/service/UI separation is enforced by the dependency graph, not by convention.
@@ -13,7 +13,7 @@ resolver = "3"
 members = ["crates/logolig-core", "crates/logolig-app", "crates/logolig-i18n"]
 
 [workspace.package]
-version = "1.22.0"
+version = "1.23.0"
 edition = "2024"
 rust-version = "1.85"
 authors = ["nabbisen <nabbisen@scqr.net>"]
@@ -27,10 +27,21 @@ thiserror = "2"
 
 # GUI runtime + framework
 iced  = { version = "0.14", features = ["tokio", "image"] }
+# snora 0.18 — bumped from 0.8 in v1.22.0; 0.8→0.18 was entirely additive for logolig.
+#
+# Notable changes across the 0.8→0.18 range:
+# - 0.11: AppLayout marked #[non_exhaustive] (logolig uses the builder API — no impact).
+#         Toast ordering bug fixed: newest toast is now correctly closest to the
+#         anchor edge (logolig pushes chronologically, so this is an improvement).
+# - 0.14: snora::keyboard::dismiss_on_escape added — a ready-made helper for the
+#         deferred ESC-to-close-modals feature (logolig can adopt it when that lands).
+# - 0.17: Icon implements PartialEq (no impact on logolig).
+# - 0.18: API freeze review; 7 of 10 1.0 gates satisfied.
+#
 # default-features=false disables the `widgets` feature. logolig does not use
 # app_header / app_side_bar etc.; it assembles AppLayout in its own shell.rs.
 # The core vocabulary (Toast, Sheet, AppLayout) is always available even with default-features=false.
-snora = { version = "0.8", default-features = false, features = ["widgets", "lucide-icons"] }
+snora = { version = "0.18", default-features = false, features = ["widgets", "lucide-icons"] }
 
 # Step 2: image-processing core (logolig-core only)
 image = { version = "0.25", default-features = false, features = ["png", "webp", "jpeg"] }
