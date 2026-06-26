@@ -295,7 +295,7 @@ No network communication. All processing runs on the local CPU.
 | v1.16.0 | Screen structure revision | Empty / Converting / Result; in-memory conversion |
 | v1.17.0 | Settings drawer → Right Sheet + flat layout | PNG-mock section structure, ICO section removed |
 | v1.18.0 | Left sidebar + picker popups | lucide icons, context-menu pickers |
-| v1.19.0 | Dead code removal + `run_in_memory` API | Direct in-memory export API in logolig-core |
+| v1.19.0 | Dead code removal + `run_in_memory` API | Direct in-memory export API in logolig (core) |
 | v1.20.0 | Mobile layout | Sidebar ↔ bottom nav, responsive grid |
 | v1.21.0 | Keep-transparency toggle | Flatten service, full test coverage |
 | **v1.22.0** | **Side-nav redesign** | **Three-page nav: Home / Customize / Settings** |

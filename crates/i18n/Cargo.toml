@@ -1,0 +1,21 @@
+[package]
+name        = "logolig-i18n"
+description = "Translations for logolig. Translates `logolig::MessageKey` to localized strings."
+readme      = "../../README.md"
+version.workspace       = true
+edition.workspace       = true
+rust-version.workspace  = true
+authors.workspace       = true
+license.workspace       = true
+repository.workspace    = true
+
+[dependencies]
+logolig                 = { workspace = true }
+
+sys-locale              = { workspace = true }
+
+serde                   = { workspace = true }
+toml                    = { workspace = true }
+
+[lints]
+workspace = true

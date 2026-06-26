@@ -98,12 +98,12 @@ behaviour. A future RFC may add live re-rendering as a separate scope.
 
 ### Domain model
 
-In `crates/logolig-core/src/domain/export_plan.rs`:
+In `crates/core/src/domain/export_plan.rs`:
 
 ```rust
 /// RGB colour for compositing alpha when keep_transparency=false.
 /// Components are 0..=255 in straight (un-premultiplied) sRGB space,
-/// matching how Rgba8 pixels are stored elsewhere in logolig-core.
+/// matching how Rgba8 pixels are stored elsewhere in logolig (core).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FlattenColor {
     pub r: u8,

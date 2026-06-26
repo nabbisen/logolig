@@ -27,7 +27,7 @@ pipeline is identical to PNG.
 Module placements follow the v1.11.0 JPEG precedent exactly. Anyone who
 implemented v1.11.0 should be able to do this in an afternoon.
 
-### `crates/logolig-core`
+### `crates/core`
 
 1. **`Cargo.toml`** (workspace level): add `bmp` to the `image` crate's
    features list. Currently:

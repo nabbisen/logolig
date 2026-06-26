@@ -1,13 +1,23 @@
 # Logolig
 
+[![License](https://img.shields.io/github/license/nabbisen/logolig)](LICENSE)
+[![Documentation](https://docs.rs/logolig/badge.svg?version=latest)](https://docs.rs/logolig)
+[![Documentation](https://docs.rs/logolig-app/badge.svg?version=latest)](https://docs.rs/logolig-app)
+[![Documentation](https://docs.rs/logolig-i18n/badge.svg?version=latest)](https://docs.rs/logolig-i18n)    
+[![crates.io](https://img.shields.io/crates/v/logolig?label=core)](https://crates.io/crates/logolig)
+[![Dependency Status](https://deps.rs/crate/logolig/latest/status.svg)](https://deps.rs/crate/logolig)
+[![crates.io](https://img.shields.io/crates/v/logolig-app?label=app)](https://crates.io/crates/logolig-app)
+[![Dependency Status](https://deps.rs/crate/logolig-app/latest/status.svg)](https://deps.rs/crate/logolig-app)
+[![crates.io](https://img.shields.io/crates/v/logolig-i18n?label=i18n)](https://crates.io/crates/logolig-i18n)
+[![Dependency Status](https://deps.rs/crate/logolig-i18n/latest/status.svg)](https://deps.rs/crate/logolig-i18n)
+
 A local-first, accessible favicon generator GUI.
 
 PNG / SVG / WebP goes in. A polished `favicon.svg`, `favicon.ico`, an
 Apple touch icon, high-resolution PNGs, and a clean HTML `<head>` snippet
 come out — all on your machine, with no upload anywhere.
 
-Built on [iced 0.14](https://iced.rs/) and
-[snora 0.4](https://github.com/nabbisen/snora).
+Built on [iced](https://iced.rs/) and [snora](https://github.com/nabbisen/snora).
 
 ## Why
 
@@ -138,7 +148,7 @@ See `docs/export-spec.md` for the rationale on what is **not** emitted (no
 
 ## Layout
 
-- `crates/logolig-core` — pure domain types and image processing.
+- `crates/core` — pure domain types and image processing.
   No iced / snora / GUI dependency. The dependency graph enforces
   this: importing iced from inside core is a compile-time error.
 - `crates/logolig-app` — the iced + snora GUI binary, compiled to
@@ -315,11 +325,11 @@ message has a translation, or the build fails.
 ## Tests
 
 ```sh
-cargo test -p logolig-core
+cargo test -p logolig
 cargo test -p logolig-i18n
 ```
 
-logolig-core has 101 integration tests covering ingest, decode (PNG /
+logolig has 101 integration tests covering ingest, decode (PNG /
 WebP / JPEG), SVG rasterization, vectorization, resize, preview cache,
 ICO writing, HTML snippet generation, transactional export, settings
 round-trip, forward-compatible JSON deserialization, transparency-state
@@ -340,9 +350,9 @@ advanced settings UX, persistence) extended it without breaking
 compatibility.
 
 A separate **v2** branch is planned that retargets the same
-`logolig-core` to a leptos-based WebAssembly build for
+`logolig` to a leptos-based WebAssembly build for
 privacy-preserving in-browser use. The split is possible because
-`logolig-core` carries no GUI-framework dependency. The v1.4.0
+`logolig` carries no GUI-framework dependency. The v1.4.0
 `SettingsStore` trait is the seam: v2 will provide a `BrowserStore`
 implementation backed by `localStorage` while reusing the same
 `PersistedSettings` schema.

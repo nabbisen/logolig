@@ -1,0 +1,31 @@
+[package]
+name        = "logolig-app"
+description = "Local-first, ABDD-compliant favicon generator GUI (binary: logolig)."
+readme      = "../../README.md"
+version.workspace       = true
+edition.workspace       = true
+rust-version.workspace  = true
+authors.workspace       = true
+license.workspace       = true
+repository.workspace    = true
+
+# Binary name is `logolig`.
+[[bin]]
+name = "logolig"
+path = "src/main.rs"
+
+[dependencies]
+logolig                 = { workspace = true }
+logolig-i18n            = { workspace = true }
+
+iced                    = { workspace = true }
+snora                   = { workspace = true }
+
+rfd                     = { workspace = true }
+app-json-settings       = { workspace = true }
+
+image                   = { workspace = true }
+zip                     = { workspace = true }
+
+[lints]
+workspace = true

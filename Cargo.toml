@@ -1,93 +1,44 @@
-# Workspace root.
-#
-# Structural intent (§16, §3.1):
-# - logolig-core: pure domain + image processing. No iced/snora dependency.
-# - logolig-app : GUI binary. Wires together iced 0.14 + snora 0.25 + logolig-core.
-#                 Binary name is `logolig` (usable as the `logolig` command after cargo install).
-#
-# The domain/service/UI separation is enforced by the dependency graph, not by convention.
-# Importing iced from logolig-core would be a compile error.
-
 [workspace]
 resolver = "3"
-members = ["crates/logolig-core", "crates/logolig-app", "crates/logolig-i18n"]
+members = [
+    "crates/app",
+    "crates/core",
+    "crates/i18n",
+]
 
 [workspace.package]
-version = "1.25.0"
-edition = "2024"
-rust-version = "1.85"
-authors = ["nabbisen <nabbisen@scqr.net>"]
-license = "Apache-2.0"
-repository = "https://github.com/nabbisen/logolig"
-publish = false
+version = "1.25.1"
+edition         = "2024"
+rust-version    = "1.85"
+license         = "Apache-2.0"
+authors         = ["nabbisen"]
+repository      = "https://github.com/nabbisen/logolig"
 
 [workspace.dependencies]
-# Shared foundation
-thiserror = "2"
+logolig                 = { version = "1", path = "crates/core" }
+logolig-i18n            = { version = "1", path = "crates/i18n" }
 
-# GUI runtime + framework
-iced  = { version = "0.14", features = ["tokio", "image"] }
-# snora 0.25 — bumped from 0.18 in v1.25.0; 0.18→0.25 was additive for logolig.
-#
-# Notable changes across the 0.18→0.25 range:
-# - 0.18.1: Icon::Lucide rendering compile fix (reported by nabbisen — this is
-#           the fix that made logolig's lucide download/history icons reliable).
-# - 0.19–0.20: new iced-free `snora-design` token crate + opt-in `design` feature
-#           (button/card helpers, 4 token presets incl. high-contrast). Published
-#           to crates.io in 0.20. Not enabled here — see below.
-# - 0.21: design `notice` / `chip` / `progress` primitives added (keyboard-reachable).
-# - 0.24: Palette::roles() made test-only (the only breaking change in the range;
-#         logolig does not use it — zero impact). Chip selected-state contrast fix.
-# - 0.25: docs/measurement/CI housekeeping; no API or breaking changes.
-#
-# The `design` feature is intentionally NOT enabled yet. It is opt-in by snora's
-# own policy (default-on pending a binary-size/build-cost review), and adopting
-# its primitives is optional UI/UX work rather than a requirement of the bump.
-# Enabling it and migrating logolig's hand-written button styles to the token
-# system is a candidate for a future release (see docs/architecture.md v1.26.0+).
-#
-# default-features=false disables the `widgets` feature. logolig does not use
-# app_header / app_side_bar etc.; it assembles AppLayout in its own shell.rs.
-# The core vocabulary (Toast, Sheet, AppLayout) is always available even with default-features=false.
-snora = { version = "0.25", default-features = false, features = ["widgets", "lucide-icons"] }
+iced                    = { version = "0.14", features = ["tokio", "image"] }
+snora                   = { version = "0.25", default-features = false, features = ["widgets", "lucide-icons"] }
 
-# Step 2: image-processing core (logolig-core only)
-image = { version = "0.25", default-features = false, features = ["png", "webp", "jpeg"] }
-fast_image_resize = { version = "5", features = ["image"] }
-resvg = "0.45"
-tiny-skia = "0.11"
-usvg = "0.45"
-ico = "0.4"
-tokio = { version = "1", features = ["fs", "rt", "macros"] }
+app-json-settings       = "2"
+rfd                     = "0.15"
+sys-locale              = "0.3"
+tiny-skia               = "0.11"
 
-# v1.2.0: raster → SVG vectorisation (logolig-core only)
-# vtracer 0.6.5 + visioncortex 0.8.10. MIT/Apache-2.0, WASM-compatible (proven in the official web app).
-vtracer = "0.6"
+fast_image_resize       = { version = "5", features = ["image"] }
+ico                     = "0.4"
+image                   = { version = "0.25", default-features = false, features = ["png", "webp", "jpeg", "ico"] }
+resvg                   = "0.45"
+usvg                    = "0.45"
 
-# v1.4.0: settings persistence
-# serde is used in logolig-core to Serialize/Deserialize ExportPlan etc.
-# app-json-settings v2 is wrapped by logolig-app's NativeStore implementation
-# (typed ConfigManager<T>, automatic OS config-dir resolution, read-modify-write `update()`).
-serde = { version = "1", features = ["derive"] }
-app-json-settings = "2"
-
-# v1.5.0: i18n foundation
-# sys-locale: OS locale detection (abstracts LANG / macOS API / Windows API). ~60 KB, lightweight.
-# toml: parses logolig-i18n dictionary files (en.toml etc.). Works fine in a v2 WASM build too.
-sys-locale = "0.3"
-toml = "0.8"
-
-# v1.8.0: used for JSON serialisation in Web manifest output.
-# Previously a dev-dep in logolig-core (InMemoryStore tests),
-# promoted to a runtime dep in v1.8 for the manifest.webmanifest feature.
-serde_json = "1"
-
-# Step 2: file picker (logolig-app only, the §5.1 alternative path)
-rfd = "0.15"
-
-# Inter-crate references
-logolig-core = { path = "crates/logolig-core" }
+serde                   = { version = "1", features = ["derive"] }
+serde_json              = "1"
+thiserror               = "2"
+tokio                   = "1"
+toml                    = "0.8"
+vtracer                 = "0.6"
+zip                     = { version = "2", default-features = false, features = ["deflate"] }
 
 [workspace.lints.rust]
-# §2.1 "unsafe is forbidden by default" — enforced at build time.
 unsafe_code = "forbid"

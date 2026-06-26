@@ -100,7 +100,7 @@ The following are **not** emitted by default:
 
 ## Failure modes
 
-Output failures surface as `AppError::Export(_)` from `logolig_core`
+Output failures surface as `AppError::Export(_)` from `logolig`
 and become persistent error toasts in the UI (§ui-a11y "Errors as
 toasts"). The export step is **transactional at the file level**:
 either every requested artifact is written, or none is. The
