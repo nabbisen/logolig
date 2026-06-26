@@ -422,6 +422,12 @@ pub enum Message {
 
     // snora: outside-click to close modals
     CloseModals,
+
+    // v1.24.0: history — return to the last Result screen without re-converting.
+    /// Switch back to `Screen::Result` using the in-memory assets already in
+    /// `state.result_assets`. Only reachable from the history card on the
+    /// Empty screen, so `result_assets` is always `Some` when this fires.
+    ShowLastResultRequested,
 }
 
 // ----------------------------------------------------------------------
@@ -536,14 +542,22 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // Persisted settings (export_plan, theme, locale) are preserved.
         // Resets transient UI state (nav page, extras open, etc.).
         Message::EditCancelled => {
-            state.source_asset = None;
+            // v1.24.0: result_assets and source_asset are intentionally kept so
+            // the history card can offer "View results →" on the Empty screen.
+            // Clearing them is deferred until a new file is ingested.
             state.preview = None;
             state.preview_cache = None;
             state.transparency = None;
-            state.result_assets = None;
             state.result_preview_open = false;
             state.screen = Screen::Empty;
             state.advanced_open = false;
+            Task::none()
+        }
+        Message::ShowLastResultRequested => {
+            // Return to the Result screen without re-converting.
+            // result_assets is always Some here because the history card
+            // only appears when it is Some.
+            state.screen = Screen::Result;
             Task::none()
         }
         Message::IngestCompleted(Ok(asset)) => {
@@ -553,6 +567,9 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.source_asset = Some(asset);
             state.preview = Some(PreviewProfile::default());
             state.preview_cache = None;
+            // v1.24.0: clear the previous history now that a new file is being
+            // processed. The history card (if shown) disappears at this point.
+            state.result_assets = None;
             // v1.16.0: ingest complete → auto-convert. Prior to v1.15 the app
             // waited on the Preview screen; v1.16 converts immediately.
             // Two parallel tasks are launched:

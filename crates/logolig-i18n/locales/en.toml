@@ -200,3 +200,7 @@ theme_system = "System"
 nav_home = "Home"
 nav_customize = "Customize"
 nav_settings = "Settings"
+
+# v1.24.0: history card on the Empty screen
+history_last_conversion_label = "Last conversion"
+history_view_results_button = "View results →"

@@ -279,4 +279,10 @@ pub enum MessageKey {
     NavCustomize,
     /// Side-nav 'Settings' label.
     NavSettings,
+
+    // --- v1.24.0: history card on the Empty screen ---
+    /// Section label for the last-conversion card ("Last conversion").
+    HistoryLastConversionLabel,
+    /// Button label to return to the Result screen ("View results →").
+    HistoryViewResultsButton,
 }

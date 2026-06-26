@@ -202,3 +202,7 @@ theme_system = "システム設定に従う"
 nav_home = "ホーム"
 nav_customize = "カスタマイズ"
 nav_settings = "設定"
+
+# v1.24.0: 履歴カード
+history_last_conversion_label = "前回の変換"
+history_view_results_button = "結果を見る →"

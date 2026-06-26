@@ -22,6 +22,10 @@
 use iced::widget::{Space, button, column, container, image, row, text};
 use iced::{Background, Border, Color, Element, Length, Padding, Theme};
 
+use snora::Icon;
+use snora::lucide;
+use snora::widget::icon_element_sized;
+
 use logolig_core::{MessageKey, Rgba8};
 
 use crate::app::{AppState, Message, resolve_theme};
@@ -73,7 +77,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let download_all = container(
         button(
             row![
-                text("↓").size(16),
+                icon_element_sized::<Message>(&Icon::Lucide(lucide::Download), 16.0),
                 text(t.t(MessageKey::ResultDownloadAllButton)).size(15),
             ]
             .spacing(10)
@@ -209,11 +213,14 @@ fn asset_card<'a>(idx: usize, item: &'a ResultAssetItem, theme: &Theme) -> Eleme
     .spacing(8)
     .align_y(iced::Alignment::Center);
 
-    // Download button (↓ icon only; a11y label via tooltip)
-    let dl_button = button(text("↓ ").size(14))
-        .padding([4, 12])
-        .on_press(Message::DownloadOneRequested(idx))
-        .style(download_button_style);
+    // Download button (lucide Download icon; a11y label via tooltip)
+    let dl_button = button(icon_element_sized::<Message>(
+        &Icon::Lucide(lucide::Download),
+        16.0,
+    ))
+    .padding([4, 12])
+    .on_press(Message::DownloadOneRequested(idx))
+    .style(download_button_style);
 
     let inner = column![
         file_name_text,

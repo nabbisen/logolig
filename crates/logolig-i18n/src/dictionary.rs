@@ -210,6 +210,10 @@ pub(crate) struct Dictionary {
     pub nav_home: String,
     pub nav_customize: String,
     pub nav_settings: String,
+
+    // v1.24.0: history card
+    pub history_last_conversion_label: String,
+    pub history_view_results_button: String,
 }
 
 impl Dictionary {
@@ -415,6 +419,9 @@ impl Dictionary {
             MessageKey::NavHome => &self.nav_home,
             MessageKey::NavCustomize => &self.nav_customize,
             MessageKey::NavSettings => &self.nav_settings,
+            // v1.24.0
+            MessageKey::HistoryLastConversionLabel => &self.history_last_conversion_label,
+            MessageKey::HistoryViewResultsButton => &self.history_view_results_button,
         }
     }
 }
