@@ -305,21 +305,13 @@ impl Dictionary {
             MessageKey::ToastExportBody => &self.toast_export_body,
             MessageKey::ToastResetTitle => &self.toast_reset_title,
             MessageKey::ToastResetBody => &self.toast_reset_body,
-            MessageKey::ToastSettingsLoadFailedTitle => {
-                &self.toast_settings_load_failed_title
-            }
+            MessageKey::ToastSettingsLoadFailedTitle => &self.toast_settings_load_failed_title,
             MessageKey::ToastSettingsLoadFailedBody => &self.toast_settings_load_failed_body,
-            MessageKey::ToastSettingsSaveFailedTitle => {
-                &self.toast_settings_save_failed_title
-            }
+            MessageKey::ToastSettingsSaveFailedTitle => &self.toast_settings_save_failed_title,
             MessageKey::ToastSettingsSaveFailedBody => &self.toast_settings_save_failed_body,
             MessageKey::ToastSizeAlreadyInSetTitle => &self.toast_size_already_in_set_title,
-            MessageKey::ToastPngSizeAlreadyInSetBody => {
-                &self.toast_png_size_already_in_set_body
-            }
-            MessageKey::ToastIcoSizeAlreadyInSetBody => {
-                &self.toast_ico_size_already_in_set_body
-            }
+            MessageKey::ToastPngSizeAlreadyInSetBody => &self.toast_png_size_already_in_set_body,
+            MessageKey::ToastIcoSizeAlreadyInSetBody => &self.toast_ico_size_already_in_set_body,
             MessageKey::ToastInvalidSizeTitle => &self.toast_invalid_size_title,
             MessageKey::ToastInvalidSizeBody => &self.toast_invalid_size_body,
             MessageKey::ToastSizeOutOfRangeTitle => &self.toast_size_out_of_range_title,
@@ -348,9 +340,13 @@ impl Dictionary {
             MessageKey::WebManifestNameLabel => &self.web_manifest_name_label,
             MessageKey::WebManifestNamePlaceholder => &self.web_manifest_name_placeholder,
             MessageKey::WebManifestShortNameLabel => &self.web_manifest_short_name_label,
-            MessageKey::WebManifestShortNamePlaceholder => &self.web_manifest_short_name_placeholder,
+            MessageKey::WebManifestShortNamePlaceholder => {
+                &self.web_manifest_short_name_placeholder
+            }
             MessageKey::WebManifestThemeColorLabel => &self.web_manifest_theme_color_label,
-            MessageKey::WebManifestBackgroundColorLabel => &self.web_manifest_background_color_label,
+            MessageKey::WebManifestBackgroundColorLabel => {
+                &self.web_manifest_background_color_label
+            }
             MessageKey::ToastInvalidColorTitle => &self.toast_invalid_color_title,
             MessageKey::ToastInvalidColorBody => &self.toast_invalid_color_body,
 

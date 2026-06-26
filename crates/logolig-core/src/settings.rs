@@ -37,7 +37,7 @@
 
 use std::error::Error as StdError;
 
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 /// A store that persists exactly one value of type `T`.
 ///

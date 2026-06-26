@@ -22,8 +22,8 @@ fn detects_png_and_reads_intrinsic_size() {
 
 #[test]
 fn detects_svg_and_reads_intrinsic_size() {
-    let asset = ingest_bytes("dummy.svg", fixtures::SVG_16.as_bytes().to_vec())
-        .expect("SVG should ingest");
+    let asset =
+        ingest_bytes("dummy.svg", fixtures::SVG_16.as_bytes().to_vec()).expect("SVG should ingest");
     assert_eq!(asset.kind, SourceKind::Svg);
     assert_eq!(asset.intrinsic_size, Some((16, 16)));
 }
@@ -40,8 +40,7 @@ fn detects_webp_and_reads_intrinsic_size() {
 
 #[test]
 fn rejects_unrelated_bytes_even_with_png_extension() {
-    let err =
-        ingest_bytes("fake.png", b"not really an image".to_vec()).expect_err("should reject");
+    let err = ingest_bytes("fake.png", b"not really an image".to_vec()).expect_err("should reject");
     assert!(matches!(err, AppError::UnsupportedFile { .. }));
 }
 

@@ -10,7 +10,9 @@ pub mod theme_mode;
 pub mod vtracer_preset;
 pub mod web_manifest;
 
-pub use export_plan::{ExportPlan, SizeOverride, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX, PNG_SIZE_MIN};
+pub use export_plan::{
+    ExportPlan, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX, PNG_SIZE_MIN, SizeOverride,
+};
 pub use persisted_settings::PersistedSettings;
 pub use preview_profile::{PreviewContext, PreviewProfile};
 pub use raster::Rgba8;

@@ -12,10 +12,8 @@
 use std::cell::RefCell;
 use std::convert::Infallible;
 
-use logolig_core::{
-    ExportPlan, PersistedSettings, ResizeAlgorithm, SettingsStore, ThemeMode,
-};
-use serde::{de::DeserializeOwned, Serialize};
+use logolig_core::{ExportPlan, PersistedSettings, ResizeAlgorithm, SettingsStore, ThemeMode};
+use serde::{Serialize, de::DeserializeOwned};
 
 // ---------------------------------------------------------------------------
 // Test fixture: in-memory store
@@ -174,7 +172,10 @@ fn missing_fields_are_filled_from_default() {
 fn entirely_empty_json_object_yields_full_default() {
     let restored: PersistedSettings = serde_json::from_str("{}").unwrap();
     let default = PersistedSettings::default();
-    assert_eq!(restored.export_plan.png_sizes, default.export_plan.png_sizes);
+    assert_eq!(
+        restored.export_plan.png_sizes,
+        default.export_plan.png_sizes
+    );
     assert_eq!(restored.theme, default.theme);
     assert_eq!(restored.locale, default.locale);
 }

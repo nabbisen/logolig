@@ -10,8 +10,8 @@
 
 use std::sync::Arc;
 
-use logolig_core::services::monochrome::{into_grayscale, to_grayscale};
 use logolig_core::Rgba8;
+use logolig_core::services::monochrome::{into_grayscale, to_grayscale};
 
 fn make(width: u32, height: u32, pixels: Vec<u8>) -> Rgba8 {
     Rgba8::try_from_raw(width, height, Arc::from(pixels.into_boxed_slice()))
@@ -36,7 +36,7 @@ fn alpha_is_preserved_per_pixel() {
         vec![
             255, 0, 0, 255, // red · fully opaque
             0, 255, 0, 128, // green · half-transparent
-            0, 0, 255, 64,  // blue · low opacity
+            0, 0, 255, 64, // blue · low opacity
             128, 128, 128, 0, // grey · fully transparent
         ],
     );
@@ -93,7 +93,9 @@ fn white_stays_white() {
     let img = make(
         2,
         2,
-        vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255],
+        vec![
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+        ],
     );
     let mono = to_grayscale(&img);
     for chunk in mono.pixels.chunks_exact(4) {

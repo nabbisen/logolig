@@ -5,8 +5,8 @@
 //! - Base-path normalisation (trailing-slash insertion)
 //! - Output contains no legacy `msapplication-*` or `browserconfig.xml`
 
-use logolig_core::services::html_snippet::{render, DEFAULT_BASE};
 use logolig_core::ExportPlan;
+use logolig_core::services::html_snippet::{DEFAULT_BASE, render};
 
 #[test]
 fn default_plan_renders_modern_minimal_set() {
@@ -27,7 +27,10 @@ fn default_plan_renders_modern_minimal_set() {
     let pos_ico = html.find("favicon.ico").unwrap();
     let pos_png = html.find("favicon-32.png").unwrap();
     let pos_apple = html.find("apple-touch-icon").unwrap();
-    assert!(pos_svg < pos_ico, "SVG must precede ICO for modern browsers");
+    assert!(
+        pos_svg < pos_ico,
+        "SVG must precede ICO for modern browsers"
+    );
     assert!(pos_ico < pos_png);
     assert!(pos_png < pos_apple);
 }

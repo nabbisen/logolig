@@ -14,11 +14,11 @@ use iced::{Element, Subscription, Task, Theme};
 use snora::{Toast, ToastIntent, ToastLifetime};
 
 use logolig_core::{
-    services::transparency_audit::{audit as audit_transparency, TransparencyReport},
     AppError, ExportPlan, MessageKey, PreviewCache, PreviewContext, PreviewProfile,
     ResizeAlgorithm, SettingsStore, SourceAsset, ThemeMode,
+    services::transparency_audit::{TransparencyReport, audit as audit_transparency},
 };
-use logolig_i18n::{detect_system_locale, Locale, Translator};
+use logolig_i18n::{Locale, Translator, detect_system_locale};
 
 // ----------------------------------------------------------------------
 // State model
@@ -90,7 +90,6 @@ pub struct AppState {
     pub translator: Translator,
     /// User-selected locale override. `None` means use the OS locale.
     /// Changed via the Settings page; persisted in `PersistedSettings.locale`.
-
     pub locale_override: Option<Locale>,
 
     // v1.7.0: transparency audit
@@ -101,11 +100,8 @@ pub struct AppState {
     // v1.10.0: `preview_checker: bool` was replaced by a PreviewContext variant
     // to prevent meaningless combined states (e.g. tab + checker simultaneously).
 
-
     // v1.17.0: `advanced_groups` (AdvancedGroupExpansion) removed;
     // Settings became flat in v1.17.0; accordion state no longer needed.
-
-
 
     // ---------------------------------------------------------------
     // v1.16.0: state for the new screen structure (Empty / Converting / Result)
@@ -123,8 +119,6 @@ pub struct AppState {
 
     /// Whether the collapsible preview panel on the Result screen is open.
     /// Session-only; not persisted.
-
-
     pub result_preview_open: bool,
 
     // ---------------------------------------------------------------
@@ -136,17 +130,13 @@ pub struct AppState {
     /// The former use to compute the Right Sheet width is no longer relevant;
     /// the Customize page now spans the full body width.
 
-
     ///
     /// Defaults to 1280×720; updated by `Message::WindowResized`.
-
     pub window_size: iced::Size<f32>,
 
     /// Whether the 'Advanced extras' collapsible in the Customize page is open.
     /// Groups the less-common settings (apple-touch, HTML snippet, web manifest,
     /// monochrome, resize algorithm, vectorize_on_raster). Session-only.
-
-
     pub advanced_extras_open: bool,
 
     // ---------------------------------------------------------------
@@ -177,12 +167,7 @@ pub enum NavPage {
 /// NOTE: AdvancedGroupExpansion was removed in v1.17.0 (settings became flat).
 ///
 
-
 // v1.17.0: AdvancedGroupExpansion / AdvancedGroup removed; settings are flat now.
-
-
-
-
 
 impl AppState {
     /// Boot function. Loads persisted settings via NativeStore and applies them to AppState.
@@ -214,9 +199,7 @@ impl AppState {
                 // Translator is still default (English) at this point.
                 // Once the locale is resolved the next repaint updates all UI strings.
                 // This toast stays in English until it expires.
-                let title = state
-                    .translator
-                    .t(MessageKey::ToastSettingsLoadFailedTitle);
+                let title = state.translator.t(MessageKey::ToastSettingsLoadFailedTitle);
                 let body = state.translator.t_args(
                     MessageKey::ToastSettingsLoadFailedBody,
                     &[("error", &err.to_string())],
@@ -284,10 +267,6 @@ impl Default for AppState {
 /// every variant must be cloneable.
 ///
 
-
-
-
-
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -348,8 +327,6 @@ pub enum Message {
 
     // Theme / UI
     // v1.19.0: old `ThemeToggled` (cycle UI) removed; replaced by `ThemePicked`.
-
-
     /// Navigate to the Customize page (replaces the former settings-drawer toggle).
     AdvancedToggled,
     AlgorithmChanged(ResizeAlgorithm),
@@ -394,10 +371,7 @@ pub enum Message {
 
     // `AppCloseRequested` → removed when the ✕ button was dropped in v1.18.0.
 
-
     // v1.17.0: `AdvancedGroupToggled` removed (accordion structure replaced by flat layout).
-
-
 
     // v1.12.0: back navigation
     /// Back / Cancel button. Returns to the drop zone (Empty screen),
@@ -407,12 +381,9 @@ pub enum Message {
 
     // v1.10.0: PreviewCheckerToggled removed; checker state lives in PreviewContext.
 
-
-
     // v1.8.0: Web manifest
     /// Toggles web manifest output. When turned on, inserts
     /// `WebManifestSettings::default()` into `state.export_plan.web_manifest`.
-
     IncludeWebManifestToggled(bool),
     /// Web manifest `name` field edited.
     WebManifestNameChanged(String),
@@ -498,15 +469,12 @@ fn theme(state: &AppState) -> Theme {
 /// 768 px matches Bootstrap's `md` breakpoint and the original iPad mini portrait
 /// width — a threshold widely used in web accessibility work.
 
-
 ///
 /// Used throughout the UI: sidebar vs. bottom-nav selection, result-view column count,
 /// Customize page width, and header padding.
 ///
 /// On first frame `AppState::window_size` defaults to 1280×720, so the check
 /// initially returns `false` (desktop). A resize event corrects it shortly after.
-
-
 
 pub(crate) fn is_mobile(state: &AppState) -> bool {
     state.window_size.width < MOBILE_BREAKPOINT_PX
@@ -547,9 +515,7 @@ fn view(state: &AppState) -> Element<'_, Message> {
 
 fn update(state: &mut AppState, message: Message) -> Task<Message> {
     match message {
-        Message::FileDropped(path) | Message::FilePicked(Some(path)) => {
-            start_ingest(state, path)
-        }
+        Message::FileDropped(path) | Message::FilePicked(Some(path)) => start_ingest(state, path),
         Message::FilePicked(None) => {
             // File picker cancelled — no state change.
             Task::none()
@@ -686,9 +652,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             };
             crate::task_queue::pick_save_one_task(idx, item.file_name.clone())
         }
-        Message::DownloadAllRequested => {
-            crate::task_queue::pick_save_all_task()
-        }
+        Message::DownloadAllRequested => crate::task_queue::pick_save_all_task(),
         Message::DownloadOneTargetPicked(_, None) => Task::none(),
         Message::DownloadOneTargetPicked(idx, Some(path)) => {
             let Some(assets) = state.result_assets.as_ref() else {
@@ -965,11 +929,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         // v1.19.0: old LocaleCycled / AppCloseRequested handlers removed.
 
-
-
-
-
-
         // -----------------------------------------------------------------
         // v1.10.3 → v1.17.0: accordion handlers removed; settings are flat now.
         // -----------------------------------------------------------------
@@ -1053,7 +1012,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             // The setting's effect is visible in Result card thumbnails and
             // downloaded files only.
 
-
             state.export_plan.keep_transparency = on;
             persist_settings(state);
             Task::none()
@@ -1061,9 +1019,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         // v1.19.0: ExportRequested / ExportDirPicked / ExportCompleted handlers removed.
         // v1.16.0 moved to the ConvertCompleted + per-asset download path.
-
-
-
         Message::ToastTick => {
             snora::toast::sweep_expired(&mut state.toasts, Instant::now());
             Task::none()
@@ -1284,9 +1239,7 @@ fn persist_settings(state: &mut AppState) {
     if let Err(err) = store.save(&snapshot) {
         // Use a transient warning (not persistent) to avoid flooding the UI.
         // v1.5.0: uses the active Translator.
-        let title = state
-            .translator
-            .t(MessageKey::ToastSettingsSaveFailedTitle);
+        let title = state.translator.t(MessageKey::ToastSettingsSaveFailedTitle);
         let body = state.translator.t_args(
             MessageKey::ToastSettingsSaveFailedBody,
             &[("error", &err.to_string())],

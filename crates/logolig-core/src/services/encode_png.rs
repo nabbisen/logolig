@@ -17,7 +17,12 @@ pub fn encode(rgba: &Rgba8) -> Result<Vec<u8>, AppError> {
     let mut out = Vec::new();
     let encoder = PngEncoder::new(Cursor::new(&mut out));
     encoder
-        .write_image(rgba.as_bytes(), rgba.width, rgba.height, ColorType::Rgba8.into())
+        .write_image(
+            rgba.as_bytes(),
+            rgba.width,
+            rgba.height,
+            ColorType::Rgba8.into(),
+        )
         .map_err(|e| AppError::export(format!("PNG encode: {e}")))?;
     Ok(out)
 }

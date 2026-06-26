@@ -22,7 +22,11 @@ impl Rgba8 {
     pub fn try_from_raw(width: u32, height: u32, pixels: Arc<[u8]>) -> Option<Self> {
         let expected = (width as usize) * (height as usize) * 4;
         if pixels.len() == expected {
-            Some(Self { width, height, pixels })
+            Some(Self {
+                width,
+                height,
+                pixels,
+            })
         } else {
             None
         }

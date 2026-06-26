@@ -33,10 +33,8 @@ pub fn resize(
 
     // Zero-size check is performed when constructing NonZero values.
     let (sw, sh) = (
-        NonZeroU32::new(src.width)
-            .ok_or_else(|| AppError::resize("source width is 0"))?,
-        NonZeroU32::new(src.height)
-            .ok_or_else(|| AppError::resize("source height is 0"))?,
+        NonZeroU32::new(src.width).ok_or_else(|| AppError::resize("source width is 0"))?,
+        NonZeroU32::new(src.height).ok_or_else(|| AppError::resize("source height is 0"))?,
     );
 
     // src is a read-only view; dst is a mutable output buffer.

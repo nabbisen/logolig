@@ -10,8 +10,8 @@
 
 use std::sync::Arc;
 
-use logolig_core::services::transparency_audit::{audit, TransparencyReport};
 use logolig_core::Rgba8;
+use logolig_core::services::transparency_audit::{TransparencyReport, audit};
 
 /// Create a `width × height` image with every pixel's alpha set to `alpha`.
 /// RGB is zeroed (only alpha classification matters here).

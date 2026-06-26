@@ -45,7 +45,10 @@ pub fn webp_8x8_blue() -> Vec<u8> {
     let mut out = Vec::new();
     let dynamic = image::DynamicImage::ImageRgba8(buf);
     dynamic
-        .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::WebP)
+        .write_to(
+            &mut std::io::Cursor::new(&mut out),
+            image::ImageFormat::WebP,
+        )
         .expect("WebP encoding for fixture should not fail");
     out
 }
@@ -63,7 +66,10 @@ pub fn jpeg_8x8_red() -> Vec<u8> {
     let mut out = Vec::new();
     let dynamic = image::DynamicImage::ImageRgb8(buf);
     dynamic
-        .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Jpeg)
+        .write_to(
+            &mut std::io::Cursor::new(&mut out),
+            image::ImageFormat::Jpeg,
+        )
         .expect("JPEG encoding for fixture should not fail");
     out
 }

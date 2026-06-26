@@ -15,7 +15,7 @@ use iced::{Background, Border, Element, Length, Theme};
 
 use logolig_core::MessageKey;
 
-use crate::app::{resolve_theme, AppState, Message};
+use crate::app::{AppState, Message, resolve_theme};
 use crate::ui::colors;
 
 // v1.14.0: replaced hardcoded HEADLINE_COLOR constant with colors::drop_zone_headline

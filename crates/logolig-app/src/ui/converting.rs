@@ -22,7 +22,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // Central label area. iced 0.14 has no built-in circular progress widget;
     // use a "BUSY marker + text" pattern for now.
     // Per ABDD §12, convey "in progress" via a symbol (not colour alone).
-    // 
+    //
     let main_label = text(format!(
         "{} {}",
         marker::BUSY,

@@ -19,12 +19,12 @@
 //! └──────────────────────────────────────────────────────┘
 //! ```
 
-use iced::widget::{button, column, container, image, row, text, Space};
+use iced::widget::{Space, button, column, container, image, row, text};
 use iced::{Background, Border, Color, Element, Length, Padding, Theme};
 
 use logolig_core::{MessageKey, Rgba8};
 
-use crate::app::{resolve_theme, AppState, Message};
+use crate::app::{AppState, Message, resolve_theme};
 use crate::result::{ResultAssetItem, ResultAssetKind, ResultAssets};
 use crate::ui::colors;
 
@@ -90,7 +90,11 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // with View-as / Surface picker.
     let preview_toggle_label = format!(
         "{} {}",
-        if state.result_preview_open { "▼" } else { "▶" },
+        if state.result_preview_open {
+            "▼"
+        } else {
+            "▶"
+        },
         t.t(MessageKey::ResultPreviewToggle)
     );
     let preview_toggle = button(text(preview_toggle_label).size(13))
@@ -104,8 +108,8 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         // come from this screen, so using preview_panel::view() as a collapsible
         // can double-render titles. Acceptable in phase B;
         // refactor to "preview only" in a later version.
-        // 
-        // 
+        //
+        //
         crate::ui::preview_panel::view(state)
     } else {
         Space::new().height(Length::Shrink).into()
@@ -124,7 +128,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .align_y(iced::Alignment::Center);
 
     // Full layout. Wrapped in a scrollable because the asset list can be long.
-    // 
+    //
     // v1.22.0: "Download all" moved below the preview (RFC feedback —
     // users review the preview before downloading).
     let content = column![
@@ -148,11 +152,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 /// Build an asset card grid with the given number of columns.
 ///
 /// v1.20.0: column count is a parameter (3 desktop / 2 mobile).
-fn build_grid<'a>(
-    assets: &'a ResultAssets,
-    columns: usize,
-    theme: &Theme,
-) -> Element<'a, Message> {
+fn build_grid<'a>(assets: &'a ResultAssets, columns: usize, theme: &Theme) -> Element<'a, Message> {
     let mut col = column![].spacing(12);
     let mut cur_row = row![].spacing(12);
     let mut count_in_row = 0usize;
@@ -176,11 +176,7 @@ fn build_grid<'a>(
 }
 
 /// One asset card.
-fn asset_card<'a>(
-    idx: usize,
-    item: &'a ResultAssetItem,
-    theme: &Theme,
-) -> Element<'a, Message> {
+fn asset_card<'a>(idx: usize, item: &'a ResultAssetItem, theme: &Theme) -> Element<'a, Message> {
     // Source file name (abbreviated)
     let file_name_text = text(item.file_name.clone())
         .size(13)
@@ -204,9 +200,14 @@ fn asset_card<'a>(
     } else {
         Space::new().width(Length::Shrink).into()
     };
-    let meta_row = row![badge, dim_text, Space::new().width(Length::Fill), size_label]
-        .spacing(8)
-        .align_y(iced::Alignment::Center);
+    let meta_row = row![
+        badge,
+        dim_text,
+        Space::new().width(Length::Fill),
+        size_label
+    ]
+    .spacing(8)
+    .align_y(iced::Alignment::Center);
 
     // Download button (↓ icon only; a11y label via tooltip)
     let dl_button = button(text("↓ ").size(14))
@@ -214,8 +215,13 @@ fn asset_card<'a>(
         .on_press(Message::DownloadOneRequested(idx))
         .style(download_button_style);
 
-    let inner = column![file_name_text, thumb, meta_row, container(dl_button).center_x(Length::Fill)]
-        .spacing(8);
+    let inner = column![
+        file_name_text,
+        thumb,
+        meta_row,
+        container(dl_button).center_x(Length::Fill)
+    ]
+    .spacing(8);
 
     container(inner)
         .padding(12)
@@ -252,10 +258,7 @@ fn raster_thumbnail<'a>(rgba: &'a Rgba8) -> Element<'a, Message> {
 
 /// Placeholder thumbnail for text-based assets (HTML snippet / Web manifest / SVG).
 /// Shows a large document icon.
-fn placeholder_thumbnail<'a>(
-    kind: ResultAssetKind,
-    theme: &Theme,
-) -> Element<'a, Message> {
+fn placeholder_thumbnail<'a>(kind: ResultAssetKind, theme: &Theme) -> Element<'a, Message> {
     let glyph = match kind {
         ResultAssetKind::HtmlSnippet => "{}",
         ResultAssetKind::WebManifest => "{ }",

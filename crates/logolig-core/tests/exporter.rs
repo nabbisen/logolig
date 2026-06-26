@@ -7,9 +7,9 @@ mod fixtures;
 
 use std::path::PathBuf;
 
+use logolig_core::ExportPlan;
 use logolig_core::services::exporter::run;
 use logolig_core::services::ingest::ingest_bytes;
-use logolig_core::ExportPlan;
 
 /// Create a unique temporary directory (temp_dir + nanoseconds).
 fn fresh_tmp_dir(label: &str) -> PathBuf {
@@ -54,7 +54,10 @@ fn exports_default_artifact_set_from_png_source() {
         .filter_map(|e| e.ok())
         .filter(|e| e.file_name().to_string_lossy().starts_with(".logolig-"))
         .collect();
-    assert!(leftovers.is_empty(), "staging directory should be cleaned up");
+    assert!(
+        leftovers.is_empty(),
+        "staging directory should be cleaned up"
+    );
 
     // Cleanup
     let _ = std::fs::remove_dir_all(&dir);
@@ -71,7 +74,8 @@ fn exports_default_artifact_set_from_svg_source() {
     assert!(dir.join("favicon.svg").is_file(), "SVG output expected");
     let svg_content = std::fs::read(dir.join("favicon.svg")).unwrap();
     assert_eq!(
-        svg_content, fixtures::SVG_16.as_bytes(),
+        svg_content,
+        fixtures::SVG_16.as_bytes(),
         "SVG source must be copied byte-for-byte (non-destructive)"
     );
 
@@ -146,11 +150,7 @@ fn ico_can_be_read_back_with_correct_frames() {
     // Re-parse the ICO with the ico crate and verify all three frames (16/32/48) are present
     let f = std::fs::File::open(dir.join("favicon.ico")).unwrap();
     let icondir = ico::IconDir::read(std::io::BufReader::new(f)).unwrap();
-    let mut sizes: Vec<u32> = icondir
-        .entries()
-        .iter()
-        .map(|e| e.width())
-        .collect();
+    let mut sizes: Vec<u32> = icondir.entries().iter().map(|e| e.width()).collect();
     sizes.sort_unstable();
     assert_eq!(sizes, vec![16, 32, 48]);
 
@@ -251,7 +251,10 @@ fn monochrome_emits_mono_subdir_with_png_and_ico() {
     assert!(dir.join("mono").is_dir());
 
     // Total: colour 7 + mono 4 = 11 (no SVG mono in v1.9.0)
-    assert_eq!(report.artifacts.len(), expected_color.len() + expected_mono.len());
+    assert_eq!(
+        report.artifacts.len(),
+        expected_color.len() + expected_mono.len()
+    );
 
     // mono/favicon-32.png must differ from favicon-32.png in bytes (greyscale)
     let color_bytes = std::fs::read(dir.join("favicon-32.png")).unwrap();
@@ -317,7 +320,6 @@ fn monochrome_with_ico_off_skips_mono_ico() {
 // - Byte-for-byte match with `run` output
 // - Subdirectories (mono/) expressed in relative_path
 // - Failure (empty ico_sizes) → nothing written (zero disk side-effects)
-
 
 use logolig_core::services::exporter::run_in_memory;
 
@@ -482,11 +484,7 @@ fn run_in_memory_skips_optional_artifacts_when_disabled() {
 fn keep_transparency_true_preserves_alpha_in_png_output() {
     // Semi-transparent red PNG → keep_transparency=true (default) →
     // output PNG pixels retain alpha < 255.
-    let asset = ingest_bytes(
-        "halftransp.png",
-        fixtures::png_4x4_half_alpha_red(),
-    )
-    .unwrap();
+    let asset = ingest_bytes("halftransp.png", fixtures::png_4x4_half_alpha_red()).unwrap();
     let mut plan = ExportPlan::default();
     plan.png_sizes = vec![32];
     plan.include_ico = false;
@@ -502,8 +500,7 @@ fn keep_transparency_true_preserves_alpha_in_png_output() {
         .iter()
         .find(|a| a.relative_path.to_string_lossy() == "favicon-32.png")
         .expect("favicon-32.png should exist");
-    let img = image::load_from_memory_with_format(&png_art.bytes, image::ImageFormat::Png)
-        .unwrap();
+    let img = image::load_from_memory_with_format(&png_art.bytes, image::ImageFormat::Png).unwrap();
     let rgba = img.to_rgba8();
     // Input alpha=0x80 (128). Lanczos3 may shift alpha slightly on resize;
     // "not 255" is sufficient.
@@ -519,11 +516,7 @@ fn keep_transparency_true_preserves_alpha_in_png_output() {
 fn keep_transparency_false_flattens_to_fully_opaque_png() {
     // Semi-transparent red PNG → keep_transparency=false →
     // every output PNG pixel has alpha=255.
-    let asset = ingest_bytes(
-        "halftransp.png",
-        fixtures::png_4x4_half_alpha_red(),
-    )
-    .unwrap();
+    let asset = ingest_bytes("halftransp.png", fixtures::png_4x4_half_alpha_red()).unwrap();
     let mut plan = ExportPlan::default();
     plan.png_sizes = vec![32];
     plan.include_ico = false;
@@ -538,8 +531,7 @@ fn keep_transparency_false_flattens_to_fully_opaque_png() {
         .iter()
         .find(|a| a.relative_path.to_string_lossy() == "favicon-32.png")
         .expect("favicon-32.png should exist");
-    let img = image::load_from_memory_with_format(&png_art.bytes, image::ImageFormat::Png)
-        .unwrap();
+    let img = image::load_from_memory_with_format(&png_art.bytes, image::ImageFormat::Png).unwrap();
     let rgba = img.to_rgba8();
     // Every pixel should now have alpha=255.
     for px in rgba.pixels() {
@@ -564,11 +556,7 @@ fn keep_transparency_false_does_not_affect_svg_output() {
     // SVG source → keep_transparency=false → SVG output copies asset.raw
     // as-is, so output matches input exactly
     // (flattening does not affect SVG — Q2-a).
-    let asset = ingest_bytes(
-        "tile.svg",
-        fixtures::SVG_16.as_bytes().to_vec(),
-    )
-    .unwrap();
+    let asset = ingest_bytes("tile.svg", fixtures::SVG_16.as_bytes().to_vec()).unwrap();
     let mut plan = ExportPlan::default();
     plan.png_sizes = vec![]; // suppress PNG output
     plan.include_ico = false;
@@ -591,11 +579,7 @@ fn keep_transparency_false_does_not_affect_svg_output() {
 #[test]
 fn keep_transparency_false_makes_ico_frames_fully_opaque() {
     // ICO output: all frames should also have alpha=255.
-    let asset = ingest_bytes(
-        "halftransp.png",
-        fixtures::png_4x4_half_alpha_red(),
-    )
-    .unwrap();
+    let asset = ingest_bytes("halftransp.png", fixtures::png_4x4_half_alpha_red()).unwrap();
     let mut plan = ExportPlan::default();
     plan.png_sizes = vec![]; // no PNG needed for this test
     plan.include_apple_touch = false;
@@ -615,9 +599,11 @@ fn keep_transparency_false_makes_ico_frames_fully_opaque() {
     // The image crate's `ico` feature is not enabled in the workspace,
     // so image::load_from_memory_with_format(_, Ico) would return Unsupported.
     use std::io::Cursor;
-    let dir = ico::IconDir::read(Cursor::new(&ico_art.bytes))
-        .expect("ico parse should succeed");
-    assert!(!dir.entries().is_empty(), "ICO should have at least 1 frame");
+    let dir = ico::IconDir::read(Cursor::new(&ico_art.bytes)).expect("ico parse should succeed");
+    assert!(
+        !dir.entries().is_empty(),
+        "ICO should have at least 1 frame"
+    );
     for entry in dir.entries() {
         let img = entry.decode().expect("ICO frame decode should succeed");
         let rgba = img.rgba_data();
@@ -625,11 +611,9 @@ fn keep_transparency_false_makes_ico_frames_fully_opaque() {
         for (i, byte) in rgba.iter().enumerate() {
             if i % 4 == 3 {
                 assert_eq!(
-                    *byte,
-                    255,
+                    *byte, 255,
                     "expected fully opaque ICO frame after flatten, got alpha={} at index {}",
-                    byte,
-                    i
+                    byte, i
                 );
             }
         }

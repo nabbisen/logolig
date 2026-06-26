@@ -14,5 +14,5 @@ mod dictionary;
 mod locale;
 mod translator;
 
-pub use locale::{detect_system_locale, Locale};
+pub use locale::{Locale, detect_system_locale};
 pub use translator::Translator;

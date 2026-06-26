@@ -59,10 +59,7 @@ pub async fn ingest(path: PathBuf) -> Result<SourceAsset, AppError> {
 
 /// Synchronous version for tests (inject hand-crafted bytes directly).
 /// Not used in the production I/O path (always go through the async version).
-pub fn ingest_bytes(
-    path: impl AsRef<Path>,
-    bytes: Vec<u8>,
-) -> Result<SourceAsset, AppError> {
+pub fn ingest_bytes(path: impl AsRef<Path>, bytes: Vec<u8>) -> Result<SourceAsset, AppError> {
     let path = path.as_ref().to_path_buf();
     let ext_kind = path
         .extension()
@@ -155,11 +152,7 @@ fn parse_png_size(bytes: &[u8]) -> Option<(u32, u32)> {
     }
     let w = u32::from_be_bytes(bytes[W_OFF..W_OFF + 4].try_into().ok()?);
     let h = u32::from_be_bytes(bytes[W_OFF + 4..W_OFF + 8].try_into().ok()?);
-    if w == 0 || h == 0 {
-        None
-    } else {
-        Some((w, h))
-    }
+    if w == 0 || h == 0 { None } else { Some((w, h)) }
 }
 
 /// Delegate SVG dimension extraction to usvg.

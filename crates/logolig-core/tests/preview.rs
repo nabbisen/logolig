@@ -6,9 +6,9 @@
 
 mod fixtures;
 
+use logolig_core::ResizeAlgorithm;
 use logolig_core::services::ingest::ingest_bytes;
 use logolig_core::services::preview::build_preview;
-use logolig_core::ResizeAlgorithm;
 
 #[test]
 fn build_preview_from_png_produces_both_sizes() {
@@ -30,7 +30,10 @@ fn build_preview_from_svg_produces_both_sizes() {
     assert_eq!(cache.tab_16.width, 16);
     assert_eq!(cache.icon_120.width, 120);
     // 16×16 and 120×120 must differ in bytes (proves independent rendering)
-    assert_ne!(cache.tab_16.as_bytes().len(), cache.icon_120.as_bytes().len());
+    assert_ne!(
+        cache.tab_16.as_bytes().len(),
+        cache.icon_120.as_bytes().len()
+    );
 }
 
 #[test]

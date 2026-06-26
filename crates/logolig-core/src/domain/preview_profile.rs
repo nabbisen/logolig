@@ -34,7 +34,7 @@ impl PreviewContext {
     }
 
     /// All variants in display order, for building the "View as" button group in the UI.
-    /// 
+    ///
     pub fn all() -> [Self; 3] {
         [
             Self::BrowserTab16,

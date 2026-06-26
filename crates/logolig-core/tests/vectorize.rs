@@ -7,25 +7,30 @@
 
 mod fixtures;
 
+use logolig_core::VtracerPreset;
 use logolig_core::services::decode_png::decode as decode_png;
 use logolig_core::services::decode_webp::decode as decode_webp;
 use logolig_core::services::ingest::ingest_bytes;
 use logolig_core::services::vectorize::vectorize;
-use logolig_core::VtracerPreset;
 
 #[test]
 fn png_can_be_vectorized_to_svg_string() {
     let asset = ingest_bytes("tile.png", fixtures::png_4x4_red()).unwrap();
     let rgba = decode_png(&asset).unwrap();
-    let svg = vectorize(&rgba, VtracerPreset::Default)
-        .expect("PNG vectorization should succeed");
+    let svg = vectorize(&rgba, VtracerPreset::Default).expect("PNG vectorization should succeed");
 
     // Minimum SVG structure: <?xml …?> declaration and <svg …> root element
-    assert!(svg.starts_with("<?xml"), "should start with XML declaration");
+    assert!(
+        svg.starts_with("<?xml"),
+        "should start with XML declaration"
+    );
     assert!(svg.contains("<svg"), "should contain <svg> element");
     assert!(svg.contains("</svg>"), "should be properly closed");
     // vtracer inserts a generator comment
-    assert!(svg.contains("VTracer"), "should mention VTracer in generator comment");
+    assert!(
+        svg.contains("VTracer"),
+        "should mention VTracer in generator comment"
+    );
     // Source size (4×4) should be reflected in SVG width/height
     assert!(svg.contains(r#"width="4""#) && svg.contains(r#"height="4""#));
 }
@@ -34,8 +39,7 @@ fn png_can_be_vectorized_to_svg_string() {
 fn webp_can_be_vectorized_to_svg_string() {
     let asset = ingest_bytes("tile.webp", fixtures::webp_8x8_blue()).unwrap();
     let rgba = decode_webp(&asset).unwrap();
-    let svg = vectorize(&rgba, VtracerPreset::Default)
-        .expect("WebP vectorization should succeed");
+    let svg = vectorize(&rgba, VtracerPreset::Default).expect("WebP vectorization should succeed");
 
     assert!(svg.starts_with("<?xml"));
     assert!(svg.contains("<svg"));
@@ -52,8 +56,8 @@ fn vectorize_output_can_be_parsed_back_by_usvg() {
     let svg = vectorize(&rgba, VtracerPreset::Default).unwrap();
 
     let opt = usvg::Options::default();
-    let tree = usvg::Tree::from_data(svg.as_bytes(), &opt)
-        .expect("vtracer output should parse with usvg");
+    let tree =
+        usvg::Tree::from_data(svg.as_bytes(), &opt).expect("vtracer output should parse with usvg");
     let size = tree.size();
     assert!(size.width() > 0.0 && size.height() > 0.0);
 }
@@ -68,8 +72,14 @@ fn all_presets_produce_valid_svg() {
     for preset in VtracerPreset::all() {
         let svg = vectorize(&rgba, preset)
             .unwrap_or_else(|e| panic!("vectorize with {preset:?} failed: {e}"));
-        assert!(svg.starts_with("<?xml"), "preset {preset:?} should produce XML");
-        assert!(svg.contains("<svg"), "preset {preset:?} should contain <svg>");
+        assert!(
+            svg.starts_with("<?xml"),
+            "preset {preset:?} should produce XML"
+        );
+        assert!(
+            svg.contains("<svg"),
+            "preset {preset:?} should contain <svg>"
+        );
         // Re-parseable by usvg
         let opt = usvg::Options::default();
         usvg::Tree::from_data(svg.as_bytes(), &opt)

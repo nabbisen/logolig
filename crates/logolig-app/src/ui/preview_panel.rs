@@ -9,12 +9,12 @@
 //! - Background colour switches via `PreviewProfile::background`;
 //!   the raster itself is not touched
 
-use iced::widget::{button, column, container, image, row, stack, text, Space};
+use iced::widget::{Space, button, column, container, image, row, stack, text};
 use iced::{Background, Border, Color, Element, Length, Padding, Theme};
 
 use logolig_core::{MessageKey, PreviewCache, PreviewContext, Rgba8, ThemeMode};
 
-use crate::app::{resolve_theme, AppState, Message};
+use crate::app::{AppState, Message, resolve_theme};
 use crate::ui::accessibility::marker;
 use crate::ui::colors;
 
@@ -56,7 +56,6 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     //    clearly labelled as the file-creation action
     // 4. Preview size stability: container uses `FillPortion(4)` (4/7 of height),
     //    capped with max_width/max_height. All modes centre within the same frame.
-
 
     // 5. Layout: title centred; "Preview" label top-left of frame; pickers centred;
     //    Export right-aligned. Avoids a purely left-heavy layout.
@@ -114,7 +113,6 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // Context: v1.16.0 turned preview_panel into a collapsible section
     // inside result_view. Back / Re-select / Export were moved to result_view.
 
-
     // v1.19.0 removed all Export* Messages, so the Export button here was
     // removed too.
 
@@ -126,7 +124,6 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 
 // v1.14.0: PAGE_TITLE_COLOR / SECTION_LABEL_COLOR / MUTED_TEXT hardcoded
 // constants moved to theme-aware helpers in `crate::ui::colors`.
-
 
 // v1.19.0: `secondary_button_style` (for Back / Re-select buttons) removed.
 // The action_row itself was removed; use
@@ -151,9 +148,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 /// "View as" group: Tab / Phone / Checker — three buttons.
 fn view_as_picker<'a>(state: &'a AppState, current: PreviewContext) -> Element<'a, Message> {
     let t = &state.translator;
-    let mut buttons = row![]
-        .spacing(6)
-        .align_y(iced::Alignment::Center);
+    let mut buttons = row![].spacing(6).align_y(iced::Alignment::Center);
     for ctx in PreviewContext::all() {
         let active = ctx == current;
         let label = state.translator.t(context_message_key(ctx));
@@ -187,9 +182,7 @@ fn surface_picker<'a>(
 ) -> Element<'a, Message> {
     let t = &state.translator;
     let respects_surface = context.respects_surface();
-    let mut buttons = row![]
-        .spacing(6)
-        .align_y(iced::Alignment::Center);
+    let mut buttons = row![].spacing(6).align_y(iced::Alignment::Center);
     for theme in [ThemeMode::System, ThemeMode::Light, ThemeMode::Dark] {
         let active = theme == current;
         let label = state.translator.t(background_message_key(theme));
@@ -280,7 +273,12 @@ fn loading_placeholder<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     container(
         column![
-            text(format!("{} {}", marker::BUSY, t.t(MessageKey::ImportingMessage))).size(16),
+            text(format!(
+                "{} {}",
+                marker::BUSY,
+                t.t(MessageKey::ImportingMessage)
+            ))
+            .size(16),
         ]
         .spacing(6)
         .align_x(iced::alignment::Horizontal::Center),
@@ -421,9 +419,7 @@ fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> 
     // Tab content: [favicon 16 px] [Page Title] [×]
     let tab_inner = row![
         icon,
-        text("logolig.example.com")
-            .size(13)
-            .color(text_color),
+        text("logolig.example.com").size(13).color(text_color),
         Space::new().width(Length::Fill),
         text("×").size(13).color(text_color),
     ]
@@ -471,13 +467,10 @@ fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> 
     .width(Length::Fixed(560.0))
     .padding([8, 8]);
 
-    column![
-        text("Browser tab — 16×16 actual size").size(12),
-        chrome,
-    ]
-    .spacing(8)
-    .align_x(iced::alignment::Horizontal::Center)
-    .into()
+    column![text("Browser tab — 16×16 actual size").size(12), chrome,]
+        .spacing(8)
+        .align_x(iced::alignment::Horizontal::Center)
+        .into()
 }
 
 /// Simulate a phone home screen.
@@ -530,13 +523,10 @@ fn smartphone_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> {
         .center_x(Length::Fill)
         .center_y(Length::Fill);
 
-    column![
-        text("Smartphone home — 60pt @2x").size(12),
-        home,
-    ]
-    .spacing(8)
-    .align_x(iced::alignment::Horizontal::Center)
-    .into()
+    column![text("Smartphone home — 60pt @2x").size(12), home,]
+        .spacing(8)
+        .align_x(iced::alignment::Horizontal::Center)
+        .into()
 }
 
 // ---------------------------------------------------------------------------

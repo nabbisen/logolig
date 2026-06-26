@@ -10,7 +10,7 @@ use iced::{Alignment, Background, Border, Color, Element, Length, Padding, Theme
 use logolig_core::{MessageKey, ThemeMode};
 use logolig_i18n::Locale;
 
-use crate::app::{resolve_theme, AppState, Message};
+use crate::app::{AppState, Message, resolve_theme};
 use crate::ui::colors;
 
 /// Root view. Called from `shell::body()`.
@@ -91,9 +91,7 @@ fn section<'a>(
     content: Element<'a, Message>,
     theme: &Theme,
 ) -> Element<'a, Message> {
-    let heading = text(title)
-        .size(15)
-        .color(colors::page_title(theme));
+    let heading = text(title).size(15).color(colors::page_title(theme));
 
     column![heading, content].spacing(12).into()
 }
@@ -118,9 +116,7 @@ fn choice_row<'a>(
         .color(text_color);
     let label_el = text(label).size(14).color(text_color);
 
-    let inner = row![check, label_el]
-        .spacing(10)
-        .align_y(Alignment::Center);
+    let inner = row![check, label_el].spacing(10).align_y(Alignment::Center);
 
     button(inner)
         .width(Length::Fill)
@@ -150,7 +146,11 @@ fn choice_style(
         background: bg,
         text_color: p.background.base.text,
         border: Border {
-            color: if active { p.background.strong.color } else { Color::TRANSPARENT },
+            color: if active {
+                p.background.strong.color
+            } else {
+                Color::TRANSPARENT
+            },
             width: if active { 1.0 } else { 0.0 },
             radius: 8.0.into(),
         },

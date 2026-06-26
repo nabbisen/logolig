@@ -108,9 +108,9 @@ pub fn run_in_memory(
             }
             SourceKind::Png | SourceKind::Webp | SourceKind::Jpeg => {
                 if plan.vectorize_on_raster {
-                    let src = decoded_raster.as_ref().ok_or_else(|| {
-                        AppError::export("internal: missing decoded raster")
-                    })?;
+                    let src = decoded_raster
+                        .as_ref()
+                        .ok_or_else(|| AppError::export("internal: missing decoded raster"))?;
                     let svg_string = vectorize::vectorize(src, plan.vtracer_preset)?;
                     push_artifact(&mut artifacts, "favicon.svg", svg_string.into_bytes());
                     true
@@ -178,8 +178,7 @@ pub fn run_in_memory(
                 .into_iter()
                 .map(|(size, rgba)| (size, monochrome::to_grayscale(&rgba)))
                 .collect();
-            let frame_refs: Vec<(u32, &Rgba8)> =
-                mono_frames.iter().map(|(s, r)| (*s, r)).collect();
+            let frame_refs: Vec<(u32, &Rgba8)> = mono_frames.iter().map(|(s, r)| (*s, r)).collect();
             let ico_bytes = ico_writer::build(&frame_refs)?;
             push_artifact(&mut artifacts, "mono/favicon.ico", ico_bytes);
         }

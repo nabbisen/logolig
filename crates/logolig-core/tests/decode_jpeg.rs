@@ -7,11 +7,11 @@
 
 mod fixtures;
 
+use logolig_core::AppError;
+use logolig_core::ResizeAlgorithm;
 use logolig_core::services::decode_jpeg::decode;
 use logolig_core::services::ingest::ingest_bytes;
 use logolig_core::services::resize::resize;
-use logolig_core::AppError;
-use logolig_core::ResizeAlgorithm;
 
 #[test]
 fn jpeg_decode_returns_correct_dimensions() {

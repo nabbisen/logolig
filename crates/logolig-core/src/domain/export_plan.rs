@@ -161,9 +161,7 @@ impl ExportPlan {
         //          + ICO (if include_ico). apple-touch / html / manifest excluded.
 
         let mono = if self.monochrome {
-            self.png_sizes.len()
-                + usize::from(self.include_svg)
-                + usize::from(self.include_ico)
+            self.png_sizes.len() + usize::from(self.include_svg) + usize::from(self.include_ico)
         } else {
             0
         };

@@ -91,7 +91,7 @@ impl AppError {
     // Constructor helpers for smooth migration from the old tuple-variant API
     // (pre-v1.5.0). Call sites used to write `AppError::Io(format!(...))`;
     // these factory functions let those sites be updated with minimal diff.
-    // 
+    //
     // ---------------------------------------------------------------
 
     pub fn unsupported_file(path: impl Into<String>) -> Self {

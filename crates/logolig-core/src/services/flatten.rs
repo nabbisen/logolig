@@ -87,8 +87,7 @@ mod tests {
     use super::*;
 
     fn make_rgba(width: u32, height: u32, pixels: Vec<u8>) -> Rgba8 {
-        Rgba8::try_from_raw(width, height, Arc::<[u8]>::from(pixels))
-            .expect("valid Rgba8 fixture")
+        Rgba8::try_from_raw(width, height, Arc::<[u8]>::from(pixels)).expect("valid Rgba8 fixture")
     }
 
     #[test]

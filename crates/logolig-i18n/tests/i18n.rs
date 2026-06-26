@@ -31,7 +31,10 @@ fn translator_substitutes_placeholders() {
         MessageKey::ToastExportBody,
         &[("count", "7"), ("dir", "/tmp/out")],
     );
-    assert!(result.contains("7"), "count placeholder should be substituted");
+    assert!(
+        result.contains("7"),
+        "count placeholder should be substituted"
+    );
     assert!(
         result.contains("/tmp/out"),
         "dir placeholder should be substituted"

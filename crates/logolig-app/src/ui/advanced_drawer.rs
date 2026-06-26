@@ -20,7 +20,7 @@ use iced::{Alignment, Color, Element, Length, Padding};
 
 use logolig_core::{MessageKey, ResizeAlgorithm, VtracerPreset};
 
-use crate::app::{resolve_theme, AppState, Message};
+use crate::app::{AppState, Message, resolve_theme};
 use crate::ui::colors;
 
 // v1.14.0: HEADING_COLOR / MUTED_COLOR / BADGE_MUTED_BG hardcoded constants
@@ -196,7 +196,11 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // - Monochrome (BT.709 greyscale)
     // - Resize algorithm
     // - Vectorise raster (vectorize_on_raster)
-    let extras_chevron = if state.advanced_extras_open { "▼" } else { "▶" };
+    let extras_chevron = if state.advanced_extras_open {
+        "▼"
+    } else {
+        "▶"
+    };
     let extras_header = button(
         row![
             text(extras_chevron)
@@ -265,13 +269,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // ─────────────────────────────────────────────────────────────
     // Main body: scrollable area
     // ─────────────────────────────────────────────────────────────
-    let scroll_content = column![
-        sizes_col,
-        svg_section,
-        misc_section,
-        extras_section,
-    ]
-    .spacing(20);
+    let scroll_content = column![sizes_col, svg_section, misc_section, extras_section,].spacing(20);
 
     let scrollable_body = container(
         iced::widget::scrollable(scroll_content)
@@ -307,7 +305,6 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         .height(Length::Fill)
         .into()
 }
-
 
 /// SVG section: checkbox + indented sub-options.
 fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
@@ -356,17 +353,15 @@ fn subsection<'a>(
     body: Element<'a, Message>,
     muted_color: Color,
 ) -> Element<'a, Message> {
-    let mut col = column![
-        text(title.to_string()).size(15),
-    ]
-    .spacing(2);
+    let mut col = column![text(title.to_string()).size(15),].spacing(2);
     if let Some(b) = blurb {
         col = col.push(text(b.to_string()).size(11).color(muted_color));
     }
     col = col.push(container(body).padding(Padding::default().top(4)));
-    container(col).padding(Padding::default().top(2).bottom(2)).into()
+    container(col)
+        .padding(Padding::default().top(2).bottom(2))
+        .into()
 }
-
 
 /// v1.8.0: Web manifest section body.
 ///
@@ -434,9 +429,7 @@ fn labeled_input<'a>(
     on_change: fn(String) -> Message,
 ) -> Element<'a, Message> {
     row![
-        text(label.to_string())
-            .size(13)
-            .width(Length::Fixed(140.0)),
+        text(label.to_string()).size(13).width(Length::Fixed(140.0)),
         text_input(placeholder, value)
             .on_input(on_change)
             .size(13)
@@ -500,7 +493,6 @@ fn vtracer_preset_row<'a>(state: &'a AppState) -> Element<'a, Message> {
         .align_y(Alignment::Center)
         .into()
 }
-
 
 // ---------------------------------------------------------------------------
 // i18n wrappers for pick_list (ResizeAlgorithm / VtracerPreset)
@@ -662,7 +654,7 @@ fn title_close_button_style(
 /// v1.17.0: Collapsible "▶ Advanced settings" section header button style.
 ///
 /// Full-width click target, subtle hover background, no border.
-Behaves like an accordion chevron control.
+/// Behaves like an accordion chevron control.
 fn extras_header_style(
     theme: &iced::Theme,
     status: iced::widget::button::Status,

@@ -23,7 +23,7 @@ use snora::{AppLayout, LayoutDirection, render};
 
 use logolig_core::MessageKey;
 
-use crate::app::{is_mobile, resolve_theme, AppState, Message, NavPage, Screen};
+use crate::app::{AppState, Message, NavPage, Screen, is_mobile, resolve_theme};
 use crate::ui::{colors, drop_zone, sidebar};
 
 pub fn view(state: &AppState) -> Element<'_, Message> {

@@ -8,8 +8,8 @@
 //! 4. File names follow the `favicon-{size}.png` convention
 //! 5. `start_url` and `display` are fixed (`/` and `standalone`)
 
-use logolig_core::services::manifest_writer::{build_manifest_json, MANIFEST_FILENAME};
 use logolig_core::WebManifestSettings;
+use logolig_core::services::manifest_writer::{MANIFEST_FILENAME, build_manifest_json};
 use serde_json::Value;
 
 fn parse(json: &str) -> Value {

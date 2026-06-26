@@ -9,13 +9,13 @@
 use iced::widget::{button, column, container, text};
 use iced::{Alignment, Background, Border, Color, Element, Length, Padding, Theme};
 
+use snora::Icon;
 use snora::lucide;
 use snora::widget::icon_element_sized;
-use snora::Icon;
 
 use logolig_core::MessageKey;
 
-use crate::app::{resolve_theme, AppState, Message, NavPage};
+use crate::app::{AppState, Message, NavPage, resolve_theme};
 use crate::ui::colors;
 
 /// Desktop left sidebar. Passed to `AppLayout::side_bar(...)`.
@@ -85,14 +85,11 @@ pub fn bottom_view(state: &AppState) -> Element<'_, Message> {
         &theme,
     );
 
-    container(
-        row![nav_home, nav_customize, nav_settings]
-            .spacing(0),
-    )
-    .width(Length::Fill)
-    .height(Length::Fixed(64.0))
-    .style(move |t: &Theme| sidebar_style(t))
-    .into()
+    container(row![nav_home, nav_customize, nav_settings].spacing(0))
+        .width(Length::Fill)
+        .height(Length::Fixed(64.0))
+        .style(move |t: &Theme| sidebar_style(t))
+        .into()
 }
 
 // ---------------------------------------------------------------------------

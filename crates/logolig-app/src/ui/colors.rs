@@ -102,7 +102,6 @@ pub fn drop_zone_headline(theme: &Theme) -> Color {
 // v1.17.0: `badge_muted_bg` helper removed (was used for the "at defaults"
 // badge, which was removed; trivial to restore if needed).
 
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

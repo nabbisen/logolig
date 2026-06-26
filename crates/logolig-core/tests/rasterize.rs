@@ -7,9 +7,9 @@
 
 mod fixtures;
 
+use logolig_core::AppError;
 use logolig_core::services::ingest::ingest_bytes;
 use logolig_core::services::rasterize_svg::rasterize;
-use logolig_core::AppError;
 
 #[test]
 fn rasterize_svg_renders_at_each_target_size() {
@@ -38,7 +38,11 @@ fn rasterize_centers_drawn_pixels_with_transparent_padding() {
         bytes[idx]
     };
     assert_eq!(alpha_at(0, 0), 0, "top-left corner should be transparent");
-    assert_eq!(alpha_at(16, 16), 0, "bottom-right corner should be transparent");
+    assert_eq!(
+        alpha_at(16, 16),
+        0,
+        "bottom-right corner should be transparent"
+    );
 }
 
 #[test]
