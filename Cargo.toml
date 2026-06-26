@@ -2,7 +2,7 @@
 #
 # Structural intent (§16, §3.1):
 # - logolig-core: pure domain + image processing. No iced/snora dependency.
-# - logolig-app : GUI binary. Wires together iced 0.14 + snora 0.18 + logolig-core.
+# - logolig-app : GUI binary. Wires together iced 0.14 + snora 0.25 + logolig-core.
 #                 Binary name is `logolig` (usable as the `logolig` command after cargo install).
 #
 # The domain/service/UI separation is enforced by the dependency graph, not by convention.
@@ -13,7 +13,7 @@ resolver = "3"
 members = ["crates/logolig-core", "crates/logolig-app", "crates/logolig-i18n"]
 
 [workspace.package]
-version = "1.24.0"
+version = "1.25.0"
 edition = "2024"
 rust-version = "1.85"
 authors = ["nabbisen <nabbisen@scqr.net>"]
@@ -27,21 +27,29 @@ thiserror = "2"
 
 # GUI runtime + framework
 iced  = { version = "0.14", features = ["tokio", "image"] }
-# snora 0.18 — bumped from 0.8 in v1.22.0; 0.8→0.18 was entirely additive for logolig.
+# snora 0.25 — bumped from 0.18 in v1.25.0; 0.18→0.25 was additive for logolig.
 #
-# Notable changes across the 0.8→0.18 range:
-# - 0.11: AppLayout marked #[non_exhaustive] (logolig uses the builder API — no impact).
-#         Toast ordering bug fixed: newest toast is now correctly closest to the
-#         anchor edge (logolig pushes chronologically, so this is an improvement).
-# - 0.14: snora::keyboard::dismiss_on_escape added — a ready-made helper for the
-#         deferred ESC-to-close-modals feature (logolig can adopt it when that lands).
-# - 0.17: Icon implements PartialEq (no impact on logolig).
-# - 0.18: API freeze review; 7 of 10 1.0 gates satisfied.
+# Notable changes across the 0.18→0.25 range:
+# - 0.18.1: Icon::Lucide rendering compile fix (reported by nabbisen — this is
+#           the fix that made logolig's lucide download/history icons reliable).
+# - 0.19–0.20: new iced-free `snora-design` token crate + opt-in `design` feature
+#           (button/card helpers, 4 token presets incl. high-contrast). Published
+#           to crates.io in 0.20. Not enabled here — see below.
+# - 0.21: design `notice` / `chip` / `progress` primitives added (keyboard-reachable).
+# - 0.24: Palette::roles() made test-only (the only breaking change in the range;
+#         logolig does not use it — zero impact). Chip selected-state contrast fix.
+# - 0.25: docs/measurement/CI housekeeping; no API or breaking changes.
+#
+# The `design` feature is intentionally NOT enabled yet. It is opt-in by snora's
+# own policy (default-on pending a binary-size/build-cost review), and adopting
+# its primitives is optional UI/UX work rather than a requirement of the bump.
+# Enabling it and migrating logolig's hand-written button styles to the token
+# system is a candidate for a future release (see docs/architecture.md v1.26.0+).
 #
 # default-features=false disables the `widgets` feature. logolig does not use
 # app_header / app_side_bar etc.; it assembles AppLayout in its own shell.rs.
 # The core vocabulary (Toast, Sheet, AppLayout) is always available even with default-features=false.
-snora = { version = "0.18", default-features = false, features = ["widgets", "lucide-icons"] }
+snora = { version = "0.25", default-features = false, features = ["widgets", "lucide-icons"] }
 
 # Step 2: image-processing core (logolig-core only)
 image = { version = "0.25", default-features = false, features = ["png", "webp", "jpeg"] }

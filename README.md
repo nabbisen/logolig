@@ -1,9 +1,5 @@
 # Logolig
 
-[![License](https://img.shields.io/github/license/nabbisen/logolig)](https://github.com/nabbisen/logolig/blob/main/LICENSE)
-[![crates.io](https://img.shields.io/crates/v/logolig-app?label=app)](https://crates.io/crates/logolig-app)
-[![crates.io](https://img.shields.io/crates/v/logolig-core?label=core)](https://crates.io/crates/logolig-core)
-
 A local-first, accessible favicon generator GUI.
 
 PNG / SVG / WebP goes in. A polished `favicon.svg`, `favicon.ico`, an
@@ -354,3 +350,5 @@ implementation backed by `localStorage` while reusing the same
 ## License
 
 Licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).
+
+Copyright 2026 nabbisen

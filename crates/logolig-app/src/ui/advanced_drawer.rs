@@ -604,7 +604,6 @@ fn reset_button_style(
 
 /// v1.17.0: Successor to `close_button_style`. Used for auxiliary buttons
 /// (e.g. "Add custom size"). Transparent background + neutral border.
-
 fn secondary_drawer_button_style(
     theme: &iced::Theme,
     status: iced::widget::button::Status,
