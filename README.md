@@ -68,8 +68,8 @@ right — language (`文A`/`Aa`/`あ`), theme (`◐`/`☀`/`☾`), advanced (`�
 and close (`✕`). Each button shows a tooltip when you hover over it.
 Language and theme each cycle through their three states with one click.
 
-1. Drop a PNG, SVG, WebP, or JPEG onto the window, or click **Choose
-   file…** inside the bordered drop card on the empty screen.
+1. Drop a PNG, SVG, WebP, or JPEG onto the window, or click anywhere
+   inside the bordered drop card on the empty screen.
    - JPEG inputs work, but the format cannot store transparency, so
      Logolig shows an educational toast suggesting you re-export your
      logo as a PNG with the background cut out for a proper favicon

@@ -1,7 +1,7 @@
 # Logolig Functional Specification
 
 > This document describes **what logolig can do and how it behaves** at
-> v1.26.0, as observable behaviour rather than implementation detail.
+> v1.26.1, as observable behaviour rather than implementation detail.
 > It is intended as input for UX review and external design decisions.
 >
 > The document separates **functional specification** (what it does) from
@@ -35,8 +35,8 @@ use. Follows ABDD principles: accessible, internationalised, fully local.
 
 ### Ingestion paths
 
-1. **File dialog** — "Choose file" button
-2. **Drag and drop** — anywhere on the window
+1. **File dialog** — click the drop zone or the "Choose file" control
+2. **Drag and drop** — anywhere on the window when the platform delivers native file-drop events
 
 ### Validation
 
@@ -111,6 +111,15 @@ The app moves through three states (v1.16.0):
   │     Result       │  ← asset cards + download buttons
   └──────────────────┘
 ```
+
+
+### Drop-zone behaviour (v1.26.1)
+
+The Empty screen uses the full drop-zone card as one large click target. This
+keeps the startup action accessible even on platforms where native OS file-drop
+events are unavailable or unreliable. When the runtime reports file-hover events,
+the card border and background are strengthened to show that a file can be
+dropped.
 
 ### Transition triggers
 

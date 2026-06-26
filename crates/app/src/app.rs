@@ -122,6 +122,17 @@ pub struct AppState {
     pub result_preview_open: bool,
 
     // ---------------------------------------------------------------
+    // v1.26.1: drag-and-drop feedback state
+    // ---------------------------------------------------------------
+    /// Whether an OS file drag is currently hovering over the window.
+    ///
+    /// This is visual feedback only. The actual import still starts from
+    /// `Message::FileDropped(path)`. Some Linux Wayland compositors do not
+    /// deliver native file-drop events through iced/winit; the drop zone is
+    /// also a large click target so users always have an accessible fallback.
+    pub file_drag_hovering: bool,
+
+    // ---------------------------------------------------------------
     // v1.17.0 → v1.22.0: window state
     // ---------------------------------------------------------------
     /// Current window size in logical pixels.
@@ -248,6 +259,8 @@ impl Default for AppState {
             // v1.16.0
             result_assets: None,
             result_preview_open: false,
+            // v1.26.1
+            file_drag_hovering: false,
             // v1.17.0
             window_size: iced::Size::new(1280.0, 720.0),
             advanced_extras_open: false,
@@ -272,6 +285,10 @@ impl Default for AppState {
 pub enum Message {
     // Input
     FileDropped(PathBuf),
+    /// A native file drag is hovering over the window.
+    FileDragHovered,
+    /// The native file drag left the window or was completed/cancelled.
+    FileDragLeft,
     PickFileRequested,
     FilePicked(Option<PathBuf>),
 
@@ -495,24 +512,32 @@ pub(crate) fn is_mobile(state: &AppState) -> bool {
 pub(crate) const MOBILE_BREAKPOINT_PX: f32 = 768.0;
 
 fn subscription(state: &AppState) -> Subscription<Message> {
-    // Combine three subscriptions:
+    // Combine two subscriptions:
     //   (a) snora Toast tick — auto-dismisses transient toasts
-    //   (b) iced window events — converts file drops to Message::FileDropped
-    //   (c) window resize — updates window_size for responsive layout
+    //   (b) iced runtime events — window resize plus native file drag/drop.
+    //
+    // v1.26.1: use `iced::event::listen_with` instead of `window::events()`.
+    // It receives the same window events but keeps all event routing in one
+    // runtime-event subscription and lets us observe FileHovered /
+    // FilesHoveredLeft for visible drop-zone feedback.
     let toasts = snora::toast::subscription(&state.toasts, || Message::ToastTick);
 
-    // (b) and (c) share one event stream; window::events returns all window events.
-
-    let window_evts = iced::window::events().filter_map(|(_id, ev)| match ev {
-        iced::window::Event::FileDropped(path) => Some(Message::FileDropped(path)),
-        iced::window::Event::Resized(size) => Some(Message::WindowResized(size)),
+    let runtime_events = iced::event::listen_with(|event, _status, _id| match event {
+        iced::Event::Window(iced::window::Event::FileHovered(_)) => Some(Message::FileDragHovered),
+        iced::Event::Window(iced::window::Event::FilesHoveredLeft) => Some(Message::FileDragLeft),
+        iced::Event::Window(iced::window::Event::FileDropped(path)) => Some(Message::FileDropped(path)),
+        iced::Event::Window(iced::window::Event::Resized(size)) => {
+            Some(Message::WindowResized(size))
+        }
         // v1.17.0: also respond to Opened so window_size is set at startup,
         // not just after the first explicit resize.
-        iced::window::Event::Opened { size, .. } => Some(Message::WindowResized(size)),
+        iced::Event::Window(iced::window::Event::Opened { size, .. }) => {
+            Some(Message::WindowResized(size))
+        }
         _ => None,
     });
 
-    Subscription::batch([toasts, window_evts])
+    Subscription::batch([toasts, runtime_events])
 }
 
 fn view(state: &AppState) -> Element<'_, Message> {
@@ -525,7 +550,18 @@ fn view(state: &AppState) -> Element<'_, Message> {
 
 fn update(state: &mut AppState, message: Message) -> Task<Message> {
     match message {
-        Message::FileDropped(path) | Message::FilePicked(Some(path)) => start_ingest(state, path),
+        Message::FileDropped(path) | Message::FilePicked(Some(path)) => {
+            state.file_drag_hovering = false;
+            start_ingest(state, path)
+        }
+        Message::FileDragHovered => {
+            state.file_drag_hovering = true;
+            Task::none()
+        }
+        Message::FileDragLeft => {
+            state.file_drag_hovering = false;
+            Task::none()
+        }
         Message::FilePicked(None) => {
             // File picker cancelled — no state change.
             Task::none()
@@ -546,6 +582,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // Persisted settings (export_plan, theme, locale) are preserved.
         // Resets transient UI state (nav page, extras open, etc.).
         Message::EditCancelled => {
+            state.file_drag_hovering = false;
             // v1.24.0: result_assets and source_asset are intentionally kept so
             // the history card can offer "View results →" on the Empty screen.
             // Clearing them is deferred until a new file is ingested.
@@ -1073,6 +1110,7 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
 /// All phases (ingest, preview build, asset bundle) now share the Converting state.
 
 fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message> {
+    state.file_drag_hovering = false;
     state.source_path = Some(path.clone());
     state.screen = Screen::Converting;
     state.busy = true;
