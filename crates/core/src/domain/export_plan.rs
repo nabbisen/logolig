@@ -95,6 +95,14 @@ pub struct ExportPlan {
     /// the struct-level `#[serde(default)]` (= `ExportPlan::default()`).
     /// Existing users see no behaviour change after upgrade.
     pub keep_transparency: bool,
+
+    /// Whether to generate the minimal Microsoft app logo set (v1.26.0).
+    ///
+    /// When enabled, the exporter writes four PNG files at the output root:
+    /// `StoreLogo.png`, `Square44x44Logo.png`, `Square150x150Logo.png`,
+    /// and `Wide310x150Logo.png`. This is intentionally an advanced,
+    /// opt-in setting rather than part of the default favicon bundle.
+    pub include_microsoft_app_logos: bool,
 }
 
 impl Default for ExportPlan {
@@ -126,6 +134,8 @@ impl Default for ExportPlan {
             monochrome: false,
             // v1.21.0: Transparency is preserved by default (modern favicon standard + backward compat).
             keep_transparency: true,
+            // v1.26.0: Microsoft app logos are advanced/opt-in, not default favicon output.
+            include_microsoft_app_logos: false,
         }
     }
 }
@@ -156,7 +166,12 @@ impl ExportPlan {
         let svg = usize::from(self.include_svg);
         // v1.8.0: +1 for manifest.webmanifest when web_manifest is Some.
         let manifest = usize::from(self.web_manifest.is_some());
-        let base = ico + apple + html + svg + manifest + self.png_sizes.len();
+        let microsoft_app_logos = if self.include_microsoft_app_logos {
+            crate::domain::MICROSOFT_APP_LOGOS.len()
+        } else {
+            0
+        };
+        let base = ico + apple + html + svg + manifest + self.png_sizes.len() + microsoft_app_logos;
         // v1.9.0: when monochrome is on, add greyscale PNG + SVG (if include_svg)
         //          + ICO (if include_ico). apple-touch / html / manifest excluded.
 

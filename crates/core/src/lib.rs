@@ -22,8 +22,9 @@ pub mod settings;
 // instead of the full module path.
 pub use domain::{
     ExportPlan, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX, PNG_SIZE_MIN, PersistedSettings,
-    PreviewContext, PreviewProfile, ResizeAlgorithm, Rgba8, SizeOverride, SourceAsset, SourceKind,
-    ThemeMode, VtracerPreset, WebManifestSettings,
+    MicrosoftAppLogoSpec, PreviewContext, PreviewProfile, ResizeAlgorithm, Rgba8, SizeOverride,
+    SourceAsset, SourceKind, ThemeMode, VtracerPreset, WebManifestSettings,
+    MICROSOFT_APP_LOGOS,
 };
 pub use error::AppError;
 pub use message_key::MessageKey;

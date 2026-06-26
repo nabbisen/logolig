@@ -23,6 +23,7 @@ prior version history.
 | [0002](./0002-user-specified-flatten-color.md) | User-specified flatten color | medium | Draft |
 | [0003](./0003-bmp-input-support.md) | BMP input support | small | Draft |
 | [0004](./0004-locale-zh-cn.md) | Simplified Chinese locale | medium | Draft |
+| [0005](./0005-microsoft-app-logos.md) | Microsoft app logos | small | Implemented (v1.26.0) |
 
 "Status: Draft" means the RFC is reviewed and ready for implementation
 but no implementer has started yet. It moves to "In Progress" once a

@@ -399,6 +399,10 @@ pub enum Message {
     /// Toggles the `mono/` grayscale output set.
     IncludeMonochromeToggled(bool),
 
+    // v1.26.0: Microsoft app logo output
+    /// Toggles the minimal Microsoft app logo PNG set.
+    IncludeMicrosoftAppLogosToggled(bool),
+
     // v1.21.0: keep-transparency toggle
     /// Whether to preserve alpha or flatten against a white background.
     /// `true` = preserve (modern favicon standard); `false` = flatten.
@@ -1013,6 +1017,17 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             // only at export time and has no preview representation.
 
             state.export_plan.monochrome = on;
+            persist_settings(state);
+            Task::none()
+        }
+
+        // -----------------------------------------------------------------
+        // v1.26.0: Microsoft app logo output
+        // -----------------------------------------------------------------
+        Message::IncludeMicrosoftAppLogosToggled(on) => {
+            // Advanced, opt-in output group. Like monochrome, it only affects
+            // generated result assets; preview cache is unchanged.
+            state.export_plan.include_microsoft_app_logos = on;
             persist_settings(state);
             Task::none()
         }

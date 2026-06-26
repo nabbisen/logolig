@@ -31,6 +31,28 @@ in v1.2.0 control the SVG output:
 When the input is already SVG, `vectorize_on_raster` is irrelevant: the
 source bytes are copied to `favicon.svg` unchanged.
 
+
+## Optional Microsoft app logos (v1.26.0)
+
+When `ExportPlan::include_microsoft_app_logos` is enabled, Logolig adds a
+small Microsoft app logo set to the result bundle:
+
+| File | Dimensions | Purpose |
+| --- | ---: | --- |
+| `StoreLogo.png` | 50×50 | Store/logo identity asset |
+| `Square44x44Logo.png` | 44×44 | Small app identity asset |
+| `Square150x150Logo.png` | 150×150 | Square tile logo |
+| `Wide310x150Logo.png` | 310×150 | Wide tile logo |
+
+This setting is off by default and appears under Advanced settings. The
+feature intentionally avoids the full Windows scale-qualified asset matrix:
+v1.26.0 only implements the four practical filenames requested for the
+current product flow. The renderer uses contain-fit placement on a
+transparent canvas so a source logo is not cropped or stretched, including
+the wide 310×150 output. The existing "Keep transparency" setting still
+applies; when disabled, these PNGs are flattened to white like other raster
+outputs.
+
 ## Quality strategy
 
 Each output PNG is rendered:
@@ -91,8 +113,9 @@ The following are **not** emitted by default:
 - Multiple `apple-touch-icon-*x*.png` variants. Modern iOS scales the
   single 180×180 well; the `-precomposed` variant is unnecessary on
   any iOS we target.
-- `browserconfig.xml` and the Microsoft tile colors. They were Edge
-  Legacy / IE11 only.
+- `browserconfig.xml` and Microsoft tile color metadata. They were Edge
+  Legacy / IE11 only. v1.26.0 can optionally generate four Microsoft app
+  logo PNGs, but it still does not emit legacy metadata by default.
 - A `manifest.webmanifest` file. v1 does not generate one because it
   is project-shaped, not favicon-shaped — the user often has their
   own manifest already. (A future v2 may add it as an advanced

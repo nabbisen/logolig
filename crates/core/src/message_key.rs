@@ -252,6 +252,14 @@ pub enum MessageKey {
     /// "Advanced settings" collapsible section heading.
     AdvancedExtrasSection,
 
+    // --- v1.26.0: Microsoft app logos ---
+    /// Microsoft app logo section heading.
+    SectionMicrosoftAppLogos,
+    /// Microsoft app logo section description.
+    SectionMicrosoftAppLogosBlurb,
+    /// Checkbox label for the minimal Microsoft app logo set.
+    IncludeMicrosoftAppLogosLabel,
+
     // --- v1.18.0: Left sidebar + picker popups (nav redesigned in v1.22.0) ---
     /// Sidebar Settings icon label/tooltip (legacy; nav changed in v1.22.0).
     SidebarLabelSettings,

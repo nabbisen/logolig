@@ -164,6 +164,7 @@ fn missing_fields_are_filled_from_default() {
     // Missing fields are filled with their defaults
     assert!(restored.export_plan.include_svg); // default = true
     assert!(restored.export_plan.vectorize_on_raster);
+    assert!(!restored.export_plan.include_microsoft_app_logos); // v1.26.0 default = false
     assert_eq!(restored.theme, ThemeMode::Dark);
     assert!(restored.locale.is_none()); // missing → None
 }

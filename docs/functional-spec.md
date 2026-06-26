@@ -1,7 +1,7 @@
 # Logolig Functional Specification
 
 > This document describes **what logolig can do and how it behaves** at
-> v1.15.0, as observable behaviour rather than implementation detail.
+> v1.26.0, as observable behaviour rather than implementation detail.
 > It is intended as input for UX review and external design decisions.
 >
 > The document separates **functional specification** (what it does) from
@@ -11,7 +11,7 @@
 
 ## 1. Purpose
 
-A local-first favicon generator. Takes a single image (logo source) as
+A local-first favicon and logo asset generator. Takes a single image (logo source) as
 input and produces a **multi-format, multi-size** favicon bundle for web
 use. Follows ABDD principles: accessible, internationalised, fully local.
 
@@ -57,6 +57,15 @@ Items marked ON are enabled by default.
 | `favicon-snippet.html` | Ready-to-paste `<link>` tag block | ON |
 | `manifest.webmanifest` | PWA Web App Manifest JSON | ON |
 | `mono/` subdirectory | Monochrome (BT.709 greyscale) versions of the above | OFF |
+| Microsoft app logos | `StoreLogo.png`, `Square44x44Logo.png`, `Square150x150Logo.png`, `Wide310x150Logo.png` | OFF |
+
+### Microsoft app logos
+
+The Microsoft app logo setting is an advanced, opt-in output group. When
+enabled, Logolig generates four PNG files at the output root: `StoreLogo.png`
+(50×50), `Square44x44Logo.png` (44×44), `Square150x150Logo.png` (150×150),
+and `Wide310x150Logo.png` (310×150). The wide logo uses contain-fit rendering
+on a transparent canvas so the source logo is not cropped or stretched.
 
 ### Atomic export
 

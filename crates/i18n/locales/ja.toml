@@ -185,6 +185,12 @@ svg_conversion_simple = "シンプル"
 svg_conversion_detailed = "詳細"
 section_misc = "その他"
 keep_transparency = "透過 (アルファ) を維持する"
+
+# --- Microsoft app logos (v1.26.0) ---
+section_microsoft_app_logos = "Microsoft app logos"
+section_microsoft_app_logos_blurb = "Windows アプリ向けの追加ロゴファイル: StoreLogo.png, Square44x44Logo.png, Square150x150Logo.png, Wide310x150Logo.png。"
+include_microsoft_app_logos_label = "Microsoft app logos を出力"
+
 advanced_extras_section = "上級設定"
 
 # --- 左サイドバー + ピッカーポップアップ (v1.18.0) ---

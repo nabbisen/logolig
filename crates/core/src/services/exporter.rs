@@ -36,11 +36,11 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::domain::{ExportPlan, Rgba8, SourceAsset, SourceKind};
+use crate::domain::{ExportPlan, Rgba8, SourceAsset, SourceKind, MICROSOFT_APP_LOGOS};
 use crate::error::AppError;
 use crate::services::{
     decode_jpeg, decode_png, decode_webp, encode_png, html_snippet, ico_writer, manifest_writer,
-    monochrome, rasterize_svg, resize, vectorize,
+    canvas, monochrome, rasterize_svg, resize, vectorize,
 };
 
 /// Result of a disk-write operation; tells the UI what was created.
@@ -158,6 +158,21 @@ pub fn run_in_memory(
             manifest_writer::MANIFEST_FILENAME,
             manifest_json.into_bytes(),
         );
+    }
+
+    // v1.26.0: Minimal Microsoft app logo set.
+    if plan.include_microsoft_app_logos {
+        for spec in MICROSOFT_APP_LOGOS {
+            let rgba = render_to_contain_canvas(
+                asset,
+                decoded_raster.as_ref(),
+                spec.width,
+                spec.height,
+                plan,
+            )?;
+            let png_bytes = encode_png::encode(&rgba)?;
+            push_artifact(&mut artifacts, spec.file_name, png_bytes);
+        }
     }
 
     // v1.9.0: Monochrome output set (mono/ subdirectory).
@@ -290,6 +305,34 @@ fn render_at_size(
             resize::resize(src, size, size, plan.algorithm)?
         }
         SourceKind::Svg => rasterize_svg::rasterize(asset, size)?,
+    };
+    if plan.keep_transparency {
+        Ok(rgba)
+    } else {
+        Ok(crate::services::flatten::flatten_to_white(&rgba))
+    }
+}
+
+
+/// Render the source into a non-cropping canvas while preserving aspect ratio.
+///
+/// Used by Microsoft app logo outputs, especially the non-square
+/// `Wide310x150Logo.png`. Existing favicon outputs still use `render_at_size`
+/// to preserve their historical square-output behaviour.
+fn render_to_contain_canvas(
+    asset: &SourceAsset,
+    decoded_raster: Option<&Rgba8>,
+    width: u32,
+    height: u32,
+    plan: &ExportPlan,
+) -> Result<Rgba8, AppError> {
+    let rgba = match asset.kind {
+        SourceKind::Png | SourceKind::Webp | SourceKind::Jpeg => {
+            let src = decoded_raster
+                .ok_or_else(|| AppError::export("internal: missing decoded raster"))?;
+            canvas::contain_on_transparent_canvas(src, width, height, plan.algorithm)?
+        }
+        SourceKind::Svg => rasterize_svg::rasterize_to_canvas(asset, width, height)?,
     };
     if plan.keep_transparency {
         Ok(rgba)

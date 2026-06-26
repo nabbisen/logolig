@@ -17,14 +17,27 @@ use crate::error::AppError;
 /// - The SVG logical viewBox is scaled proportionally to `target_size`
 ///   (non-square SVGs are centred with transparent padding)
 pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppError> {
+    rasterize_to_canvas(asset, target_size, target_size)
+}
+
+/// Render an SVG source into `target_w × target_h`, preserving aspect ratio.
+///
+/// Added for v1.26.0 Microsoft app logo assets, including the wide
+/// `Wide310x150Logo.png` canvas. Transparent padding is added around the
+/// fitted SVG content when aspect ratios do not match.
+pub fn rasterize_to_canvas(
+    asset: &SourceAsset,
+    target_w: u32,
+    target_h: u32,
+) -> Result<Rgba8, AppError> {
     if asset.kind != SourceKind::Svg {
         return Err(AppError::unsupported_file(format!(
             "rasterize_svg called on non-SVG source ({})",
             asset.kind.label()
         )));
     }
-    if target_size == 0 {
-        return Err(AppError::rasterize("target_size must be > 0"));
+    if target_w == 0 || target_h == 0 {
+        return Err(AppError::rasterize("target dimensions must be > 0"));
     }
 
     // 1. Parse into a usvg tree
@@ -39,18 +52,19 @@ pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppErro
         return Err(AppError::rasterize("SVG has zero or negative size"));
     }
 
-    // 2. Choose a scale that fits target_size while preserving aspect ratio
-    let target = target_size as f32;
-    let scale = (target / svg_w).min(target / svg_h);
+    // 2. Choose a scale that fits the target canvas while preserving aspect ratio.
+    let target_w_f = target_w as f32;
+    let target_h_f = target_h as f32;
+    let scale = (target_w_f / svg_w).min(target_h_f / svg_h);
     let drawn_w = svg_w * scale;
     let drawn_h = svg_h * scale;
-    let tx = (target - drawn_w) * 0.5;
-    let ty = (target - drawn_h) * 0.5;
+    let tx = (target_w_f - drawn_w) * 0.5;
+    let ty = (target_h_f - drawn_h) * 0.5;
 
     // 3. Allocate a Pixmap and render with resvg
-    let mut pixmap = tiny_skia::Pixmap::new(target_size, target_size).ok_or_else(|| {
+    let mut pixmap = tiny_skia::Pixmap::new(target_w, target_h).ok_or_else(|| {
         AppError::rasterize(format!(
-            "tiny_skia: cannot allocate pixmap {target_size}x{target_size}"
+            "tiny_skia: cannot allocate pixmap {target_w}x{target_h}"
         ))
     })?;
 
@@ -68,6 +82,6 @@ pub fn rasterize(asset: &SourceAsset, target_size: u32) -> Result<Rgba8, AppErro
         })
         .collect();
 
-    Rgba8::try_from_raw(target_size, target_size, Arc::<[u8]>::from(pixels))
+    Rgba8::try_from_raw(target_w, target_h, Arc::<[u8]>::from(pixels))
         .ok_or_else(|| AppError::rasterize("internal: rgba length mismatch"))
 }

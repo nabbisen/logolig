@@ -195,6 +195,11 @@ pub(crate) struct Dictionary {
     pub keep_transparency: String,
     pub advanced_extras_section: String,
 
+    // Microsoft app logos (v1.26.0)
+    pub section_microsoft_app_logos: String,
+    pub section_microsoft_app_logos_blurb: String,
+    pub include_microsoft_app_logos_label: String,
+
     // Left sidebar + picker popups (v1.18.0)
     pub sidebar_label_settings: String,
     pub sidebar_label_locale: String,
@@ -404,6 +409,11 @@ impl Dictionary {
             MessageKey::SectionMisc => &self.section_misc,
             MessageKey::KeepTransparency => &self.keep_transparency,
             MessageKey::AdvancedExtrasSection => &self.advanced_extras_section,
+
+            // v1.26.0
+            MessageKey::SectionMicrosoftAppLogos => &self.section_microsoft_app_logos,
+            MessageKey::SectionMicrosoftAppLogosBlurb => &self.section_microsoft_app_logos_blurb,
+            MessageKey::IncludeMicrosoftAppLogosLabel => &self.include_microsoft_app_logos_label,
 
             // v1.18.0
             MessageKey::SidebarLabelSettings => &self.sidebar_label_settings,

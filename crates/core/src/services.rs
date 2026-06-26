@@ -40,6 +40,7 @@
 //! - `decode_jpeg` — JPEG → Rgba8. Accepted as input with an educational warning;
 //!   JPEG cannot carry alpha so it is not ideal for favicons.
 
+pub mod canvas;
 pub mod decode_jpeg;
 pub mod decode_png;
 pub mod decode_webp;

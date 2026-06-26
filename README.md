@@ -11,11 +11,11 @@
 [![crates.io](https://img.shields.io/crates/v/logolig-i18n?label=i18n)](https://crates.io/crates/logolig-i18n)
 [![Dependency Status](https://deps.rs/crate/logolig-i18n/latest/status.svg)](https://deps.rs/crate/logolig-i18n)
 
-A local-first, accessible favicon generator GUI.
+A local-first, accessible logo asset generator GUI.
 
-PNG / SVG / WebP goes in. A polished `favicon.svg`, `favicon.ico`, an
-Apple touch icon, high-resolution PNGs, and a clean HTML `<head>` snippet
-come out — all on your machine, with no upload anywhere.
+PNG / SVG / WebP / JPEG goes in. A polished favicon bundle and, when enabled,
+small Microsoft app logo assets come out — all on your machine, with no upload
+anywhere.
 
 Built on [iced](https://iced.rs/) and [snora](https://github.com/nabbisen/snora).
 
@@ -129,6 +129,8 @@ By default, seven artifacts:
 - `apple-touch-icon.png` (180×180)
 - `favicon-32.png` / `favicon-192.png` / `favicon-512.png`
 - `favicon-snippet.html` (the `<link>` block for your `<head>`)
+- Optional Microsoft app logos: `StoreLogo.png`, `Square44x44Logo.png`,
+  `Square150x150Logo.png`, and `Wide310x150Logo.png`
 
 The set is intentionally minimal. The SVG output is referenced first in the
 generated HTML so modern browsers prefer it on high-DPI displays; older

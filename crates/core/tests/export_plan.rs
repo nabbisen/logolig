@@ -104,3 +104,21 @@ fn ico_size_set_can_become_empty() {
     }
     assert!(plan.ico_sizes.is_empty());
 }
+
+#[test]
+fn microsoft_app_logos_are_advanced_opt_in() {
+    let plan = ExportPlan::default();
+    assert!(!plan.include_microsoft_app_logos);
+    assert_eq!(logolig::MICROSOFT_APP_LOGOS.len(), 4);
+}
+
+#[test]
+fn artifact_count_includes_microsoft_app_logos_when_enabled() {
+    let mut plan = ExportPlan::default();
+    let base = plan.artifact_count();
+    plan.include_microsoft_app_logos = true;
+    assert_eq!(
+        plan.artifact_count(),
+        base + logolig::MICROSOFT_APP_LOGOS.len()
+    );
+}

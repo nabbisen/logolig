@@ -239,6 +239,17 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
                 web_manifest_body(state),
                 colors::muted_text(&theme),
             ),
+            // Microsoft app logos
+            subsection(
+                &t.t(MessageKey::SectionMicrosoftAppLogos),
+                Some(&t.t(MessageKey::SectionMicrosoftAppLogosBlurb)),
+                checkbox(state.export_plan.include_microsoft_app_logos)
+                    .label(t.t(MessageKey::IncludeMicrosoftAppLogosLabel))
+                    .on_toggle(Message::IncludeMicrosoftAppLogosToggled)
+                    .text_size(13)
+                    .into(),
+                colors::muted_text(&theme),
+            ),
             // Monochrome
             subsection(
                 &t.t(MessageKey::SectionMonochrome),
