@@ -130,5 +130,5 @@ reading; on too-short input return `None` so the caller falls back to
 
 ## Related ROADMAP entry
 
-See `docs/architecture.md` ROADMAP row for `v1.22.0+ (option)`,
+See `docs/src/architecture.md` ROADMAP row for `v1.22.0+ (option)`,
 sub-bullet (c).

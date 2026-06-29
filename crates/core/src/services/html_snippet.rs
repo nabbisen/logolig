@@ -1,6 +1,6 @@
 //! HTML `<head>` snippet generator (§7.2).
 //!
-//! Design principles (see docs/export-spec.md):
+//! Design principles (see docs/src/export-spec.md):
 //! - **Semantic** — correct use of `rel="icon"` / `rel="apple-touch-icon"`
 //! - **Modern** — no legacy `msapplication-*` or `browserconfig.xml`
 //! - **Minimal** — only references artifacts present in the export plan

@@ -328,5 +328,5 @@ encode hidden alpha that affects downstream tools.
 
 ## Related ROADMAP entry
 
-See `docs/architecture.md` ROADMAP row for `v1.22.0+ (option)`,
+See `docs/src/architecture.md` ROADMAP row for `v1.22.0+ (option)`,
 sub-bullet (b).

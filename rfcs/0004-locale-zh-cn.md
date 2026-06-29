@@ -72,7 +72,7 @@ worse than showing English.
   through as their original English text. logolig wraps them in a
   translated `MessageKey::ErrorTitle` envelope but the inner cause
   remains in English. This is an inherited limitation from v1.5.0 and
-  is documented in `docs/architecture.md`.
+  is documented in `docs/src/architecture.md`.
 
 ## Requirements
 
@@ -289,5 +289,5 @@ specific to zh-CN, but worth re-checking when touching the area.)
 
 ## Related ROADMAP entry
 
-See `docs/architecture.md` ROADMAP row for `v1.22.0+ (option)`,
+See `docs/src/architecture.md` ROADMAP row for `v1.22.0+ (option)`,
 sub-bullet (d).

@@ -8,7 +8,7 @@ already self-evident from the title alone, padding the document with an
 external section adds noise.
 
 The active set of RFCs corresponds to the priority themes listed under
-`v1.22.0+ (option)` in [`docs/architecture.md`](../docs/architecture.md)'s
+`v1.22.0+ (option)` in [`docs/src/architecture.md`](../docs/src/architecture.md)'s
 ROADMAP table. Each RFC is intended to be a complete handoff package for
 an implementer — the surrounding repository (architecture.md, export-spec.md,
 ui-a11y.md) provides context but the RFC itself should be self-contained
@@ -94,11 +94,11 @@ none), persisted state side-channels.
 
 ## Principles
 
-- **English only** — matches the rest of `docs/`.
+- **English only** — matches the rest of `docs/src/`.
 - **Self-contained** — an implementer should not need to read 5 other
   files to start. Quote or restate the relevant context inline.
 - **Decisions over options** — RFCs should land on a recommendation, not
   open a debate. If alternatives were considered and rejected, briefly
   note why; don't reopen the discussion in the RFC body.
-- **Cite the ROADMAP row** — link back to `docs/architecture.md` for the
+- **Cite the ROADMAP row** — link back to `docs/src/architecture.md` for the
   one-paragraph summary that justified the RFC's existence.

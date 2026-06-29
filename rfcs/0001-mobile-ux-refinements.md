@@ -251,5 +251,5 @@ no network calls.
 
 ## Related ROADMAP entry
 
-See `docs/architecture.md` ROADMAP row for `v1.22.0+ (option)`,
+See `docs/src/architecture.md` ROADMAP row for `v1.22.0+ (option)`,
 sub-bullet (a). This RFC is the detailed handoff for that bullet.

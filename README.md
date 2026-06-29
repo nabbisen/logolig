@@ -30,7 +30,7 @@ Existing online favicon generators have problems:
 - The UI demands too many decisions up front
 
 Logolig addresses all of these as **design requirements**, not
-afterthoughts. See `docs/architecture.md` for the rationale.
+afterthoughts. See `docs/src/architecture.md` for the rationale.
 
 ## Installation
 
@@ -101,7 +101,7 @@ Language and theme each cycle through their three states with one click.
    (Language used to live here too; it moved to the header icon button
    in v1.10.2 so it's reachable without opening the drawer.)
 5. Click **Export**, choose an output directory, and the artifacts
-   are written atomically (all-or-nothing — see `docs/export-spec.md`).
+   are written atomically (all-or-nothing — see `docs/src/export-spec.md`).
    If you want to abandon the current image without exporting, click
    **← Back** to return to the drop screen, or **↻ Re-select** to pick
    a different file without leaving the preview. Re-select keeps the
@@ -145,7 +145,7 @@ PWA `manifest.webmanifest` to the output, alongside a matching
 `<link rel="manifest">` line in the HTML snippet. The manifest's `icons`
 array mirrors the PNG sizes you've configured.
 
-See `docs/export-spec.md` for the rationale on what is **not** emitted (no
+See `docs/src/export-spec.md` for the rationale on what is **not** emitted (no
 `browserconfig.xml`, no `msapplication-*`).
 
 ## Layout
@@ -156,7 +156,7 @@ See `docs/export-spec.md` for the rationale on what is **not** emitted (no
 - `crates/logolig-app` — the iced + snora GUI binary, compiled to
   `logolig`.
 
-Documentation lives under `docs/`:
+Documentation lives under `docs/src/`:
 
 - `architecture.md` — module layout, state model, message flow
 - `ui-a11y.md` — Accessible-by-Default-and-by-Design (ABDD) commitments
