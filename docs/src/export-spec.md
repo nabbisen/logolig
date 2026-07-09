@@ -16,11 +16,11 @@ project:
 | `apple-touch-icon.png` | 180×180 PNG; iOS / iPadOS home-screen icon. |
 | `favicon-32.png` | High-DPI browser tab. |
 | `favicon-192.png` | PWA / Android home-screen install. |
-| `favicon-512.png` | PWA splash / `manifest.webmanifest` reference. |
+| `favicon-512.png` | Large favicon / optional manifest icon reference. |
 | `<head>` HTML snippet | Pasteable markup; see below. |
 
-A user can extend `png_sizes` or `ico_sizes` via the advanced settings
-drawer (§5.3) but the default set is intentionally short. Two new toggles
+A user can extend `png_sizes` from the Customize page. The default set is
+intentionally short. Two toggles
 in v1.2.0 control the SVG output:
 
 - `include_svg` (default: `true`) — write `favicon.svg` at all
@@ -62,7 +62,7 @@ Each output PNG is rendered:
 - For PNG sources — by decoding the source once and resizing to each
   target with `fast_image_resize`. The default algorithm is
   `Lanczos3` (`ResizeAlgorithm::Lanczos3`); other choices are
-  available via the advanced drawer.
+  available from Customize → Advanced settings.
 
 For the ICO container, **each frame is generated from the source at
 that exact size**. ICO frames are not scaled from a "master"
@@ -116,10 +116,9 @@ The following are **not** emitted by default:
 - `browserconfig.xml` and Microsoft tile color metadata. They were Edge
   Legacy / IE11 only. v1.26.0 can optionally generate four Microsoft app
   logo PNGs, but it still does not emit legacy metadata by default.
-- A `manifest.webmanifest` file. v1 does not generate one because it
-  is project-shaped, not favicon-shaped — the user often has their
-  own manifest already. (A future v2 may add it as an advanced
-  option once the WASM build introduces PWA-flavoured workflows.)
+- A `manifest.webmanifest` file by default. It is available as an
+  advanced opt-in because manifests are project-shaped and users often
+  already have one.
 
 ## Failure modes
 

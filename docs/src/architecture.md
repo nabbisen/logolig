@@ -113,33 +113,34 @@ A single `AppState` lives in `logolig-app`. Pure functional `view` and
 
 | Field | Purpose |
 | --- | --- |
-| `screen: Screen` | Current screen (Empty / Importing / Preview / ExportReady / Exporting) |
+| `screen: Screen` | Current Home-flow screen (Empty / Converting / Result) |
 | `theme: ThemeMode` | System / Light / Dark |
-| `advanced_open: bool` | Whether the advanced settings BottomSheet is open |
+| `nav_page: NavPage` | Current side-nav page (Home / Customize / Settings) |
+| `advanced_extras_open: bool` | Whether Customize's infrequently changed settings section is expanded |
 | `source_path` / `source_asset` | The loaded image (immutable; §6.4 non-destructive) |
 | `preview: Option<PreviewProfile>` | Current preview context + background |
-| `export_plan: ExportPlan` | What and how to write to disk |
+| `result_assets: Option<ResultAssets>` | In-memory generated artifacts shown on the Result screen |
+| `export_plan: ExportPlan` | What and how to generate |
 | `busy: bool` | Whether a long task is in flight |
 | `toasts: Vec<Toast<Message>>` | Notifications (errors, successes) |
 | `next_toast_id: u64` | Monotonic id source for toasts |
 
 ### Screen states
 
-There are **five** screens. `Failed` was deliberately omitted: errors
-become `Toast::persistent()` notifications instead of taking over the
-screen. A persistent error toast is dismissible from any screen and
-keeps the user's context (their loaded image, their progress) intact.
+There are **three** Home-flow screens. `Failed` is deliberately omitted:
+errors become `Toast::persistent()` notifications instead of taking over
+the screen. A persistent error toast is dismissible from any screen and
+keeps the user's context intact.
 
 ```text
-   Empty ──drop / pick──> Importing ──ok──> Preview ──export──> Exporting
-                                                                  │
-                                                                  ok
-                                                                  ▼
-                                                            ExportReady
+   Empty ──drop / pick──> Converting ──conversion ok──> Result
+     ▲                         │                         │
+     └──────────── Back ───────┴──────────── Back ───────┘
 ```
 
-On any error, the state machine returns to `Preview` (if a source is
-loaded) or `Empty` (if not), and a persistent error toast is enqueued.
+On any error, the state machine returns to `Result` when previous
+in-memory assets are still available; otherwise it returns to `Empty`.
+A persistent error toast is enqueued.
 
 ## Message flow
 
@@ -150,7 +151,7 @@ loaded) or `Empty` (if not), and a persistent error toast is enqueued.
    Message::FileDropped            Message::IngestCompleted(Result<...>)
       │                                 │
       ▼                                 ▼
-   start_ingest(path)               Ok → Screen::Preview
+   start_ingest(path)               Ok → preview task + convert task
       │                             Err → fail() → toast
       ▼
    iced::Task::perform(
@@ -158,6 +159,11 @@ loaded) or `Empty` (if not), and a persistent error toast is enqueued.
        ingest::ingest(path),
      Message::IngestCompleted)
 ```
+
+When conversion completes, `Message::ConvertCompleted` stores
+`ResultAssets` in memory and switches to `Screen::Result`. Individual
+download and ZIP download messages write bytes only after the user picks
+a save target.
 
 Heavy work is run via `iced::Task::perform`, never on the UI thread.
 The Task helpers live in `logolig-app/src/task_queue.rs` because they
@@ -216,7 +222,7 @@ that strengthen the core for v2 reuse:
 | **v1.14.0** | **Dark-mode colour integrity + visual hierarchy**: ~10 hardcoded `Color::from_rgb(...)` constants (all assuming the light theme) replaced with role-based colours via `iced::extended_palette()`. New module `crates/logolig-app/src/ui/colors.rs` provides role functions (`app_name(theme)` / `tagline(theme)` / `file_name(theme)` / `page_title(theme)` / `section_label(theme)` / `group_heading(theme)` / `muted_text(theme)` / `drop_zone_headline(theme)` / `badge_muted_bg(theme)`); each screen receives a resolved `&Theme` via `crate::app::resolve_theme(state)`. The boundary between "theme-reactive" and "intentionally hardcoded" is documented: hardcoded items are (a) checkerboard greys (`#E6E6E6` / `#C0C0C0` — indicators of transparency itself) and (b) browser-tab / phone / wallpaper preview colours (controlled by the Surface picker, an independent axis). Unified role names across screens make font-size ↔ role ↔ theme-reactivity relationships explicit. `accordion_group` extended with `heading_color: Color`; `subsection` extended with `muted_color: Color`; `size_subsection` calls `resolve_theme(state)` for the "at defaults" badge colour. Light/dark switching via the `◐/☀/☾` header button; all text, card borders, badge backgrounds, and muted descriptions follow the theme. |
 | **v1.15.0** | **Advanced drawer scroll + sticky footer**: the old layout placed Reset/Close at the end of a single column, so fully expanding all accordions pushed the footer off the bottom of the sheet. Fix: drawer split into three rows — (1) title area (`Length::Shrink`, pinned top), (2) `iced::widget::scrollable`-wrapped group content (`Length::FillPortion(1)`, fills remaining space), (3) footer (`Length::Shrink`, pinned bottom = sticky). Only the middle row scrolls; title and footer are always visible. Because snora 0.8's `Sheet` is documented as a pure content carrier, the wrapping is done entirely on the logolig side. Reset (left, destructive-leaning — transparent bg + `palette.danger.weak.color` border, hover tints with danger at alpha 0.15) and Close (right, neutral — `secondary_button_style`) are visually differentiated by position + border colour + hover feedback; `Space::new()` in the row creates the left-right separation. Always-visible scrollbar (iced 0.14 default) signals "more content below". Sheet size remains `SheetSize::Half`. |
 | **v1.16.0** | **Screen structure revision — first stage of the new external design**: screen states simplified from 5 (`Empty / Importing / Preview / Exporting / ExportReady`) to 3 (`Empty / Converting / Result`). The Preview state is removed; the v1.15 flow "confirm via View-as pickers → press Export to write" becomes "drop file → auto-convert → Result screen with asset cards + individual DL / ZIP DL". Preview inspection is preserved as an optional collapsible section ("▶ Preview") on the Result screen. In-memory conversion: conversion results are held in `crate::result::ResultAssets` (app state) and written to disk only when the user presses a download button, decoupling generation from saving. ZIP bundle uses the `zip = "2"` crate. Two new UI modules: `ui::converting` (replaces the old Importing/Exporting screens) and `ui::result_view` (3-column asset card grid; `ResultAssetKind` drives card appearance — raster thumbnail for PNG/ICO, `<>` placeholder for SVG, etc.). Each card shows file name, thumbnail, badge (PNG/ICO/SVG/HTML/JSON), dimensions (images only), human-readable size, and a per-card download button. "Download all (ZIP)" button at the bottom. Total artifact bytes are typically < 1 MB, so in-memory holding cost is negligible. BMP input deferred (separate phase). |
-| **v1.17.0** | **Settings drawer → Right Sheet + flat layout**: migrated from Bottom Sheet to Right Sheet (`SheetEdge::End`); content reorganised into a flat section structure matching the design mock. Settings not in the mock (apple-touch-icon / HTML snippet / web manifest / monochrome / resize algorithm / vectorize_on_raster) are collected under a collapsible "Advanced" chevron (accessible to power users without cluttering the main view). ICO generation section removed entirely — favicon.ico is always produced at fixed sizes (16/24/32/48), requiring no user input. PNG output sizes: six preset checkboxes (16/32/48/96/192/512) plus a custom-size input. SVG conversion: 3-position discrete slider (Simple ↔ Detailed) mapping to vtracer presets Sharp / Default / PhotoRich. Right Sheet width: `window_width / 3.0` clamped to `[280 px, 480 px]` (`shell::drawer_pixel_width`); calculated on the app side because snora 0.8 `SheetSize` has no min/max combination mechanism. Window size subscribed via `iced::window::events()` `Resized` / `Opened` → `Message::WindowResized`. Footer: only "↻ Reset" (left-aligned); Close consolidated into the × button. Old accordion helpers, `AdvancedGroup*` types, `badge_muted_bg`, and `close_button_style` removed. 9 new `MessageKey` entries + en/ja translations. Keep-transparency toggle: UI only in v1.17 (always true placeholder); full implementation in v1.21.0. |
+| **v1.17.0** | **Settings drawer → Right Sheet + flat layout**: migrated from Bottom Sheet to Right Sheet (`SheetEdge::End`); content reorganised into a flat section structure matching the design mock. Settings not in the mock (apple-touch-icon / HTML snippet / web manifest / monochrome / resize algorithm / vectorize_on_raster) are collected under a collapsible "Advanced" chevron (accessible to power users without cluttering the main view). ICO generation section removed entirely — favicon.ico is always produced at fixed sizes (16/32/48), requiring no user input. PNG output sizes: six preset checkboxes (16/32/48/96/192/512) plus a custom-size input. SVG conversion: 3-position discrete slider (Simple ↔ Detailed) mapping to vtracer presets Sharp / Default / PhotoRich. Right Sheet width: `window_width / 3.0` clamped to `[280 px, 480 px]` (`shell::drawer_pixel_width`); calculated on the app side because snora 0.8 `SheetSize` has no min/max combination mechanism. Window size subscribed via `iced::window::events()` `Resized` / `Opened` → `Message::WindowResized`. Footer: only "↻ Reset" (left-aligned); Close consolidated into the × button. Old accordion helpers, `AdvancedGroup*` types, `badge_muted_bg`, and `close_button_style` removed. 9 new `MessageKey` entries + en/ja translations. Keep-transparency toggle: UI only in v1.17 (always true placeholder); full implementation in v1.21.0. |
 | **v1.18.0** | **Header icons moved to a left vertical sidebar**: old top-right horizontal icon row (language / theme / settings / close) migrated to a left sidebar per the design mock. Header simplified to app name (Empty/Converting) or file name (Result) only. Close button removed entirely — delegated to the OS native window chrome (future browser-port consideration). Icons: lucide-icons via snora 0.8 `widgets` + `lucide-icons` features — `lucide::Settings` / `lucide::Languages` / `lucide::Moon`. Old cycle-UI `language_icon_glyph()` / `theme_icon_glyph()` removed. Language/theme pickers implemented as click-to-open popups via snora's `context_menu` slot (`AppLayout::context_menu(...)` + `on_close_menus`; outside-click dismisses); only one open at a time. Cycle UI replaced by direct selection (`LocalePicked(Option<Locale>)` / `ThemePicked(ThemeMode)`) with ✓ prefix on the current value. Sidebar: 90 px wide, icon (22 px) + label (11 px) two-row layout assembled on the logolig side (snora's `app_side_bar` widget is 64 px + tooltip only, not matching the mock's label-below style). Active state: `palette.background.strong.color` at alpha 0.35 + label colour switches to `page_title` (ABDD §12, not colour alone). `AppLayout::side_bar(...)` slot integrates with snora's skeleton and supports automatic LTR/RTL layout. 9 new `MessageKey` entries + en/ja translations. Simplified Chinese locale deferred to a separate phase. |
 | **v1.19.0** | **Dead Message cleanup + `exporter::run_in_memory` direct API**: 6 dead `Message` variants removed — `ExportRequested` / `ExportDirPicked` / `ExportCompleted` (old "Export → pick dir → bulk write" flow, superseded by per-file DL / ZIP DL in v1.16), `LocaleCycled` / `ThemeToggled` (old cycle UI, superseded by direct pickers in v1.18), `AppCloseRequested` (old close button, removed in v1.18). Related handlers, `pick_export_dir_task`, `export_task`, old `action_row` in `preview_panel`, and orphaned `secondary_button_style` all removed. Core change: **`exporter::run_in_memory(asset, plan) -> Result<Vec<InMemoryArtifact>, AppError>`** added — pure in-memory, zero disk I/O, future browser-port friendly, no temp-directory leak risk. Old `exporter::run` (disk version) refactored into a thin wrapper that calls `run_in_memory` then writes atomically via a staging directory; existing 12 tests pass unchanged. `task_queue::convert_in_memory_task` renamed to `convert_task` and simplified to call `run_in_memory` directly (temp-directory create/write/read/cleanup cycle eliminated). 5 new unit tests for the in-memory API covering artifact count / order / relative paths / byte-level match with disk run / mono subdirectory representation / error cases / optional artifact toggles. |
 | **v1.20.0** | **Mobile layout**: window width `< 768 px` (Bootstrap `md` breakpoint / old iPad mini portrait boundary) is treated as mobile. Detection centralised in `app::is_mobile(state) -> bool`; each UI module branches on it. Changes: (1) Left sidebar (90 px) → bottom nav (64 px tall, 3 equal cells) on mobile. New module `ui::bottom_nav` (twin of `ui::sidebar`) fires the same Messages and uses the same active-state style. `shell.rs` switches between `AppLayout::side_bar()` (desktop) and `AppLayout::footer()` (mobile). (2) Settings Right Sheet width on mobile: clamped to `[280, window_width - 16]` (nearly full-width, 16 px margin). Desktop retains v1.17 `[280, 480]`. `drawer_pixel_width(window_width, mobile)` signature updated. (3) Asset card grid: 2 columns mobile, 3 desktop. `result_view::build_grid` gains `columns: usize`. (4) Header horizontal padding: 20→8 on mobile; vertical unchanged. Startup transient: `AppState::window_size` defaults to 1280×720 so the first frame may render as desktop before the first resize event corrects it — harmless. |

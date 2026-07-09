@@ -8,7 +8,7 @@
 //! - `export_plan`: full output plan (PNG/ICO sizes, algorithm, toggles)
 //! - `theme`:       theme mode selection (System / Light / Dark)
 //! - `locale`:      optional locale override; `Some("ja")` overrides the
-//!                  OS locale. Unused in v1.4 but wired up in v1.5+.
+//!   OS locale. Unused in v1.4 but wired up in v1.5+.
 //!
 //! ## What is NOT persisted
 //!

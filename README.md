@@ -41,7 +41,7 @@ Requires Rust 1.85 or newer.
 ```sh
 git clone https://github.com/nabbisen/logolig
 cd logolig
-cargo install --path crates/logolig-app
+cargo install --path crates/app
 logolig
 ```
 
@@ -63,57 +63,36 @@ cargo run -p logolig-app --release
 
 ## Usage
 
-The window has a slim header at the top with four icon buttons on the
-right — language (`文A`/`Aa`/`あ`), theme (`◐`/`☀`/`☾`), advanced (`⚙`),
-and close (`✕`). Each button shows a tooltip when you hover over it.
-Language and theme each cycle through their three states with one click.
+The app uses a three-item side navigation: **Home**, **Customize**, and
+**Settings**. On narrow windows the same navigation moves to the bottom.
 
-1. Drop a PNG, SVG, WebP, or JPEG onto the window, or click anywhere
-   inside the bordered drop card on the empty screen.
+1. On **Home**, drop a PNG, SVG, WebP, or JPEG onto the window, or click
+   anywhere inside the bordered drop-zone card to open the file picker.
    - JPEG inputs work, but the format cannot store transparency, so
-     Logolig shows an educational toast suggesting you re-export your
-     logo as a PNG with the background cut out for a proper favicon
-     that adapts to dark and light browser tabs.
-2. Once an image loads, inspect the preview using the **View as** picker:
-   - **Browser tab** — 16×16 in a tab-frame mock
-   - **Phone home** — the icon at home-screen size on a phone-style mock
-   - **Checker** — drop the framing entirely and show the icon over a
-     light/dark grey checker pattern so transparent regions are obvious
-3. Switch the **Surface** (System / Light / Dark) to see how the icon
-   reads on each background. The Surface picker greys out automatically
-   when Checker is active because background tinting doesn't apply there.
-4. (Optional) Click the gear icon (**⚙**) to open the advanced drawer.
-   The drawer is organized into three accordion groups, each with a
-   clickable heading (`▶` collapsed, `▼` expanded). Only **What to
-   export** is open by default — Extras and Rendering quality start
-   collapsed since most users don't touch them. Click any heading to
-   show or hide its contents. The expansion state is per-session: it
-   resets to the default each time you open the drawer.
-   - **What to export** — file kinds (ICO, Apple touch, SVG, HTML
-     snippet) and PNG / ICO size sets. Size sets at their defaults
-     (32 / 192 / 512 for PNG, 16 / 32 / 48 for ICO) display as a quiet
-     "at defaults: …" badge; type a number into the adjacent input and
-     the full chip editor expands.
-   - **Extras** — opt-in extras (Web manifest for PWA, Monochrome
-     `mono/` set). Most users skip these.
-   - **Rendering quality** — resize algorithm (Lanczos3 default).
+     Logolig shows an educational toast suggesting a PNG with the
+     background cut out for favicons that adapt to light and dark tabs.
+2. Logolig converts immediately after ingest and then shows the **Result**
+   screen. Each generated asset appears as a card with a thumbnail or
+   document placeholder, dimensions where applicable, file size, and an
+   individual download button.
+3. Use **Preview** on the Result screen when you want to inspect the icon
+   in browser-tab, phone-home, or checkerboard contexts before saving.
+4. Save one asset with its card download button, or save the whole result
+   set with **Download all (ZIP)**. Conversion itself is in-memory; files
+   are written only when you choose a download target.
+5. Use **← Back** to return to the drop zone. The last result remains in
+   memory for the session and can be reopened from the **Last conversion**
+   card without re-converting.
 
-   (Language used to live here too; it moved to the header icon button
-   in v1.10.2 so it's reachable without opening the drawer.)
-5. Click **Export**, choose an output directory, and the artifacts
-   are written atomically (all-or-nothing — see `docs/src/export-spec.md`).
-   If you want to abandon the current image without exporting, click
-   **← Back** to return to the drop screen, or **↻ Re-select** to pick
-   a different file without leaving the preview. Re-select keeps the
-   current preview if you cancel the file picker.
+Use **Customize** for output settings: PNG sizes, SVG conversion mode,
+keep-transparency behavior, and the collapsible **Advanced settings**
+section for Apple touch icon, HTML snippet, web manifest, monochrome output,
+resize algorithm, raster vectorization, and Microsoft app logos.
+
+Use **Settings** for language and theme. Supported languages are English,
+Japanese, and system default; themes are light, dark, and system default.
 
 The generated `favicon-snippet.html` is paste-ready for your `<head>`.
-
-The preview frame on the edit screen scales with your window height
-(roughly 4/7 of the available vertical space, capped at ~560px) so
-that the Export button stays in a stable position regardless of which
-View-as mode is active. Switching between Browser tab / Phone home /
-Checker mode no longer makes the layout shift.
 
 Active picker buttons (View as / Surface, vtracer preset) are
 indicated **both** with a filled background and a `▣` text prefix, so
@@ -137,7 +116,7 @@ generated HTML so modern browsers prefer it on high-DPI displays; older
 browsers fall back to the ICO and PNGs.
 
 If your input is a photograph or otherwise unsuitable for vectorization,
-turn off **Vectorize raster sources to SVG** in the advanced drawer to skip
+turn off **Vectorize raster sources to SVG** in Customize → Advanced settings to skip
 `favicon.svg` for that run.
 
 Optionally, enabling **Output `manifest.webmanifest`** (since v1.8.0) adds a
@@ -153,8 +132,8 @@ See `docs/src/export-spec.md` for the rationale on what is **not** emitted (no
 - `crates/core` — pure domain types and image processing.
   No iced / snora / GUI dependency. The dependency graph enforces
   this: importing iced from inside core is a compile-time error.
-- `crates/logolig-app` — the iced + snora GUI binary, compiled to
-  `logolig`.
+- `crates/i18n` — bundled dictionaries and locale resolution.
+- `crates/app` — the iced + snora GUI binary, compiled to `logolig`.
 
 Documentation lives under `docs/src/`:
 
@@ -164,8 +143,8 @@ Documentation lives under `docs/src/`:
 
 ## Settings persistence
 
-Your advanced settings (resize algorithm, output toggles, PNG / ICO sizes,
-theme) are saved automatically as you change them. Storage location:
+Your output settings, theme, and locale override are saved automatically as
+you change them. Storage location:
 
 - Linux: `$XDG_CONFIG_HOME/logolig/settings.json` (or `~/.config/logolig/settings.json`)
 - macOS: `~/Library/Application Support/logolig/settings.json`
@@ -202,7 +181,8 @@ transparent regions are visually unambiguous.
 
 ## Web manifest (PWA)
 
-When **Output `manifest.webmanifest`** is enabled in the advanced drawer,
+When **Output `manifest.webmanifest`** is enabled in Customize → Advanced
+settings,
 Logolig writes a [W3C Web App Manifest](https://www.w3.org/TR/appmanifest/)
 alongside the favicons. The four user-editable fields are:
 
@@ -224,7 +204,8 @@ export, a Toast is shown and the export is blocked until it's fixed.
 
 ## Monochrome output
 
-When **Output `mono/` grayscale set** is enabled in the advanced drawer,
+When **Output `mono/` grayscale set** is enabled in Customize → Advanced
+settings,
 Logolig adds a grayscale version of each PNG and the ICO under a `mono/`
 subdirectory:
 
@@ -297,51 +278,48 @@ ICO is shipped as `mono/favicon.ico` for completeness — its primary use
 case is legacy `favicon.ico` URLs at the site root, which can't easily
 be theme-swapped, but it's there if you need it.
 
-SVG monochrome is not yet supported in v1.9.0. The naive "replace `fill`
+SVG monochrome is not yet supported. The naive "replace `fill`
 attributes" approach breaks on gradients, external CSS, and inline
-styles, so a future v1.9.x release will go raster → grayscale →
+styles, so a future release may go raster → grayscale →
 re-vectorize via vtracer instead.
 
 ## Language
 
-Logolig follows your system language by default. Click the language icon
-in the header (top right) to cycle through the three states:
+Logolig follows your system language by default. Open **Settings** to choose:
 
-- **System default** (`文A`) — use the OS locale (`LANG` on Linux,
+- **System default** — use the OS locale (`LANG` on Linux,
   `NSLocale` on macOS, user UI language on Windows)
-- **English** (`Aa`) — explicit override
+- **English** — explicit override
 - **日本語** (`あ`) — Japanese (since v1.6.0)
 
-The icon glyph reflects the current state, so you can tell at a glance
-which language is active. The selection persists across sessions.
+The selection persists across sessions.
 Locale detection accepts the common forms — `en`, `en-US`, `en_US`, `ja`,
 `ja-JP`, `ja_JP`, even `ja_JP.UTF-8` from POSIX `LANG` — so most users
 need no override.
 
 If your OS locale isn't supported yet, Logolig falls back to English
 without warning. New languages are added by dropping a TOML file under
-`crates/logolig-i18n/locales/` and adding a `Locale` enum variant —
+`crates/i18n/locales/` and adding a `Locale` enum variant —
 the enum's exhaustiveness check ensures every UI string and error
 message has a translation, or the build fails.
 
 ## Tests
 
 ```sh
-cargo test -p logolig
-cargo test -p logolig-i18n
+cargo fmt --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo audit
 ```
 
-logolig has 101 integration tests covering ingest, decode (PNG /
-WebP / JPEG), SVG rasterization, vectorization, resize, preview cache,
-ICO writing, HTML snippet generation, transactional export, settings
-round-trip, forward-compatible JSON deserialization, transparency-state
-classification, Web manifest JSON generation, and BT.709 grayscale
-conversion (alpha preservation, coefficient precision, exporter `mono/`
-subdirectory wiring). logolig-i18n adds 16 tests covering dictionary
-loading (English and Japanese), placeholder substitution, error
-translation, BCP-47 locale resolution including POSIX forms, and a
-regression check that Japanese UI keys actually differ from English.
-Total: 117 tests.
+The core tests cover ingest, decode, SVG rasterization, vectorization,
+resize, preview cache, ICO writing, HTML snippet generation, in-memory and
+disk export, settings round-trip, transparency classification, web manifest
+JSON generation, Microsoft app logo output, and monochrome conversion. The
+i18n tests cover dictionary loading, placeholder substitution, error
+translation, and BCP-47 locale resolution. The app crate has focused
+`update()` smoke tests for navigation, settings changes, history, and
+drag/drop state.
 
 ## Versioning
 

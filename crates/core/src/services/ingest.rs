@@ -216,8 +216,8 @@ fn parse_webp_size(bytes: &[u8]) -> Option<(u32, u32)> {
             let b2 = chunk_data[2] as u32;
             let b3 = chunk_data[3] as u32;
             let b4 = chunk_data[4] as u32;
-            let w = ((b1 | ((b2 & 0x3F) << 8)) + 1) as u32;
-            let h = (((b2 >> 6) | (b3 << 2) | ((b4 & 0x0F) << 10)) + 1) as u32;
+            let w = (b1 | ((b2 & 0x3F) << 8)) + 1;
+            let h = ((b2 >> 6) | (b3 << 2) | ((b4 & 0x0F) << 10)) + 1;
             (w > 0 && h > 0).then_some((w, h))
         }
         b"VP8X" => {
@@ -296,10 +296,10 @@ fn parse_jpeg_size(bytes: &[u8]) -> Option<(u32, u32)> {
         }
 
         // SOF range: C0-C3, C5-C7, C9-CB, CD-CF (DHT=C4, JPG=C8, DAC=CC excluded)
-        let is_sof = match marker {
-            0xC0..=0xC3 | 0xC5..=0xC7 | 0xC9..=0xCB | 0xCD..=0xCF => true,
-            _ => false,
-        };
+        let is_sof = matches!(
+            marker,
+            0xC0..=0xC3 | 0xC5..=0xC7 | 0xC9..=0xCB | 0xCD..=0xCF
+        );
         if is_sof {
             // SOF segment data follows for seg_len bytes (self-inclusive).
             // Content: precision(1) + height(2 BE) + width(2 BE) + ...

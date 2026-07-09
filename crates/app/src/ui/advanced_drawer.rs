@@ -47,7 +47,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // remain accessible (chevron `▶` / `▼`).
     //
     // ICO generation section removed in v1.17.0 (confirmed in Q4). favicon.ico
-    // is always output at default sizes (16/24/32/48 multi-frame); no user toggle.
+    // is always output at default sizes (16/32/48 multi-frame); no user toggle.
     // Old ICO size editor removed entirely.
 
     // ─────────────────────────────────────────────────────────────
@@ -355,7 +355,6 @@ fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
 
 /// Sub-section within a group: title + optional blurb + body.
 /// Successor to the old `section` helper (renamed when the group hierarchy grew).
-
 ///
 /// v1.14.0: `muted_color` is resolved by the caller and passed in.
 fn subsection<'a>(
@@ -383,7 +382,6 @@ fn subsection<'a>(
 /// - No validation during typing (avoids mid-input warning UX)
 /// - Validation runs at export time
 /// - Persist on every keystroke (`persist_settings`) — consistent with other inputs
-
 fn web_manifest_body<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let toggle = checkbox(state.export_plan.web_manifest.is_some())
@@ -631,31 +629,6 @@ fn secondary_drawer_button_style(
             color: palette.background.strong.color,
             width: 1.0,
             radius: 6.0.into(),
-        },
-        ..Default::default()
-    }
-}
-
-/// v1.17.0: The × button that was at the top-right of the drawer title row.
-///
-/// Light fill on hover only; minimal decoration (no border) — matches
-/// the common modern "title-bar × button" appearance.
-fn title_close_button_style(
-    theme: &iced::Theme,
-    status: iced::widget::button::Status,
-) -> iced::widget::button::Style {
-    let palette = theme.extended_palette();
-    let bg = match status {
-        iced::widget::button::Status::Hovered => palette.background.weak.color,
-        _ => Color::TRANSPARENT,
-    };
-    iced::widget::button::Style {
-        background: Some(iced::Background::Color(bg)),
-        text_color: palette.background.weak.text,
-        border: iced::Border {
-            color: Color::TRANSPARENT,
-            width: 0.0,
-            radius: 4.0.into(),
         },
         ..Default::default()
     }

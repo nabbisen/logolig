@@ -33,7 +33,6 @@ use logolig_i18n::{Locale, Translator, detect_system_locale};
 /// - `Converting`: conversion in progress after file input.
 ///   Prior to v1.15 this was split into `Importing` and `Exporting`;
 ///   v1.16 unified them into a single in-memory conversion step.
-
 /// - `Result`: conversion complete. Asset cards and download buttons shown.
 ///
 /// The former `Preview` screen (context preview with surface picker) was removed
@@ -175,9 +174,6 @@ pub enum NavPage {
     Settings,
 }
 
-/// NOTE: AdvancedGroupExpansion was removed in v1.17.0 (settings became flat).
-///
-
 // v1.17.0: AdvancedGroupExpansion / AdvancedGroup removed; settings are flat now.
 
 impl AppState {
@@ -278,8 +274,6 @@ impl Default for AppState {
 ///
 /// `snora::AppLayout<Element, Message>` requires `Message: Clone`, so
 /// every variant must be cloneable.
-///
-
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -476,7 +470,6 @@ fn window_title(state: &AppState) -> String {
 /// Resolves the iced `Theme` from current app state.
 ///
 /// v1.14.0: exposed as `pub(crate)` so UI modules can resolve theme-palette colours.
-
 pub(crate) fn resolve_theme(state: &AppState) -> Theme {
     match state.theme {
         // System: will query OS theme in a future step; currently falls back to Light.
@@ -495,20 +488,17 @@ fn theme(state: &AppState) -> Theme {
 /// Window width below `MOBILE_BREAKPOINT_PX` (768 px) is considered mobile.
 /// 768 px matches Bootstrap's `md` breakpoint and the original iPad mini portrait
 /// width — a threshold widely used in web accessibility work.
-
 ///
 /// Used throughout the UI: sidebar vs. bottom-nav selection, result-view column count,
 /// Customize page width, and header padding.
 ///
 /// On first frame `AppState::window_size` defaults to 1280×720, so the check
 /// initially returns `false` (desktop). A resize event corrects it shortly after.
-
 pub(crate) fn is_mobile(state: &AppState) -> bool {
     state.window_size.width < MOBILE_BREAKPOINT_PX
 }
 
 /// Mobile breakpoint in logical pixels. See [`is_mobile`] for details.
-
 pub(crate) const MOBILE_BREAKPOINT_PX: f32 = 768.0;
 
 fn subscription(state: &AppState) -> Subscription<Message> {
@@ -525,7 +515,9 @@ fn subscription(state: &AppState) -> Subscription<Message> {
     let runtime_events = iced::event::listen_with(|event, _status, _id| match event {
         iced::Event::Window(iced::window::Event::FileHovered(_)) => Some(Message::FileDragHovered),
         iced::Event::Window(iced::window::Event::FilesHoveredLeft) => Some(Message::FileDragLeft),
-        iced::Event::Window(iced::window::Event::FileDropped(path)) => Some(Message::FileDropped(path)),
+        iced::Event::Window(iced::window::Event::FileDropped(path)) => {
+            Some(Message::FileDropped(path))
+        }
         iced::Event::Window(iced::window::Event::Resized(size)) => {
             Some(Message::WindowResized(size))
         }
@@ -1108,7 +1100,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
 ///
 /// v1.16.0: the former Screen::Importing was merged into Screen::Converting.
 /// All phases (ingest, preview build, asset bundle) now share the Converting state.
-
 fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message> {
     state.file_drag_hovering = false;
     state.source_path = Some(path.clone());
@@ -1180,7 +1171,6 @@ fn push_success_toast(state: &mut AppState, title: &str, body: &str) {
 /// 7 s rationale: snora's default 4 s suits short messages; export notifications
 /// can include long paths and need extra read time. 10+ s feels intrusive,
 /// so 7 s is the pragmatic middle ground.
-
 ///
 /// Toast position is bottom-right (snora default). Improving this is tracked
 /// as a future snora upstream request.
@@ -1245,7 +1235,6 @@ fn push_warning_toast(state: &mut AppState, title: &str, body: &str) {
 /// v1.7.0: transparency audit warning. Shown when the loaded image is fully opaque
 /// or fully transparent. Uses the standard transient lifetime — this is an advisory
 /// notice, not a blocking error.
-
 fn push_transparency_warning(state: &mut AppState, report: TransparencyReport) {
     let (title_key, body_key) = match report {
         TransparencyReport::FullyOpaque => (
@@ -1335,6 +1324,30 @@ fn persist_settings(state: &mut AppState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
+
+    use crate::result::{ResultAssetItem, ResultAssetKind, ResultAssets};
+
+    fn dummy_source_asset() -> SourceAsset {
+        SourceAsset {
+            path: PathBuf::from("logo.png"),
+            kind: logolig::SourceKind::Png,
+            raw: Arc::<[u8]>::from([0x89, b'P', b'N', b'G'].as_slice()),
+            intrinsic_size: Some((1, 1)),
+        }
+    }
+
+    fn dummy_result_assets() -> ResultAssets {
+        ResultAssets {
+            items: vec![ResultAssetItem {
+                file_name: "favicon-snippet.html".to_string(),
+                bytes: b"<link rel=\"icon\" href=\"/favicon.ico\">".to_vec(),
+                kind: ResultAssetKind::HtmlSnippet,
+                dimensions: None,
+                thumbnail: None,
+            }],
+        }
+    }
 
     #[test]
     fn nav_page_selected_switches_page() {
@@ -1381,5 +1394,82 @@ mod tests {
         assert_eq!(state.export_plan.png_sizes, vec![32, 192, 512]); // default
         let _ = update(&mut state, Message::PngPresetSizeAdded(64));
         assert_eq!(state.export_plan.png_sizes, vec![32, 64, 192, 512]);
+    }
+
+    #[test]
+    fn edit_cancelled_preserves_last_result_history() {
+        let mut state = AppState {
+            screen: Screen::Result,
+            source_asset: Some(dummy_source_asset()),
+            result_assets: Some(dummy_result_assets()),
+            result_preview_open: true,
+            file_drag_hovering: true,
+            ..AppState::default()
+        };
+
+        let _ = update(&mut state, Message::EditCancelled);
+
+        assert_eq!(state.screen, Screen::Empty);
+        assert!(state.source_asset.is_some());
+        assert!(state.result_assets.is_some());
+        assert!(state.preview.is_none());
+        assert!(state.preview_cache.is_none());
+        assert!(state.transparency.is_none());
+        assert!(!state.result_preview_open);
+        assert!(!state.file_drag_hovering);
+    }
+
+    #[test]
+    fn show_last_result_requested_reopens_result_without_reconversion() {
+        let mut state = AppState {
+            screen: Screen::Empty,
+            source_asset: Some(dummy_source_asset()),
+            result_assets: Some(dummy_result_assets()),
+            ..AppState::default()
+        };
+
+        let _ = update(&mut state, Message::ShowLastResultRequested);
+
+        assert_eq!(state.screen, Screen::Result);
+        assert_eq!(
+            state.result_assets.as_ref().map(ResultAssets::count),
+            Some(1)
+        );
+        assert_eq!(
+            state
+                .source_asset
+                .as_ref()
+                .map(|asset| asset.display_name()),
+            Some("logo.png".to_string())
+        );
+    }
+
+    #[test]
+    fn file_drag_hover_messages_toggle_drop_zone_feedback() {
+        let mut state = AppState::default();
+
+        let _ = update(&mut state, Message::FileDragHovered);
+        assert!(state.file_drag_hovering);
+
+        let _ = update(&mut state, Message::FileDragLeft);
+        assert!(!state.file_drag_hovering);
+    }
+
+    #[test]
+    fn file_drop_clears_hover_and_starts_converting() {
+        let mut state = AppState {
+            file_drag_hovering: true,
+            ..AppState::default()
+        };
+        let path = PathBuf::from("new-logo.png");
+
+        let _ = update(&mut state, Message::FileDropped(path.clone()));
+
+        assert!(!state.file_drag_hovering);
+        assert_eq!(state.source_path, Some(path));
+        assert_eq!(state.screen, Screen::Converting);
+        assert!(state.busy);
+        assert!(state.result_assets.is_none());
+        assert!(!state.result_preview_open);
     }
 }

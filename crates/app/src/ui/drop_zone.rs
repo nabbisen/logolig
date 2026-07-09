@@ -111,7 +111,11 @@ fn drop_zone_card_style(theme: &Theme, hovered: bool) -> iced::widget::container
     iced::widget::container::Style {
         background: Some(Background::Color(background)),
         border: Border {
-            color: if hovered { accent } else { palette.background.strong.color },
+            color: if hovered {
+                accent
+            } else {
+                palette.background.strong.color
+            },
             width: if hovered { 2.5 } else { 2.0 },
             radius: 12.0.into(),
         },

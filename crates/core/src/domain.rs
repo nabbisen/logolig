@@ -14,7 +14,7 @@ pub mod web_manifest;
 pub use export_plan::{
     ExportPlan, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX, PNG_SIZE_MIN, SizeOverride,
 };
-pub use microsoft_app_logo::{MicrosoftAppLogoSpec, MICROSOFT_APP_LOGOS};
+pub use microsoft_app_logo::{MICROSOFT_APP_LOGOS, MicrosoftAppLogoSpec};
 pub use persisted_settings::PersistedSettings;
 pub use preview_profile::{PreviewContext, PreviewProfile};
 pub use raster::Rgba8;

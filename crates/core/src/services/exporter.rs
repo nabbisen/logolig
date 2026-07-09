@@ -36,11 +36,11 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::domain::{ExportPlan, Rgba8, SourceAsset, SourceKind, MICROSOFT_APP_LOGOS};
+use crate::domain::{ExportPlan, MICROSOFT_APP_LOGOS, Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
 use crate::services::{
-    decode_jpeg, decode_png, decode_webp, encode_png, html_snippet, ico_writer, manifest_writer,
-    canvas, monochrome, rasterize_svg, resize, vectorize,
+    canvas, decode_jpeg, decode_png, decode_webp, encode_png, html_snippet, ico_writer,
+    manifest_writer, monochrome, rasterize_svg, resize, vectorize,
 };
 
 /// Result of a disk-write operation; tells the UI what was created.
@@ -312,7 +312,6 @@ fn render_at_size(
         Ok(crate::services::flatten::flatten_to_white(&rgba))
     }
 }
-
 
 /// Render the source into a non-cropping canvas while preserving aspect ratio.
 ///

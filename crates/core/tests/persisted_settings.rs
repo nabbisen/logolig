@@ -9,6 +9,8 @@
 //! - `load_or_default()` for first-run and existing-value cases
 //! - `update()` read-modify-write correctness
 
+#![allow(clippy::field_reassign_with_default)]
+
 use std::cell::RefCell;
 use std::convert::Infallible;
 

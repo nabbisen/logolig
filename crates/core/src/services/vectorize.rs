@@ -52,7 +52,6 @@ pub fn vectorize(rgba: &Rgba8, preset: VtracerPreset) -> Result<String, AppError
 /// v1.4.1 changed 4 parameters simultaneously (including `filter_speckle=2`,
 /// `path_precision=Some(3)`). Testing found that `filter_speckle=2` and
 /// `path_precision=3` likely degraded logo contour quality.
-
 ///
 /// v1.4.2 reduces the diff to a single parameter (`corner_threshold`)
 /// so the effect of "no corner rounding" can be observed in isolation.

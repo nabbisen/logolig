@@ -158,7 +158,6 @@ impl ExportPlan {
     /// Note: `include_svg` may not produce SVG when `vectorize_on_raster=false`
     /// and source is raster, so this returns the upper bound.
     /// Actual count is `services::exporter::run`'s `ExportReport.artifacts.len()`.
-
     pub fn artifact_count(&self) -> usize {
         let ico = usize::from(self.include_ico);
         let apple = usize::from(self.include_apple_touch);

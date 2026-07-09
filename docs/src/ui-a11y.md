@@ -20,10 +20,9 @@ keyboard:
 
 - Drag-and-drop has a sibling **"Choose file…"** button (`Message::PickFileRequested`).
 - Toggling theme is a button, not a click-on-icon-only widget.
-- Opening / closing advanced settings is a footer button. The bottom
-  sheet itself can be dismissed by clicking the explicit "Close"
-  button inside, in addition to clicking outside (which routes to
-  `Message::CloseModals`).
+- Advanced settings are reachable through the **Customize** nav item.
+  The main output settings are visible there; infrequently changed
+  settings live under an explicit collapsible Advanced section.
 - Error toasts have an explicit close button (× glyph). They never
   rely solely on auto-dismiss.
 
@@ -58,20 +57,17 @@ pronounce on a different screen.
 ## Errors as toasts, not screens
 
 Errors do not hijack the screen. They appear as **persistent**
-`snora::Toast` notifications anchored at the bottom-end of the
-window, so the user's loaded image, preview, and progress remain
-visible. The user dismisses an error explicitly when they have read
-it (`Message::DismissToast(id)`). Successes use the default
-transient lifetime (4 s) — long enough to read, short enough not to
-stack.
+`snora::Toast` notifications, so the user's loaded image, preview, and
+progress remain visible. The user dismisses an error explicitly when
+they have read it (`Message::DismissToast(id)`). Successes use a
+transient lifetime — long enough to read, short enough not to stack.
 
 ## Detail kept hidden by default
 
-Per §5.3, advanced settings are **not** shown on the main screen.
-They live in a `BottomSheet` that opens via a footer button, can be
-dismissed by clicking outside (single sink:
-`AppLayout::on_close_modals`), and never blocks access to the
-underlying body content visually.
+Per §5.3, advanced settings are **not** shown on the Home screen.
+They live on the full-page Customize view, with rare options grouped
+under a collapsible section. This keeps the startup path simple while
+leaving power-user controls discoverable.
 
 ## What we do not do
 

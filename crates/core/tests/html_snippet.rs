@@ -5,6 +5,8 @@
 //! - Base-path normalisation (trailing-slash insertion)
 //! - Output contains no legacy `msapplication-*` or `browserconfig.xml`
 
+#![allow(clippy::field_reassign_with_default)]
+
 use logolig::ExportPlan;
 use logolig::services::html_snippet::{DEFAULT_BASE, render};
 

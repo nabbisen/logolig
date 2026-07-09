@@ -21,10 +21,9 @@ pub mod settings;
 // upstream crates (logolig-app) can write `use logolig::SourceAsset`
 // instead of the full module path.
 pub use domain::{
-    ExportPlan, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX, PNG_SIZE_MIN, PersistedSettings,
-    MicrosoftAppLogoSpec, PreviewContext, PreviewProfile, ResizeAlgorithm, Rgba8, SizeOverride,
-    SourceAsset, SourceKind, ThemeMode, VtracerPreset, WebManifestSettings,
-    MICROSOFT_APP_LOGOS,
+    ExportPlan, ICO_SIZE_MAX, ICO_SIZE_MIN, MICROSOFT_APP_LOGOS, MicrosoftAppLogoSpec,
+    PNG_SIZE_MAX, PNG_SIZE_MIN, PersistedSettings, PreviewContext, PreviewProfile, ResizeAlgorithm,
+    Rgba8, SizeOverride, SourceAsset, SourceKind, ThemeMode, VtracerPreset, WebManifestSettings,
 };
 pub use error::AppError;
 pub use message_key::MessageKey;

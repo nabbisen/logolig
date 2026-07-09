@@ -3,6 +3,8 @@
 //! Runs the exporter against a temporary directory and verifies that all
 //! expected files are present with correct contents.
 
+#![allow(clippy::field_reassign_with_default)]
+
 mod fixtures;
 
 use std::path::PathBuf;
@@ -652,7 +654,11 @@ fn microsoft_app_logos_are_generated_with_expected_names_and_dimensions() {
         let img = image::load_from_memory_with_format(&art.bytes, image::ImageFormat::Png)
             .expect("Microsoft app logo should be a PNG")
             .to_rgba8();
-        assert_eq!(img.dimensions(), (width, height), "wrong dimensions for {name}");
+        assert_eq!(
+            img.dimensions(),
+            (width, height),
+            "wrong dimensions for {name}"
+        );
     }
 }
 
@@ -679,7 +685,11 @@ fn microsoft_wide_logo_preserves_aspect_ratio_with_transparent_padding() {
     assert_eq!(img.dimensions(), (310, 150));
 
     // A square source should be centred on a 310×150 canvas with transparent side padding.
-    assert_eq!(img.get_pixel(0, 0)[3], 0, "side padding should be transparent");
+    assert_eq!(
+        img.get_pixel(0, 0)[3],
+        0,
+        "side padding should be transparent"
+    );
     assert!(
         img.get_pixel(155, 75)[3] > 0,
         "centre should contain the fitted source image"

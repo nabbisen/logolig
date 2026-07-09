@@ -50,12 +50,12 @@ Items marked ON are enabled by default.
 
 | Artifact | Content | Default |
 |---|---|---|
-| `favicon.ico` | Multi-size ICO containing 16/24/32/48 px frames | ON |
+| `favicon.ico` | Multi-size ICO containing fixed 16/32/48 px frames | ON |
 | `apple-touch-icon.png` | Single 180×180 px PNG | ON |
-| `favicon-16.png` … `favicon-512.png` | Per-size PNGs (default: 16/32/48/180/192/256/512) | ON |
+| `favicon-32.png` / `favicon-192.png` / `favicon-512.png` | Per-size PNGs (user-editable 16–1024 px) | ON |
 | `favicon.svg` | (a) original SVG copied as-is, or (b) vtracer-vectorised from raster | ON |
 | `favicon-snippet.html` | Ready-to-paste `<link>` tag block | ON |
-| `manifest.webmanifest` | PWA Web App Manifest JSON | ON |
+| `manifest.webmanifest` | PWA Web App Manifest JSON | OFF |
 | `mono/` subdirectory | Monochrome (BT.709 greyscale) versions of the above | OFF |
 | Microsoft app logos | `StoreLogo.png`, `Square44x44Logo.png`, `Square150x150Logo.png`, `Wide310x150Logo.png` | OFF |
 
@@ -67,16 +67,18 @@ enabled, Logolig generates four PNG files at the output root: `StoreLogo.png`
 and `Wide310x150Logo.png` (310×150). The wide logo uses contain-fit rendering
 on a transparent canvas so the source logo is not cropped or stretched.
 
-### Atomic export
+### Atomic disk export
 
-All artifacts appear together on success; no partial output is left on
+The primary GUI flow generates artifacts in memory. The legacy disk-export
+API still provides all-or-nothing writes: no partial output is left on
 failure. The implementation writes to a staging directory, then renames
 atomically into the output directory.
 
 ### Size customisation
 
-PNG and ICO size lists are editable in the UI (16–1024 px). Customisations
-are persisted across sessions.
+PNG size lists are editable in the UI (16–1024 px). ICO frames are fixed at
+16/32/48 px and are not user-editable. PNG customisations are persisted across
+sessions.
 
 ### vtracer presets (SVG generation from raster)
 
@@ -128,7 +130,7 @@ dropped.
 | Drop / choose file | Empty → Converting → Result |
 | Individual download | Save dialog → single file written |
 | Download all (ZIP) | Save dialog → zip bundle written |
-| ← Back (Result screen) | Result → Empty (source cleared) |
+| ← Back (Result screen) | Result → Empty, with the last result kept for session history |
 | ESC key | **Not implemented** (deferred) |
 
 ## 5. Navigation (v1.22.0 side nav)
@@ -174,7 +176,7 @@ The collapsible preview offers three modes:
 | **Phone home** | 120×120 icon inside a simulated home screen |
 | **Checker** | Icon over a checkerboard (for inspecting transparency) |
 
-A Surface picker (White / Grey / Black) controls the preview background.
+A Surface picker (System / Light / Dark) controls the preview background.
 The Surface picker is disabled in Checker mode (background has no effect
 on the checkerboard).
 
@@ -201,7 +203,7 @@ are composited against white (Porter-Duff over) before writing.
 - Include SVG output / vectorise raster sources
 - Apple touch icon (180×180 PNG)
 - HTML snippet file
-- Web manifest (name, short name, theme colour, background colour)
+- Web manifest (off by default; name, short name, theme colour, background colour)
 - Monochrome output set
 - Resize algorithm
 
@@ -267,7 +269,7 @@ Stored as JSON in the OS standard config directory.
 
 - Locale selection
 - Theme selection
-- Full export plan (checkboxes, PNG/ICO sizes, vtracer preset, resize
+- Full export plan (checkboxes, PNG sizes, fixed ICO defaults, vtracer preset, resize
   algorithm, web manifest fields, monochrome toggle, keep-transparency
   toggle)
 

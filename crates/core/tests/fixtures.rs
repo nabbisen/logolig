@@ -57,7 +57,6 @@ pub fn webp_8x8_blue() -> Vec<u8> {
 ///
 /// 8×8 is the safe minimum for JPEG. Encoded via the `jpeg` feature of the image crate.
 /// Used for magic-byte (`FF D8 FF`) + `parse_jpeg_size` SOF marker tests.
-
 pub fn jpeg_8x8_red() -> Vec<u8> {
     let mut buf = image::RgbImage::new(8, 8);
     for px in buf.pixels_mut() {

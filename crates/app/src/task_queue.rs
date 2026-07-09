@@ -35,8 +35,8 @@ pub fn pick_file_task() -> Task<Message> {
     Task::perform(
         async {
             rfd::AsyncFileDialog::new()
-                .add_filter("Images", &["png", "svg", "webp"])
-                .set_title("Choose a PNG, SVG, or WebP to forge favicons from")
+                .add_filter("Images", &["png", "svg", "webp", "jpg", "jpeg"])
+                .set_title("Choose a PNG, SVG, WebP, or JPEG to forge favicons from")
                 .pick_file()
                 .await
                 .map(|handle| handle.path().to_path_buf())
@@ -73,9 +73,7 @@ pub fn build_preview_task(asset: Arc<SourceAsset>, algorithm: ResizeAlgorithm) -
 /// then read results back. v1.19.0 added `exporter::run_in_memory` to
 /// logolig (core), eliminating the temp-directory round-trip.
 /// Benefits:
-
 /// - Zero disk I/O → compatible with a future browser port
-
 /// - No risk of leaking temp directories on panic
 /// - Better performance: favicon output is typically < 1 MB,
 ///   so in-memory is natural
@@ -187,7 +185,7 @@ fn parse_png_size(bytes: &[u8]) -> Option<(u32, u32)> {
     if bytes.len() < 24 {
         return None;
     }
-    if &bytes[0..8] != [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] {
+    if bytes[0..8] != [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] {
         return None;
     }
     let w = u32::from_be_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]);

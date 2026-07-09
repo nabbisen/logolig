@@ -71,7 +71,8 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // 1 column is too tall for 7–12 items; 2 columns fits 4–6 per screen,
     // an acceptable scroll amount on mobile.
     let columns = if crate::app::is_mobile(state) { 2 } else { 3 };
-    let grid = build_grid(assets, columns, &theme);
+    let download_one_label = t.t(MessageKey::ResultDownloadOne);
+    let grid = build_grid(assets, columns, &theme, &download_one_label);
 
     // 4. ZIP "Download all" button
     let download_all = container(
@@ -156,12 +157,17 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 /// Build an asset card grid with the given number of columns.
 ///
 /// v1.20.0: column count is a parameter (3 desktop / 2 mobile).
-fn build_grid<'a>(assets: &'a ResultAssets, columns: usize, theme: &Theme) -> Element<'a, Message> {
+fn build_grid<'a>(
+    assets: &'a ResultAssets,
+    columns: usize,
+    theme: &Theme,
+    download_one_label: &str,
+) -> Element<'a, Message> {
     let mut col = column![].spacing(12);
     let mut cur_row = row![].spacing(12);
     let mut count_in_row = 0usize;
     for (idx, item) in assets.items.iter().enumerate() {
-        cur_row = cur_row.push(asset_card(idx, item, theme));
+        cur_row = cur_row.push(asset_card(idx, item, theme, download_one_label));
         count_in_row += 1;
         if count_in_row == columns {
             col = col.push(cur_row);
@@ -180,7 +186,12 @@ fn build_grid<'a>(assets: &'a ResultAssets, columns: usize, theme: &Theme) -> El
 }
 
 /// One asset card.
-fn asset_card<'a>(idx: usize, item: &'a ResultAssetItem, theme: &Theme) -> Element<'a, Message> {
+fn asset_card<'a>(
+    idx: usize,
+    item: &'a ResultAssetItem,
+    theme: &Theme,
+    download_one_label: &str,
+) -> Element<'a, Message> {
     // Source file name (abbreviated)
     let file_name_text = text(item.file_name.clone())
         .size(13)
@@ -213,11 +224,17 @@ fn asset_card<'a>(idx: usize, item: &'a ResultAssetItem, theme: &Theme) -> Eleme
     .spacing(8)
     .align_y(iced::Alignment::Center);
 
-    // Download button (lucide Download icon; a11y label via tooltip)
-    let dl_button = button(icon_element_sized::<Message>(
-        &Icon::Lucide(lucide::Download),
-        16.0,
-    ))
+    // Download button uses icon + text so the action is visible without hover.
+    let dl_button = button(
+        row![
+            icon_element_sized::<Message>(&Icon::Lucide(lucide::Download), 16.0),
+            text(download_one_label.to_string())
+                .size(12)
+                .color(colors::file_name(theme)),
+        ]
+        .spacing(6)
+        .align_y(iced::Alignment::Center),
+    )
     .padding([4, 12])
     .on_press(Message::DownloadOneRequested(idx))
     .style(download_button_style);

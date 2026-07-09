@@ -25,7 +25,6 @@ pub const DEFAULT_BASE: &str = "/";
 ///
 /// Why SVG first: browsers pick the "most suitable" from multiple `<link rel="icon">` tags.
 /// Modern browsers prefer SVG (great on HiDPI); legacy browsers fall back to ICO/PNG.
-
 pub fn render(plan: &ExportPlan, base: &str) -> String {
     let base = normalize_base(base);
     let mut out = String::new();

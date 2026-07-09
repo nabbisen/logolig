@@ -48,7 +48,7 @@ impl Locale {
         // Match on the language subtag only to catch "en-US" / "en_US" / "en" etc.
         // Split on "." as well to handle POSIX locale strings like `ja_JP.UTF-8`.
         let primary = tag
-            .split(|c: char| c == '-' || c == '_' || c == '.')
+            .split(['-', '_', '.'])
             .next()
             .unwrap_or("")
             .to_ascii_lowercase();

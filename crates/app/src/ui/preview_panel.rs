@@ -174,7 +174,6 @@ fn view_as_picker<'a>(state: &'a AppState, current: PreviewContext) -> Element<'
 /// "Surface" group: System / Light / Dark — three buttons.
 /// Disabled during Checker context (background has no effect on rendering).
 /// Disabled appearance: omit `on_press`.
-
 fn surface_picker<'a>(
     state: &'a AppState,
     context: PreviewContext,

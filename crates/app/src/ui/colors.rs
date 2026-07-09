@@ -30,16 +30,6 @@ pub fn app_name(theme: &Theme) -> Color {
     p.background.weak.text
 }
 
-/// Tagline colour (the short description next to the app name).
-///
-/// Even more muted than the app name ("hint level"). The palette has
-/// no "extra-muted" slot, so we use the same base as `app_name`
-/// (`background.weak.text`) but dim it with **alpha=0.65**.
-/// The relative weakening is preserved in both light and dark themes.
-pub fn tagline(theme: &Theme) -> Color {
-    with_alpha(app_name(theme), 0.65)
-}
-
 /// File name colour shown in the header on the edit / Result screen.
 ///
 /// The file is the star of the screen, so it needs more prominence than the app name.
@@ -78,7 +68,6 @@ pub fn group_heading(theme: &Theme) -> Color {
 /// Blurb / supporting description / "at defaults: …" annotation.
 ///
 /// Weaker than body text but still legible.
-
 pub fn muted_text(theme: &Theme) -> Color {
     with_alpha(theme.extended_palette().background.base.text, 0.6)
 }

@@ -1,0 +1,9 @@
+[advisories]
+ignore = [
+    # quick-xml is pulled through wayland-scanner 0.31.10 as a proc-macro/build-time
+    # parser for bundled Wayland protocol XML. Logolig does not expose quick-xml to
+    # user-supplied files at runtime. Remove these ignores once wayland-scanner allows
+    # quick-xml >= 0.41.0 or Snora/iced can disable the affected Wayland build path.
+    "RUSTSEC-2026-0194",
+    "RUSTSEC-2026-0195",
+]
