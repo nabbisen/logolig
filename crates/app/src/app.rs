@@ -457,6 +457,7 @@ pub enum Message {
 /// so it updates automatically on locale change.
 pub fn run() -> iced::Result {
     iced::application(AppState::boot, update, view)
+        .font(snora::lucide::LUCIDE_FONT_BYTES)
         .title(window_title)
         .theme(theme)
         .subscription(subscription)
