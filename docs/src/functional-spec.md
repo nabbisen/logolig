@@ -1,7 +1,7 @@
 # Logolig Functional Specification
 
 > This document describes **what logolig can do and how it behaves** at
-> v1.26.1, as observable behaviour rather than implementation detail.
+> v1.26.2, as observable behaviour rather than implementation detail.
 > It is intended as input for UX review and external design decisions.
 >
 > The document separates **functional specification** (what it does) from
@@ -132,6 +132,11 @@ dropped.
 | Download all (ZIP) | Save dialog → zip bundle written |
 | ← Back (Result screen) | Result → Empty, with the last result kept for session history |
 | ESC key | **Not implemented** (deferred) |
+
+ZIP bundle entries carry a local wall-clock modified timestamp so desktop
+archive tools show useful "Last Modified" metadata alongside the created file.
+The ZIP timestamp format has no timezone field, so this is intentionally local
+time rather than UTC.
 
 ## 5. Navigation (v1.22.0 side nav)
 

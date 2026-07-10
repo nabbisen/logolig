@@ -2337,7 +2337,7 @@ checksum = "953f07c43838f8e6f9758cab68bf5bed85465e7587ebe0b823f1bcd81978ad3a"
 
 [[package]]
 name = "logolig"
-version = "1.26.1"
+version = "1.26.2"
 dependencies = [
  "fast_image_resize",
  "ico",
@@ -2354,7 +2354,7 @@ dependencies = [
 
 [[package]]
 name = "logolig-app"
-version = "1.26.1"
+version = "1.26.2"
 dependencies = [
  "app-json-settings",
  "chrono",
@@ -2369,7 +2369,7 @@ dependencies = [
 
 [[package]]
 name = "logolig-i18n"
-version = "1.26.1"
+version = "1.26.2"
 dependencies = [
  "logolig",
  "serde",
