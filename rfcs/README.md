@@ -25,6 +25,7 @@ prior version history.
 | [0004](./0004-locale-zh-cn.md) | Simplified Chinese locale | medium | Draft |
 | [0005](./0005-microsoft-app-logos.md) | Microsoft app logos | small | Implemented (v1.26.0) |
 | [0006](./0006-drop-zone-drag-drop-repair.md) | Drop-zone drag-and-drop repair | small | Implemented (v1.26.1) |
+| [0007](./0007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | small | Draft |
 
 "Status: Draft" means the RFC is reviewed and ready for implementation
 but no implementer has started yet. It moves to "In Progress" once a

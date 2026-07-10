@@ -24,6 +24,7 @@ snora                   = { workspace = true }
 rfd                     = { workspace = true }
 app-json-settings       = { workspace = true }
 
+chrono                  = { workspace = true }
 image                   = { workspace = true }
 zip                     = { workspace = true }
 
