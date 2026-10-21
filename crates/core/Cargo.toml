@@ -97,5 +97,9 @@ path = "tests/monochrome.rs"
 name = "artifact_paths"
 path = "tests/artifact_paths.rs"
 
+[[test]]
+name = "non_square"
+path = "tests/non_square.rs"
+
 [lints]
 workspace = true

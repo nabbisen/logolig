@@ -90,3 +90,17 @@ pub fn png_4x4_half_alpha_red() -> Vec<u8> {
         .expect("PNG encoding for fixture should not fail");
     out
 }
+
+/// Solid-colour PNG of any size (RFC 010 non-square fixtures).
+pub fn png_rgba(width: u32, height: u32, rgba: [u8; 4]) -> Vec<u8> {
+    let mut buf = image::RgbaImage::new(width, height);
+    for px in buf.pixels_mut() {
+        *px = image::Rgba(rgba);
+    }
+    let mut out = Vec::new();
+    let dynamic = image::DynamicImage::ImageRgba8(buf);
+    dynamic
+        .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+        .expect("PNG encoding for fixture should not fail");
+    out
+}
