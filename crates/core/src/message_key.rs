@@ -207,6 +207,10 @@ pub enum MessageKey {
     ToastJpegInputTitle,
     /// Toast body for JPEG input. Suggests converting to PNG.
     ToastJpegInputBody,
+    /// Toast title for a non-square source (RFC 010): the logo is shown in full with padding.
+    ToastNonSquareInputTitle,
+    /// Toast body for a non-square source. Suggests a square version of the logo.
+    ToastNonSquareInputBody,
 
     // --- v1.12.0: Edit screen navigation + preview area refresh ---
     /// Edit/preview screen page title ("Preview & Generate Favicon").
