@@ -237,6 +237,7 @@ Toasts appear at the top-right corner (TopEnd) for a short duration.
 | Download complete | "Saved N files to `<path>`" |
 | Transparency warning (PNG/SVG/WebP) | Advisory when the source is fully opaque |
 | **JPEG educational warning** | "JPEG cannot store transparency. Consider converting to PNG." |
+| **Non-square source advisory** | "Your logo is not square" / the logo is shown in full with empty space around it, so the icon may look small. Shown once per loaded image when the sides differ by more than 2 % (any source kind). |
 | Error | Decode failure, write failure, etc. |
 
 ### JPEG vs. generic transparency warning
