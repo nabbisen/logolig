@@ -1342,6 +1342,7 @@ mod tests {
         ResultAssets {
             items: vec![ResultAssetItem {
                 file_name: "favicon-snippet.html".to_string(),
+                relative_path: "favicon-snippet.html".to_string(),
                 bytes: b"<link rel=\"icon\" href=\"/favicon.ico\">".to_vec(),
                 kind: ResultAssetKind::HtmlSnippet,
                 dimensions: None,

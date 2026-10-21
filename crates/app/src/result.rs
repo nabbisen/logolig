@@ -40,7 +40,12 @@ impl ResultAssets {
 #[derive(Debug, Clone)]
 pub struct ResultAssetItem {
     /// Output file name (e.g. `favicon.ico`, `favicon-16.png`, `manifest.webmanifest`).
+    /// Used for kind classification and as the save-dialog default (RFC 009 Q1).
     pub file_name: String,
+    /// Unique identity of the item: the path relative to the output root, always
+    /// `/`-separated, never absolute, never containing `..` (e.g. `mono/favicon-32.png`).
+    /// Used as the card title and as the ZIP entry name (RFC 009).
+    pub relative_path: String,
     /// Raw output bytes (used for individual download and ZIP bundle).
     pub bytes: Vec<u8>,
     /// Kind, used to decide how to render the card thumbnail.

@@ -92,7 +92,7 @@ fn run_convert(asset: &SourceAsset, plan: &ExportPlan) -> Result<ResultAssets, A
     // Assemble all artifacts in memory.
     let in_memory = logolig::services::exporter::run_in_memory(asset, plan)?;
     // Convert to ResultAssets (for UI card rendering).
-    Ok(collect_assets(in_memory))
+    collect_assets(in_memory)
 }
 
 /// Convert `Vec<InMemoryArtifact>` to `ResultAssets` for UI card display.
@@ -101,9 +101,13 @@ fn run_convert(asset: &SourceAsset, plan: &ExportPlan) -> Result<ResultAssets, A
 /// 1. Classify kind (PngMono / Png / Ico / Svg / HtmlSnippet / WebManifest)
 /// 2. Extract dimensions (from PNG IHDR / ICO header)
 /// 3. Build thumbnail (PNG / ICO only, decoded via image crate)
-fn collect_assets(in_memory: Vec<InMemoryArtifact>) -> ResultAssets {
+///
+/// Fails if an artifact path is not a plain relative path (see
+/// [`relative_path_string`]), so a producer bug can never reach a ZIP entry name.
+fn collect_assets(in_memory: Vec<InMemoryArtifact>) -> Result<ResultAssets, AppError> {
     let mut items = Vec::with_capacity(in_memory.len());
     for art in in_memory {
+        let relative_path = relative_path_string(&art.relative_path)?;
         let file_name = art
             .relative_path
             .file_name()
@@ -115,13 +119,45 @@ fn collect_assets(in_memory: Vec<InMemoryArtifact>) -> ResultAssets {
         let thumbnail = build_thumbnail(kind, &art.bytes);
         items.push(ResultAssetItem {
             file_name,
+            relative_path,
             bytes: art.bytes,
             kind,
             dimensions,
             thumbnail,
         });
     }
-    ResultAssets { items }
+    Ok(ResultAssets { items })
+}
+
+/// Joins the components of `path` with `/` (identical on Windows and Unix).
+///
+/// Only plain relative paths are accepted: every component must be a normal,
+/// valid-UTF-8 component. `..`, root and drive-prefix components are rejected,
+/// which rules out path traversal ("zip slip") in archives built from the result.
+fn relative_path_string(path: &std::path::Path) -> Result<String, AppError> {
+    use std::path::Component;
+
+    let mut parts: Vec<&str> = Vec::new();
+    for component in path.components() {
+        match component {
+            Component::Normal(part) => parts.push(part.to_str().ok_or_else(|| {
+                AppError::export(format!(
+                    "artifact path is not valid UTF-8: {}",
+                    path.display()
+                ))
+            })?),
+            _ => {
+                return Err(AppError::export(format!(
+                    "artifact path is not a plain relative path: {}",
+                    path.display()
+                )));
+            }
+        }
+    }
+    if parts.is_empty() {
+        return Err(AppError::export("artifact path is empty"));
+    }
+    Ok(parts.join("/"))
 }
 
 /// Classify asset kind from file name and relative path.
@@ -263,23 +299,35 @@ pub fn write_zip_task(path: PathBuf, items: Vec<ResultAssetItem>) -> Task<Messag
     )
 }
 
-fn write_zip_blocking(path: &std::path::Path, items: &[ResultAssetItem]) -> Result<(), AppError> {
+/// Builds the ZIP archive in memory. Entry names are the items' `relative_path`,
+/// so the archive has the same layout as the disk export (including `mono/`).
+///
+/// Nothing touches the disk here; any error (for example a duplicate entry name)
+/// is returned before a single byte is written anywhere.
+fn build_zip_bytes(items: &[ResultAssetItem]) -> Result<Vec<u8>, AppError> {
     use std::io::Write;
-    let file = std::fs::File::create(path)
-        .map_err(|e| AppError::export(format!("failed to create zip file: {}", e)))?;
-    let mut zip = zip::ZipWriter::new(file);
+    let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
     let opts: zip::write::SimpleFileOptions = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated)
         .last_modified_time(current_zip_modified_time());
     for item in items {
-        zip.start_file(item.file_name.as_str(), opts)
+        zip.start_file(item.relative_path.as_str(), opts)
             .map_err(|e| AppError::export(format!("zip start_file: {}", e)))?;
         zip.write_all(&item.bytes)
             .map_err(|e| AppError::export(format!("zip write_all: {}", e)))?;
     }
-    zip.finish()
+    let cursor = zip
+        .finish()
         .map_err(|e| AppError::export(format!("zip finish: {}", e)))?;
-    Ok(())
+    Ok(cursor.into_inner())
+}
+
+/// All-or-nothing: the archive is built first and written with a single
+/// `std::fs::write`, so a failure never leaves a partial file at `path`.
+fn write_zip_blocking(path: &std::path::Path, items: &[ResultAssetItem]) -> Result<(), AppError> {
+    let bytes = build_zip_bytes(items)?;
+    std::fs::write(path, bytes)
+        .map_err(|e| AppError::export(format!("failed to write zip file: {}", e)))
 }
 
 fn current_zip_modified_time() -> zip::DateTime {
@@ -333,6 +381,7 @@ mod tests {
     fn asset(file_name: &str, bytes: &[u8]) -> ResultAssetItem {
         ResultAssetItem {
             file_name: file_name.to_string(),
+            relative_path: file_name.to_string(),
             bytes: bytes.to_vec(),
             kind: ResultAssetKind::Svg,
             dimensions: None,

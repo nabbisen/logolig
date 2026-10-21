@@ -193,7 +193,7 @@ fn asset_card<'a>(
     download_one_label: &str,
 ) -> Element<'a, Message> {
     // Source file name (abbreviated)
-    let file_name_text = text(item.file_name.clone())
+    let file_name_text = text(item.relative_path.clone())
         .size(13)
         .color(colors::file_name(theme));
 
