@@ -1,7 +1,7 @@
 # RFC 020 — GitHub Actions CI and AUR packaging (`logolig`, `logolig-bin`)
 
-**Status.** Proposed
-**Priority.** P2 (the AUR names are already reserved; CI has been a recommended follow-up since the v1.25.0 handoff)
+**Status.** Accepted (phased; phases 3–4 gated by owner actions D4/D5, 2026-10-21)
+**Priority.** P1 (owner priority, 2026-10-21: AUR publication first)
 **Tracks.** Release engineering: automated quality gates, release artifacts, and AUR publication.
 **Touches.** new `.github/workflows/`, new `packaging/aur/`, new `packaging/linux/` (desktop entry, icon), `scripts/`, `.cargo/audit.toml`, `README.md` install section.
 
@@ -41,7 +41,7 @@ crates.io publication (separate owner decision), Windows Store submission (exist
 |---|---|---|
 | `ci.yml` | `pull_request`, `push` to `main` | `fmt`, `clippy`, `test` (stable); `msrv` (1.85, `cargo check --workspace --locked`); `audit` (`cargo audit`, reads `.cargo/audit.toml`); `docs` (RFC lint from RFC 008, link check); `packaging` (only when `packaging/**` changes: `makepkg --verifysource`/build in an `archlinux` container plus `namcap`) |
 | `release.yml` | push of tag `[0-9]+.[0-9]+.[0-9]+` | verify tag equals `workspace.package.version`; re-run gates; build `x86_64-unknown-linux-gnu` release with `--locked`; create a **draft** GitHub Release with `logolig-<ver>-x86_64-linux.tar.gz` and its `.sha256` |
-| `aur.yml` | release **published** (the owner presses publish), or manual `workflow_dispatch` | render PKGBUILDs from templates, run `makepkg`/`namcap`, push to both AUR repos |
+| `aur.yml` | **manual `workflow_dispatch` only**, with the release tag as input; runs in the protected `aur` environment | verify the release is published and its checksum matches, render PKGBUILDs from templates, run `makepkg`/`namcap`, push to the AUR repo(s) |
 
 Ubuntu runners need the iced/winit system libraries at build time; the exact package list is determined in the first CI run and recorded in the workflow.
 
@@ -64,6 +64,7 @@ Ubuntu runners need the iced/winit system libraries at build time; the exact pac
 Templates live in the main repository (`packaging/aur/logolig/PKGBUILD.in`, `packaging/aur/logolig-bin/PKGBUILD.in`), so changes are reviewed in pull requests and validated by the `packaging` job before any push. The AUR clones stay mirrors.
 
 `logolig` (source):
+- `prepare()` runs `cargo fetch --locked` so that `build()` can use `--frozen` (AUR convention: no network during `build()`).
 - `source` = tag archive, `sha256sums` computed by the workflow, `makedepends=(cargo pkgconf)` plus whatever the container pass requires, `build()` = `cargo build --release --locked --frozen -p logolig-app`, `package()` installs `target/release/logolig` to `/usr/bin/`, `LICENSE` to `/usr/share/licenses/logolig/`, the `.desktop` file and the icon.
 
 `logolig-bin`:
@@ -81,13 +82,34 @@ Both: `arch=(x86_64)`, `license=('Apache-2.0')`, `url` unchanged, `pkgdesc` real
 - Fully automatic AUR push on tag: removes the human release gate; rejected by the governance rules.
 - AppImage/Flatpak instead of AUR: possible later; out of scope.
 
-## Decisions requested
+## Phases
 
-- **D1** Confirm the two-package scheme and that `logolig-bin` targets glibc x86_64 only.
-- **D2** Confirm the approval design (draft release + protected `aur` environment).
-- **D3** Allow a pinned community action for the AUR push, or require plain shell (recommended).
-- **D4** Who holds the AUR account, and is a single dedicated key acceptable?
-- **D5** Icon/desktop-entry source assets (use the Windows logo assets or provide new artwork).
+| Phase | Content | Needs from the owner |
+|---|---|---|
+| 1 | `ci.yml` gates (fmt, clippy, test, MSRV, audit; docs jobs once RFC 008/018 land). No secrets, no release. | nothing |
+| 2 | `packaging/` templates, `.desktop`, icon, container build with `makepkg` + `namcap`, dry run on the maintainer's Arch machine. `logolig` (source) first. | D5 master artwork |
+| 3 | **First publication of `logolig` is done by the owner by hand** from a verified PKGBUILD (`git push` to AUR). Proves the package before any secret exists. Then `logolig-bin` (needs `release.yml` artifacts and attestation). | release approval |
+| 4 | `aur.yml` automation for later releases. | D4 (bot account and key) |
+
+## Decisions (2026-10-21, applying the owner's philosophy: clean, safe, secure, robust; users not confused)
+
+- **D1 — two packages: accepted, sequenced.** `logolig` (source build, verifiable by anyone from the tagged source) is published first. `logolig-bin` follows because compiling an iced application takes long and a binary package has real user value, but it asks users to trust a binary, so it carries two additions: a SHA-256 in the PKGBUILD **and** a GitHub build-provenance attestation for the release asset (`actions/attest-build-provenance`, pinned by SHA), with the verification command in `packaging/README.md`. Scope: Linux x86_64, glibc, as built on the CI runner; no promise of bit-for-bit reproducibility is made in the docs. `logolig-bin` declares `provides=(logolig)` and `conflicts=(logolig)` so users are never left with two copies.
+- **D2 — approval design: accepted, tightened.** A tag creates only a draft release; the owner's publishing of that release is the release approval; the AUR push is a separate, manual, environment-protected step (`workflow_dispatch`), so no outward-facing publication can happen unattended. For a one-person project the environment's reviewer is the owner; "prevent self-review" is left off because it would block the only maintainer, and the manual trigger is the real gate.
+- **D3 — AUR push by plain shell: accepted.** Clone, copy `PKGBUILD`, regenerate `.SRCINFO` with `makepkg --printsrcinfo` (run in an Arch container as a non-root user, because `makepkg` refuses root), commit, push. No community deploy action. All actions pinned to commit SHAs; `permissions:` minimal per job.
+- **D4 — AUR account and key: needs the owner.** Recommendation, to limit blast radius: AUR SSH keys belong to an *account*, not a package, so a leaked key would expose every package of that account. Create a **separate bot account**, add it as co-maintainer of `logolig` and `logolig-bin` only, and store that account's key only as the `aur` environment secret. Keep the owner's personal key out of CI. (To the architect's knowledge AUR offers no 2FA; this has not been re-checked, confirm at account creation.) Phase 4 does not start until this is done.
+- **D5 — icon and desktop entry: needs the owner.** Finding: the repository contains the logo only as the 150 × 150 Microsoft tile (`packaging/windows/Assets`), a rounded blue square with the hexagon mark, and no master artwork. Upscaling it would produce a blurry Linux icon, which would be a poor first impression for a tool whose selling point is output quality. Request: commit the master (SVG preferred, or a PNG of at least 1024 px) to `packaging/icons/`. Then generate every size, Windows assets included, **with Logolig itself**, which also serves as a standing end-to-end test of the product. Desktop entry text is localised (`en`, `ja`) and keeps the project's "less is more" wording.
+
+## First-publication readiness (recommendation; the release decision remains with the owner)
+
+Publishing to the AUR makes the application discoverable to a new audience, and users there will not read the RFCs. Recommended before the first AUR release:
+
+1. RFC 009 fixed (ZIP failure with monochrome on is a visible, data-losing error).
+2. RFC 019 step 2 done (documentation states honestly what keyboard support exists) and, ideally, step 1 evidence recorded.
+3. RFC 015 spike done: confirm or refute the SVG-text defect. If confirmed, fix it or document it prominently, since logo SVGs often contain text.
+4. README install section updated for AUR.
+5. Gates green on the release commit, `cargo audit` result recorded.
+
+A natural vehicle is a patch release (for example 1.26.3) that carries these fixes and is the first release produced by the new pipeline.
 
 ## Tests and evidence
 
@@ -115,4 +137,4 @@ Both: `arch=(x86_64)`, `license=('Apache-2.0')`, `url` unchanged, `pkgdesc` real
 
 ## Dependencies
 
-Benefits from RFC 008 (RFC lint script) and RFC 017 (smaller files make clippy/test faster to review), but can start independently with the gate jobs.
+Phase 1 starts independently. The RFC-lint job is added when RFC 008 lands. RFC 017 is not a prerequisite.

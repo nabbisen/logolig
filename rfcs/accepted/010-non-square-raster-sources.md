@@ -1,7 +1,7 @@
 # RFC 010 — Non-square raster sources in square outputs
 
-**Status.** Proposed
-**Priority.** P1 (output quality is a stated product value; owner decision required on behaviour change)
+**Status.** Accepted (owner approval conditional on reasonableness; architect assessment below, 2026-10-21)
+**Priority.** P1 (output quality is a stated product value)
 **Tracks.** Defect/design gap: non-square PNG/WebP/JPEG sources are stretched into square favicon outputs.
 **Touches.** `crates/core/src/services/exporter.rs` (`render_at_size`), `services/preview.rs` (`render_at`), `services/canvas.rs`, tests, `docs/src/export-spec.md`.
 
@@ -41,10 +41,18 @@ This changes the pixels of outputs for non-square raster sources, which today ar
 
 `favicon.svg` produced by vtracer from a raster keeps the source aspect ratio in its `viewBox`; browsers letterbox SVG icons themselves, so no change is proposed there.
 
-## Decisions requested
+## Decisions (2026-10-21)
 
-- **D1** Accept A (behaviour change for non-square rasters)?
-- **D2** Add the advisory toast (option D)?
+The owner approved D1 "only if reasonable enough" and asked that the philosophy *clean, safe, robust design; users must not be confused* be applied. Architect assessment:
+
+- **D1 — contain-fit (option A): accepted.** Reasonable because (1) the application already contains this rule for SVG sources and for the Microsoft logos, so today's raster behaviour is the inconsistent one; (2) it is the only option that neither distorts nor discards the user's artwork; (3) distortion is not a contract anyone can rely on, while square sources, which are the intended input, stay bit-identical; (4) no new setting is introduced.
+- **D2 — advisory toast (option D): accepted.** Contain-fit makes a wide wordmark a thin strip at 16 px. Without an explanation a user would read that as a defect. The toast is educational and non-blocking, in the tone of the JPEG notice ("Your logo is wider than it is tall, so it is shown with empty space above and below. A square version of your logo gives a larger icon."). Needs `en` and `ja` keys; shown once per loaded image, never for square sources.
+
+Conditions of acceptance:
+
+1. First task of the handoff is a failing test that demonstrates the current distortion (confirms the defect by execution; the evidence above is from source reading).
+2. Golden bytes for square sources are captured **before** the change and must be unchanged after it.
+3. The `docs/src/export-spec.md` rule is part of the same change.
 
 ## Tests (design-derived)
 

@@ -13,8 +13,8 @@ Project rules say test cases validate the **design specification**, not the code
 
 | # | Document says | Code does | Decision needed |
 |---|---|---|---|
-| 1 | README, `ui-a11y.md`, `functional-spec.md`, dev instructions: active state uses a `▣` prefix | `✓` (`marker::READY`) is used in `preview_panel` and `settings_page`; `▣` appears only in a comment | Which glyph is the design? (D1) |
-| 2 | `functional-spec.md` §3 and handoff: vtracer default **Sharp** | `ExportPlan::default().vtracer_preset == Default`; the UI slider maps Simple/Detailed to Sharp/Default/PhotoRich | Fix docs or change default? (D2; changing default alters output) |
+| 1 | README, `ui-a11y.md`, `functional-spec.md`, dev instructions: active state uses a `▣` prefix | `✓` (`marker::READY`) is used in `preview_panel` and `settings_page`; `▣` appears only in a comment | Decided: RFC 021 (D1) |
+| 2 | `functional-spec.md` §3 and handoff: vtracer default **Sharp** | `ExportPlan::default().vtracer_preset == Default`; the UI slider maps Simple/Detailed to Sharp/Default/PhotoRich | Decided: keep `Default`, fix docs (D2); Sharp checked by RFC 022 |
 | 3 | `functional-spec.md`: three resize algorithms | `ResizeAlgorithm` has five (adds Mitchell–Netravali, Catmull–Rom) | Docs only |
 | 4 | handoff: ICO frames 16/24/32/48 | `default_ico_sizes() = [16, 32, 48]`; spec §8 says ICO "fixed" but `ico_sizes` is a persisted plan field with add/remove methods and no Customize UI | Docs only; clarify "not editable in UI" |
 | 5 | `architecture.md` workspace tree lists `picker_overlay.rs`, `bottom_nav.rs`, `logolig-*` crate directories | removed in v1.22.0; actual directories are `crates/{app,core,i18n}` | Docs only |
@@ -35,10 +35,12 @@ Project rules say test cases validate the **design specification**, not the code
 4. Add a short **Maintainers** chapter pointer to `rfcs/README.md` for the lifecycle policy (RFC 008).
 5. Add a CI link check for relative Markdown links (RFC 020).
 
-## Decisions requested
+## Decisions (2026-10-21, applying the owner's philosophy: clean, safe, robust; users must not be confused)
 
-- **D1** Active-state marker: `✓` (code) or `▣` (docs)? Note `✓` is also the "Ready" marker, so one glyph carries two meanings; `▣` is more distinct but less obvious to new users. Recommendation: keep `✓`, update docs, accept the dual meaning because the surrounding text disambiguates. Needs a UI/UX call.
-- **D2** vtracer default: documented Sharp or implemented Default? Recommendation: keep implemented `Default` (no output change), correct the docs. The 1.4.2 notes say Sharp was only ever an opt-in preset.
+- **D1 — marker: neither glyph is adopted as documented.** Reviewing it showed the real problem is not `✓` versus `▣`: the code reuses `✓` ("Ready") to mean "selected", and both are font-dependent text glyphs. Decision: treat it as a UI design item, now **RFC 021** (distinct cues per meaning, bundled icons instead of text glyphs). Until RFC 021 lands, row 1 is left open and the docs are not edited in either direction, so that documentation is not changed twice.
+- **D2 — vtracer default: keep the implemented `Default`; correct the documents.** Reason: the default must be the choice with the most predictable result for the widest range of inputs, and `Default` is vtracer's own balanced setting; changing it would alter the output of existing users for an unverified benefit. In reviewing it, a doubt appeared about whether "Sharp" does what its name says (a higher `corner_threshold` should smooth, not sharpen). That is tracked as **RFC 022**; the docs must not call Sharp "the default" or "the sharpest" until it is resolved. Row 2 is closed by editing the documents to say "default = balanced (`Default`); Sharp is an opt-in preset".
+
+Rows 1, 8 and 9 stay open until RFC 021, RFC 019 and RFC 014 respectively; the other rows can proceed now.
 
 ## Acceptance criteria
 

@@ -36,21 +36,30 @@ vocabulary, and new RFCs follow RFC 000 and live in `proposed/`. In RFC 000
 terms, **Proposed** means open for review; the implementer should not start.
 Priorities are the architect's recommendation and require owner approval.
 
+**Accepted** (review complete; Developer Handoff to be prepared):
+
 | # | Title | Priority |
 | --- | --- | --- |
-| [008](./proposed/008-rfc-portfolio-migration.md) | Migrate the RFC portfolio to the RFC 000 layout | P1 |
+| [020](./accepted/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging (phased) | P1 |
+| [010](./accepted/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | P1 |
+
+**Proposed** (open for review):
+
+| # | Title | Priority |
+| --- | --- | --- |
 | [009](./proposed/009-result-artifact-identity-and-zip-integrity.md) | Result artifact identity and ZIP integrity | P1 |
-| [010](./proposed/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | P1 |
+| [015](./proposed/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources | P1 / P2 |
+| [019](./proposed/019-keyboard-accessibility.md) | Keyboard accessibility | P1 / P2 |
+| [008](./proposed/008-rfc-portfolio-migration.md) | Migrate the RFC portfolio to the RFC 000 layout | P2 |
 | [011](./proposed/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
 | [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
 | [013](./proposed/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |
 | [014](./proposed/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
-| [015](./proposed/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources | P1 / P2 |
-| [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
 | [017](./proposed/017-source-structure-conformance.md) | Source structure conformance (tests, file size, dead code) | P2 |
 | [018](./proposed/018-documentation-synchronisation.md) | Documentation synchronisation with v1.26.2 | P2 |
-| [019](./proposed/019-keyboard-accessibility.md) | Keyboard accessibility | P1 / P2 |
-| [020](./proposed/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging | P2 |
+| [021](./proposed/021-selection-state-indicators.md) | Selection-state indicators | P2 |
+| [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
+| [022](./proposed/022-vtracer-sharp-preset-verification.md) | Verify the vtracer "Sharp" preset | P3 |
 
 "Status: Draft" (in the table above, for RFC 001–007) means the RFC is reviewed and ready for implementation
 but no implementer has started yet. It moves to "In Progress" once a

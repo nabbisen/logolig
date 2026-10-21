@@ -1,7 +1,7 @@
 # RFC 008 — Migrate the RFC portfolio to the RFC 000 layout
 
 **Status.** Proposed
-**Priority.** P1 (governance; unblocks every other RFC being tracked correctly)
+**Priority.** P2 (governance; the owner prioritised AUR publication, RFC 020, first on 2026-10-21)
 **Tracks.** Governance. Implements the adoption step of [RFC 000](../done/000-rfc-lifecycle-policy.md).
 **Touches.** `rfcs/` layout, `rfcs/README.md`, Status fields of RFC 001–007, inbound links in `docs/src/architecture.md`.
 
@@ -46,7 +46,7 @@ Use the **5-folder variant** (the design/implementation roles are separate in th
 - **D1 Numbering width — decided by the owner (2026-10-21): `NNN`.** Existing RFCs were renamed from `NNNN` to `NNN`; numbers themselves are unchanged. Remaining work under this item: confirm no external references to the old four-digit names exist (issue tracker, commit messages cannot be rewritten and are left as is).
 - **D2 Version form in Status.** Recommended: `Implemented (1.26.0)`, matching the tag format with no `v` prefix.
 - **D3 Handoff storage.** RFC 000 allows `rfcs/handoffs/NNN-slug/`. Current handoffs live untracked under `.git-exclude/`. Recommended: keep working handoffs untracked, and promote only reviewed, current ones to `rfcs/handoffs/` when an RFC reaches `accepted/`.
-- **D4** Dispositions in the table above.
+- **D4** Dispositions in the table above. *Owner reply 2026-10-21: "AUR publishment is prioritized."* The architect reads this as an ordering of the work (RFC 020 first), not as an answer to the disposition table, so **D4 remains open**; it is not urgent. Since 2026-10-21 RFC 010 and RFC 020 are `accepted/`, which already exercises the 5-folder layout.
 
 D1 is closed; D2–D4 remain open.
 
