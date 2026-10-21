@@ -1,6 +1,7 @@
 # Logolig
 
 [![License](https://img.shields.io/github/license/nabbisen/logolig)](LICENSE)
+[![CI](https://github.com/nabbisen/logolig/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nabbisen/logolig/actions/workflows/ci.yml)
 [![Documentation](https://docs.rs/logolig/badge.svg?version=latest)](https://docs.rs/logolig)
 [![Documentation](https://docs.rs/logolig-app/badge.svg?version=latest)](https://docs.rs/logolig-app)
 [![Documentation](https://docs.rs/logolig-i18n/badge.svg?version=latest)](https://docs.rs/logolig-i18n)    
@@ -311,6 +312,8 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
 cargo audit
 ```
+
+The same gates run in CI on every pull request and every push to `main`.
 
 The core tests cover ingest, decode, SVG rasterization, vectorization,
 resize, preview cache, ICO writing, HTML snippet generation, in-memory and
