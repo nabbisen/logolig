@@ -43,13 +43,13 @@ Priorities are the architect's recommendation and require owner approval.
 | [020](./accepted/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging (phased) | P1 |
 | [010](./accepted/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | P1 |
 | [009](./accepted/009-result-artifact-identity-and-zip-integrity.md) | Result artifact identity and ZIP integrity | P1 |
+| [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased: spike first) | P1 / P2 |
+| [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phased: verify and document first) | P1 / P2 |
 
 **Proposed** (open for review):
 
 | # | Title | Priority |
 | --- | --- | --- |
-| [015](./proposed/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources | P1 / P2 |
-| [019](./proposed/019-keyboard-accessibility.md) | Keyboard accessibility | P1 / P2 |
 | [008](./proposed/008-rfc-portfolio-migration.md) | Migrate the RFC portfolio to the RFC 000 layout | P2 |
 | [011](./proposed/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
 | [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |

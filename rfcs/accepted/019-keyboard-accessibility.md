@@ -1,6 +1,6 @@
 # RFC 019 — Keyboard accessibility
 
-**Status.** Proposed
+**Status.** Accepted, phased (owner, 2026-10-21). Phase 1 = run-time verification and honest documentation (steps 1–2); the keyboard model (steps 3–4) is handed off after the evidence exists.
 **Priority.** P1 for documenting the truth; P2 for the implementation spike
 **Tracks.** ABDD commitment "every mouse operation is reachable by keyboard" versus the capabilities of iced 0.14.
 **Touches.** `crates/app` (event subscription, focus state, UI styles), `docs/src/ui-a11y.md`, README, manual test checklist.
@@ -36,6 +36,13 @@ The documentation promises keyboard parity and a preserved focus ring. Dependenc
 Recommendation: **A now, B as a follow-up RFC if the verification shows Tab traversal is the main gap, C tracked.**
 
 **Step 4 — visible states.** Give every custom button style distinct hover/pressed/disabled/focused appearance (non-colour cue: border thickness or underline), starting with the drop-zone card.
+
+## Decisions and phasing (2026-10-21, applying the owner's philosophy: clean, safe, robust; users must not be misled)
+
+- **Direction for step 3 (D1): option A, global shortcuts, first.** Reason: it delivers a complete, predictable keyboard path with little code and no per-widget focus machinery, and it is robust (no hidden focus state to get out of sync). Option B (focus model with Tab traversal and a visible focus ring) becomes a follow-up RFC **only if** the phase-1 evidence shows that Tab traversal is the real gap. Option C (wait for upstream) is tracked, not relied on. The exact key bindings are finalised in the step-3 handoff; constraints already fixed: no shortcut fires while a text input has focus; shortcuts are listed in the application (one short discoverable list, in `en` and `ja`); platform modifier is Ctrl, or Cmd on macOS.
+- **Phase 1 (handoff 007):** step 1 (verify by execution, on every platform available) and step 2 (make the documentation say exactly what is and is not supported). Documentation edits are limited to keyboard and focus statements. No application code changes.
+- **Why step 2 is not optional:** the README, `ui-a11y.md` and `functional-spec.md` currently promise keyboard parity; users with a keyboard-only workflow who rely on that promise are being misled. This is also a prerequisite named in RFC 020 for the first AUR release.
+- **Step 1 platform scope:** Linux (Wayland as the maintainer's session; X11 through the winit X11 backend or XWayland) is the minimum. Windows and macOS only if a machine is available; if not, they are reported as "not tested", never inferred.
 
 ## Out of scope
 
