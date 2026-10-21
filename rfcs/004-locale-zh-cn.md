@@ -1,4 +1,4 @@
-# RFC 0004: Simplified Chinese (zh-CN) locale
+# RFC 004: Simplified Chinese (zh-CN) locale
 
 - **Status**: Draft
 - **Target version**: v1.22.0+ option

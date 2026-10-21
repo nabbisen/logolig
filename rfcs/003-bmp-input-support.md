@@ -1,4 +1,4 @@
-# RFC 0003: BMP input support
+# RFC 003: BMP input support
 
 - **Status**: Draft
 - **Target version**: v1.22.0+ option

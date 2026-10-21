@@ -1,4 +1,4 @@
-# RFC 0006: Drop-zone Drag-and-Drop Repair
+# RFC 006: Drop-zone Drag-and-Drop Repair
 
 - **Status**: Implemented (v1.26.1)
 - **Target version**: v1.26.1

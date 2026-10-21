@@ -1,4 +1,4 @@
-# RFC 0007: Wayland Drag-Hover Feedback Follow-Up
+# RFC 007: Wayland Drag-Hover Feedback Follow-Up
 
 - **Status**: Draft
 - **Target version**: future v1.x
@@ -8,12 +8,12 @@
 ## Summary
 
 Improve or document file drag-hover visual feedback on Linux Wayland sessions.
-This is a follow-up to RFC 0006 and is not a v1.26.1 release blocker because
+This is a follow-up to RFC 006 and is not a v1.26.1 release blocker because
 the choose-file flow remains usable through the full-card file-picker fallback.
 
 ## Background
 
-RFC 0006 repaired the Empty-screen drop zone by making the whole card clickable
+RFC 006 repaired the Empty-screen drop zone by making the whole card clickable
 and by wiring native `FileHovered`, `FilesHoveredLeft`, and `FileDropped` events
 through the iced runtime event stream. Manual v1.26.1 checks later showed that
 per-file save, ZIP save contents, and ZIP timestamp metadata pass, but

@@ -1,4 +1,4 @@
-# RFC 0001: Mobile UX refinements
+# RFC 001: Mobile UX refinements
 
 - **Status**: Draft
 - **Target version**: v1.22.0+ option

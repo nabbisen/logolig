@@ -19,15 +19,40 @@ prior version history.
 
 | # | Title | Scope | Status |
 | --- | --- | --- | --- |
-| [0001](./0001-mobile-ux-refinements.md) | Mobile UX refinements | medium (4 sub-topics) | Draft |
-| [0002](./0002-user-specified-flatten-color.md) | User-specified flatten color | medium | Draft |
-| [0003](./0003-bmp-input-support.md) | BMP input support | small | Draft |
-| [0004](./0004-locale-zh-cn.md) | Simplified Chinese locale | medium | Draft |
-| [0005](./0005-microsoft-app-logos.md) | Microsoft app logos | small | Implemented (v1.26.0) |
-| [0006](./0006-drop-zone-drag-drop-repair.md) | Drop-zone drag-and-drop repair | small | Implemented (v1.26.1) |
-| [0007](./0007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | small | Draft |
+| [001](./001-mobile-ux-refinements.md) | Mobile UX refinements | medium (4 sub-topics) | Draft |
+| [002](./002-user-specified-flatten-color.md) | User-specified flatten color | medium | Draft |
+| [003](./003-bmp-input-support.md) | BMP input support | small | Draft |
+| [004](./004-locale-zh-cn.md) | Simplified Chinese locale | medium | Draft |
+| [005](./005-microsoft-app-logos.md) | Microsoft app logos | small | Implemented (v1.26.0) |
+| [006](./006-drop-zone-drag-drop-repair.md) | Drop-zone drag-and-drop repair | small | Implemented (v1.26.1) |
+| [007](./007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | small | Draft |
 
-"Status: Draft" means the RFC is reviewed and ready for implementation
+### Proposed under the RFC 000 lifecycle policy
+
+The RFC portfolio is being migrated to the layout defined by
+[RFC 000](./done/000-rfc-lifecycle-policy.md) (see RFC 008). Until that
+migration lands, RFC 001–007 stay in this folder with the old status
+vocabulary, and new RFCs follow RFC 000 and live in `proposed/`. In RFC 000
+terms, **Proposed** means open for review; the implementer should not start.
+Priorities are the architect's recommendation and require owner approval.
+
+| # | Title | Priority |
+| --- | --- | --- |
+| [008](./proposed/008-rfc-portfolio-migration.md) | Migrate the RFC portfolio to the RFC 000 layout | P1 |
+| [009](./proposed/009-result-artifact-identity-and-zip-integrity.md) | Result artifact identity and ZIP integrity | P1 |
+| [010](./proposed/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | P1 |
+| [011](./proposed/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
+| [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
+| [013](./proposed/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |
+| [014](./proposed/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
+| [015](./proposed/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources | P1 / P2 |
+| [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
+| [017](./proposed/017-source-structure-conformance.md) | Source structure conformance (tests, file size, dead code) | P2 |
+| [018](./proposed/018-documentation-synchronisation.md) | Documentation synchronisation with v1.26.2 | P2 |
+| [019](./proposed/019-keyboard-accessibility.md) | Keyboard accessibility | P1 / P2 |
+| [020](./proposed/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging | P2 |
+
+"Status: Draft" (in the table above, for RFC 001–007) means the RFC is reviewed and ready for implementation
 but no implementer has started yet. It moves to "In Progress" once a
 version branch is opened, and to "Implemented (vX.Y.Z)" once merged.
 
@@ -39,7 +64,7 @@ that don't apply. For medium-or-larger RFCs, add the optional sections
 listed below.
 
 ```markdown
-# RFC NNNN: <Title>
+# RFC NNN: <Title>
 
 - **Status**: Draft | In Progress | Implemented (vX.Y.Z) | Withdrawn
 - **Target version**: vX.Y.Z (or "v1.22.0+ option")

@@ -1,4 +1,4 @@
-# RFC 0002: User-specified flatten color
+# RFC 002: User-specified flatten color
 
 - **Status**: Draft
 - **Target version**: v1.22.0+ option

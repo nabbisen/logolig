@@ -1,4 +1,4 @@
-# RFC 0005: Microsoft app logo advanced output set
+# RFC 005: Microsoft app logo advanced output set
 
 - **Status**: Accepted
 - **Target version**: v1.26.0
