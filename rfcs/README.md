@@ -44,14 +44,17 @@ Priorities are the architect's recommendation and require owner approval.
 | [010](./accepted/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | P1 |
 | [009](./accepted/009-result-artifact-identity-and-zip-integrity.md) | Result artifact identity and ZIP integrity | P1 |
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased: spike first) | P1 / P2 |
-| [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phased: verify and document first) | P1 / P2 |
+| [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phase 1 done; phase 2 shortcuts next) | P1 |
+| [024](./accepted/024-dependency-and-toolchain-baseline.md) | Dependency and toolchain baseline (MSRV, `cargo audit`) | P1 |
+| [025](./accepted/025-window-application-id.md) | Window application ID and desktop integration | P1 |
+
+The order of work is in [`ROADMAP.md`](../ROADMAP.md).
 
 **Proposed** (open for review):
 
 | # | Title | Priority |
 | --- | --- | --- |
-| [024](./proposed/024-dependency-and-toolchain-baseline.md) | Dependency and toolchain baseline (MSRV, `cargo audit`) | P1 |
-| [025](./proposed/025-window-application-id.md) | Window application ID and desktop integration | P1 |
+| [027](./proposed/027-keyboard-focus-model.md) | Keyboard focus model (Tab traversal, activation, visible focus) | P1 |
 | [008](./proposed/008-rfc-portfolio-migration.md) | Migrate the RFC portfolio to the RFC 000 layout | P2 |
 | [011](./proposed/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
 | [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |

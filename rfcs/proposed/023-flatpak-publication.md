@@ -57,14 +57,16 @@ The project is developed with AI agents. For Flathub: the manifest and the submi
 2. Owner submission to Flathub.
 3. Maintenance per release.
 
-## Decisions requested
+## Decisions
 
-- **D1** Channel A (Flathub)? B only as a CI test artefact.
-- **D2** App ID `io.github.nabbisen.Logolig`? (Confirm the repository-case question with the reviewers.)
-- **D3** The AI-policy handling above, including disclosure.
-- **D4** Use the reverse-DNS ID for the desktop file, MetaInfo and icon names for both AUR and Flatpak (amends the RFC 020 phase-2 handoff before it starts).
-- **D5** The minimal permission set above.
-- **D6** Timing: start phase 1 after the first AUR release (recommended), so that two new distribution channels do not open at once.
+Owner reply 2026-10-21: "Maybe yes. I want an ordinary way around Flatpak package publishment." Read by the architect as: **the ordinary route, Flathub (option A), is wanted, provisionally**; this RFC therefore stays **Proposed** until the owner has read the Flathub policy pages (especially the AI policy) and confirms.
+
+- **D1** Channel A (Flathub): the owner's stated preference (provisional). B only as a CI test artefact; C not pursued.
+- **D2** App ID `io.github.nabbisen.Logolig`: **decided** (RFC 025 D1). The repository-case question is still to be confirmed with the Flathub reviewers.
+- **D3** The AI-policy handling above (owner writes the manifest and the submission; disclosure of AI-assisted upstream files): **open**, needs the owner's reading of the policy.
+- **D4** Reverse-DNS names for desktop file, MetaInfo and icon: **decided** (RFC 025 D1). Flatpak requires it; the AUR does not, and uses the same files for simplicity.
+- **D5** The minimal permission set above: open, to be confirmed by the phase-1 evidence.
+- **D6** Timing: after the first AUR release, so that two new distribution channels do not open at once (architect's schedule recommendation in `ROADMAP.md`).
 
 ## Tests and evidence
 

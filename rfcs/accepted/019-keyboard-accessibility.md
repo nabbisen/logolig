@@ -55,7 +55,7 @@ Executed on Linux (X11 backend with `xdotool`, native Wayland with `wtype`) agai
 
 - **Phase 2 = option A**, as already decided, scoped to the main path plus the in-app shortcut list; no focus machinery.
 - **Option B becomes its own RFC** (focus model, visible focus indicators, Customize page), written after phase 2, because it changes every interactive widget and needs its own design review. Until then the documentation states the limitation.
-- **README tagline (owner decision):** "A local-first, accessible logo asset generator GUI" is stronger than the evidence for keyboard users. The architect recommends tempering the claim until option A and B land (for example dropping "accessible" from the tagline, or stating what is supported). The tagline is positioning text and belongs to the owner.
+- **README tagline (owner decision, 2026-10-21): the tagline stays; the product is improved instead.** The owner declined to temper "accessible" and asked to **enhance the keyboard UI/UX**. This raises the priority of this RFC and of the focus-model RFC (027): the claim must become true. Until it is true the documentation (already corrected) states the limits exactly, and the architect's schedule (`ROADMAP.md`) puts phase 2 (shortcuts for the main path) into the first public release and the focus model into the next one. The tagline wording itself remains the owner's.
 - Two source comments still claim keyboard accessibility (`ui/drop_zone.rs:6`, `ui/preview_panel.rs:134`); they are corrected in phase 2.
 
 ## Out of scope

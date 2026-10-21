@@ -27,11 +27,11 @@ Produce a correct, validated `PKGBUILD` template for the AUR package `logolig` (
 ## 3. Change scope (you may add)
 
 - `packaging/aur/logolig/PKGBUILD.in`
-- `packaging/linux/logolig.desktop`
+- `packaging/linux/io.github.nabbisen.Logolig.desktop` (**renamed 2026-10-21**: the application ID is the file name; see RFC 020 "Naming". The AUR itself does not require this.)
 - `packaging/README.md` (release and rollback procedure for packagers; see §5.6)
 - `scripts/render-aur.sh` (render and validate helper)
 - `.github/workflows/packaging.yml` (§5.8, only after the RFC 020 phase-1 handoff (`implementation-handoff-phase-1-ci-gates.md`) is merged)
-- Icon files under `packaging/linux/icons/hicolor/<size>x<size>/apps/logolig.png` **only after** the owner supplies the master artwork (§5.5).
+- Icon files under `packaging/linux/icons/hicolor/<size>x<size>/apps/io.github.nabbisen.Logolig.png` (and `scalable/apps/io.github.nabbisen.Logolig.svg` if the master is SVG) **only after** the owner supplies the master artwork (§5.5).
 
 ## 4. Non-change scope (you must not touch)
 
@@ -55,12 +55,12 @@ A template with exactly these placeholders: `@PKGVER@`, `@SOURCE_URL@`, `@SHA256
 - `prepare()`: `cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"`.
 - `build()`: `export RUSTUP_TOOLCHAIN=stable CARGO_TARGET_DIR=target` and `cargo build --frozen --release -p logolig-app`. Network access must not be needed in `build()`.
 - `check()`: `cargo test --frozen -p logolig -p logolig-i18n` (the GUI-free crates; fast, no display). Do **not** run the whole workspace test suite here (compiles the GUI in debug mode, long and pointless for packaging).
-- `package()`: install `target/release/logolig` to `/usr/bin/logolig` (mode 755), the desktop file to `/usr/share/applications/logolig.desktop` (644), and the whole `packaging/linux/icons/hicolor` tree to `/usr/share/icons/hicolor` (644). The icon install must **fail loudly** if the directory is missing; no `|| true`, no silent skip.
+- `package()`: install `target/release/logolig` to `/usr/bin/logolig` (mode 755), the desktop file to `/usr/share/applications/io.github.nabbisen.Logolig.desktop` (644), and the whole `packaging/linux/icons/hicolor` tree to `/usr/share/icons/hicolor` (644). The icon install must **fail loudly** if the directory is missing; no `|| true`, no silent skip.
 - License file: follow the current Arch guideline for SPDX common licenses (Apache-2.0 is a common license, which is normally **not** copied into the package). Check what `namcap` says and follow the guideline; if the guideline and `namcap` disagree, report instead of choosing.
 - `depends`: derive from evidence, not from the placeholder. Minimum evidence required for each entry: `ldd` of the built binary in the clean environment, plus an analysis of `dlopen`-loaded libraries (see §5.4). **Include `xdg-desktop-portal`** in `depends` (decision by the architect: the file chooser is the primary action and must work out of the box) unless your test in §5.4 shows the application does not need it, in which case report and stop. List portal backends and Vulkan drivers in `optdepends` with a short reason each.
 - No `options` or flags that weaken the build (no `!strip`, no disabled LTO unless a documented reason exists; state any you add).
 
-### 5.2 `packaging/linux/logolig.desktop`
+### 5.2 `packaging/linux/io.github.nabbisen.Logolig.desktop`
 
 Freedesktop Desktop Entry (validate with `desktop-file-validate`):
 
@@ -71,12 +71,12 @@ Name=Logolig
 Comment=Make favicons and app logos from one image, offline
 Comment[ja]=1枚の画像から favicon とアプリ用ロゴを作成（オフライン）
 Exec=logolig
-Icon=logolig
+Icon=io.github.nabbisen.Logolig
 Terminal=false
 Categories=Graphics;
 ```
 
-The wording is fixed by the architect (short, no marketing). If `desktop-file-validate` rejects something, report instead of rewording. Do not add `MimeType`, `Keywords` or `StartupWMClass` (there is no verified window class; do not guess one). The `Exec` has no `%f` because the application does not accept a file argument (verify in `crates/app/src/main.rs`).
+The wording is fixed by the architect (short, no marketing). If `desktop-file-validate` rejects something, report instead of rewording. Do not add `MimeType` or `Keywords`. `StartupWMClass` is added only if the RFC 025 job (which runs before this one) recorded an X11 window class that differs from the application ID; read its review request, and if there is none, do not guess one. The window must report the ID `io.github.nabbisen.Logolig` (RFC 025); verify it with `niri msg windows` on the built binary and report a mismatch instead of fixing it here. The `Exec` has no `%f` because the application does not accept a file argument (verify in `crates/app/src/main.rs`).
 
 ### 5.3 `scripts/render-aur.sh`
 
@@ -131,7 +131,7 @@ Add `.github/workflows/packaging.yml`, first-party actions only, pinned by SHA, 
 ## 6. Required tests and acceptance criteria
 
 - `makepkg` succeeds from the rendered dry-run PKGBUILD in a clean environment; `namcap` has no unexplained errors; `desktop-file-validate` is clean; `ldd` shows no missing library.
-- The installed file list of the package is exactly: `/usr/bin/logolig`, `/usr/share/applications/logolig.desktop`, the icon files. Show `pacman -Qlp <package>`.
+- The installed file list of the package is exactly: `/usr/bin/logolig`, `/usr/share/applications/io.github.nabbisen.Logolig.desktop`, the icon files. Show `pacman -Qlp <package>`.
 - `render-aur.sh`: negative tests, each recorded: unknown argument; missing `--tarball` file; output directory inside the AUR clones (must refuse); unreplaced placeholder (inject one in a copy of the template). Positive test with the real tag `1.26.2` only to prove the **download and hash path** works (the build from that archive is expected to fail at the icon step because the tag has no packaging files, which also proves the loud-failure rule; record both outcomes).
 - The dependency table (§5.4 item 5) and the portal finding (item 7) are present.
 - No file changed outside §3.
@@ -161,7 +161,9 @@ Add `.github/workflows/packaging.yml`, first-party actions only, pinned by SHA, 
 
 ## 10. Delivery
 
-Work on branch `rfc-020-aur-source-package`, small commits (match the repository's short imperative subject style), push the **branch**. Do not merge, tag or release. The architect reviews, then merges. The owner publishes to the AUR in Phase 3.
+**Workflow (owner decision 2026-10-21): no topic branches and no concurrent jobs.** Work directly on `main`, one small commit at a time (match the repository's short imperative subject style), `git pull --ff-only` before you start, and push after each commit that passes the local gates. Never rewrite history or force-push. Do not tag or release. The architect reviews the commit range afterwards; corrections are new commits. The owner publishes to the AUR in Phase 3. This job starts only when the preceding jobs in `ROADMAP.md` are reviewed.
+
+Because the workflow now runs on `push` to `main`, the packaging workflow of §5.8 triggers on `push` with the same `paths` filter (in addition to `pull_request`), and the "deliberate failure" demonstration is done with two commits on `main` (a failing one, then its `git revert`), announced in the review request so that the red run is not mistaken for a regression.
 
 ## 11. Required review request
 

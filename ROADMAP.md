@@ -1,0 +1,88 @@
+# Logolig roadmap and release plan
+
+**Status.** Proposed by the architect on 2026-10-21 and **awaiting the owner's authorization**. The architect makes the schedule and manages the release cycle; the owner authorizes it. Nothing here is a release decision. Major version transitions are the owner's alone and none is proposed.
+
+## 1. Rules of the cycle
+
+- **One job at a time, directly on `main`** (owner decision 2026-10-21: no topic branches, no concurrent jobs). Each job is a Developer Handoff under `rfcs/handoffs/NNN-slug/`, followed by a review by the architect before the next job starts.
+- Every job ends with: local gates green (`fmt`, `clippy -D warnings`, `test`), CI green on the pushed commit, a review request with evidence, and the architect's verdict (Approved, Conditionally Approved, Corrections Required).
+- Version numbers follow SemVer. A release bundles reviewed jobs; the architect proposes the version, the owner authorizes it, tags have no `v` prefix (`X.Y.Z`). Publishing to the AUR or Flathub is done or approved by the owner.
+- **Effort sizes** are relative (S small, M medium, L large) and are not calendar estimates. Dates are not promised until the first jobs have shown the real pace; the architect will then add dates and report deviations early.
+- RFC lifecycle: `proposed/` → `accepted/` → `done/` (moved when the work ships, with the release in its Status).
+
+## 2. Release 1.27.0: first public release for Arch Linux (recommended minor)
+
+**Objective.** A first release that is honest, safe and installable: correct output, no known data-losing defect, true compatibility statement, clean audit, green CI, a keyboard path for the main task, and an AUR source package.
+
+**Why a minor release, not 1.26.3.** It changes visible behaviour (contain-fit of non-square logos, advisories, keyboard shortcuts) and corrects the declared minimum Rust version.
+
+| Job | RFC / handoff | Size | Blocked by | Notes |
+|---|---|---|---|---|
+| J0 | Merge the reviewed work: RFC 009, RFC 010, RFC 019 phase 1, CI workflow (PR #2) | S | owner (git permission) | Approved by the architect; merge was blocked by the permission system, see the owner message |
+| J1 | RFC 024: MSRV 1.90, `zip` ≥ 9, audit triage | S–M | J0 | Turns CI green; then the owner marks the five checks required |
+| J2 | RFC 025: window application ID | S | J1 | Needed by every desktop package |
+| J3 | RFC 015 phase 2a: data-URL-only SVG resolver, `svg::analyze`, one advisory | M | J2 | Closes the local-file read; ends silent misleading SVG output |
+| J4 | RFC 019 phase 2: global shortcuts, shortcut list, comment fixes | M | J3 | First real keyboard path (choose, download all, back, pages) |
+| J5 | RFC 020 phase 2: AUR source package (`logolig`), packaging CI | M | J4, **owner: master icon** | Files named by the application ID; local dry run only |
+| J6 | Release preparation: version 1.27.0, release notes, final gates, candidate verification | S | J5 | The architect submits a release recommendation |
+| J7 | **Owner:** authorize 1.27.0, tag, first manual AUR publication (RFC 020 phase 3), then the README install section | S | J6 | Owner actions |
+
+**Readiness criteria (all must hold; the architect reports the evidence):** all five CI jobs green on the release commit; `cargo audit` clean; RFC 009, 010, 015 (2a), 019 (phase 1 and 2), 024, 025 implemented and reviewed; documentation matches behaviour; the dry-run package builds in a clean environment and the window shows the application icon; no unresolved critical finding; known limitations written in the release notes (keyboard coverage, SVG text not drawn, ja text review status).
+
+**Not in 1.27.0.** Full focus model, SVG text rendering, `logolig-bin`, AUR automation, Flatpak, robustness items.
+
+## 3. Release 1.28.0: keyboard and UI correctness (proposed)
+
+| Job | RFC | Size | Notes |
+|---|---|---|---|
+| J8 | RFC 017: source structure (inline tests out, `app.rs` split, dead code) | L | Enabler: do it before the large UI work so reviews stay mechanical |
+| J9 | RFC 021: selection-state indicators | M | Settles icons and cues before the focus indicator is designed |
+| J10 | RFC 027: keyboard focus model (phase 0 spike, then Home, Result, Customize, Settings) | L | The owner's priority: makes "accessible" true |
+| J11 | RFC 026: result screen layout | S | Back button must always be reachable |
+| J12 | RFC 018: documentation synchronisation | S | Closed last, from the evidence of the finished work |
+| T1 | RFC 020 phases 3–4: `logolig-bin`, `release.yml` with attestation, AUR automation | M | Needs the owner's `aur` environment and CI key (RFC 020 D4) |
+
+## 4. Release 1.29.0: distribution reach and robustness (proposed)
+
+| Job | RFC | Size | Notes |
+|---|---|---|---|
+| J13 | RFC 023: Flatpak (upstream files, MetaInfo, validation CI; the owner writes the manifest and submits to Flathub) | M–L | Owner prefers the ordinary Flathub route; AI-policy decision pending |
+| J14 | RFC 015 phase 2b: text rendering with generic-family repair and substitution advisory | M | Includes the Flatpak font set |
+| J15 | RFC 011, 012, 014: stale results, manifest validation, input limits | M | Robustness and safety |
+| J16 | RFC 013, 016, 022: system theme, i18n hygiene, vtracer preset check | M | Polish and correctness |
+
+The architect may split or reorder these as evidence arrives and will say so before acting. RFC 001–004 and RFC 008 (portfolio migration) are scheduled when the owner has decided their dispositions (RFC 008 D2, D4).
+
+## 4a. Distribution track
+
+| Step | Owner | Architect/dev |
+|---|---|---|
+| Master icon (SVG or ≥ 1024 px PNG) in `packaging/icons/` | provides (request issued 2026-10-21) | J5 uses it |
+| First AUR publication of `logolig` | publishes by hand | prepares and verifies the package |
+| `aur` environment and CI-only key | sets up (conditions in RFC 020 D4) | T1 after confirmation |
+| Flathub | reads the policy, writes the manifest and the submission | upstream files and validation only |
+
+## 5. Release checklist applied to every release
+
+1. Gates: `fmt`, `clippy -D warnings`, `test`, MSRV check, `cargo audit` all green in CI on the release commit.
+2. Security review note by the architect (new data flows, external integrations, dependency changes); threat model updated if a data flow is new.
+3. Documentation (README, `docs/src`) matches behaviour; RFC statuses and the index are current; implemented RFCs are moved to `done/` with the release.
+4. Evidence kept: review requests, gate logs, CI run URLs, known limitations.
+5. Release notes and a draft GitHub Release; **the owner publishes**.
+6. Post-release: record deviations from plan and lessons; update this file.
+
+## 6. Authorizations requested from the owner
+
+1. This plan, in particular the scope and order of 1.27.0 and the recommendation of a minor version.
+2. The ordering of jobs J1–J7 (strictly serial).
+3. A decision on the git permission block (see the architect's message): the reviewed merges J0.
+
+## 7. Risks to the schedule
+
+| Risk | Effect | Handling |
+|---|---|---|
+| Master icon arrives late | J5 cannot finish | Everything else in J5 proceeds; the release waits for the icon only |
+| `zip` 9 needs more than renames | J1 grows | Report options; interim documented ignore only by the owner's explicit risk acceptance |
+| Focus model larger than estimated | 1.28.0 slips | Phase 0 spike first; deliver per screen with reviews |
+| Flathub policy outcome | 1.29.0 scope | Owner reads the policy before work starts |
+| Serial execution | No parallel slack | Keep jobs small; review quickly |

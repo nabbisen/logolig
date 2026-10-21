@@ -1,7 +1,8 @@
 # RFC 024 — Dependency and toolchain baseline (MSRV, `cargo audit`)
 
-**Status.** Proposed
+**Status.** Accepted (owner, 2026-10-21: "Yes" to D1 and D2 as recommended)
 **Priority.** P1 (CI is red on two jobs; the declared MSRV is false)
+**Handoffs.** [rfcs/handoffs/024-dependency-and-toolchain-baseline/](../handoffs/024-dependency-and-toolchain-baseline/README.md)
 **Tracks.** Findings of the RFC 020 phase-1 CI work.
 **Touches.** `Cargo.toml` (`rust-version`, possibly `zip`), `Cargo.lock`, `README.md`, `.cargo/audit.toml`, `.github/workflows/ci.yml`, ZIP code in `crates/app`.
 

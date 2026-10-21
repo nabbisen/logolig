@@ -105,14 +105,16 @@ Both: `arch=(x86_64)`, `license=('Apache-2.0')`, `url` unchanged, `pkgdesc` real
   5. Rotation and revocation are documented in `packaging/README.md` (rotate yearly and after any doubt; remove the public key from the AUR account to revoke).
   6. The owner can move to a separate bot account later without changing the workflow (only the secret and the AUR co-maintainer setting change). Recommended if the owner ever maintains other AUR packages that the key should not be able to touch.
   Phase 4 does not start until conditions 1–4 are set up and the owner confirms it.
-- **D5 — icon and desktop entry: owner will provide the master artwork on request (2026-10-21: "Give me request later").** The architect issues a written request when Handoff 004 reaches the icon step (§5.5). Until then that step stays blocked and nothing is invented. Finding: the repository contains the logo only as the 150 × 150 Microsoft tile (`packaging/windows/Assets`), a rounded blue square with the hexagon mark, and no master artwork. Upscaling it would produce a blurry Linux icon, which would be a poor first impression for a tool whose selling point is output quality. Request: commit the master (SVG preferred, or a PNG of at least 1024 px) to `packaging/icons/`. Then generate every size, Windows assets included, **with Logolig itself**, which also serves as a standing end-to-end test of the product. Desktop entry text is localised (`en`, `ja`) and keeps the project's "less is more" wording.
+- **D5 — icon and desktop entry: owner will provide the master artwork on request (2026-10-21: "Give me request later").** The written request was issued on 2026-10-21: master artwork as an **SVG** (preferred; Flathub prefers SVG too) or a square **PNG of at least 1024 × 1024 px** with a transparent background, one mark with no text so it stays legible at 48 px, redistributable under the project's licence (Apache-2.0) and free of third-party trademarks, committed by the owner to `packaging/icons/` (for example `packaging/icons/logolig.svg`). The existing tile in `packaging/windows/Assets` shows the intended hexagon mark; the owner may supply it in a master form. Until the file exists that step stays blocked and nothing is invented. Finding: the repository contains the logo only as the 150 × 150 Microsoft tile (`packaging/windows/Assets`), a rounded blue square with the hexagon mark, and no master artwork. Upscaling it would produce a blurry Linux icon, which would be a poor first impression for a tool whose selling point is output quality. Request: commit the master (SVG preferred, or a PNG of at least 1024 px) to `packaging/icons/`. Then generate every size, Windows assets included, **with Logolig itself**, which also serves as a standing end-to-end test of the product. Desktop entry text is localised (`en`, `ja`) and keeps the project's "less is more" wording.
 
 ## Binding details fixed while preparing the phase-2 handoff
 
 - Phase 2 covers the **source** package `logolig` only; `logolig-bin` and `release.yml` come later.
 - `check()` runs only the GUI-free crates (`cargo test --frozen -p logolig -p logolig-i18n`).
 - `depends` includes `xdg-desktop-portal`: `rfd` 0.15.4 defaults to the XDG-portal backend, so the file chooser (the primary action) needs it. Portal back-ends and Vulkan drivers go to `optdepends`. A test without a portal is required evidence and may lead to a UX RFC.
-- Desktop entry wording (fixed by the architect): Name `Logolig`; Comment `Make favicons and app logos from one image, offline`; Comment[ja] `1枚の画像から favicon とアプリ用ロゴを作成（オフライン）`; Categories `Graphics;`. No `MimeType`, `Keywords` or `StartupWMClass`.
+- Desktop entry wording (fixed by the architect): Name `Logolig`; Comment `Make favicons and app logos from one image, offline`; Comment[ja] `1枚の画像から favicon とアプリ用ロゴを作成（オフライン）`; Categories `Graphics;`. No `MimeType` or `Keywords`.
+- **Naming (amended 2026-10-21, owner decision on RFC 025 D1):** the desktop file is `io.github.nabbisen.Logolig.desktop` with `Icon=io.github.nabbisen.Logolig`, and the icons are installed as `io.github.nabbisen.Logolig.png` / `.svg` under `hicolor`. **The AUR does not require reverse-DNS names**; plain names such as `logolig.desktop` would be accepted there. The choice is made for two other reasons: Flatpak **requires** the desktop file, icon and MetaInfo to be named by the application ID (RFC 023), and on any distribution the window's application id must equal the desktop file's base name for the dock and taskbar to match them (RFC 025). One set of files and one ID then serve both packages. This replaces the earlier plan for `logolig.desktop` and `logolig.png` in the phase-2 handoff, which was amended before it started. `StartupWMClass` is added only if RFC 025's X11 evidence shows that the X11 class differs from the ID.
+- **Workflow (owner decision 2026-10-21):** no topic branches and no concurrent jobs; implementers commit directly to `main`, one job at a time, in the order of `ROADMAP.md`. Tags, releases and AUR pushes stay with the owner.
 - The 1.26.2 tag contains no Linux packaging files, so the dry run uses a local archive of the working tree, and the first published version must be a release that already contains `packaging/linux/`.
 - The AUR clones under `.git-exclude/tmp/aur-repositories/` are read-only for the implementer; nothing is pushed in phases 1–2.
 
@@ -120,13 +122,16 @@ Both: `arch=(x86_64)`, `license=('Apache-2.0')`, `url` unchanged, `pkgdesc` real
 
 Publishing to the AUR makes the application discoverable to a new audience, and users there will not read the RFCs. Recommended before the first AUR release:
 
-1. RFC 009 fixed (ZIP failure with monochrome on is a visible, data-losing error).
-2. RFC 019 step 2 done (documentation states honestly what keyboard support exists) and, ideally, step 1 evidence recorded.
-3. RFC 015 spike done: confirm or refute the SVG-text defect. If confirmed, fix it or document it prominently, since logo SVGs often contain text.
-4. README install section updated for AUR.
-5. Gates green on the release commit, `cargo audit` result recorded.
+1. RFC 009 fixed (ZIP failure with monochrome on is a visible, data-losing error). *Implemented and reviewed 2026-10-21.*
+2. RFC 019 phase 1 done (documentation states honestly what keyboard support exists). *Implemented and reviewed.* The owner has asked for real keyboard improvement (RFC 019 phase 2, then RFC 027); the architect recommends phase 2 (global shortcuts for the main path) in the first release.
+3. RFC 015: the spike confirmed that SVG text renders nothing and that local files are read through `<image href>`. Phase 2a (data-only resolver and an honest advisory) before the first release.
+4. RFC 024: declared MSRV equal to the real one (1.90) and the `zip` advisories gone, so all five CI jobs are green.
+5. RFC 025: window application ID set.
+6. RFC 010 (contain-fit): implemented and reviewed.
+7. README install section updated for AUR.
+8. Gates green on the release commit, `cargo audit` result recorded.
 
-A natural vehicle is a patch release (for example 1.26.3) that carries these fixes and is the first release produced by the new pipeline.
+The vehicle is a **minor release (recommended 1.27.0)**, not a patch: it changes visible behaviour (contain-fit, advisories, keyboard shortcuts) and corrects the declared minimum Rust version. The version is the owner's decision; see `ROADMAP.md`.
 
 ## Tests and evidence
 

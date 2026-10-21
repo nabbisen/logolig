@@ -1,7 +1,8 @@
 # RFC 025 — Window application ID and desktop integration
 
-**Status.** Proposed
+**Status.** Accepted (owner, 2026-10-21)
 **Priority.** P1 for packaging (affects the AUR package and any Flatpak)
+**Handoffs.** [rfcs/handoffs/025-window-application-id/](../handoffs/025-window-application-id/README.md)
 **Tracks.** The application reports an empty Wayland `app_id`.
 **Touches.** `crates/app/src/app.rs` (`iced::application(..)` window settings), `packaging/linux/` (desktop file name and `Icon=`), docs.
 
@@ -23,9 +24,9 @@ Desktop environments match a window to its desktop entry (icon, name, grouping, 
 3. **Names.** Desktop file `io.github.nabbisen.Logolig.desktop`, icon name `io.github.nabbisen.Logolig`, MetaInfo `io.github.nabbisen.Logolig.metainfo.xml`. The desktop file's `StartupWMClass` is set only if the X11 class differs from the ID (decide from the X11 evidence).
 4. Windows and macOS are unaffected; the setting is Linux-specific.
 
-## Decision requested
+## Decision
 
-- **D1** Adopt `io.github.nabbisen.Logolig` as the application ID for all Linux packaging (AUR and Flatpak). The architect recommends yes. If yes, the RFC 020 phase-2 handoff and RFC 020's binding details are amended **before** that work starts.
+- **D1 — decided by the owner (2026-10-21): yes.** `io.github.nabbisen.Logolig` is the application ID for all Linux packaging. The owner asked whether this is needed only for Flatpak. Answer, recorded for the files: **only Flatpak requires the reverse-DNS name** (desktop file, icon and MetaInfo must be named by the application ID there). The AUR does not require it. What applies on every distribution is that the window's application id must equal the desktop file's base name, otherwise the dock and taskbar cannot match the window to the entry; so the ID must be set in the application anyway, and using the same ID for both packages keeps one set of files. RFC 020's binding details and its phase-2 handoff were amended accordingly (before that work started).
 
 ## Tests and evidence
 
