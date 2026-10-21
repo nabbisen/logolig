@@ -1,6 +1,6 @@
 # Logolig roadmap and release plan
 
-**Status.** Proposed by the architect on 2026-10-21 and **awaiting the owner's authorization**. The architect makes the schedule and manages the release cycle; the owner authorizes it. Nothing here is a release decision. Major version transitions are the owner's alone and none is proposed.
+**Status.** **Authorized by the owner on 2026-10-21** (plan, the scope and order of release 1.27.0, the recommendation of a minor version, and strictly serial jobs). The architect makes the schedule and manages the release cycle; the owner authorizes it. Authorizing the plan is not a release decision: the owner still authorizes each tag and publication separately, and major version transitions remain the owner's alone (none is proposed). Changes to scope or order are announced by the architect before they are made.
 
 ## 1. Rules of the cycle
 
@@ -71,11 +71,12 @@ The architect may split or reorder these as evidence arrives and will say so bef
 5. Release notes and a draft GitHub Release; **the owner publishes**.
 6. Post-release: record deviations from plan and lessons; update this file.
 
-## 6. Authorizations requested from the owner
+## 6. Authorizations
 
-1. This plan, in particular the scope and order of 1.27.0 and the recommendation of a minor version.
-2. The ordering of jobs J1–J7 (strictly serial).
-3. (Resolved) the reviewed work was integrated into `main` as J0.
+1. **Granted 2026-10-21:** this plan, in particular the scope and order of 1.27.0 and the recommendation of a minor version.
+2. **Granted 2026-10-21:** the ordering of jobs J1–J7 (strictly serial).
+3. Resolved: the reviewed work was integrated into `main` as J0.
+4. **Still to be authorized separately, when the time comes:** the release tag and publication of 1.27.0 (J7), the first AUR publication, and every later release.
 
 ## 7. Risks to the schedule
 
