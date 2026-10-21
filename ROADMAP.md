@@ -20,7 +20,7 @@
 |---|---|---|---|---|
 | J0 | Integrate the reviewed work: RFC 009, RFC 010, RFC 019 phase 1, CI workflow (PR #2) | S | none | **Done 2026-10-21:** applied linearly to `main` (`git cherry-pick -x`, no merge commits, conflict in `crates/core/Cargo.toml` resolved by keeping both `[[test]]` entries); gates green on the result (fmt, clippy, 178 tests); PR #2 closed with a pointer. The remote topic branches are no longer needed |
 | J1 | RFC 024: MSRV 1.90, `zip` ≥ 9, audit triage | S–M | J0 | **Done and reviewed 2026-10-21** (all five CI jobs green, 0 vulnerabilities); required-checks idea revised, see RFC 024 |
-| J1b | RFC 024 follow-up: three single-crate lock updates (`anyhow`, `event-listener`, `memmap2`) | S | J1 | **Added 2026-10-21 (architect, small hygiene job inside the authorized objective "clean audit")**; clears 3 of the 14 audit warnings |
+| J1b | RFC 024 follow-up: three single-crate lock updates (`anyhow`, `event-listener`, `memmap2`) | S | J1 | **Done and reviewed 2026-10-22** (audit warnings 14 → 11, 0 vulnerabilities, gates green); added 2026-10-21 by the architect as a small hygiene job inside the authorized objective "clean audit" |
 | J2 | RFC 025: window application ID | S | J1b | Needed by every desktop package |
 | J2b | RFC 028: snora 0.25.2 → 0.53.0 (same features, no `design`), retake the README screenshot | S–M | J2 | **Added 2026-10-21 (owner authorized).** Overlay click-through fix, AA toasts, F6 zones for the keyboard job |
 | J3 | RFC 015 phase 2a: data-URL-only SVG resolver, `svg::analyze`, one advisory | M | J2b | Closes the local-file read; ends silent misleading SVG output |
