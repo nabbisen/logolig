@@ -299,6 +299,9 @@ fn current_zip_modified_time() -> zip::DateTime {
 }
 
 #[cfg(test)]
+mod zip_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
