@@ -458,6 +458,7 @@ pub enum Message {
 pub fn run() -> iced::Result {
     iced::application(AppState::boot, update, view)
         .font(snora::lucide::LUCIDE_FONT_BYTES)
+        .window(crate::window::settings())
         .title(window_title)
         .theme(theme)
         .subscription(subscription)

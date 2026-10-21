@@ -5,6 +5,7 @@ mod result;
 mod shell;
 mod task_queue;
 mod ui;
+mod window;
 
 fn main() -> iced::Result {
     app::run()
