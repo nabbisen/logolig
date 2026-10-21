@@ -1,6 +1,6 @@
 # RFC 020 — GitHub Actions CI and AUR packaging (`logolig`, `logolig-bin`)
 
-**Status.** Accepted (phased; phases 3–4 gated by owner actions D4/D5, 2026-10-21)
+**Status.** Accepted (phased; phase 2's icon step waits for the owner's artwork; phase 4 waits for the D4 set-up, 2026-10-21)
 **Priority.** P1 (owner priority, 2026-10-21: AUR publication first)
 **Tracks.** Release engineering: automated quality gates, release artifacts, and AUR publication.
 **Touches.** new `.github/workflows/`, new `packaging/aur/`, new `packaging/linux/` (desktop entry, icon), `scripts/`, `.cargo/audit.toml`, `README.md` install section.
@@ -89,15 +89,22 @@ Both: `arch=(x86_64)`, `license=('Apache-2.0')`, `url` unchanged, `pkgdesc` real
 | 1 | `ci.yml` gates (fmt, clippy, test, MSRV, audit; docs jobs once RFC 008/018 land). No secrets, no release. | nothing |
 | 2 | `packaging/` templates, `.desktop`, icon, container build with `makepkg` + `namcap`, dry run on the maintainer's Arch machine. `logolig` (source) first. | D5 master artwork |
 | 3 | **First publication of `logolig` is done by the owner by hand** from a verified PKGBUILD (`git push` to AUR). Proves the package before any secret exists. Then `logolig-bin` (needs `release.yml` artifacts and attestation). | release approval |
-| 4 | `aur.yml` automation for later releases. | D4 (bot account and key) |
+| 4 | `aur.yml` automation for later releases. | D4 set-up: CI-only key and protected `aur` environment (conditions in D4) |
 
 ## Decisions (2026-10-21, applying the owner's philosophy: clean, safe, secure, robust; users not confused)
 
 - **D1 — two packages: accepted, sequenced.** `logolig` (source build, verifiable by anyone from the tagged source) is published first. `logolig-bin` follows because compiling an iced application takes long and a binary package has real user value, but it asks users to trust a binary, so it carries two additions: a SHA-256 in the PKGBUILD **and** a GitHub build-provenance attestation for the release asset (`actions/attest-build-provenance`, pinned by SHA), with the verification command in `packaging/README.md`. Scope: Linux x86_64, glibc, as built on the CI runner; no promise of bit-for-bit reproducibility is made in the docs. `logolig-bin` declares `provides=(logolig)` and `conflicts=(logolig)` so users are never left with two copies.
 - **D2 — approval design: accepted, tightened.** A tag creates only a draft release; the owner's publishing of that release is the release approval; the AUR push is a separate, manual, environment-protected step (`workflow_dispatch`), so no outward-facing publication can happen unattended. For a one-person project the environment's reviewer is the owner; "prevent self-review" is left off because it would block the only maintainer, and the manual trigger is the real gate.
 - **D3 — AUR push by plain shell: accepted.** Clone, copy `PKGBUILD`, regenerate `.SRCINFO` with `makepkg --printsrcinfo` (run in an Arch container as a non-root user, because `makepkg` refuses root), commit, push. No community deploy action. All actions pinned to commit SHAs; `permissions:` minimal per job.
-- **D4 — AUR account and key: needs the owner.** Recommendation, to limit blast radius: AUR SSH keys belong to an *account*, not a package, so a leaked key would expose every package of that account. Create a **separate bot account**, add it as co-maintainer of `logolig` and `logolig-bin` only, and store that account's key only as the `aur` environment secret. Keep the owner's personal key out of CI. (To the architect's knowledge AUR offers no 2FA; this has not been re-checked, confirm at account creation.) Phase 4 does not start until this is done.
-- **D5 — icon and desktop entry: needs the owner.** Finding: the repository contains the logo only as the 150 × 150 Microsoft tile (`packaging/windows/Assets`), a rounded blue square with the hexagon mark, and no master artwork. Upscaling it would produce a blurry Linux icon, which would be a poor first impression for a tool whose selling point is output quality. Request: commit the master (SVG preferred, or a PNG of at least 1024 px) to `packaging/icons/`. Then generate every size, Windows assets included, **with Logolig itself**, which also serves as a standing end-to-end test of the product. Desktop entry text is localised (`en`, `ja`) and keeps the project's "less is more" wording.
+- **D4 — AUR account and key: decided by the owner (2026-10-21): the owner's own AUR account is used, and the owner sets the secret in a GitHub Actions environment.** The architect had recommended a separate bot account as co-maintainer, because an AUR SSH key belongs to an account, not to a package. The owner chose otherwise; this is the owner's risk decision and it is recorded here as an **accepted residual risk**: a leaked CI key could modify every AUR package of that account, not only `logolig` and `logolig-bin`. Conditions that keep the risk small (all part of the Phase 4 acceptance criteria):
+  1. A **dedicated SSH key pair for CI only**, generated for this purpose and never reused for anything else. Register its public key on the AUR account in addition to the owner's personal key (to the architect's knowledge the AUR accepts more than one key per account; confirm in the account settings, and if only one key is allowed, stop and ask before replacing the personal key). The CI key can then be revoked alone.
+  2. The private key lives **only** as a secret of the GitHub environment `aur`; never as a repository-level secret, never in a file, log or artifact.
+  3. The environment is restricted: deployment allowed only from `main` (or release tags), required reviewer = the owner, and the workflow is `workflow_dispatch` only (RFC 020 D2). Pull requests and forks cannot reach it.
+  4. The AUR step prints no secret material, does not enable shell tracing (`set -x`), and pins `known_hosts` for `aur.archlinux.org` from a verified fingerprint committed in the repository (not `StrictHostKeyChecking=no`).
+  5. Rotation and revocation are documented in `packaging/README.md` (rotate yearly and after any doubt; remove the public key from the AUR account to revoke).
+  6. The owner can move to a separate bot account later without changing the workflow (only the secret and the AUR co-maintainer setting change). Recommended if the owner ever maintains other AUR packages that the key should not be able to touch.
+  Phase 4 does not start until conditions 1–4 are set up and the owner confirms it.
+- **D5 — icon and desktop entry: owner will provide the master artwork on request (2026-10-21: "Give me request later").** The architect issues a written request when Handoff 004 reaches the icon step (§5.5). Until then that step stays blocked and nothing is invented. Finding: the repository contains the logo only as the 150 × 150 Microsoft tile (`packaging/windows/Assets`), a rounded blue square with the hexagon mark, and no master artwork. Upscaling it would produce a blurry Linux icon, which would be a poor first impression for a tool whose selling point is output quality. Request: commit the master (SVG preferred, or a PNG of at least 1024 px) to `packaging/icons/`. Then generate every size, Windows assets included, **with Logolig itself**, which also serves as a standing end-to-end test of the product. Desktop entry text is localised (`en`, `ja`) and keeps the project's "less is more" wording.
 
 ## First-publication readiness (recommendation; the release decision remains with the owner)
 
@@ -129,7 +136,7 @@ A natural vehicle is a patch release (for example 1.26.3) that carries these fix
 
 | Risk | Rating | Mitigation |
 |---|---|---|
-| AUR key leak | High impact, low likelihood | Environment secret, required reviewers, dedicated key, rotate on any doubt |
+| AUR key leak | High impact (account-wide: the owner's account is used, D4), low likelihood | Conditions 1–6 under D4: CI-only key, environment secret, branch-restricted environment with required reviewer, manual dispatch, pinned `known_hosts`, rotation; separately revocable key |
 | Bad package published | Medium | Draft-release gate, `makepkg`/`namcap` in CI, supersede-don't-rewrite policy |
 | Missing runtime libraries on Arch | Medium | Container install test; record results |
 | Workflow supply-chain compromise | Medium | SHA-pinned actions, minimal permissions |
