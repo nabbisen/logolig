@@ -21,6 +21,8 @@ Rule: tests are separate files (`some_mod.rs` + `some_mod/tests.rs`); `#[test]` 
 | Files over 500 lines | `app/src/app.rs` 1476, `core/tests/exporter.rs` 697, `app/src/ui/advanced_drawer.rs` 660, `app/src/ui/preview_panel.rs` 565 |
 | Blanket lint allowances | `#[allow(dead_code)]` on `enum Message`, on `ui::accessibility::{label, marker}`, and `#![allow(dead_code)]` in `result.rs` |
 | Vestigial code | `AppState::advanced_open` (never set to true), `Message::NoOp`, `Message::AdvancedToggled`, `Message::LocaleChanged` (duplicate of `LocalePicked`), `busy`, `ExportPlan::overrides`/`SizeOverride` (no readers), `PreviewContext::label` and `ThemeMode::next` (check usage) |
+| Dead branch (found in the RFC 009 review) | `ResultAssetKind::has_visual_thumbnail` lists `Svg`, but `build_thumbnail` returns `None` for SVG |
+| Path comparison (found in the RFC 009 review) | `exporter::ensure_unique_paths` compares `to_string_lossy().to_lowercase()` without normalising separators; normalise via path components and add a backslash-path test when core is next hardened |
 | Stale test scaffolding | `crates/app/tests/app_state.rs` contains one test and a "Step 1 / Step 2" comment; the integration-test crate cannot see app types |
 | Working tree | untracked empty directories `crates/logolig-app/`, `crates/logolig-core/`, `crates/logolig-i18n/` (leftovers of an earlier layout) and empty `.agents/` |
 | Doc comments | blank line splitting doc comments in `export_plan.rs` (two places) and `exporter.rs` header |
