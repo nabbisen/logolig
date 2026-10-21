@@ -16,8 +16,8 @@ fn png_decode_returns_correct_dimensions() {
     assert_eq!(rgba.height, 4);
     assert_eq!(rgba.as_bytes().len(), 4 * 4 * 4);
     // All 4×4 pixels are #CC3333FF
-    for chunk in rgba.as_bytes().chunks_exact(4) {
-        assert_eq!(chunk, [0xCC, 0x33, 0x33, 0xFF]);
+    for chunk in rgba.as_bytes().as_chunks::<4>().0 {
+        assert_eq!(*chunk, [0xCC, 0x33, 0x33, 0xFF]);
     }
 }
 
@@ -50,7 +50,7 @@ fn resize_with_nearest_preserves_solid_color() {
     let small = decode(&asset).unwrap();
     let big = resize(&small, 8, 8, ResizeAlgorithm::Nearest).unwrap();
     // Nearest: solid colour is preserved exactly
-    for chunk in big.as_bytes().chunks_exact(4) {
-        assert_eq!(chunk, [0xCC, 0x33, 0x33, 0xFF]);
+    for chunk in big.as_bytes().as_chunks::<4>().0 {
+        assert_eq!(*chunk, [0xCC, 0x33, 0x33, 0xFF]);
     }
 }

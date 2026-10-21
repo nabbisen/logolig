@@ -52,7 +52,7 @@ pub fn flatten_to_white(src: &Rgba8) -> Rgba8 {
     let mut out: Vec<u8> = Vec::with_capacity(expected_len);
     let src_bytes = src.pixels.as_ref();
 
-    for chunk in src_bytes.chunks_exact(4) {
+    for chunk in src_bytes.as_chunks::<4>().0 {
         let r = chunk[0];
         let g = chunk[1];
         let b = chunk[2];

@@ -32,7 +32,7 @@ fn webp_then_resize_to_favicon_sizes() {
         assert_eq!(big.height, size);
         assert_eq!(big.as_bytes().len(), (size as usize) * (size as usize) * 4);
         // Alpha channel should be fully opaque
-        for chunk in big.as_bytes().chunks_exact(4) {
+        for chunk in big.as_bytes().as_chunks::<4>().0 {
             assert_eq!(chunk[3], 0xFF);
         }
     }

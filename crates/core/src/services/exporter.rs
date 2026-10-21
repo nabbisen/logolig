@@ -268,12 +268,13 @@ pub fn run(
     let mut artifacts: Vec<PathBuf> = Vec::with_capacity(in_memory.len());
     for art in &in_memory {
         let staged = stage.join(&art.relative_path);
-        if let Some(parent) = staged.parent() {
-            if parent != stage && !parent.exists() {
-                std::fs::create_dir_all(parent).map_err(|e| {
-                    AppError::export(format!("create stage subdir {}: {e}", parent.display()))
-                })?;
-            }
+        if let Some(parent) = staged.parent()
+            && parent != stage
+            && !parent.exists()
+        {
+            std::fs::create_dir_all(parent).map_err(|e| {
+                AppError::export(format!("create stage subdir {}: {e}", parent.display()))
+            })?;
         }
         write_file(&staged, &art.bytes)?;
         artifacts.push(output_dir.join(&art.relative_path));
@@ -424,12 +425,13 @@ fn finalize(stage: &Path, output_dir: &Path, artifacts: &[PathBuf]) -> Result<()
 
         // Create output subdirectory (e.g. mono/) if missing.
         // It only exists in staging; mkdir on the output side before rename.
-        if let Some(parent) = final_path.parent() {
-            if parent != output_dir && !parent.exists() {
-                std::fs::create_dir_all(parent).map_err(|e| {
-                    AppError::export(format!("create output subdir {}: {e}", parent.display()))
-                })?;
-            }
+        if let Some(parent) = final_path.parent()
+            && parent != output_dir
+            && !parent.exists()
+        {
+            std::fs::create_dir_all(parent).map_err(|e| {
+                AppError::export(format!("create output subdir {}: {e}", parent.display()))
+            })?;
         }
 
         // Remove existing file before rename to achieve overwrite semantics.

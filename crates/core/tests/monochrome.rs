@@ -80,7 +80,7 @@ fn pure_blue_uses_bt709_coefficient() {
 fn black_stays_black() {
     let img = make(2, 2, vec![0; 2 * 2 * 4]);
     let mono = to_grayscale(&img);
-    for chunk in mono.pixels.chunks_exact(4) {
+    for chunk in mono.pixels.as_chunks::<4>().0 {
         assert_eq!(chunk[0], 0);
         assert_eq!(chunk[1], 0);
         assert_eq!(chunk[2], 0);
@@ -98,7 +98,7 @@ fn white_stays_white() {
         ],
     );
     let mono = to_grayscale(&img);
-    for chunk in mono.pixels.chunks_exact(4) {
+    for chunk in mono.pixels.as_chunks::<4>().0 {
         assert_eq!(chunk[0], 255);
         assert_eq!(chunk[1], 255);
         assert_eq!(chunk[2], 255);

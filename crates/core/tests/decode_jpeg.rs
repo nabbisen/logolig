@@ -28,7 +28,7 @@ fn jpeg_decode_fills_alpha_with_full_opacity() {
     // with 255. Verify every pixel is fully opaque.
     let asset = ingest_bytes("tile.jpg", fixtures::jpeg_8x8_red()).unwrap();
     let rgba = decode(&asset).unwrap();
-    for chunk in rgba.as_bytes().chunks_exact(4) {
+    for chunk in rgba.as_bytes().as_chunks::<4>().0 {
         assert_eq!(chunk[3], 0xFF, "JPEG decoded pixel must be fully opaque");
     }
 }
@@ -44,7 +44,7 @@ fn jpeg_then_resize_to_favicon_sizes() {
         assert_eq!(big.height, size);
         assert_eq!(big.as_bytes().len(), (size as usize) * (size as usize) * 4);
         // Alpha is still 255 after resize
-        for chunk in big.as_bytes().chunks_exact(4) {
+        for chunk in big.as_bytes().as_chunks::<4>().0 {
             assert_eq!(chunk[3], 0xFF);
         }
     }

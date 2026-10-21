@@ -43,7 +43,7 @@ fn luma_bt709(r: u8, g: u8, b: u8) -> u8 {
 /// is freshly allocated and wrapped in `Arc<[u8]>`.
 pub fn to_grayscale(image: &Rgba8) -> Rgba8 {
     let mut buf = Vec::with_capacity(image.pixels.len());
-    for chunk in image.pixels.chunks_exact(4) {
+    for chunk in image.pixels.as_chunks::<4>().0 {
         let y = luma_bt709(chunk[0], chunk[1], chunk[2]);
         buf.push(y); // R = Y
         buf.push(y); // G = Y

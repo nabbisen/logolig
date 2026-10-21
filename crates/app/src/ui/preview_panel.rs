@@ -329,7 +329,11 @@ fn checker_handle() -> &'static image::Handle {
             for x in 0..CHECKER_SIDE {
                 let cx = x / CHECKER_TILE;
                 let cy = y / CHECKER_TILE;
-                let color = if (cx + cy) % 2 == 0 { light } else { dark };
+                let color = if (cx + cy).is_multiple_of(2) {
+                    light
+                } else {
+                    dark
+                };
                 pixels.extend_from_slice(&color);
             }
         }

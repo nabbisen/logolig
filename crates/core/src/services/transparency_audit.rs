@@ -59,7 +59,7 @@ pub fn audit(image: &Rgba8) -> TransparencyReport {
 
     let mut min_alpha: u8 = 255;
     let mut max_alpha: u8 = 0;
-    for chunk in image.pixels.chunks_exact(4) {
+    for chunk in image.pixels.as_chunks::<4>().0 {
         // chunk[3] is the alpha byte
         let a = chunk[3];
         if a < min_alpha {
