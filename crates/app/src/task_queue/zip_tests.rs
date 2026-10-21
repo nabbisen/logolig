@@ -78,7 +78,10 @@ fn assert_archive_matches(
     expected: &[(String, Vec<u8>)],
 ) {
     assert_eq!(archive.len(), expected.len(), "entry count");
-    let mut names: Vec<String> = archive.file_names().map(String::from).collect();
+    let mut names: Vec<String> = archive
+        .file_names()
+        .map(|name| name.expect("entry name should be readable").into_owned())
+        .collect();
     names.sort();
     let before = names.len();
     names.dedup();

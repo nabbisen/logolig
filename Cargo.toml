@@ -39,7 +39,7 @@ thiserror               = "2"
 tokio                   = "1"
 toml                    = "0.8"
 vtracer                 = "0.6"
-zip                     = { version = "2", default-features = false, features = ["deflate"] }
+zip                     = { version = "9.0.5", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
