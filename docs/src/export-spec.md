@@ -120,6 +120,21 @@ The following are **not** emitted by default:
   advanced opt-in because manifests are project-shaped and users often
   already have one.
 
+## ZIP bundle ("Download all")
+
+The ZIP bundle contains the same relative layout as the disk export, including
+the `mono/` subdirectory when monochrome output is enabled (for example
+`favicon-32.png` **and** `mono/favicon-32.png`). Artifact paths are unique,
+compared case-insensitively, because extracting an archive onto a
+case-insensitive file system (Windows, macOS) would otherwise silently
+overwrite entries; the exporter fails with an error instead of producing a
+colliding set.
+
+The archive is built in memory and written to the chosen path in one step, so a
+failed download never leaves a partial file behind. The single-file download
+dialog still proposes the base name (`favicon-32.png`), also for files under
+`mono/`.
+
 ## Failure modes
 
 Output failures surface as `AppError::Export(_)` from `logolig`

@@ -163,7 +163,9 @@ of the screen.
 After conversion, assets are shown in a grid (3 columns desktop /
 2 columns mobile). Each card shows:
 
-- File name and badge (PNG / ICO / SVG / HTML / JSON)
+- File name and badge (PNG / ICO / SVG / HTML / JSON). Files in a subdirectory
+  show their relative path as the title (for example `mono/favicon-32.png`), so
+  a colour file and its monochrome twin are never visually identical.
 - Raster thumbnail (image assets) or document icon placeholder
 - Dimensions (image assets only) and human-readable file size
 - Per-card download button (↓)
