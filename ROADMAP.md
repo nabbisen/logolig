@@ -31,6 +31,21 @@
 
 **Not in 1.27.0.** Full focus model, SVG text rendering, `logolig-bin`, AUR automation, Flatpak, robustness items.
 
+### 2a. Proposed amendment to 1.27.0 (**not authorized; the table above stays in force until the owner decides**)
+
+Snora's upstream sent migration guides for 0.25.2 → 0.53.0 (2026-10-21). The architect proposes to add one job, **RFC 028 (snora upgrade)**, to 1.27.0, immediately after J2:
+
+| Order | Job |
+|---|---|
+| J1 | RFC 024 (unchanged) |
+| J2 | RFC 025 (unchanged) |
+| **J2b (new)** | **RFC 028: snora 0.25.2 → 0.53.0, same features, no `design`; retake the README screenshot (S–M)** |
+| J3 | RFC 015 phase 2a (unchanged) |
+| J4 | RFC 019 phase 2 (may use snora's F6 zone navigation) |
+| J5–J7 | unchanged |
+
+Why: the overlay click-through fix and AA-contrast toasts reach the first public audience; the keyboard work gets F6 zones; screenshots are not yet published, so the visual change costs nothing now. Cost: one small job and a mostly cosmetic change of look. The alternative is 1.28.0 (then F6 is unavailable to phase 2 and public screenshots go stale). Decision requested in RFC 028 D1.
+
 ## 3. Release 1.28.0: keyboard and UI correctness (proposed)
 
 | Job | RFC | Size | Notes |

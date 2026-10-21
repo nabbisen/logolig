@@ -14,7 +14,7 @@ The documentation promises keyboard parity and a preserved focus ring. Dependenc
 
 - Verified (dependency source, `iced_widget` 0.14.2): `Button::operate` only calls `operation.container(..)` and traverses its child; it does not register a focusable. A search finds `Focusable` implemented only by `text_input` and `text_editor`. Checkbox, toggler and radio were not found among the implementers either.
 - Verified (project source): the drop zone, the nav items, the download buttons, "Back", "Choose file…" and the toggles are all `button`/`checkbox`-family widgets. `drop_zone_button_style` returns `Style::default()` and ignores `Status`, so there is also no visible hover/pressed/focus state for the largest control.
-- Verified (snora 0.25.2): its only keyboard helper is `keyboard::dismiss_on_escape`; no focus helpers.
+- Verified (snora 0.25.2): its only keyboard helper is `keyboard::dismiss_on_escape`; no focus helpers. *Update 2026-10-21:* snora 0.35 and later add opt-in F6 zone navigation (`snora::keyboard::cycle_zones`); see RFC 027 and RFC 028. Phase 2 may use it for the page-region shortcut once RFC 028 is done.
 - **Not verified at run time**: actual behaviour of Tab / Enter / Space on the running application, per platform. The owner noted this should be verified soon; step 1 does it.
 - Documentation claiming parity: `ui-a11y.md` "Keyboard parity", `functional-spec.md` §14, README.
 - Known backlog item: ESC-to-back (never wired).
