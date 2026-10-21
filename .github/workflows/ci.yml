@@ -47,6 +47,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Linux build prerequisites of the GUI stack (iced / winit / wgpu / rfd):
+      #   pkg-config          lets build scripts locate system libraries
+      #   libfontconfig1-dev  font discovery
+      #   libxkbcommon-dev    keyboard handling (winit)
+      #   libwayland-dev      Wayland client libraries (winit)
       - name: Install system packages
         run: |
           sudo apt-get update
@@ -77,6 +82,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Linux build prerequisites of the GUI stack (iced / winit / wgpu / rfd):
+      #   pkg-config          lets build scripts locate system libraries
+      #   libfontconfig1-dev  font discovery
+      #   libxkbcommon-dev    keyboard handling (winit)
+      #   libwayland-dev      Wayland client libraries (winit)
       - name: Install system packages
         run: |
           sudo apt-get update
@@ -107,6 +117,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Linux build prerequisites of the GUI stack (iced / winit / wgpu / rfd):
+      #   pkg-config          lets build scripts locate system libraries
+      #   libfontconfig1-dev  font discovery
+      #   libxkbcommon-dev    keyboard handling (winit)
+      #   libwayland-dev      Wayland client libraries (winit)
       - name: Install system packages
         run: |
           sudo apt-get update
