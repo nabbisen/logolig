@@ -1,9 +1,9 @@
 # RFC 005: Microsoft app logo advanced output set
 
-- **Status**: Accepted
-- **Target version**: v1.26.0
-- **Author**: logolig maintainers
-- **Created**: 2026-06-26
+**Status.** Implemented (1.26.0)
+**Target version.** v1.26.0
+**Author.** logolig maintainers
+**Created.** 2026-06-26
 
 ## Summary
 

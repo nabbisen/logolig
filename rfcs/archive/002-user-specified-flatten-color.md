@@ -1,9 +1,9 @@
 # RFC 002: User-specified flatten color
 
-- **Status**: Draft
-- **Target version**: v1.22.0+ option
-- **Author**: logolig maintainers
-- **Created**: 2026-05-05
+**Status.** Withdrawn — "less is more": a custom flatten colour adds a setting and a validated input for a rare need, while white covers compatibility; reopen as a new RFC on real demand (decision 2026-10-21)
+**Target version.** v1.22.0+ option
+**Author.** logolig maintainers
+**Created.** 2026-05-05
 
 ## Summary
 

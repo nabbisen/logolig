@@ -1,76 +1,72 @@
 # Logolig RFCs
 
-This folder collects design documents for upcoming logolig features.
-Each RFC pairs **external design** (what users see and how they interact
-with the feature) with **internal design** (how implementers build it).
-Some RFCs only need internal design — when the user-visible behaviour is
-already self-evident from the title alone, padding the document with an
-external section adds noise.
+RFCs record **what was decided and why**. Their lifecycle follows
+[RFC 000](./done/000-rfc-lifecycle-policy.md) (the 5-folder variant):
 
-The active set of RFCs corresponds to the priority themes listed under
-`v1.22.0+ (option)` in [`docs/src/architecture.md`](../docs/src/architecture.md)'s
-ROADMAP table. Each RFC is intended to be a complete handoff package for
-an implementer — the surrounding repository (architecture.md, export-spec.md,
-ui-a11y.md) provides context but the RFC itself should be self-contained
-enough that a new contributor can implement it without spelunking through
-prior version history.
+| Folder | State |
+| --- | --- |
+| `proposed/` | open for review; implementers do not start |
+| `accepted/` | review complete; implementation may start; handoffs in [`handoffs/`](./handoffs/) |
+| `done/` | shipped in a release (the Status field names it, for example `Implemented (1.26.0)`) |
+| `archive/` | withdrawn or superseded; kept as a record, never deleted |
+
+The **folder is the source of truth** for the state; the Status field inside each file must agree.
+Numbers are three digits (`NNN`), assigned once, never reused and never changed. Execution documents
+for implementers live in `handoffs/NNN-slug/` and inherit their state from the RFC.
+The order of work is in [`ROADMAP.md`](../ROADMAP.md). Priorities are the architect's
+recommendation; the owner authorizes the plan.
 
 ## Index
 
-| # | Title | Scope | Status |
-| --- | --- | --- | --- |
-| [001](./001-mobile-ux-refinements.md) | Mobile UX refinements | medium (4 sub-topics) | Draft |
-| [002](./002-user-specified-flatten-color.md) | User-specified flatten color | medium | Draft |
-| [003](./003-bmp-input-support.md) | BMP input support | small | Draft |
-| [004](./004-locale-zh-cn.md) | Simplified Chinese locale | medium | Draft |
-| [005](./005-microsoft-app-logos.md) | Microsoft app logos | small | Implemented (v1.26.0) |
-| [006](./006-drop-zone-drag-drop-repair.md) | Drop-zone drag-and-drop repair | small | Implemented (v1.26.1) |
-| [007](./007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | small | Draft |
+### Implemented (`done/`)
 
-### Proposed under the RFC 000 lifecycle policy
+| # | Title | Shipped in |
+| --- | --- | --- |
+| [000](./done/000-rfc-lifecycle-policy.md) | RFC lifecycle policy | policy in effect |
+| [005](./done/005-microsoft-app-logos.md) | Microsoft app logos | 1.26.0 |
+| [006](./done/006-drop-zone-drag-drop-repair.md) | Drop-zone drag-and-drop repair | 1.26.1 |
 
-The RFC portfolio is being migrated to the layout defined by
-[RFC 000](./done/000-rfc-lifecycle-policy.md) (see RFC 008). Until that
-migration lands, RFC 001–007 stay in this folder with the old status
-vocabulary, and new RFCs follow RFC 000 and live in `proposed/`. In RFC 000
-terms, **Proposed** means open for review; the implementer should not start.
-Priorities are the architect's recommendation and require owner approval.
+### Accepted (`accepted/`)
 
-**Accepted** (review complete; implementation handoffs in [`handoffs/`](./handoffs/)):
+RFC 009 and RFC 010 are implemented on `main` and move to `done/` with the release that ships them.
 
 | # | Title | Priority |
 | --- | --- | --- |
 | [020](./accepted/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging (phased) | P1 |
-| [010](./accepted/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | P1 |
-| [009](./accepted/009-result-artifact-identity-and-zip-integrity.md) | Result artifact identity and ZIP integrity | P1 |
-| [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased: spike first) | P1 / P2 |
-| [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phase 1 done; phase 2 shortcuts next) | P1 |
 | [024](./accepted/024-dependency-and-toolchain-baseline.md) | Dependency and toolchain baseline (MSRV, `cargo audit`) | P1 |
 | [025](./accepted/025-window-application-id.md) | Window application ID and desktop integration | P1 |
+| [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
+| [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phase 1 done; phase 2 shortcuts next) | P1 |
+| [027](./accepted/027-keyboard-focus-model.md) | Keyboard focus model (phased: spike first) | P1 |
+| [009](./accepted/009-result-artifact-identity-and-zip-integrity.md) | Result artifact identity and ZIP integrity | P1 (implemented, unreleased) |
+| [010](./accepted/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | P1 (implemented, unreleased) |
+| [008](./accepted/008-rfc-portfolio-migration.md) | RFC portfolio migration to the RFC 000 layout | P2 (script outstanding) |
 
-The order of work is in [`ROADMAP.md`](../ROADMAP.md).
-
-**Proposed** (open for review):
+### Proposed (`proposed/`)
 
 | # | Title | Priority |
 | --- | --- | --- |
-| [027](./proposed/027-keyboard-focus-model.md) | Keyboard focus model (Tab traversal, activation, visible focus) | P1 |
-| [008](./proposed/008-rfc-portfolio-migration.md) | Migrate the RFC portfolio to the RFC 000 layout | P2 |
 | [011](./proposed/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
 | [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
 | [013](./proposed/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |
 | [014](./proposed/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
 | [017](./proposed/017-source-structure-conformance.md) | Source structure conformance (tests, file size, dead code) | P2 |
-| [018](./proposed/018-documentation-synchronisation.md) | Documentation synchronisation with v1.26.2 | P2 |
+| [018](./proposed/018-documentation-synchronisation.md) | Documentation synchronisation | P2 |
 | [021](./proposed/021-selection-state-indicators.md) | Selection-state indicators | P2 |
-| [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
-| [022](./proposed/022-vtracer-sharp-preset-verification.md) | Verify the vtracer "Sharp" preset | P3 |
 | [023](./proposed/023-flatpak-publication.md) | Flatpak publication (Flathub) | P2 |
 | [026](./proposed/026-result-screen-layout-small-windows.md) | Result screen layout at small window heights | P2 |
+| [004](./proposed/004-locale-zh-cn.md) | Simplified Chinese locale (deferred) | P3 |
+| [007](./proposed/007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | P3 |
+| [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
+| [022](./proposed/022-vtracer-sharp-preset-verification.md) | Verify the vtracer "Sharp" preset | P3 |
 
-"Status: Draft" (in the table above, for RFC 001–007) means the RFC is reviewed and ready for implementation
-but no implementer has started yet. It moves to "In Progress" once a
-version branch is opened, and to "Implemented (vX.Y.Z)" once merged.
+### Archive (`archive/`)
+
+| # | Title | Reason |
+| --- | --- | --- |
+| [001](./archive/001-mobile-ux-refinements.md) | Mobile UX refinements | Withdrawn: the picker popups were removed in v1.22.0 |
+| [002](./archive/002-user-specified-flatten-color.md) | User-specified flatten colour | Withdrawn: a new setting for a rare need ("less is more") |
+| [003](./archive/003-bmp-input-support.md) | BMP input support | Withdrawn: rare format, extra parser surface |
 
 ## Template
 
@@ -82,10 +78,10 @@ listed below.
 ```markdown
 # RFC NNN: <Title>
 
-- **Status**: Draft | In Progress | Implemented (vX.Y.Z) | Withdrawn
-- **Target version**: vX.Y.Z (or "v1.22.0+ option")
-- **Author**: <name>
-- **Created**: YYYY-MM-DD
+**Status.** Proposed | Accepted | Implemented (X.Y.Z) | Withdrawn — reason | Superseded by RFC NNN
+**Priority.** P1 | P2 | P3
+**Tracks.** What this addresses.
+**Touches.** Where the work lands.
 
 ## Summary
 

@@ -40,6 +40,7 @@
 | J10 | RFC 027: keyboard focus model (phase 0 spike, then Home, Result, Customize, Settings) | L | The owner's priority: makes "accessible" true |
 | J11 | RFC 026: result screen layout | S | Back button must always be reachable |
 | J12 | RFC 018: documentation synchronisation | S | Closed last, from the evidence of the finished work |
+| J12b | RFC 008 remainder: `scripts/check-rfcs.sh` (RFC 000 invariants), wired into CI | S | The migration itself was executed on 2026-10-21 |
 | T1 | RFC 020 phases 3–4: `logolig-bin`, `release.yml` with attestation, AUR automation | M | Needs the owner's `aur` environment and CI key (RFC 020 D4) |
 
 ## 4. Release 1.29.0: distribution reach and robustness (proposed)
@@ -51,7 +52,7 @@
 | J15 | RFC 011, 012, 014: stale results, manifest validation, input limits | M | Robustness and safety |
 | J16 | RFC 013, 016, 022: system theme, i18n hygiene, vtracer preset check | M | Polish and correctness |
 
-The architect may split or reorder these as evidence arrives and will say so before acting. RFC 001–004 and RFC 008 (portfolio migration) are scheduled when the owner has decided their dispositions (RFC 008 D2, D4).
+The architect may split or reorder these as evidence arrives and will say so before acting. RFC 001–003 are withdrawn and RFC 004 is deferred (RFC 008 D4, decided 2026-10-21); RFC 027's phase 0 spike (J10) is the first step of the focus model.
 
 ## 4a. Distribution track
 

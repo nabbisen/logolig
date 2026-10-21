@@ -1,9 +1,9 @@
 # RFC 003: BMP input support
 
-- **Status**: Draft
-- **Target version**: v1.22.0+ option
-- **Author**: logolig maintainers
-- **Created**: 2026-05-05
+**Status.** Withdrawn — BMP is rare for logos and every input format adds parser surface and documentation; an unsupported file already gets a clear error; reopen on demand (decision 2026-10-21)
+**Target version.** v1.22.0+ option
+**Author.** logolig maintainers
+**Created.** 2026-05-05
 
 ## Summary
 

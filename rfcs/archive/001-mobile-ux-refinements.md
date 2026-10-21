@@ -1,9 +1,9 @@
 # RFC 001: Mobile UX refinements
 
-- **Status**: Draft
-- **Target version**: v1.22.0+ option
-- **Author**: logolig maintainers
-- **Created**: 2026-05-05
+**Status.** Withdrawn — picker popups were removed in v1.22.0; reopen as a new RFC if a fourth navigation item is ever added (decision 2026-10-21)
+**Target version.** v1.22.0+ option
+**Author.** logolig maintainers
+**Created.** 2026-05-05
 
 ## Summary
 

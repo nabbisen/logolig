@@ -1,9 +1,9 @@
 # RFC 006: Drop-zone Drag-and-Drop Repair
 
-- **Status**: Implemented (v1.26.1)
-- **Target version**: v1.26.1
-- **Author**: nabbisen / ChatGPT
-- **Created**: 2026-06-26
+**Status.** Implemented (1.26.1)
+**Target version.** v1.26.1
+**Author.** nabbisen / ChatGPT
+**Created.** 2026-06-26
 
 ## Summary
 

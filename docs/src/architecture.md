@@ -240,7 +240,7 @@ that strengthen the core for v2 reuse:
 ### Implementation handoff: `rfcs/`
 
 Detailed implementation specs for the `v1.26.0+ (option)` themes above
-live in [`rfcs/`](../rfcs/). Each priority sub-bullet (a–d) has its own
+live in [`rfcs/`](../../rfcs/). Each priority sub-bullet (a–d) has its own
 RFC document covering external design (where applicable), internal
 design, requirements, test plan, and security considerations. The RFC
 folder is the canonical handoff artifact for an implementer picking up
@@ -249,7 +249,7 @@ summary.
 
 | Sub-bullet | RFC |
 | --- | --- |
-| (a) Mobile UX refinements | [`rfcs/001-mobile-ux-refinements.md`](../rfcs/001-mobile-ux-refinements.md) |
-| (b) User-specified flatten color | [`rfcs/002-user-specified-flatten-color.md`](../rfcs/002-user-specified-flatten-color.md) |
-| (c) BMP input support | [`rfcs/003-bmp-input-support.md`](../rfcs/003-bmp-input-support.md) |
-| (d) Simplified Chinese locale | [`rfcs/004-locale-zh-cn.md`](../rfcs/004-locale-zh-cn.md) |
+| (a) Mobile UX refinements | [`rfcs/001-mobile-ux-refinements.md`](../../rfcs/archive/001-mobile-ux-refinements.md) |
+| (b) User-specified flatten color | [`rfcs/002-user-specified-flatten-color.md`](../../rfcs/archive/002-user-specified-flatten-color.md) |
+| (c) BMP input support | [`rfcs/003-bmp-input-support.md`](../../rfcs/archive/003-bmp-input-support.md) |
+| (d) Simplified Chinese locale | [`rfcs/004-locale-zh-cn.md`](../../rfcs/proposed/004-locale-zh-cn.md) |

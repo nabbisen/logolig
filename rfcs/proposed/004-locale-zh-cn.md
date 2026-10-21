@@ -1,9 +1,9 @@
 # RFC 004: Simplified Chinese (zh-CN) locale
 
-- **Status**: Draft
-- **Target version**: v1.22.0+ option
-- **Author**: logolig maintainers
-- **Created**: 2026-05-05
+**Status.** Proposed (deferred, P3) — to be refreshed to the current UI (Settings page picker, `locale` stored as a string tag) and scheduled only after RFC 016 (fewer keys) and when a native zh-CN reviewer is available
+**Target version.** v1.22.0+ option
+**Author.** logolig maintainers
+**Created.** 2026-05-05
 
 ## Summary
 

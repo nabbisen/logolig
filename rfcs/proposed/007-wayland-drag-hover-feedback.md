@@ -1,9 +1,9 @@
 # RFC 007: Wayland Drag-Hover Feedback Follow-Up
 
-- **Status**: Draft
-- **Target version**: future v1.x
-- **Author**: nabbisen / ChatGPT
-- **Created**: 2026-07-10
+**Status.** Proposed (P3)
+**Target version.** future v1.x
+**Author.** nabbisen / ChatGPT
+**Created.** 2026-07-10
 
 ## Summary
 

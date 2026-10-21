@@ -1,6 +1,6 @@
 # RFC 027 — Keyboard focus model
 
-**Status.** Proposed
+**Status.** Accepted, phased (owner delegation, 2026-10-21): phase 0 is an evidence-only spike; the design below is frozen only after its results are reviewed
 **Priority.** P1 (owner priority, 2026-10-21: "enhance keyboard UI/UX")
 **Tracks.** Option B of RFC 019: Tab traversal, activation and visible focus for every interactive control.
 **Touches.** `crates/app` (state, keyboard subscription, all `ui/*` views and styles), `docs/src/ui-a11y.md`, tests, a manual test checklist. Builds on RFC 019 phase 2 (global shortcuts) and interacts with RFC 021 (selection indicators) and RFC 026 (result layout).
@@ -54,11 +54,12 @@ Non-goals: screen-reader support (iced 0.14 exposes no accessibility tree; confi
 
 A keyboard-only user can choose a file (through the OS dialog), convert, download one file and the ZIP, go back, change every setting, and switch pages; the focus is always visible; the documented matrix proves it on the tested platforms.
 
-## Decisions requested
+## Decisions (2026-10-21; the owner delegated them with: "Review them carefully by yourself with my fundamental philosophy")
 
-- **D1** Option A as recommended.
-- **D2** Indicator that appears only after keyboard use (recommended) versus always visible.
-- **D3** Scope: all screens in one release, or Home first and Customize/Settings next? The architect recommends all screens in one job series (it is one model), delivered in this order: Home, Result, Customize, Settings, each reviewed.
+- **D1 — option A (app-owned focus model): decided.** Reasons: it works with iced 0.14 as it is; it is typed and therefore testable and robust (no hidden widget state); it avoids maintaining forked widgets (clean); it gives one behaviour for the mouse and the keyboard path because both emit the same `Message`s (users are not surprised). Option B (fork widgets) costs ongoing maintenance for no user-visible gain; option C leaves users blocked.
+- **D2 — indicator shown after keyboard use, hidden on mouse use ("focus-visible" behaviour): decided.** Reasons: "less is more" (no permanent outline noise for mouse users) and it is the convention users already know from browsers and desktop toolkits. To avoid the opposite confusion (a keyboard user not knowing where focus is), the indicator appears on the **first** Tab or arrow key press, shows the *current* control immediately, and a visible shortcut list (RFC 019 phase 2) tells users that keyboard operation exists. The indicator is never colour alone (offset outline plus a thicker border).
+- **D3 — scope: one model for all screens, delivered and reviewed in four steps (Home, Result, Customize, Settings): decided.** Reason: a half-covered keyboard path is the most confusing outcome (focus enters a screen and cannot leave); but each step is independently reviewable, and no step is released unless the step before it is complete, so the user is never left in a trap.
+- **Phase 0 (handoff to be written when the job is scheduled, J10 in `ROADMAP.md`):** evidence only; confirms the limits listed in "Evidence", prototypes Tab over the nav items and the drop-zone card, checks text-input focus hand-over and which key events reach the application when an input has focus. The design is frozen only after the architect reviews that evidence. Handoffs: not yet written.
 
 ## Risks
 

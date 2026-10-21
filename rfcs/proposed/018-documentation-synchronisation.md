@@ -25,7 +25,7 @@ Project rules say test cases validate the **design specification**, not the code
 | 10 | `functional-spec.md` §3: ZIP/mono layout implied; `export-spec.md` mentions a `.logolig-<pid>-<nanos>.tmp` staging flow as the primary path | primary path is in-memory download; disk export is a legacy API used by tests | Docs only |
 | 11 | README "Settings persistence": `docs.rs` badges for `logolig-app` etc. | crates not yet published (README says "after publication") | Owner: publication plan |
 | 12 | Source comments cite spec sections (`§6.2`, `§12`) of a document that is not in the repository | n/a | Replace with doc/RFC references over time |
-| 13 | `docs/src/architecture.md` links to `../rfcs/...`, which resolves to `docs/rfcs/` (does not exist) | the RFC folder is `../../rfcs/` from `docs/src/`; the links were already wrong before the 2026-10-21 renumbering | Docs only |
+| 13 | `docs/src/architecture.md` links to `../rfcs/...`, which resolves to `docs/rfcs/` (does not exist) | the RFC folder is `../../rfcs/` from `docs/src/`; the links were already wrong before the 2026-10-21 renumbering | Docs only (closed by the RFC 008 migration, 2026-10-21) |
 
 ## Design
 
