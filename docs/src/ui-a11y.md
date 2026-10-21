@@ -13,21 +13,40 @@ end-controls, sidebar side, toast anchor, custom rows authored with
 `snora::direction::row_dir`. We do not author "left" / "right"
 anywhere in the layout code.
 
-## Keyboard parity
+## Keyboard support (current)
 
-Every operation reachable by mouse must also be reachable by
-keyboard:
+**Goal.** Full keyboard parity: every operation reachable by mouse is also
+reachable by keyboard. This is **not met yet**; the work is tracked in
+[RFC 019](../../rfcs/accepted/019-keyboard-accessibility.md).
 
-- Drag-and-drop has a sibling **"Choose file…"** button (`Message::PickFileRequested`).
-- Toggling theme is a button, not a click-on-icon-only widget.
-- Advanced settings are reachable through the **Customize** nav item.
-  The main output settings are visible there; infrequently changed
-  settings live under an explicit collapsible Advanced section.
-- Error toasts have an explicit close button (× glyph). They never
-  rely solely on auto-dismiss.
+The lists below were verified by running Logolig 1.26.2 (release build) on
+Linux under the niri compositor: through the X11 backend (XWayland) on every
+screen, and on native Wayland on the Home screen only (the other screens need a
+mouse to reach). Windows and macOS have not been tested.
 
-Focus order matches reading order. iced's default focus ring is
-preserved; we do not suppress it.
+**Supported today**
+
+- Text fields (custom PNG size, web manifest name, short name and colours)
+  accept typed text once they have been focused with a mouse click. Enter in
+  the custom-size field adds the size.
+- The operating system's file chooser and save dialogs can be operated with the
+  keyboard once they are open. They are opened with a mouse click.
+
+**Not supported yet (tracked in RFC 019)**
+
+- Tab and Shift+Tab move no focus: no control can be reached, including text
+  fields, and Tab does not move between text fields.
+- Enter and Space activate nothing: not the drop-zone card or "Choose file…",
+  the navigation items, the download buttons, "Back", the toggles, the sliders,
+  or "Advanced settings".
+- As a result, the main path (choose a file, download, go back, switch between
+  Home, Customize and Settings) needs a mouse.
+- There are no keyboard shortcuts (for example Ctrl+O, Ctrl+S), Esc does
+  nothing, and arrow and paging keys do not scroll.
+- There is no visible keyboard-focus indicator. The drop-zone card also shows no
+  hover feedback; the navigation items and the download buttons do.
+- Window-close shortcuts are not handled by the application; they depend on the
+  window manager.
 
 ## Status, not just color
 
@@ -71,8 +90,9 @@ leaving power-user controls discoverable.
 
 ## What we do not do
 
-- We do **not** suppress iced's focus ring.
 - We do **not** rely on hover-only interactions.
 - We do **not** use color as the only indicator of state.
-- We do **not** require drag-and-drop for any operation.
+- We do **not** require drag-and-drop to choose a file: the file chooser is the
+  alternative. It is opened with a mouse click today (see "Keyboard support
+  (current)").
 - We do **not** auto-dismiss error notifications.
