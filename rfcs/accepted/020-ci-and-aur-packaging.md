@@ -127,6 +127,7 @@ Publishing to the AUR makes the application discoverable to a new audience, and 
 3. RFC 015: the spike confirmed that SVG text renders nothing and that local files are read through `<image href>`. Phase 2a (data-only resolver and an honest advisory) before the first release.
 4. RFC 024: declared MSRV equal to the real one (1.90) and the `zip` advisories gone, so all five CI jobs are green.
 5. RFC 025: window application ID set.
+5b. RFC 028: snora upgraded to 0.53 (owner authorized 2026-10-21).
 6. RFC 010 (contain-fit): implemented and reviewed.
 7. README install section updated for AUR.
 8. Gates green on the release commit, `cargo audit` result recorded.

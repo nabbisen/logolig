@@ -1,6 +1,6 @@
 # Logolig roadmap and release plan
 
-**Status.** **Authorized by the owner on 2026-10-21** (plan, the scope and order of release 1.27.0, the recommendation of a minor version, and strictly serial jobs). The architect makes the schedule and manages the release cycle; the owner authorizes it. Authorizing the plan is not a release decision: the owner still authorizes each tag and publication separately, and major version transitions remain the owner's alone (none is proposed). Changes to scope or order are announced by the architect before they are made.
+**Status.** **Authorized by the owner on 2026-10-21** (plan, the scope and order of release 1.27.0, amended the same day with job J2b = RFC 028, the recommendation of a minor version, and strictly serial jobs). The architect makes the schedule and manages the release cycle; the owner authorizes it. Authorizing the plan is not a release decision: the owner still authorizes each tag and publication separately, and major version transitions remain the owner's alone (none is proposed). Changes to scope or order are announced by the architect before they are made.
 
 ## 1. Rules of the cycle
 
@@ -21,30 +21,16 @@
 | J0 | Integrate the reviewed work: RFC 009, RFC 010, RFC 019 phase 1, CI workflow (PR #2) | S | none | **Done 2026-10-21:** applied linearly to `main` (`git cherry-pick -x`, no merge commits, conflict in `crates/core/Cargo.toml` resolved by keeping both `[[test]]` entries); gates green on the result (fmt, clippy, 178 tests); PR #2 closed with a pointer. The remote topic branches are no longer needed |
 | J1 | RFC 024: MSRV 1.90, `zip` ≥ 9, audit triage | S–M | J0 | Turns CI green; then the owner marks the five checks required |
 | J2 | RFC 025: window application ID | S | J1 | Needed by every desktop package |
-| J3 | RFC 015 phase 2a: data-URL-only SVG resolver, `svg::analyze`, one advisory | M | J2 | Closes the local-file read; ends silent misleading SVG output |
-| J4 | RFC 019 phase 2: global shortcuts, shortcut list, comment fixes | M | J3 | First real keyboard path (choose, download all, back, pages) |
+| J2b | RFC 028: snora 0.25.2 → 0.53.0 (same features, no `design`), retake the README screenshot | S–M | J2 | **Added 2026-10-21 (owner authorized).** Overlay click-through fix, AA toasts, F6 zones for the keyboard job |
+| J3 | RFC 015 phase 2a: data-URL-only SVG resolver, `svg::analyze`, one advisory | M | J2b | Closes the local-file read; ends silent misleading SVG output |
+| J4 | RFC 019 phase 2: global shortcuts, shortcut list, comment fixes | M | J3 | First real keyboard path (choose, download all, back, pages); may use snora's F6 zones (J2b) |
 | J5 | RFC 020 phase 2: AUR source package (`logolig`), packaging CI | M | J4, **owner: master icon** | Files named by the application ID; local dry run only |
 | J6 | Release preparation: version 1.27.0, release notes, final gates, candidate verification | S | J5 | The architect submits a release recommendation |
 | J7 | **Owner:** authorize 1.27.0, tag, first manual AUR publication (RFC 020 phase 3), then the README install section | S | J6 | Owner actions |
 
-**Readiness criteria (all must hold; the architect reports the evidence):** all five CI jobs green on the release commit; `cargo audit` clean; RFC 009, 010, 015 (2a), 019 (phase 1 and 2), 024, 025 implemented and reviewed; documentation matches behaviour; the dry-run package builds in a clean environment and the window shows the application icon; no unresolved critical finding; known limitations written in the release notes (keyboard coverage, SVG text not drawn, ja text review status).
+**Readiness criteria (all must hold; the architect reports the evidence):** all five CI jobs green on the release commit; `cargo audit` clean; RFC 009, 010, 015 (2a), 019 (phase 1 and 2), 024, 025, 028 implemented and reviewed; documentation matches behaviour; the dry-run package builds in a clean environment and the window shows the application icon; no unresolved critical finding; known limitations written in the release notes (keyboard coverage, SVG text not drawn, ja text review status).
 
 **Not in 1.27.0.** Full focus model, SVG text rendering, `logolig-bin`, AUR automation, Flatpak, robustness items.
-
-### 2a. Proposed amendment to 1.27.0 (**not authorized; the table above stays in force until the owner decides**)
-
-Snora's upstream sent migration guides for 0.25.2 → 0.53.0 (2026-10-21). The architect proposes to add one job, **RFC 028 (snora upgrade)**, to 1.27.0, immediately after J2:
-
-| Order | Job |
-|---|---|
-| J1 | RFC 024 (unchanged) |
-| J2 | RFC 025 (unchanged) |
-| **J2b (new)** | **RFC 028: snora 0.25.2 → 0.53.0, same features, no `design`; retake the README screenshot (S–M)** |
-| J3 | RFC 015 phase 2a (unchanged) |
-| J4 | RFC 019 phase 2 (may use snora's F6 zone navigation) |
-| J5–J7 | unchanged |
-
-Why: the overlay click-through fix and AA-contrast toasts reach the first public audience; the keyboard work gets F6 zones; screenshots are not yet published, so the visual change costs nothing now. Cost: one small job and a mostly cosmetic change of look. The alternative is 1.28.0 (then F6 is unavailable to phase 2 and public screenshots go stale). Decision requested in RFC 028 D1.
 
 ## 3. Release 1.28.0: keyboard and UI correctness (proposed)
 

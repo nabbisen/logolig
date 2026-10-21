@@ -1,8 +1,9 @@
 # RFC 028 — Upgrade snora from 0.25.2 to 0.53.0
 
-**Status.** Proposed
+**Status.** Accepted (owner, 2026-10-21: D1 authorized, scheduled as J2b in release 1.27.0)
 **Priority.** P1 if the owner authorizes it into release 1.27.0 (architect's recommendation); otherwise P2
 **Tracks.** Dependency currency, UI correctness fixes, and the basis for the keyboard work (RFC 019 phase 2, RFC 027).
+**Handoffs.** [rfcs/handoffs/028-snora-upgrade-0-53/](../handoffs/028-snora-upgrade-0-53/README.md)
 **Touches.** workspace `Cargo.toml` (`snora`), `Cargo.lock`, possibly a few lines in `crates/app`, `docs/assets/screenshot-01.png`, README screenshot, docs that describe appearance.
 
 ## Summary
@@ -41,10 +42,10 @@ Gates (`fmt`, `clippy -D warnings`, `test`, MSRV, `audit`), all CI jobs green; b
 
 The application builds and passes all gates on snora 0.53.x; no behavioural regression (screens, toasts, themes, languages); visible differences are listed and acceptable to the owner; README screenshot current; audit shows no new vulnerability.
 
-## Decisions requested
+## Decisions
 
-- **D1 — schedule (owner authorizes the scope change).** Recommendation: add this job to release 1.27.0, right after RFC 025 and before the SVG and keyboard jobs. Reasons: the first public audience gets the overlay-click fix and AA-contrast toasts; the keyboard work can use F6 zones; screenshots are not published yet, so retaking them costs nothing later; the jump is small today and grows with every release. Cost: one small job (S–M) and a visible, mostly cosmetic change of look. Alternative: 1.28.0 (then keyboard phase 2 cannot use F6, and public screenshots go stale).
-- **D2 — `design` feature: not adopted now.** It changes more, needs UI migration, and belongs with RFC 021 (selection indicators) if at all; revisit then.
+- **D1 — decided by the owner (2026-10-21): authorized into release 1.27.0, as job J2b right after RFC 025 and before RFC 015 phase 2a.** Reasons as recommended: the first public audience gets the overlay click-through fix and AA-contrast toasts; the keyboard work (RFC 019 phase 2, RFC 027) can use snora's F6 zone navigation; screenshots are not yet published, so the visual change costs nothing now.
+- **D2 — `design` feature not adopted now** (architect's decision, stands): it changes more, needs UI migration, and belongs with RFC 021 if at all.
 
 ## Risks
 
