@@ -10,6 +10,23 @@ use crate::domain::{ResizeAlgorithm, Rgba8};
 use crate::error::AppError;
 use crate::services::resize;
 
+/// Fit `src` inside a `size × size` square without cropping or stretching (RFC 010).
+///
+/// A square source takes exactly the plain resize path (`resize::resize(src, size, size, ..)`),
+/// so its output is byte-identical to what it was before non-square sources were letterboxed.
+/// A non-square source is contain-fitted on a transparent square canvas, the same rule that
+/// SVG sources and the Microsoft app logos already follow.
+pub fn contain_square(
+    src: &Rgba8,
+    size: u32,
+    algorithm: ResizeAlgorithm,
+) -> Result<Rgba8, AppError> {
+    if src.width == src.height {
+        return resize::resize(src, size, size, algorithm);
+    }
+    contain_on_transparent_canvas(src, size, size, algorithm)
+}
+
 /// Fit `src` inside `target_w × target_h` without cropping or stretching.
 ///
 /// The returned canvas is transparent outside the fitted source image.
