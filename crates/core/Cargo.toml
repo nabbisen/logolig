@@ -93,5 +93,9 @@ path = "tests/manifest_writer.rs"
 name = "monochrome"
 path = "tests/monochrome.rs"
 
+[[test]]
+name = "non_square"
+path = "tests/non_square.rs"
+
 [lints]
 workspace = true
