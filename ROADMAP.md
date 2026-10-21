@@ -18,7 +18,7 @@
 
 | Job | RFC / handoff | Size | Blocked by | Notes |
 |---|---|---|---|---|
-| J0 | Merge the reviewed work: RFC 009, RFC 010, RFC 019 phase 1, CI workflow (PR #2) | S | owner (git permission) | Approved by the architect; merge was blocked by the permission system, see the owner message |
+| J0 | Integrate the reviewed work: RFC 009, RFC 010, RFC 019 phase 1, CI workflow (PR #2) | S | none | **Done 2026-10-21:** applied linearly to `main` (`git cherry-pick -x`, no merge commits, conflict in `crates/core/Cargo.toml` resolved by keeping both `[[test]]` entries); gates green on the result (fmt, clippy, 178 tests); PR #2 closed with a pointer. The remote topic branches are no longer needed |
 | J1 | RFC 024: MSRV 1.90, `zip` ≥ 9, audit triage | S–M | J0 | Turns CI green; then the owner marks the five checks required |
 | J2 | RFC 025: window application ID | S | J1 | Needed by every desktop package |
 | J3 | RFC 015 phase 2a: data-URL-only SVG resolver, `svg::analyze`, one advisory | M | J2 | Closes the local-file read; ends silent misleading SVG output |
@@ -75,7 +75,7 @@ The architect may split or reorder these as evidence arrives and will say so bef
 
 1. This plan, in particular the scope and order of 1.27.0 and the recommendation of a minor version.
 2. The ordering of jobs J1–J7 (strictly serial).
-3. A decision on the git permission block (see the architect's message): the reviewed merges J0.
+3. (Resolved) the reviewed work was integrated into `main` as J0.
 
 ## 7. Risks to the schedule
 
