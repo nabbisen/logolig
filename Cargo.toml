@@ -9,7 +9,7 @@ members = [
 [workspace.package]
 version = "1.26.2"
 edition         = "2024"
-rust-version    = "1.85"
+rust-version    = "1.90"
 license         = "Apache-2.0"
 authors         = ["nabbisen"]
 repository      = "https://github.com/nabbisen/logolig"

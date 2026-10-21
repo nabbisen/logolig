@@ -35,7 +35,7 @@ afterthoughts. See `docs/src/architecture.md` for the rationale.
 
 ## Installation
 
-Requires Rust 1.85 or newer.
+Requires Rust 1.90 or newer.
 
 ### From source
 
