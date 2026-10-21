@@ -33,3 +33,13 @@ Two honest red CI jobs need decisions: the declared minimum Rust version (1.85) 
 ## Risk
 
 Low. Raising the declared MSRV may affect anyone building with Rust 1.85–1.89, who could not build the locked tree anyway.
+
+## Review outcome and further decisions (architect, 2026-10-21)
+
+Job J1 was implemented and reviewed (`.git-exclude/reviewed/rfc-024-dependency-baseline-review-2026-10-21.md`): `rust-version = "1.90"`, README corrected, `zip` 9.0.5, all five CI jobs green, `cargo audit` with 0 vulnerabilities. Decisions on the questions raised by the review:
+
+- **`zip` feature set: accepted.** `deflate-flate2-zlib-rs` is the old `deflate` minus the optional zopfli compressor (verified in the `zip` 9.0.5 manifest: `deflate` = `deflate-zopfli` + `deflate-flate2-zlib-rs`). The explicit pure-Rust `zlib-rs` backend is preferable to relying on another crate to enable a flate2 backend (robust, no C dependency).
+- **Audit triage, pre-decided rows:** leave RUSTSEC-2026-0370/-0371/-0372 (zvariant family, Linux D-Bus theme detection; RFC 013 needs it), ttf-parser, paste, and lru (pinned by iced's `cryoglyph`; clears only with an iced upgrade). Leave rustybuzz until RFC 015 phase 2b, which makes it reachable.
+- **Follow-up job J1b (small): three single-crate lock updates** that clear three more warnings because patched releases exist: `anyhow` (>= 1.0.103), `event-listener` (>= 5.4.2), `memmap2` (>= 0.9.11). Handoff: `rfcs/handoffs/024-dependency-and-toolchain-baseline/implementation-handoff-followup-lock-updates.md`.
+- **`vtracer` hygiene (rows 1–4: adler, ansi_term, atty x2):** four warnings come from `vtracer` 0.6.5's old `image` 0.23 / `clap` 2 chain. Not urgent (not on an executed path as far as known), but unclean. Scheduled as an evidence-only spike in release 1.29.0 (ROADMAP J16): can the chain be avoided through features, a newer vtracer, or a replacement, and what would a replacement cost in output quality?
+- **D5 revised (required checks).** All five jobs are green, but **marking them "required" does not help the owner's workflow**: required status checks gate pull-request merges, while the agreed workflow is direct pushes to `main` (no branches). A required check cannot stop a direct push that is red after it lands. The protection that works is on the implementer's side: run all gates locally with a command chain that stops on the first failure (`&&`), and push only when green, which every handoff requires and the J1 report shows was violated once (the red `ec9e1ed`, repaired within minutes). The architect watches CI after every push. The owner may still enable "required" later if the project moves to pull requests.

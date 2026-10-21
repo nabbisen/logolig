@@ -151,7 +151,7 @@ Add `.github/workflows/packaging.yml`, first-party actions only, pinned by SHA, 
 - Build and test runs as a non-root user.
 - No network access in `build()`; only `prepare()` fetches.
 - Do not embed credentials, tokens or personal paths in any committed file or log; scrub review artefacts.
-- Compatibility: Arch Linux x86_64, current rolling release; Rust 1.85 floor is irrelevant to Arch's current `cargo` but do not change `rust-version`.
+- Compatibility: Arch Linux x86_64, current rolling release; the declared Rust floor is 1.90 (RFC 024) and is irrelevant to Arch's current `cargo`; do not change `rust-version`.
 
 ## 9. Known risks
 

@@ -19,7 +19,7 @@ Verified (file inspection, 2026-10-21):
 - The AUR repositories (cloned under `.git-exclude/tmp/aur-repositories/`, remote `ssh://aur@aur.archlinux.org/<name>.git`) each contain one placeholder commit: `pkgver=0.0.0`, `sha256sums=('DUMMY-FOR-INITIALIZATION')`, `package()` that only echoes, `depends=(gcc-libs glibc fontconfig libxkbcommon vulkan-icd-loader)`, no `makedepends`, and for **both** packages `source` is the GitHub *tag source archive*. For `logolig-bin` that is wrong; it must point to a release binary asset.
 - Release tags are `X.Y.Z` with no `v` prefix (workflow rule, and `archive/refs/tags/$pkgver.tar.gz` in the placeholders already assumes this).
 - Application binary name is `logolig` (`crates/app/Cargo.toml` `[[bin]]`). The repository ships no `.desktop` file and no Linux icon; `packaging/windows/` holds the Microsoft Store manifest and logo assets.
-- Declared MSRV is 1.85; the maintainer toolchain in this review is 1.99.1. No gate checks the MSRV.
+- At the time of the review the declared MSRV was 1.85 (never true; RFC 024 set it to 1.90 on 2026-10-21); the maintainer toolchain was 1.99.1. No gate checked the MSRV then; the `msrv` CI job now does.
 - `makepkg`, `namcap`, `cargo-audit` and `cargo-deny` are installed on the maintainer workstation (useful for local dry runs).
 - Not verified: the full list of runtime/build dependencies the GUI needs on Arch (needs a `namcap` pass in a clean container), and whether the release binary starts on a minimal system.
 
@@ -40,7 +40,7 @@ crates.io publication (separate owner decision), Windows Store submission (exist
 
 | Workflow | Trigger | Jobs |
 |---|---|---|
-| `ci.yml` | `pull_request`, `push` to `main` | `fmt`, `clippy`, `test` (stable); `msrv` (1.85, `cargo check --workspace --locked`); `audit` (`cargo audit`, reads `.cargo/audit.toml`); `docs` (RFC lint from RFC 008, link check); `packaging` (only when `packaging/**` changes: `makepkg --verifysource`/build in an `archlinux` container plus `namcap`) |
+| `ci.yml` | `pull_request`, `push` to `main` | `fmt`, `clippy`, `test` (stable); `msrv` (the declared `rust-version`, 1.90 since RFC 024; `cargo check --workspace --locked`); `audit` (`cargo audit`, reads `.cargo/audit.toml`); `docs` (RFC lint from RFC 008, link check); `packaging` (only when `packaging/**` changes: `makepkg --verifysource`/build in an `archlinux` container plus `namcap`) |
 | `release.yml` | push of tag `[0-9]+.[0-9]+.[0-9]+` | verify tag equals `workspace.package.version`; re-run gates; build `x86_64-unknown-linux-gnu` release with `--locked`; create a **draft** GitHub Release with `logolig-<ver>-x86_64-linux.tar.gz` and its `.sha256` |
 | `aur.yml` | **manual `workflow_dispatch` only**, with the release tag as input; runs in the protected `aur` environment | verify the release is published and its checksum matches, render PKGBUILDs from templates, run `makepkg`/`namcap`, push to the AUR repo(s) |
 
