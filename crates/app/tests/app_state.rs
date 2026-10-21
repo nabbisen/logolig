@@ -27,9 +27,3 @@ fn defaults_match_spec() {
     assert!(plan.include_html_snippet);
     assert!(plan.overrides.is_empty());
 }
-
-// CI-DEMO (throwaway, reverted): deliberately failing test.
-#[test]
-fn ci_demo_failing_test() {
-    assert_eq!(1, 2, "deliberate failure to prove the test gate can go red");
-}
