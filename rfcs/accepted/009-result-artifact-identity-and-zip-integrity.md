@@ -1,6 +1,6 @@
 # RFC 009 — Result artifact identity and ZIP integrity
 
-**Status.** Proposed
+**Status.** Accepted (owner, 2026-10-21)
 **Priority.** P1 (functional defect; a shipped option makes "Download all (ZIP)" fail)
 **Tracks.** Defect: ZIP download fails and leaves a partial file when monochrome output is enabled.
 **Touches.** `crates/app/src/result.rs`, `crates/app/src/task_queue.rs` (`collect_assets`, `write_zip_blocking`), `crates/app/src/ui/result_view.rs`, tests.
@@ -35,9 +35,11 @@ Verified by source reading; **not executed**.
 - Rename mono files (`favicon-32-mono.png`): changes the documented, user-visible layout and the README guidance on `mask-image`. Rejected.
 - Skip duplicates silently: hides data loss. Rejected.
 
-## Open question
+## Decisions
 
-- **Q1** Should the per-file save dialog default to `favicon-mono-32.png` for mono items to avoid overwriting a colour file saved earlier into the same folder? Recommendation: yes, default name only; no change to ZIP or core paths. Owner/UX decision.
+- **Q1 — default name in the single-file save dialog: decided (architect, under the owner's delegation, 2026-10-21): keep the base name** (`favicon-32.png`), also for items under `mono/`. This reverses the draft's recommendation. Reason: the README and the generated guidance tell users to reference `/mono/favicon-32.png`, so a different default (`favicon-mono-32.png`) would force them to rename the file, and ZIP, disk layout and single-file names would then follow three schemes. The confusion the draft worried about (overwriting a colour file saved earlier into the same folder) is handled by the operating system's save dialog, which asks before overwriting, and by the card title, which now shows `mono/favicon-32.png`. Revisit only if user feedback shows overwrites in practice.
+- **Case-insensitive uniqueness.** The core uniqueness check (Design 5) compares paths case-insensitively, because ZIP extraction onto case-insensitive file systems (Windows, macOS) would otherwise silently overwrite entries.
+- **Public API.** `exporter::ensure_unique_paths` is added as an additive public function so the invariant is testable without crafting an impossible plan.
 
 ## Tests (design-derived)
 
