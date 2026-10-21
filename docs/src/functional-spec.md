@@ -285,8 +285,10 @@ Not persisted: the Advanced accordion's expanded/collapsed state
 
 - Active state (current nav item, current language/theme) is indicated
   by both a visual fill **and** the `▣` prefix (not colour alone).
-- Keyboard alternative path: the "Choose file…" button covers users who
-  cannot use drag and drop.
+- Keyboard: not supported yet. The "Choose file…" control is an alternative to
+  drag and drop that is opened with a mouse click; no control can be reached or
+  activated with the keyboard. See `ui-a11y.md` ("Keyboard support (current)")
+  and RFC 019.
 - Accessibility labels are defined as constants in `ui::accessibility`
   for future screen-reader support (iced 0.14 does not yet expose a full
   a11y API).
