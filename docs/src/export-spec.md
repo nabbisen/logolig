@@ -64,6 +64,18 @@ Each output PNG is rendered:
   `Lanczos3` (`ResizeAlgorithm::Lanczos3`); other choices are
   available from Customize → Advanced settings.
 
+**Non-square sources.** Square outputs (favicon PNGs, ICO frames,
+`apple-touch-icon.png`, the `mono/` variants and the preview rasters) never
+stretch or crop a logo. For **every** source kind the logo is scaled to fit
+inside the square and centred on a transparent canvas: SVG sources are
+letterboxed when they are rendered, and PNG/WebP/JPEG sources are fitted with
+the same rule, so a 2:1 logo becomes a full-width strip with empty space above
+and below. A source that is already square takes the plain resize path, so its
+output is unchanged. With "Keep transparency" turned off, the padding is
+flattened to white together with the rest of the image (flattening happens after
+padding). Logolig shows one short notice per loaded image when the sides differ
+by more than 2 %.
+
 For the ICO container, **each frame is generated from the source at
 that exact size**. ICO frames are not scaled from a "master"
 bitmap — this is what produces the jaggy 16×16 favicons on most
