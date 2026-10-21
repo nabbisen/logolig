@@ -164,6 +164,8 @@ fn japanese_translation_differs_from_english_for_ui_text() {
         MessageKey::CloseButton,
         MessageKey::ExportButton,
         MessageKey::SectionLanguage,
+        MessageKey::ToastNonSquareInputTitle,
+        MessageKey::ToastNonSquareInputBody,
     ];
     for key in differing_keys {
         let en_text = en.t(key);
@@ -208,6 +210,8 @@ fn japanese_every_key_has_non_empty_translation() {
         MessageKey::ToastExportBody,
         MessageKey::ToastResetTitle,
         MessageKey::ToastInvalidSizeTitle,
+        MessageKey::ToastNonSquareInputTitle,
+        MessageKey::ToastNonSquareInputBody,
         MessageKey::ErrorUnsupportedFile,
         MessageKey::ErrorIo,
         MessageKey::ErrorDecode,
@@ -242,4 +246,30 @@ fn japanese_translate_error_substitutes_args() {
     assert!(s.contains("/tmp/foo"), "path missing: {s}");
     assert!(s.contains("permission denied"), "cause missing: {s}");
     assert!(s.contains("入出力"), "Japanese keyword missing: {s}");
+}
+
+// ---------------------------------------------------------------------------
+// RFC 010: non-square advisory texts (fixed by the architect; do not reword)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn non_square_toast_texts_match_the_specification() {
+    let en = Translator::for_locale(Locale::En);
+    assert_eq!(
+        en.t(MessageKey::ToastNonSquareInputTitle),
+        "Your logo is not square"
+    );
+    assert_eq!(
+        en.t(MessageKey::ToastNonSquareInputBody),
+        "It is shown in full, with empty space around it, so the icon may look small. A square version of your logo gives a larger icon."
+    );
+    let ja = Translator::for_locale(Locale::Ja);
+    assert_eq!(
+        ja.t(MessageKey::ToastNonSquareInputTitle),
+        "ロゴが正方形ではありません"
+    );
+    assert_eq!(
+        ja.t(MessageKey::ToastNonSquareInputBody),
+        "ロゴ全体を表示するため、アイコンの周りに余白が付きます。正方形のロゴ画像を用意すると、アイコンを大きく表示できます。"
+    );
 }

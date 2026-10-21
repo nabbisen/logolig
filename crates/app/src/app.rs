@@ -595,6 +595,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::IngestCompleted(Ok(asset)) => {
+            // RFC 010: decide before `asset` is moved into the state.
+            let non_square = is_non_square(asset.intrinsic_size);
             // Arc the asset so it can be moved into the async preview task.
             // SourceAsset is Clone (Arc<[u8]>-backed) so this is cheap.
             let arc = std::sync::Arc::new(asset.clone());
@@ -617,6 +619,10 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             // - stale warnings carrying over on re-load
             // - duplicate warning toasts for the same image
             state.transparency = None;
+            // RFC 010: one advisory per loaded image when the logo will be padded.
+            if non_square {
+                push_non_square_warning(state);
+            }
             // Launch (a) and (b) in parallel.
             Task::batch([
                 crate::task_queue::build_preview_task(arc.clone(), state.export_plan.algorithm),
@@ -1256,6 +1262,24 @@ fn push_transparency_warning(state: &mut AppState, report: TransparencyReport) {
     push_warning_toast(state, &title, &body);
 }
 
+/// RFC 010: `true` when the intrinsic sides differ by more than 2 %
+/// (`abs(w - h) * 100 > 2 * max(w, h)`). The tolerance avoids false alarms from
+/// the `ceil()` rounding in `parse_svg_size`. Unknown size is never non-square.
+fn is_non_square(size: Option<(u32, u32)>) -> bool {
+    match size {
+        Some((w, h)) => u64::from(w.abs_diff(h)) * 100 > 2 * u64::from(w.max(h)),
+        None => false,
+    }
+}
+
+/// RFC 010: educational warning for a non-square source. The logo is shown in
+/// full with transparent padding, so the icon may look small. Transient, non-blocking.
+fn push_non_square_warning(state: &mut AppState) {
+    let title = state.translator.t(MessageKey::ToastNonSquareInputTitle);
+    let body = state.translator.t(MessageKey::ToastNonSquareInputBody);
+    push_warning_toast(state, &title, &body);
+}
+
 /// v1.11.0: educational warning for JPEG input.
 ///
 /// JPEG cannot carry alpha, so the v1.7 transparency audit always returns
@@ -1473,5 +1497,61 @@ mod tests {
         assert!(state.busy);
         assert!(state.result_assets.is_none());
         assert!(!state.result_preview_open);
+    }
+    fn ingest_ok(state: &mut AppState, size: Option<(u32, u32)>) {
+        let asset = SourceAsset {
+            intrinsic_size: size,
+            ..dummy_source_asset()
+        };
+        let _ = update(state, Message::IngestCompleted(Ok(asset)));
+    }
+
+    #[test]
+    fn non_square_ingest_adds_exactly_one_advisory_toast() {
+        let mut state = AppState::default();
+        ingest_ok(&mut state, Some((64, 32)));
+        assert_eq!(state.toasts.len(), 1);
+        let expected = state.translator.t(MessageKey::ToastNonSquareInputTitle);
+        assert_eq!(state.toasts[0].title, expected);
+    }
+
+    #[test]
+    fn square_ingest_adds_no_toast() {
+        let mut state = AppState::default();
+        ingest_ok(&mut state, Some((100, 100)));
+        assert!(state.toasts.is_empty());
+    }
+
+    #[test]
+    fn nearly_square_ingest_inside_the_tolerance_adds_no_toast() {
+        let mut state = AppState::default();
+        ingest_ok(&mut state, Some((101, 100)));
+        assert!(state.toasts.is_empty());
+    }
+
+    #[test]
+    fn unknown_size_ingest_adds_no_toast() {
+        let mut state = AppState::default();
+        ingest_ok(&mut state, None);
+        assert!(state.toasts.is_empty());
+    }
+
+    #[test]
+    fn showing_the_last_result_again_does_not_repeat_the_advisory() {
+        let mut state = AppState::default();
+        ingest_ok(&mut state, Some((64, 32)));
+        assert_eq!(state.toasts.len(), 1);
+        state.result_assets = Some(dummy_result_assets());
+        let _ = update(&mut state, Message::EditCancelled);
+        let _ = update(&mut state, Message::ShowLastResultRequested);
+        assert_eq!(state.toasts.len(), 1, "no second toast");
+    }
+
+    #[test]
+    fn non_square_tolerance_boundary_is_two_percent() {
+        assert!(!is_non_square(Some((100, 102)))); // 1.96 %: inside
+        assert!(is_non_square(Some((100, 103)))); // 2.9 %: outside
+        assert!(!is_non_square(Some((0, 0))));
+        assert!(is_non_square(Some((1000, 1))));
     }
 }

@@ -169,6 +169,8 @@ pub(crate) struct Dictionary {
     // JPEG support (v1.11.0)
     pub toast_jpeg_input_title: String,
     pub toast_jpeg_input_body: String,
+    pub toast_non_square_input_title: String,
+    pub toast_non_square_input_body: String,
 
     // Edit-screen flow + preview redesign (v1.12.0)
     pub page_title_edit: String,
@@ -384,6 +386,8 @@ impl Dictionary {
             // v1.11.0
             MessageKey::ToastJpegInputTitle => &self.toast_jpeg_input_title,
             MessageKey::ToastJpegInputBody => &self.toast_jpeg_input_body,
+            MessageKey::ToastNonSquareInputTitle => &self.toast_non_square_input_title,
+            MessageKey::ToastNonSquareInputBody => &self.toast_non_square_input_body,
 
             // v1.12.0
             MessageKey::PageTitleEdit => &self.page_title_edit,
