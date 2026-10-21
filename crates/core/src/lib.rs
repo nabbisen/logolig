@@ -31,3 +31,6 @@ pub use services::exporter::{ExportReport, InMemoryArtifact};
 pub use services::preview::PreviewCache;
 pub use services::transparency_audit::TransparencyReport;
 pub use settings::SettingsStore;
+
+// CI-DEMO (throwaway, reverted): badly formatted, clippy-dirty function.
+pub fn ci_demo_clippy(v:&Vec<u32>)->usize{ return v.len() }
