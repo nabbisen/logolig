@@ -2,6 +2,7 @@
 
 **Status.** Accepted, phased (owner, 2026-10-21). Phase 1 = run-time verification and honest documentation (steps 1–2); the keyboard model (steps 3–4) is handed off after the evidence exists.
 **Priority.** P1 for documenting the truth; P2 for the implementation spike
+**Handoffs.** [rfcs/handoffs/019-keyboard-accessibility/](../handoffs/019-keyboard-accessibility/README.md)
 **Tracks.** ABDD commitment "every mouse operation is reachable by keyboard" versus the capabilities of iced 0.14.
 **Touches.** `crates/app` (event subscription, focus state, UI styles), `docs/src/ui-a11y.md`, README, manual test checklist.
 

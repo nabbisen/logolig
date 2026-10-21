@@ -2,6 +2,7 @@
 
 **Status.** Accepted, phased (owner, 2026-10-21). Phase 1 = verification spike by execution; phase 2 = fix, designed after the evidence exists.
 **Priority.** P1 for text rendering (likely visible output defect); P2 for resource hardening
+**Handoffs.** [rfcs/handoffs/015-svg-text-and-external-resources/](../handoffs/015-svg-text-and-external-resources/README.md)
 **Tracks.** (a) SVG `<text>` probably renders as nothing; (b) SVG parsing may read local files.
 **Touches.** `crates/core/src/services/rasterize_svg.rs`, `services/ingest.rs` (`parse_svg_size`), a new shared `svg_options()` helper, docs, tests.
 

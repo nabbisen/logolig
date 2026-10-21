@@ -2,6 +2,7 @@
 
 **Status.** Accepted (owner approval conditional on reasonableness; architect assessment below, 2026-10-21)
 **Priority.** P1 (output quality is a stated product value)
+**Handoffs.** [rfcs/handoffs/010-non-square-raster-sources/](../handoffs/010-non-square-raster-sources/implementation-handoff.md)
 **Tracks.** Defect/design gap: non-square PNG/WebP/JPEG sources are stretched into square favicon outputs.
 **Touches.** `crates/core/src/services/exporter.rs` (`render_at_size`), `services/preview.rs` (`render_at`), `services/canvas.rs`, tests, `docs/src/export-spec.md`.
 
@@ -47,6 +48,12 @@ The owner approved D1 "only if reasonable enough" and asked that the philosophy 
 
 - **D1 — contain-fit (option A): accepted.** Reasonable because (1) the application already contains this rule for SVG sources and for the Microsoft logos, so today's raster behaviour is the inconsistent one; (2) it is the only option that neither distorts nor discards the user's artwork; (3) distortion is not a contract anyone can rely on, while square sources, which are the intended input, stay bit-identical; (4) no new setting is introduced.
 - **D2 — advisory toast (option D): accepted.** Contain-fit makes a wide wordmark a thin strip at 16 px. Without an explanation a user would read that as a defect. The toast is educational and non-blocking, in the tone of the JPEG notice ("Your logo is wider than it is tall, so it is shown with empty space above and below. A square version of your logo gives a larger icon."). Needs `en` and `ja` keys; shown once per loaded image, never for square sources.
+
+Binding details fixed while preparing the handoff (they belong to the design, not only to the handoff):
+
+- New additive public function `services::canvas::contain_square(src, size, algorithm)`: square sources return exactly `resize::resize(src, size, size, algorithm)` (byte-identical to before); non-square sources use `contain_on_transparent_canvas(src, size, size, algorithm)`.
+- The advisory applies to every source kind (SVG included, since SVGs are padded too), at ingest, once per loaded image. "Non-square" means the sides differ by more than 2 % (`abs(w - h) * 100 > 2 * max(w, h)`), which avoids false alarms from the `ceil()` rounding of SVG sizes. Nothing is shown when the size is unknown.
+- Texts (new keys `ToastNonSquareInputTitle` / `ToastNonSquareInputBody`): en "Your logo is not square" / "It is shown in full, with empty space around it, so the icon may look small. A square version of your logo gives a larger icon."; ja "ロゴが正方形ではありません" / "ロゴ全体を表示するため、アイコンの周りに余白が付きます。正方形のロゴ画像を用意すると、アイコンを大きく表示できます。" The ja text needs a native review.
 
 Conditions of acceptance:
 

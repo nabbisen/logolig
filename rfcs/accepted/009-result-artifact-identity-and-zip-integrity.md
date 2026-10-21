@@ -2,6 +2,7 @@
 
 **Status.** Accepted (owner, 2026-10-21)
 **Priority.** P1 (functional defect; a shipped option makes "Download all (ZIP)" fail)
+**Handoffs.** [rfcs/handoffs/009-result-artifact-identity-and-zip-integrity/](../handoffs/009-result-artifact-identity-and-zip-integrity/implementation-handoff.md)
 **Tracks.** Defect: ZIP download fails and leaves a partial file when monochrome output is enabled.
 **Touches.** `crates/app/src/result.rs`, `crates/app/src/task_queue.rs` (`collect_assets`, `write_zip_blocking`), `crates/app/src/ui/result_view.rs`, tests.
 
@@ -34,6 +35,12 @@ Verified by source reading; **not executed**.
 
 - Rename mono files (`favicon-32-mono.png`): changes the documented, user-visible layout and the README guidance on `mask-image`. Rejected.
 - Skip duplicates silently: hides data loss. Rejected.
+
+## Binding details fixed while preparing the handoff
+
+- `ResultAssetItem` gains `relative_path: String` (always `/`-separated, relative). `collect_assets` becomes fallible and rejects `..`, absolute and non-UTF-8 components, so a producer bug can never create a path-traversal ("zip slip") archive.
+- The archive is built by a pure `build_zip_bytes` and written with a single `std::fs::write`; compression method and timestamp logic are unchanged.
+- Card titles show the relative path; single-file save keeps the base name (see Decisions).
 
 ## Decisions
 

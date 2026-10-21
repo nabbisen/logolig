@@ -2,6 +2,7 @@
 
 **Status.** Accepted (phased; phase 2's icon step waits for the owner's artwork; phase 4 waits for the D4 set-up, 2026-10-21)
 **Priority.** P1 (owner priority, 2026-10-21: AUR publication first)
+**Handoffs.** [rfcs/handoffs/020-ci-and-aur-packaging/](../handoffs/020-ci-and-aur-packaging/README.md)
 **Tracks.** Release engineering: automated quality gates, release artifacts, and AUR publication.
 **Touches.** new `.github/workflows/`, new `packaging/aur/`, new `packaging/linux/` (desktop entry, icon), `scripts/`, `.cargo/audit.toml`, `README.md` install section.
 
@@ -105,6 +106,15 @@ Both: `arch=(x86_64)`, `license=('Apache-2.0')`, `url` unchanged, `pkgdesc` real
   6. The owner can move to a separate bot account later without changing the workflow (only the secret and the AUR co-maintainer setting change). Recommended if the owner ever maintains other AUR packages that the key should not be able to touch.
   Phase 4 does not start until conditions 1–4 are set up and the owner confirms it.
 - **D5 — icon and desktop entry: owner will provide the master artwork on request (2026-10-21: "Give me request later").** The architect issues a written request when Handoff 004 reaches the icon step (§5.5). Until then that step stays blocked and nothing is invented. Finding: the repository contains the logo only as the 150 × 150 Microsoft tile (`packaging/windows/Assets`), a rounded blue square with the hexagon mark, and no master artwork. Upscaling it would produce a blurry Linux icon, which would be a poor first impression for a tool whose selling point is output quality. Request: commit the master (SVG preferred, or a PNG of at least 1024 px) to `packaging/icons/`. Then generate every size, Windows assets included, **with Logolig itself**, which also serves as a standing end-to-end test of the product. Desktop entry text is localised (`en`, `ja`) and keeps the project's "less is more" wording.
+
+## Binding details fixed while preparing the phase-2 handoff
+
+- Phase 2 covers the **source** package `logolig` only; `logolig-bin` and `release.yml` come later.
+- `check()` runs only the GUI-free crates (`cargo test --frozen -p logolig -p logolig-i18n`).
+- `depends` includes `xdg-desktop-portal`: `rfd` 0.15.4 defaults to the XDG-portal backend, so the file chooser (the primary action) needs it. Portal back-ends and Vulkan drivers go to `optdepends`. A test without a portal is required evidence and may lead to a UX RFC.
+- Desktop entry wording (fixed by the architect): Name `Logolig`; Comment `Make favicons and app logos from one image, offline`; Comment[ja] `1枚の画像から favicon とアプリ用ロゴを作成（オフライン）`; Categories `Graphics;`. No `MimeType`, `Keywords` or `StartupWMClass`.
+- The 1.26.2 tag contains no Linux packaging files, so the dry run uses a local archive of the working tree, and the first published version must be a release that already contains `packaging/linux/`.
+- The AUR clones under `.git-exclude/tmp/aur-repositories/` are read-only for the implementer; nothing is pushed in phases 1–2.
 
 ## First-publication readiness (recommendation; the release decision remains with the owner)
 

@@ -36,7 +36,7 @@ vocabulary, and new RFCs follow RFC 000 and live in `proposed/`. In RFC 000
 terms, **Proposed** means open for review; the implementer should not start.
 Priorities are the architect's recommendation and require owner approval.
 
-**Accepted** (review complete; Developer Handoff to be prepared):
+**Accepted** (review complete; implementation handoffs in [`handoffs/`](./handoffs/)):
 
 | # | Title | Priority |
 | --- | --- | --- |
