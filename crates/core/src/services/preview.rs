@@ -14,7 +14,7 @@ use std::path::PathBuf;
 
 use crate::domain::{ResizeAlgorithm, Rgba8, SourceAsset, SourceKind};
 use crate::error::AppError;
-use crate::services::{decode_jpeg, decode_png, decode_webp, rasterize_svg, resize};
+use crate::services::{canvas, decode_jpeg, decode_png, decode_webp, rasterize_svg};
 
 /// Pre-resized rasters for the preview panel.
 ///
@@ -50,7 +50,7 @@ pub fn build_preview(
 
 /// Single-size rendering:
 /// - SVG          → rasterise directly at the target size
-/// - PNG / WebP   → decode then resize
+/// - PNG / WebP / JPEG → decode then contain-fit into a square (RFC 010)
 fn render_at(
     asset: &SourceAsset,
     size: u32,
@@ -60,15 +60,15 @@ fn render_at(
         SourceKind::Svg => rasterize_svg::rasterize(asset, size),
         SourceKind::Png => {
             let decoded = decode_png::decode(asset)?;
-            resize::resize(&decoded, size, size, algorithm)
+            canvas::contain_square(&decoded, size, algorithm)
         }
         SourceKind::Webp => {
             let decoded = decode_webp::decode(asset)?;
-            resize::resize(&decoded, size, size, algorithm)
+            canvas::contain_square(&decoded, size, algorithm)
         }
         SourceKind::Jpeg => {
             let decoded = decode_jpeg::decode(asset)?;
-            resize::resize(&decoded, size, size, algorithm)
+            canvas::contain_square(&decoded, size, algorithm)
         }
     }
 }

@@ -40,7 +40,7 @@ use crate::domain::{ExportPlan, MICROSOFT_APP_LOGOS, Rgba8, SourceAsset, SourceK
 use crate::error::AppError;
 use crate::services::{
     canvas, decode_jpeg, decode_png, decode_webp, encode_png, html_snippet, ico_writer,
-    manifest_writer, monochrome, rasterize_svg, resize, vectorize,
+    manifest_writer, monochrome, rasterize_svg, vectorize,
 };
 
 /// Result of a disk-write operation; tells the UI what was created.
@@ -307,7 +307,8 @@ fn push_artifact(artifacts: &mut Vec<InMemoryArtifact>, relative_path: &str, byt
 
 /// Renders the source to Rgba8 at the given target size.
 ///
-/// - PNG / WebP / JPEG: resizes the pre-decoded full-size image.
+/// - PNG / WebP / JPEG: contain-fits the pre-decoded full-size image into a square
+///   (RFC 010: never stretched; non-square sources get transparent padding).
 /// - SVG: renders individually at the target size (§6.2).
 ///
 /// v1.21.0: when `plan.keep_transparency == false`, applies
@@ -327,7 +328,7 @@ fn render_at_size(
         SourceKind::Png | SourceKind::Webp | SourceKind::Jpeg => {
             let src = decoded_raster
                 .ok_or_else(|| AppError::export("internal: missing decoded raster"))?;
-            resize::resize(src, size, size, plan.algorithm)?
+            canvas::contain_square(src, size, plan.algorithm)?
         }
         SourceKind::Svg => rasterize_svg::rasterize(asset, size)?,
     };
