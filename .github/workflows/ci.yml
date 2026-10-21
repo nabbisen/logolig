@@ -148,13 +148,21 @@ jobs:
           echo "version=$(rustc --version | tr ' ' '-')" >> "$GITHUB_OUTPUT"
           cargo --version
       # Only the installed binary is cached; the advisory database is always fetched fresh.
+      # The cache is saved right after installation (not at job end), so a red audit
+      # result, which is a legitimate outcome, does not prevent the binary from being cached.
       - id: audit-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cargo/bin/cargo-audit
           key: ${{ runner.os }}-cargo-audit-${{ env.CARGO_AUDIT_VERSION }}-${{ steps.toolchain.outputs.version }}
       - name: Install cargo-audit
         if: steps.audit-cache.outputs.cache-hit != 'true'
         run: cargo install cargo-audit --version "$CARGO_AUDIT_VERSION" --locked
+      - name: Save cargo-audit binary
+        if: steps.audit-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cargo/bin/cargo-audit
+          key: ${{ runner.os }}-cargo-audit-${{ env.CARGO_AUDIT_VERSION }}-${{ steps.toolchain.outputs.version }}
       - run: cargo audit --version
       - run: cargo audit
