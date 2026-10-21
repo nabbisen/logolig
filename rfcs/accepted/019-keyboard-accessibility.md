@@ -45,6 +45,19 @@ Recommendation: **A now, B as a follow-up RFC if the verification shows Tab trav
 - **Why step 2 is not optional:** the README, `ui-a11y.md` and `functional-spec.md` currently promise keyboard parity; users with a keyboard-only workflow who rely on that promise are being misled. This is also a prerequisite named in RFC 020 for the first AUR release.
 - **Step 1 platform scope:** Linux (Wayland as the maintainer's session; X11 through the winit X11 backend or XWayland) is the minimum. Windows and macOS only if a machine is available; if not, they are reported as "not tested", never inferred.
 
+## Phase 1 results (architect review, 2026-10-21)
+
+Executed on Linux (X11 backend with `xdotool`, native Wayland with `wtype`) against the 1.26.2 release build. **A keyboard-only user can do nothing in the application today.** No key moves focus or activates a control; checkboxes, the slider, the "Advanced settings" header and the nav items are unreachable; text inputs receive focus **only by mouse click** (Tab does not reach them, Tab inside a field does not leave it). Typing works in a mouse-focused field and Enter in the custom-size field adds the size (`on_submit`). The drop-zone card has no hover feedback; nav items and download buttons do. There is no key-handling code in the application (comments only). Evidence limits: native Wayland had no positive control (inferred from identical code and from the X11 result), Windows and macOS were not tested. The documentation (`ui-a11y.md`, `functional-spec.md` §14) was corrected to say exactly this.
+
+**Consequence for the decision:** option A (global shortcuts) delivers the main path (choose file, download all, back, switch pages) but not the Customize page (checkboxes, slider, text fields). The evidence therefore confirms that Tab traversal (option B) is a real gap, as the RFC anticipated.
+
+**Revised direction (architect):**
+
+- **Phase 2 = option A**, as already decided, scoped to the main path plus the in-app shortcut list; no focus machinery.
+- **Option B becomes its own RFC** (focus model, visible focus indicators, Customize page), written after phase 2, because it changes every interactive widget and needs its own design review. Until then the documentation states the limitation.
+- **README tagline (owner decision):** "A local-first, accessible logo asset generator GUI" is stronger than the evidence for keyboard users. The architect recommends tempering the claim until option A and B land (for example dropping "accessible" from the tagline, or stating what is supported). The tagline is positioning text and belongs to the owner.
+- Two source comments still claim keyboard accessibility (`ui/drop_zone.rs:6`, `ui/preview_panel.rs:134`); they are corrected in phase 2.
+
 ## Out of scope
 
 Screen-reader support (no accessibility tree in iced 0.14 was found in this review; confirm in step 1), high-contrast presets (tracked with the Snora Design System decision DEC-004).

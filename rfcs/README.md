@@ -50,6 +50,8 @@ Priorities are the architect's recommendation and require owner approval.
 
 | # | Title | Priority |
 | --- | --- | --- |
+| [024](./proposed/024-dependency-and-toolchain-baseline.md) | Dependency and toolchain baseline (MSRV, `cargo audit`) | P1 |
+| [025](./proposed/025-window-application-id.md) | Window application ID and desktop integration | P1 |
 | [008](./proposed/008-rfc-portfolio-migration.md) | Migrate the RFC portfolio to the RFC 000 layout | P2 |
 | [011](./proposed/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
 | [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
@@ -60,6 +62,8 @@ Priorities are the architect's recommendation and require owner approval.
 | [021](./proposed/021-selection-state-indicators.md) | Selection-state indicators | P2 |
 | [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
 | [022](./proposed/022-vtracer-sharp-preset-verification.md) | Verify the vtracer "Sharp" preset | P3 |
+| [023](./proposed/023-flatpak-publication.md) | Flatpak publication (Flathub) | P2 |
+| [026](./proposed/026-result-screen-layout-small-windows.md) | Result screen layout at small window heights | P2 |
 
 "Status: Draft" (in the table above, for RFC 001–007) means the RFC is reviewed and ready for implementation
 but no implementer has started yet. It moves to "In Progress" once a

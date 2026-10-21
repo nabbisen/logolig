@@ -35,7 +35,26 @@ Verified from dependency source (usvg 0.45) and project source; **rendering not 
 - **Q1 — bundled fallback font: no.** Binary size, licence review and a hidden dependency; document the dependency on installed fonts instead and recommend converting text to outlines for brand assets.
 - **Q2 — advisory: yes, but only for things that matter, and the mechanism is decided after phase 1.** Intended behaviour (one short, non-blocking toast per loaded image, no noise for ordinary SVGs): (a) when external images were **ignored**, because content the user expects is missing; (b) when the SVG contains text, a single sentence that the logo is drawn with fonts installed on this computer and that outlining the text gives the same result everywhere. The architect decides after the spike how core reports this to the app (a field on `SourceAsset` is a public-API change and needs its own decision).
 
-**Phase 1 (handoff 006)** is evidence only; no production code changes. **Phase 2** (implementation and tests per "Design" above, plus the advisory mechanism) is handed off after the architect has reviewed the phase-1 evidence.
+**Phase 1 (the spike handoff)** was evidence only; no production code changes. **Phase 2** (implementation and tests per "Design" above, plus the advisory mechanism) is handed off after the architect has reviewed the phase-1 evidence.
+
+## Phase 1 results and revised decisions (architect review, 2026-10-21)
+
+Phase 1 was executed (spike, evidence only). Verified by execution on one Linux machine (usvg/resvg 0.45.1, fontdb 0.23.0):
+
+- **C1/C2 confirmed:** today SVG text renders **nothing** (0 visible pixels), and the documentation sentence "resvg (uses OS fonts)" is wrong.
+- **C3/C4 confirmed:** a local file named in `<image href>` (absolute path; relative path resolved against the process working directory; nested SVG) is read and **ends up in the output**, already at ingest time (`parse_svg_size`).
+- **C5 confirmed with a significant caveat:** a data-URL-only resolver works (no file loaded; `data:` images still render), but loading system fonts is **not sufficient**: `font-family="Arial"`, `"serif"`, `"Helvetica"`, `"Times New Roman"` drew **"Aα"** (fontdb resolved the generic serif to a symbol font), and under a minimal fontconfig no generic family resolved at all (text vanished although fonts were installed). A logo with wrong letters is worse than one with missing letters.
+- **C6 only partly confirmed:** a shared font database is ~14x faster than rebuilding it per call, but the absolute cost is small (5–9 ms per full load on the test machine). The shared `OnceLock` stays good practice, not an urgent one. Cold-disk, slow machines, Windows and macOS were not measured.
+- The parsed tree reports only the *requested* font families; a substituted font is detectable only by querying the font database per requested family (cheap, demonstrated).
+
+**Revised decisions** (these supersede D1 and Q2's mechanism above; D2 stands):
+
+- **Resources (D2, unchanged, now urgent):** only `data:` URLs. One shared options builder (`services::svg::options()`) used by **both** `parse_svg_size` and `rasterize_svg`; the two call sites change together.
+- **Reporting mechanism: R1.** A new function `services::svg::analyze(bytes) -> SvgReport { has_text, ignored_external_images, missing_families }`, called by the app after a successful SVG ingest. No change to `SourceAsset` or to `ingest`'s return type (no public-API change).
+- **Phase 2a (security and honesty, small; targeted before the first public release):** the data-only resolver at both call sites; `analyze`; **one** combined advisory toast per loaded SVG (never one toast per issue) when external images were ignored and/or the SVG contains text; while text is still not drawn, the text sentence says so plainly and recommends converting text to outlines; documentation corrected (`functional-spec.md` §15). New `en`/`ja` keys.
+- **Phase 2b (text rendering, after 2a):** shared font database; **generic-family repair** (after loading, check that `sans-serif`, `serif`, `monospace` resolve to a face that actually has Latin glyphs, using the face's character map, not its name; otherwise point the generic at a chosen installed text family; never accept a symbol face); the honest substitution advisory (F3) driven by `analyze(missing_families)`. The advisory text changes from "text is not drawn" to "text uses a substitute font; outline your text for the same result everywhere". No bundled font (Q1 stands).
+- **Why split:** 2a closes a privacy-relevant file read and ends silent misleading output with little code and no cross-platform font risk; 2b is a visible feature with platform-dependent behaviour (including Flatpak, whose sandbox exposes a different font set: RFC 023) and needs its own evidence.
+- **Release scope** (whether 2a must precede the first AUR release) is the owner's decision; the architect recommends yes.
 
 ## Tests (design-derived)
 
