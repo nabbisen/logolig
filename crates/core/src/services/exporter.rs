@@ -209,7 +209,32 @@ pub fn run_in_memory(
         push_artifact(&mut artifacts, "favicon-snippet.html", html.into_bytes());
     }
 
+    // Invariant (RFC 009): every artifact has a unique relative path.
+    ensure_unique_paths(&artifacts)?;
     Ok(artifacts)
+}
+
+/// Verifies that no two artifacts share a relative path (RFC 009).
+///
+/// Paths are compared **case-insensitively**: extracting an archive built from
+/// `Favicon.ico` and `favicon.ico` onto a case-insensitive file system (Windows,
+/// macOS) would silently overwrite one of them.
+///
+/// Returns `AppError::Export("duplicate artifact path: <path>")` for the first
+/// collision found, so a future optional output that reuses a name fails a test
+/// instead of surfacing as a user-facing ZIP error.
+pub fn ensure_unique_paths(artifacts: &[InMemoryArtifact]) -> Result<(), AppError> {
+    let mut seen = std::collections::HashSet::with_capacity(artifacts.len());
+    for artifact in artifacts {
+        let key = artifact.relative_path.to_string_lossy().to_lowercase();
+        if !seen.insert(key) {
+            return Err(AppError::export(format!(
+                "duplicate artifact path: {}",
+                artifact.relative_path.display()
+            )));
+        }
+    }
+    Ok(())
 }
 
 /// Write to disk (legacy path from ≤ v1.15). Refactored in v1.19.0:
