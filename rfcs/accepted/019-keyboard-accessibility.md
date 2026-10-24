@@ -58,6 +58,20 @@ Executed on Linux (X11 backend with `xdotool`, native Wayland with `wtype`) agai
 - **README tagline (owner decision, 2026-10-21): the tagline stays; the product is improved instead.** The owner declined to temper "accessible" and asked to **enhance the keyboard UI/UX**. This raises the priority of this RFC and of the focus-model RFC (027): the claim must become true. Until it is true the documentation (already corrected) states the limits exactly, and the architect's schedule (`ROADMAP.md`) puts phase 2 (shortcuts for the main path) into the first public release and the focus model into the next one. The tagline wording itself remains the owner's.
 - Two source comments still claim keyboard accessibility (`ui/drop_zone.rs:6`, `ui/preview_panel.rs:134`); they are corrected in phase 2.
 
+## Phase 2 design (binding; architect, 2026-10-24)
+
+Global shortcuts for the main task, with the in-app list; no focus machinery (RFC 027). Cmd = Ctrl on Linux/Windows, Cmd on macOS. A shortcut fires only on a non-repeat key press that no widget captured, and **only when the control it stands for is available to the mouse**:
+
+| Keys | Action | Active when |
+|---|---|---|
+| Cmd+O | choose a file | Home page, Empty or Result screen |
+| Cmd+S | download all (ZIP) | Home page, Result screen with assets |
+| Esc | dismiss the newest toast; if none, go back | toast: always; back: Home page, Result screen |
+| Cmd+1 / 2 / 3 | Home / Customize / Settings | always |
+| F1 | Settings page (the shortcut list) | always |
+
+Letters and digits match layout-independently (`Key::to_latin(physical_key)`, so Japanese layouts work) and require exactly the command modifier (no Shift, no Alt); Esc and F1 take no modifier; plain letters never trigger anything. The list is a section on the **Settings page** (no new page): keys, action in the user's language, and the honest sentence that moving between buttons and fields with Tab is not available yet. snora's F6 zone navigation, `dismiss_on_escape`, Tab and arrow keys are **not** used in this phase. The Customize page stays mouse-only until RFC 027; the documentation says so. Native Wayland, which had no positive control in phase 1, gets one from the visible effect of Cmd+2.
+
 ## Out of scope
 
 Screen-reader support (no accessibility tree in iced 0.14 was found in this review; confirm in step 1), high-contrast presets (tracked with the Snora Design System decision DEC-004).
