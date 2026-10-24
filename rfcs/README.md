@@ -36,6 +36,7 @@ RFC 009 and RFC 010 are implemented on `main` and move to `done/` with the relea
 | [024](./accepted/024-dependency-and-toolchain-baseline.md) | Dependency and toolchain baseline (MSRV, `cargo audit`) | P1 |
 | [025](./accepted/025-window-application-id.md) | Window application ID and desktop integration | P1 |
 | [028](./accepted/028-snora-upgrade-0-53.md) | Upgrade snora 0.25.2 → 0.53.0 | P1 |
+| [029](./accepted/029-toast-lifetime-by-content.md) | Toast lifetime proportional to its content | P1 |
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
 | [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phase 1 done; phase 2 shortcuts next) | P1 |
 | [027](./accepted/027-keyboard-focus-model.md) | Keyboard focus model (phased: spike first) | P1 |
@@ -47,7 +48,6 @@ RFC 009 and RFC 010 are implemented on `main` and move to `done/` with the relea
 
 | # | Title | Priority |
 | --- | --- | --- |
-| [029](./proposed/029-toast-lifetime-by-content.md) | Toast lifetime proportional to its content (P1 if authorized into 1.27.0) | P1 / P2 |
 | [011](./proposed/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
 | [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
 | [013](./proposed/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |

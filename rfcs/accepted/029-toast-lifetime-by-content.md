@@ -1,7 +1,8 @@
 # RFC 029 — Toast lifetime proportional to its content
 
-**Status.** Proposed
-**Priority.** P1 if the owner authorizes it into release 1.27.0 (architect's recommendation); otherwise P2
+**Status.** Accepted (owner authorized it into release 1.27.0 as job J3b, 2026-10-24)
+**Priority.** P1
+**Handoffs.** [rfcs/handoffs/029-toast-lifetime-by-content/](../handoffs/029-toast-lifetime-by-content/README.md)
 **Tracks.** UX defect: advisory toasts disappear before they can be read.
 **Touches.** `crates/app/src/app.rs` (`push_warning_toast` and callers), tests, `docs/src/functional-spec.md` §10.
 
@@ -19,10 +20,10 @@ Every warning toast uses snora's default lifetime of **4 seconds**, while the ap
 
 ## Design
 
-1. **Lifetime by content, not a constant.** Transient toasts get `max(4 s, 3 s + 0.35 s × words)`, capped at 20 s; the word count is taken from the displayed title plus body (a Unicode-aware count: for Japanese, which has no spaces, count characters ÷ 4 as the estimate of "words"). One helper, one place, covered by table tests. Example: 9 s for the non-square advisory, 12.5 s JPEG, 20 s (cap) SVG combined.
+1. **Lifetime by content, not a constant.** For every **transient** toast: `lifetime = clamp(2 s + 0.3 s × units, 4 s, 20 s)`, where `units` is the reading size of the displayed title plus body: each whitespace-separated token of non-CJK text counts `max(1, ceil(chars / 6))` (so a long path is not counted as one word), and each CJK character (Han, Hiragana, Katakana, Hangul) counts 0.4 (Japanese reads at roughly 500 characters per minute against about 200 words per minute for English, i.e. about 0.4 word per character). 0.3 s per unit is 200 words per minute; 2 s is the margin to notice and start reading. One pure function, one place. Corrected examples (the first draft of this RFC had wrong arithmetic): computed on the real texts (long words count as several units): English non-square advisory **12 s**, JPEG advisory **17 s**, SVG combined advisory **20 s** (cap), SVG images-only **13 s**, a short toast **4 s**; Japanese non-square **11 s**, JPEG **15 s**, SVG combined **20 s**.
 2. **Hover/focus does not extend it** in this RFC (snora 0.53 has no such hook; do not invent one). Every toast keeps its `×`.
 3. **Alternative considered: persistent advisories** (dismissed by the user, as errors are). Rejected as the default: stacking several persistent advisories clutters the screen ("less is more") and they never go away if ignored; revisit if user feedback says transient is not enough.
-4. Errors stay persistent; the 7 s success toast becomes the same formula (a path of eight words reads in 6 s, so it stays about the same).
+4. Errors stay persistent. The long success toast (a saved path) keeps its 7 s as a **minimum**: its lifetime is `max(7 s, formula)`, so it does not get shorter.
 5. Documentation: `functional-spec.md` §10 states that toast time scales with length.
 
 ## Tests (design-derived)
@@ -37,8 +38,8 @@ No advisory toast expires before a typical reader can finish it; the formula is 
 
 ## Decisions requested
 
-- **D1** Add this as a small job **J3b** to release 1.27.0, before the keyboard job? The architect recommends yes: the SVG, JPEG and non-square advisories are part of 1.27.0 and are only useful if they can be read; the change is one helper and tests (size S). It is a scope addition and therefore needs the owner's authorization.
-- **D2** The formula and the 20 s cap are the architect's proposal; the owner may prefer other numbers.
+- **D1 — decided by the owner (2026-10-24): authorized into release 1.27.0 as job J3b, before the keyboard job.** The SVG, JPEG and non-square advisories are part of 1.27.0 and are only useful if they can be read; the change is one helper and tests (size S).
+- **D2** The formula and the 20 s cap are the architect's proposal; the owner may prefer other numbers (recorded as accepted by the owner's authorization of the job; changing a constant later is a one-line change).
 
 ## Risk
 
