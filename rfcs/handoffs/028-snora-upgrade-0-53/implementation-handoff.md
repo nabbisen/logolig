@@ -47,15 +47,42 @@ Move the GUI toolkit layer from snora 0.25.2 to 0.53.0 with the same features, s
 4. Licences: list the licence of every new crate in the lock diff (`cargo metadata` or the crate manifests). The project is Apache-2.0; report anything that is not clearly compatible.
 5. After the change, run the gates, capture **after** screenshots, run the manual checks (§6), retake the README screenshot (§6.3).
 
-## 6. Required evidence
+## 6. Required evidence (revised 2026-10-24 after the implementer's interim request: evidence proportional to risk, compared by machine, inspected by eye only where it differs)
 
-All GUI work follows `.git-exclude/rules/project-instructions-gui-common.md`: run with an **isolated config** (`XDG_CONFIG_HOME` pointing at a scratch directory; never touch the maintainer's real settings), resize to 1280 × 720 and focus the window before typing, capture with `niri msg action screenshot-window --id <id> --path <relative path>` (not ImageMagick `import`).
+**Principle.** Evidence has to answer a question; its quantity is not the measure. The questions for this job are: (Q-a) did anything visible change that we did not intend, (Q-b) is the upstream toast click-through fix really in effect, (Q-c) does the application still behave as before, (Q-d) is the README picture current. Prefer machine comparison (byte or pixel compare) and recorded state (file contents, command output) over pictures; look at a picture only when a comparison says it differs or when the picture is itself a deliverable.
 
-1. **Before/after screenshots**, same input and window size, for: Home empty; Home Result (use `packaging/windows/Assets/Square150x150Logo.png` as the input file, default plan); Customize (Advanced expanded); Settings; each in **Light and Dark** theme; plus the mobile layout at about 700 px width for Home Result. Put them side by side in the review request and describe each visible difference in words (colours, sizes, spacing, anything that moved).
-2. **Toast behaviour** (the 0.41 fix and the toast changes): trigger toasts of each kind you can reach (warning: type an invalid custom size such as `5` in Customize and press Add; success: save a file; the non-square or JPEG advisory by dropping a suitable file; error: drop an unsupported file), and record for each: appearance, auto-dismiss time, the dismiss `×`, and that a **click on a toast body does not activate a widget beneath it** (arrange the page so that a control lies under the toast, click the toast body, confirm nothing underneath reacts; also run the same check on the base build to show the difference, or say that it cannot be arranged).
-3. **README screenshot.** Replace `docs/assets/screenshot-01.png` with a fresh capture of the same scenario as the current one (Result screen, dark theme, input = `Square150x150Logo.png`, Microsoft app logos enabled in Customize, the Preview section collapsed), window about 1026 × 943 if possible. Say which platform and compositor you used; the old one was a Windows capture, a Linux one is acceptable. Check that the download icons render correctly and that no personal data is visible (window title, paths). Update the README sentence only if it describes something that changed.
-4. **Regression check by use:** language switch (English, Japanese, system), theme switch, settings persistence across a restart (isolated config), navigation Home/Customize/Settings, the bottom navigation at mobile width, drag-hover feedback (`FileHovered`) if you can produce it, the ZIP download with monochrome on. **This check also closes an open item of job J1 (the `zip` 9 upgrade):** enable the monochrome option in Customize through the UI, convert a PNG, press "Download all (ZIP)", save through the dialog, and record `unzip -l` and `unzip -t` of the saved archive (expected: every artifact once, including `mono/favicon-32.png`, `mono/favicon-192.png`, `mono/favicon-512.png`, `mono/favicon.ico`, and no errors).
-5. **Dependency evidence:** `cargo tree -p logolig-app --depth 1` before and after; `cargo audit` before and after (expected: same advisories, snora-related warning set possibly changed; report the delta; **no new vulnerability allowed**).
+All GUI work follows `.git-exclude/rules/project-instructions-gui-common.md` plus the automation rules in 6.6.
+
+**6.1 Visual regression (Q-a).**
+1. **Reuse the existing 12 "before" captures** (6 views × Light/Dark, taken on base commit `13ba2b0` and checked by the architect: all distinct, sizes 1536 × 864 and 840 × 864). Do not retake them.
+2. After the upgrade, run **the same capture script once** with the new build to produce the matching 12 "after" files, same pinned config, same input (`packaging/windows/Assets/Square150x150Logo.png`).
+3. Compare each before/after pair automatically (identical bytes, or a pixel-difference count). Report a 12-row table: view, theme, `identical` or `differs (N pixels, where)`.
+4. Only for pairs that differ: look at them and describe the difference in words. Only then read the appearance guides that can explain it (`guides/migration-0.49-to-0.50.md`, `-0.50-to-0.51.md`, `-0.51-to-0.52.md`, `-0.52-to-0.53.md`); do not read them in advance. If a difference is unexplained by the guides, say so.
+5. If the "after" set is **all identical**, say so and stop: that is the best outcome and needs no further pictures.
+
+**6.2 Toasts (Q-b).** On the base build you already recorded that a click on an error toast's body opened the file chooser underneath ("YES") and that the `×` removes the toast; those base files (`toast-before-00..05`) are accepted as the baseline. Required on the new build, nothing more:
+1. Error toast (fake `.png`): click its body: the chooser must **not** open (expected "NO"); then click `×`: it disappears. Record the same three captures as the baseline (`after-01-error-toast`, `after-02-after-body-click`, `after-03-after-x`).
+2. Warning toast (invalid custom size `5` in Customize): one capture while visible (pair of `toast-before-05`). Auto-dismiss time: **read it from the source** (`snora-core` 0.25.2 `toast.rs:164`: `ToastLifetime::DEFAULT` = 4 s; the application sets 7 s explicitly for the long success toast, `crates/app/src/app.rs`), compare it with the 0.53 source, and confirm with **one** timed check: two captures, one right after the toast appears and one at about 5 s showing it gone. **Do not sample frames densely.**
+3. Success and advisory toasts use the same widget and are not required.
+
+**6.3 README screenshot (Q-d).** Replace `docs/assets/screenshot-01.png` with a fresh capture of the same scenario as the current one (Result screen, dark theme, input = `Square150x150Logo.png`, Microsoft app logos enabled in Customize, Preview collapsed), about 1026 × 943 if possible: **at most two attempts**. Say which platform and compositor you used (the old one was a Windows capture). Check that the download icons render and that no personal data (title, paths) is visible.
+
+**6.4 Regression by use (Q-c), evidence by state, not by pictures.**
+- Theme switch through the UI (Settings): the `theme` value in the isolated `settings.json` changes, and **one** capture shows the repaint.
+- Language switch: English, Japanese, system: the `locale` value in `settings.json` after each; **one** capture of a Japanese screen (shows that text and icons render with the new snora).
+- Persistence: restart the app with the same isolated config; read `settings.json` and note that the choices survived (no picture).
+- Navigation Home/Customize/Settings and the bottom navigation at mobile width: already covered by the 12-pair matrix (the 700 px views); no extra pictures.
+- Drag-hover feedback: **not required** (snora does not touch it; RFC 007 already tracks its platform limits).
+- **ZIP with monochrome (closes the open J1 item):** enable monochrome in Customize through the UI, convert a PNG, press "Download all (ZIP)", save through the dialog; record `unzip -l` and `unzip -t` text output (expected: every artifact once, including `mono/favicon-32.png`, `mono/favicon-192.png`, `mono/favicon-512.png`, `mono/favicon.ico`; no errors). No picture needed.
+
+**6.5 Dependency evidence:** `cargo tree -p logolig-app --depth 1` before and after (the "before" files exist); `cargo audit` before and after (before: 0 vulnerabilities, 12 warnings; report the delta; **no new vulnerability allowed**); lock diff and licences of added crates as in section 5.
+
+**6.6 GUI automation rules (apply to every capture script).**
+- Name the binary `logolig` (the config directory is named after the executable's file name); run **exactly one** instance; before starting, require zero running instances; kill by exact process name; pick the window by process id.
+- A dialog is a window that appeared after your click; after each step assert that the screen changed as expected; **abort the run at the first anomaly** and report it instead of repeating the whole set.
+- No frame-sampling loops. A measurement that needs more than a few captures must be replaced by reading the source or by a single timed check.
+- If the same capture set has to be repeated a second time, stop and ask the architect before a third.
+- The architect proposes to the owner that these rules also be added to `project-instructions-gui-common.md`.
 
 ## 7. Required validation (report exactly what was and was not run)
 
