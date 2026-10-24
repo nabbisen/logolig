@@ -94,6 +94,7 @@ An SVG is self-contained as far as Logolig is concerned:
 - **Text is not drawn yet.** No fonts are loaded, so `<text>` renders as nothing. Convert text to
   outlines (paths) in your design tool before loading the SVG; the result is then the same on
   every computer.
+- **`favicon.svg` is the source SVG, unchanged** (the source is never modified). It therefore keeps any file references and any `<text>` as written: a browser draws that text with its own fonts and cannot load a file path from your computer. Embedding the images and converting text to outlines makes `favicon.svg` self-contained as well.
 - When an SVG has ignored image references and/or text, Logolig says so once, in one toast, when
   the file is loaded.
 
