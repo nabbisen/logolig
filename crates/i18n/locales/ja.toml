@@ -217,3 +217,12 @@ nav_settings = "設定"
 # v1.24.0: 履歴カード
 history_last_conversion_label = "前回の変換"
 history_view_results_button = "結果を見る →"
+
+# RFC 019 phase 2: 設定ページのキーボードショートカット一覧
+shortcuts_section_title = "キーボードショートカット"
+shortcut_choose_file = "ファイルを選ぶ"
+shortcut_download_all = "すべてダウンロード（ZIP）"
+shortcut_escape = "メッセージを閉じる、または最初の画面に戻る"
+shortcut_pages = "ホーム・カスタマイズ・設定を開く"
+shortcut_help = "この一覧を表示"
+shortcuts_limit_note = "Tab キーでボタンや入力欄の間を移動する機能は、まだありません。"

@@ -303,4 +303,20 @@ pub enum MessageKey {
     HistoryLastConversionLabel,
     /// Button label to return to the Result screen ("View results →").
     HistoryViewResultsButton,
+
+    // --- RFC 019 phase 2: keyboard shortcut list on the Settings page ---
+    /// Section title of the shortcut list ("Keyboard shortcuts").
+    ShortcutsSectionTitle,
+    /// Action text: open the file chooser.
+    ShortcutChooseFile,
+    /// Action text: download all results as a ZIP.
+    ShortcutDownloadAll,
+    /// Action text for Esc: close the newest message, or go back to the start.
+    ShortcutEscape,
+    /// Action text: switch to Home, Customize or Settings.
+    ShortcutPages,
+    /// Action text for F1: show this list.
+    ShortcutHelp,
+    /// Honest note: Tab traversal between buttons and fields is not available yet.
+    ShortcutsLimitNote,
 }

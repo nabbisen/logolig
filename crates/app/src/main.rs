@@ -3,6 +3,7 @@ mod app;
 mod native_store;
 mod result;
 mod shell;
+mod shortcuts;
 mod task_queue;
 mod toast_time;
 mod ui;

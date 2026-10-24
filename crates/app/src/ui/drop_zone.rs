@@ -3,7 +3,8 @@
 //! Design principles:
 //! - Show no settings — the user hasn't chosen a file yet
 //! - Single large drop target fills the content area
-//! - Keyboard-accessible alternative path (file chooser button)
+//! - A file chooser button as the alternative to dragging. The button itself is operated with
+//!   the mouse; the same file chooser opens with Ctrl+O (Cmd+O on macOS), see `crate::shortcuts`
 //! - v1.26.1: the whole drop zone is clickable and native drag hover is
 //!   highlighted when the platform reports it
 //!

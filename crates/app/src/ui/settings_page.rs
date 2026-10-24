@@ -72,8 +72,10 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
         &theme,
     );
 
+    let shortcuts_section = shortcuts_section(state, &theme);
+
     container(
-        column![language_section, theme_section]
+        column![language_section, theme_section, shortcuts_section]
             .spacing(32)
             .padding([24, 32])
             .max_width(480),
@@ -94,6 +96,55 @@ fn section<'a>(
     let heading = text(title).size(15).color(colors::page_title(theme));
 
     column![heading, content].spacing(12).into()
+}
+
+// ---------------------------------------------------------------------------
+// Keyboard shortcuts (RFC 019 phase 2)
+// ---------------------------------------------------------------------------
+
+/// Width of the column that holds the key combinations.
+const SHORTCUT_KEYS_WIDTH: f32 = 140.0;
+
+/// The list of global shortcuts and the honest note about what the keyboard cannot do yet.
+///
+/// The key labels are not translated; the command key is `Ctrl` (`Cmd` on macOS).
+fn shortcuts_section<'a>(state: &'a AppState, theme: &Theme) -> Element<'a, Message> {
+    let t = &state.translator;
+    let cmd = crate::shortcuts::command_key_label();
+
+    let rows = [
+        (format!("{cmd}+O"), MessageKey::ShortcutChooseFile),
+        (format!("{cmd}+S"), MessageKey::ShortcutDownloadAll),
+        ("Esc".to_string(), MessageKey::ShortcutEscape),
+        (format!("{cmd}+1 / 2 / 3"), MessageKey::ShortcutPages),
+        ("F1".to_string(), MessageKey::ShortcutHelp),
+    ];
+    let text_color = theme.extended_palette().background.base.text;
+
+    let list = rows
+        .into_iter()
+        .fold(column![].spacing(8), |list, (keys, action)| {
+            list.push(
+                row![
+                    text(keys)
+                        .size(14)
+                        .color(colors::page_title(theme))
+                        .width(Length::Fixed(SHORTCUT_KEYS_WIDTH)),
+                    text(t.t(action)).size(14).color(text_color),
+                ]
+                .spacing(12),
+            )
+        });
+
+    let note = text(t.t(MessageKey::ShortcutsLimitNote))
+        .size(13)
+        .color(colors::muted_text(theme));
+
+    section(
+        t.t(MessageKey::ShortcutsSectionTitle),
+        column![list, note].spacing(12).into(),
+        theme,
+    )
 }
 
 // ---------------------------------------------------------------------------

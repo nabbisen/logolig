@@ -224,6 +224,15 @@ pub(crate) struct Dictionary {
     // v1.24.0: history card
     pub history_last_conversion_label: String,
     pub history_view_results_button: String,
+
+    // RFC 019 phase 2: keyboard shortcut list
+    pub shortcuts_section_title: String,
+    pub shortcut_choose_file: String,
+    pub shortcut_download_all: String,
+    pub shortcut_escape: String,
+    pub shortcut_pages: String,
+    pub shortcut_help: String,
+    pub shortcuts_limit_note: String,
 }
 
 impl Dictionary {
@@ -442,6 +451,14 @@ impl Dictionary {
             // v1.24.0
             MessageKey::HistoryLastConversionLabel => &self.history_last_conversion_label,
             MessageKey::HistoryViewResultsButton => &self.history_view_results_button,
+            // RFC 019 phase 2
+            MessageKey::ShortcutsSectionTitle => &self.shortcuts_section_title,
+            MessageKey::ShortcutChooseFile => &self.shortcut_choose_file,
+            MessageKey::ShortcutDownloadAll => &self.shortcut_download_all,
+            MessageKey::ShortcutEscape => &self.shortcut_escape,
+            MessageKey::ShortcutPages => &self.shortcut_pages,
+            MessageKey::ShortcutHelp => &self.shortcut_help,
+            MessageKey::ShortcutsLimitNote => &self.shortcuts_limit_note,
         }
     }
 }

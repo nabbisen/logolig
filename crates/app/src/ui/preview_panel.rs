@@ -131,7 +131,8 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 // if needed.
 
 // ---------------------------------------------------------------------------
-// Context / background switcher UI (uses buttons as keyboard-accessible §12)
+// Context / background switcher UI (buttons operated with the mouse; there is no Tab focus
+// traversal yet, RFC 027)
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------

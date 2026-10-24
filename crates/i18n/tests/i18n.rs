@@ -313,3 +313,71 @@ fn svg_toast_texts_match_the_specification() {
         "Logolig は SVG 内の文字をまだ描画できません。デザインツールで文字をアウトライン化（パス化）してから、SVG を読み込み直してください。"
     );
 }
+
+// ---------------------------------------------------------------------------
+// RFC 019 phase 2: the keyboard shortcut list on the Settings page
+// ---------------------------------------------------------------------------
+
+const SHORTCUT_KEYS: [MessageKey; 7] = [
+    MessageKey::ShortcutsSectionTitle,
+    MessageKey::ShortcutChooseFile,
+    MessageKey::ShortcutDownloadAll,
+    MessageKey::ShortcutEscape,
+    MessageKey::ShortcutPages,
+    MessageKey::ShortcutHelp,
+    MessageKey::ShortcutsLimitNote,
+];
+
+#[test]
+fn shortcut_texts_exist_in_both_languages_and_differ() {
+    let en = Translator::for_locale(Locale::En);
+    let ja = Translator::for_locale(Locale::Ja);
+    for key in SHORTCUT_KEYS {
+        assert!(!en.t(key).is_empty(), "en {key:?} is empty");
+        assert!(!ja.t(key).is_empty(), "ja {key:?} is empty");
+        assert_ne!(en.t(key), ja.t(key), "{key:?} should differ between en/ja");
+    }
+}
+
+#[test]
+fn shortcut_texts_match_the_specification() {
+    let en = Translator::for_locale(Locale::En);
+    let ja = Translator::for_locale(Locale::Ja);
+    let expected = [
+        (
+            MessageKey::ShortcutsSectionTitle,
+            "Keyboard shortcuts",
+            "キーボードショートカット",
+        ),
+        (
+            MessageKey::ShortcutChooseFile,
+            "Choose a file",
+            "ファイルを選ぶ",
+        ),
+        (
+            MessageKey::ShortcutDownloadAll,
+            "Download all (ZIP)",
+            "すべてダウンロード（ZIP）",
+        ),
+        (
+            MessageKey::ShortcutEscape,
+            "Close the message, or go back to the start",
+            "メッセージを閉じる、または最初の画面に戻る",
+        ),
+        (
+            MessageKey::ShortcutPages,
+            "Go to Home, Customize or Settings",
+            "ホーム・カスタマイズ・設定を開く",
+        ),
+        (MessageKey::ShortcutHelp, "Show this list", "この一覧を表示"),
+        (
+            MessageKey::ShortcutsLimitNote,
+            "Moving between buttons and fields with the Tab key is not available yet.",
+            "Tab キーでボタンや入力欄の間を移動する機能は、まだありません。",
+        ),
+    ];
+    for (key, en_text, ja_text) in expected {
+        assert_eq!(en.t(key), en_text, "en {key:?}");
+        assert_eq!(ja.t(key), ja_text, "ja {key:?}");
+    }
+}

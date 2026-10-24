@@ -215,3 +215,12 @@ nav_settings = "Settings"
 # v1.24.0: history card on the Empty screen
 history_last_conversion_label = "Last conversion"
 history_view_results_button = "View results →"
+
+# RFC 019 phase 2: keyboard shortcut list on the Settings page
+shortcuts_section_title = "Keyboard shortcuts"
+shortcut_choose_file = "Choose a file"
+shortcut_download_all = "Download all (ZIP)"
+shortcut_escape = "Close the message, or go back to the start"
+shortcut_pages = "Go to Home, Customize or Settings"
+shortcut_help = "Show this list"
+shortcuts_limit_note = "Moving between buttons and fields with the Tab key is not available yet."
