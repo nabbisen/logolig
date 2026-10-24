@@ -1188,12 +1188,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4"
 
 [[package]]
-name = "float_next_after"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bf7cc16383c4b8d58b9905a8509f02926ce3058053c056376248d958c9df1e8"
-
-[[package]]
 name = "foldhash"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1729,7 +1723,6 @@ dependencies = [
  "image 0.25.10",
  "kamadak-exif",
  "log",
- "lyon_path",
  "raw-window-handle",
  "rustc-hash 2.1.2",
  "thiserror 2.0.18",
@@ -1784,7 +1777,6 @@ dependencies = [
  "iced_graphics",
  "kurbo 0.10.4",
  "log",
- "resvg",
  "rustc-hash 2.1.2",
  "softbuffer",
  "tiny-skia",
@@ -1805,8 +1797,6 @@ dependencies = [
  "iced_debug",
  "iced_graphics",
  "log",
- "lyon",
- "resvg",
  "rustc-hash 2.1.2",
  "thiserror 2.0.18",
  "wgpu",
@@ -2383,61 +2373,6 @@ name = "lucide-icons"
 version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ada83468e5be8c9b17564fc0c0732435311cde019d83aa4d8815c865186ef7d"
-dependencies = [
- "iced",
-]
-
-[[package]]
-name = "lyon"
-version = "1.0.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd0578bdecb7d6d88987b8b2b1e3a4e2f81df9d0ece1078623324a567904e7b7"
-dependencies = [
- "lyon_algorithms",
- "lyon_tessellation",
-]
-
-[[package]]
-name = "lyon_algorithms"
-version = "1.0.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8575c0d003ae459399623c4def180c63b77f343b1a7fee64f249b349e7699a31"
-dependencies = [
- "lyon_path",
- "num-traits",
-]
-
-[[package]]
-name = "lyon_geom"
-version = "1.0.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4336502e29e32af93cf2dad2214ed6003c17ceb5bd499df77b1de663b9042b92"
-dependencies = [
- "arrayvec",
- "euclid",
- "num-traits",
-]
-
-[[package]]
-name = "lyon_path"
-version = "1.0.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c463f9c428b7fc5ec885dcd39ce4aa61e29111d0e33483f6f98c74e89d8621e"
-dependencies = [
- "lyon_geom",
- "num-traits",
-]
-
-[[package]]
-name = "lyon_tessellation"
-version = "1.0.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e43b7e44161571868f5c931d12583592c223c5583eef86b08aa02b7048a3552"
-dependencies = [
- "float_next_after",
- "lyon_path",
- "num-traits",
-]
 
 [[package]]
 name = "malloc_buf"
@@ -4062,9 +3997,9 @@ dependencies = [
 
 [[package]]
 name = "snora"
-version = "0.25.2"
+version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9462363b7d6b86e54a7be6b44e3c5e8650e23e1e699118cf14fd7c9aac0e0a5"
+checksum = "cd42674082482e534b440450ce41f45206316f418c20842f52680babf8bf3cc1"
 dependencies = [
  "iced",
  "lucide-icons",
@@ -4074,18 +4009,18 @@ dependencies = [
 
 [[package]]
 name = "snora-core"
-version = "0.25.2"
+version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "890987cab9f865f6da8b497e641d59757f82132ceb77b63e450c8a1821864b39"
+checksum = "8839a7df7be6c4f8c1d4932f7a20c7403b9e25d3e163c07ce26e5157872e1378"
 dependencies = [
  "lucide-icons",
 ]
 
 [[package]]
 name = "snora-widgets"
-version = "0.25.2"
+version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6131ae5ff821f188e2d31fb6153901d2d7df957a74805cf126d6b6d75bedf33"
+checksum = "b2e97350c9f141cb094d465fa946e6ad0f2c2da8af4394993a282aba393c0999"
 dependencies = [
  "iced",
  "lucide-icons",

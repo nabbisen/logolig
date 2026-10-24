@@ -19,7 +19,7 @@ logolig                 = { version = "1", path = "crates/core" }
 logolig-i18n            = { version = "1", path = "crates/i18n" }
 
 iced                    = { version = "0.14", features = ["tokio", "image"] }
-snora                   = { version = "0.25", default-features = false, features = ["widgets", "lucide-icons"] }
+snora                   = { version = "0.53", default-features = false, features = ["widgets", "lucide-icons"] }
 
 app-json-settings       = "2"
 rfd                     = "0.15"
