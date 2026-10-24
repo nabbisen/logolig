@@ -81,6 +81,22 @@ that exact size**. ICO frames are not scaled from a "master"
 bitmap — this is what produces the jaggy 16×16 favicons on most
 online generators. We avoid that mode entirely.
 
+## SVG sources
+
+An SVG is self-contained as far as Logolig is concerned:
+
+- **Embedded images are used; files are not read.** An `<image>` whose `href` is a `data:` URL is
+  drawn. A reference to anything else (an absolute path, a path relative to the working
+  directory, a nested SVG file) is **ignored**: Logolig never reads a file named inside an SVG,
+  neither when the SVG is loaded nor when it is rendered. This protects against an SVG from a
+  third party pulling a private local file into the icons you publish. Embed the images in the
+  SVG to include them.
+- **Text is not drawn yet.** No fonts are loaded, so `<text>` renders as nothing. Convert text to
+  outlines (paths) in your design tool before loading the SVG; the result is then the same on
+  every computer.
+- When an SVG has ignored image references and/or text, Logolig says so once, in one toast, when
+  the file is loaded.
+
 ## Source non-destructiveness
 
 `SourceAsset::raw` (an `Arc<[u8]>`) is the canonical source. Every

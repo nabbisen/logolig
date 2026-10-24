@@ -443,6 +443,11 @@ pub enum Message {
     /// `state.result_assets`. Only reachable from the history card on the
     /// Empty screen, so `result_assets` is always `Some` when this fires.
     ShowLastResultRequested,
+
+    // RFC 015 phase 2a: result of the off-thread SVG analysis.
+    /// The SVG at `PathBuf` was analysed. Ignored when it is no longer the current source
+    /// (a newer file was loaded in the meantime). Never sent for non-SVG sources.
+    SvgAnalyzed(PathBuf, logolig::SvgReport),
 }
 
 // ----------------------------------------------------------------------
@@ -598,6 +603,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::IngestCompleted(Ok(asset)) => {
             // RFC 010: decide before `asset` is moved into the state.
             let non_square = is_non_square(asset.intrinsic_size);
+            // RFC 015 phase 2a: only SVG sources are analysed for parts that are not shown.
+            let is_svg = asset.kind == logolig::SourceKind::Svg;
             // Arc the asset so it can be moved into the async preview task.
             // SourceAsset is Clone (Arc<[u8]>-backed) so this is cheap.
             let arc = std::sync::Arc::new(asset.clone());
@@ -624,11 +631,26 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             if non_square {
                 push_non_square_warning(state);
             }
-            // Launch (a) and (b) in parallel.
-            Task::batch([
+            // Launch (a) and (b) in parallel; for an SVG also (c) the analysis for the advisory.
+            let mut tasks = vec![
                 crate::task_queue::build_preview_task(arc.clone(), state.export_plan.algorithm),
-                crate::task_queue::convert_task(arc, state.export_plan.clone()),
-            ])
+                crate::task_queue::convert_task(arc.clone(), state.export_plan.clone()),
+            ];
+            if is_svg {
+                tasks.push(crate::task_queue::analyze_svg_task(arc));
+            }
+            Task::batch(tasks)
+        }
+        Message::SvgAnalyzed(path, report) => {
+            // Stale result (another file was loaded since): ignore.
+            let is_current = state
+                .source_asset
+                .as_ref()
+                .is_some_and(|asset| asset.path == path);
+            if is_current && (report.has_text || report.ignored_external_images > 0) {
+                push_svg_parts_warning(state, report);
+            }
+            Task::none()
         }
         Message::IngestCompleted(Err(err)) => fail(state, err),
 
@@ -1281,6 +1303,21 @@ fn push_non_square_warning(state: &mut AppState) {
     push_warning_toast(state, &title, &body);
 }
 
+/// RFC 015 phase 2a: one combined warning for an SVG whose parts are not shown. The body holds
+/// the applicable sentences (images first, then text), one per line, so there is never more than
+/// one toast per loaded SVG. Transient and non-blocking.
+fn push_svg_parts_warning(state: &mut AppState, report: logolig::SvgReport) {
+    let title = state.translator.t(MessageKey::ToastSvgPartsTitle);
+    let mut sentences: Vec<String> = Vec::with_capacity(2);
+    if report.ignored_external_images > 0 {
+        sentences.push(state.translator.t(MessageKey::ToastSvgImagesBody));
+    }
+    if report.has_text {
+        sentences.push(state.translator.t(MessageKey::ToastSvgTextBody));
+    }
+    push_warning_toast(state, &title, &sentences.join("\n"));
+}
+
 /// v1.11.0: educational warning for JPEG input.
 ///
 /// JPEG cannot carry alpha, so the v1.7 transparency audit always returns
@@ -1554,5 +1591,119 @@ mod tests {
         assert!(is_non_square(Some((100, 103)))); // 2.9 %: outside
         assert!(!is_non_square(Some((0, 0))));
         assert!(is_non_square(Some((1000, 1))));
+    }
+    // ---- RFC 015 phase 2a: SVG advisory ------------------------------------
+
+    const SVG_TEXT: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><text x="2" y="30" font-size="20">Hi</text></svg>"#;
+    const SVG_IMAGE: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64" height="64"><image width="8" height="8" xlink:href="/some/file.png"/></svg>"#;
+    const SVG_BOTH: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64" height="64"><image width="8" height="8" xlink:href="/some/file.png"/><text x="2" y="30" font-size="20">Hi</text></svg>"#;
+    const SVG_PLAIN: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="8" height="8"/></svg>"#;
+
+    fn svg_asset(path: &str) -> SourceAsset {
+        SourceAsset {
+            path: PathBuf::from(path),
+            kind: logolig::SourceKind::Svg,
+            raw: Arc::<[u8]>::from(b"<svg/>".as_slice()),
+            intrinsic_size: Some((64, 64)),
+        }
+    }
+
+    /// State with `logo.svg` as the current source, as after a successful ingest.
+    fn state_with_svg_source() -> AppState {
+        AppState {
+            source_asset: Some(svg_asset("logo.svg")),
+            ..AppState::default()
+        }
+    }
+
+    fn analyzed(state: &mut AppState, path: &str, svg: &str) {
+        let report = logolig::services::svg::analyze(svg.as_bytes());
+        let _ = update(state, Message::SvgAnalyzed(PathBuf::from(path), report));
+    }
+
+    #[test]
+    fn svg_with_text_and_images_gets_one_toast_with_both_sentences_images_first() {
+        let mut state = state_with_svg_source();
+        analyzed(&mut state, "logo.svg", SVG_BOTH);
+        assert_eq!(
+            state.toasts.len(),
+            1,
+            "exactly one toast, never one per issue"
+        );
+        let t = &state.translator;
+        assert_eq!(state.toasts[0].title, t.t(MessageKey::ToastSvgPartsTitle));
+        let expected = format!(
+            "{}\n{}",
+            t.t(MessageKey::ToastSvgImagesBody),
+            t.t(MessageKey::ToastSvgTextBody)
+        );
+        assert_eq!(state.toasts[0].message, expected);
+    }
+
+    #[test]
+    fn svg_with_only_images_gets_only_the_images_sentence() {
+        let mut state = state_with_svg_source();
+        analyzed(&mut state, "logo.svg", SVG_IMAGE);
+        assert_eq!(state.toasts.len(), 1);
+        assert_eq!(
+            state.toasts[0].message,
+            state.translator.t(MessageKey::ToastSvgImagesBody)
+        );
+    }
+
+    #[test]
+    fn svg_with_only_text_gets_only_the_text_sentence() {
+        let mut state = state_with_svg_source();
+        analyzed(&mut state, "logo.svg", SVG_TEXT);
+        assert_eq!(state.toasts.len(), 1);
+        assert_eq!(
+            state.toasts[0].message,
+            state.translator.t(MessageKey::ToastSvgTextBody)
+        );
+    }
+
+    #[test]
+    fn plain_svg_gets_no_toast() {
+        let mut state = state_with_svg_source();
+        analyzed(&mut state, "logo.svg", SVG_PLAIN);
+        assert!(state.toasts.is_empty());
+    }
+
+    #[test]
+    fn stale_analysis_result_is_ignored() {
+        let mut state = state_with_svg_source();
+        analyzed(&mut state, "an-older-logo.svg", SVG_BOTH);
+        assert!(
+            state.toasts.is_empty(),
+            "result for a file that is no longer current"
+        );
+        let mut no_source = AppState::default();
+        analyzed(&mut no_source, "logo.svg", SVG_BOTH);
+        assert!(no_source.toasts.is_empty(), "no current source at all");
+    }
+
+    #[test]
+    fn analysis_is_started_only_for_svg_sources() {
+        // Preview and conversion are always started (2 units); an SVG adds the analysis (3).
+        let mut png = AppState::default();
+        let task = update(&mut png, Message::IngestCompleted(Ok(dummy_source_asset())));
+        assert_eq!(task.units(), 2, "PNG source: no analysis");
+        let mut svg = AppState::default();
+        let task = update(
+            &mut svg,
+            Message::IngestCompleted(Ok(svg_asset("logo.svg"))),
+        );
+        assert_eq!(task.units(), 3, "SVG source: analysis started");
+    }
+
+    #[test]
+    fn going_back_and_showing_the_last_result_does_not_repeat_the_svg_toast() {
+        let mut state = state_with_svg_source();
+        analyzed(&mut state, "logo.svg", SVG_BOTH);
+        assert_eq!(state.toasts.len(), 1);
+        state.result_assets = Some(dummy_result_assets());
+        let _ = update(&mut state, Message::EditCancelled);
+        let _ = update(&mut state, Message::ShowLastResultRequested);
+        assert_eq!(state.toasts.len(), 1, "no second toast");
     }
 }

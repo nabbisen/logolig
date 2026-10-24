@@ -46,6 +46,20 @@ pub fn pick_file_task() -> Task<Message> {
     )
 }
 
+/// Spawn the analysis of an SVG source (RFC 015 phase 2a): which parts of it are not shown.
+///
+/// CPU-bound, off the UI thread. The result carries the source path so the receiver can
+/// discard it if a newer file has been loaded in the meantime.
+pub fn analyze_svg_task(asset: Arc<SourceAsset>) -> Task<Message> {
+    Task::perform(
+        async move {
+            let report = logolig::services::svg::analyze(&asset.raw);
+            (asset.path.clone(), report)
+        },
+        |(path, report)| Message::SvgAnalyzed(path, report),
+    )
+}
+
 /// Spawn a task that generates preview images (16×16 and 120×120). CPU-bound,
 /// dispatched via `iced::Task::perform` off the UI thread.
 ///

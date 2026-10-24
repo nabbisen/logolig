@@ -171,6 +171,9 @@ pub(crate) struct Dictionary {
     pub toast_jpeg_input_body: String,
     pub toast_non_square_input_title: String,
     pub toast_non_square_input_body: String,
+    pub toast_svg_parts_title: String,
+    pub toast_svg_images_body: String,
+    pub toast_svg_text_body: String,
 
     // Edit-screen flow + preview redesign (v1.12.0)
     pub page_title_edit: String,
@@ -388,6 +391,9 @@ impl Dictionary {
             MessageKey::ToastJpegInputBody => &self.toast_jpeg_input_body,
             MessageKey::ToastNonSquareInputTitle => &self.toast_non_square_input_title,
             MessageKey::ToastNonSquareInputBody => &self.toast_non_square_input_body,
+            MessageKey::ToastSvgPartsTitle => &self.toast_svg_parts_title,
+            MessageKey::ToastSvgImagesBody => &self.toast_svg_images_body,
+            MessageKey::ToastSvgTextBody => &self.toast_svg_text_body,
 
             // v1.12.0
             MessageKey::PageTitleEdit => &self.page_title_edit,

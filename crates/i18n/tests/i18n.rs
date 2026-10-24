@@ -166,6 +166,9 @@ fn japanese_translation_differs_from_english_for_ui_text() {
         MessageKey::SectionLanguage,
         MessageKey::ToastNonSquareInputTitle,
         MessageKey::ToastNonSquareInputBody,
+        MessageKey::ToastSvgPartsTitle,
+        MessageKey::ToastSvgImagesBody,
+        MessageKey::ToastSvgTextBody,
     ];
     for key in differing_keys {
         let en_text = en.t(key);
@@ -212,6 +215,9 @@ fn japanese_every_key_has_non_empty_translation() {
         MessageKey::ToastInvalidSizeTitle,
         MessageKey::ToastNonSquareInputTitle,
         MessageKey::ToastNonSquareInputBody,
+        MessageKey::ToastSvgPartsTitle,
+        MessageKey::ToastSvgImagesBody,
+        MessageKey::ToastSvgTextBody,
         MessageKey::ErrorUnsupportedFile,
         MessageKey::ErrorIo,
         MessageKey::ErrorDecode,
@@ -271,5 +277,39 @@ fn non_square_toast_texts_match_the_specification() {
     assert_eq!(
         ja.t(MessageKey::ToastNonSquareInputBody),
         "ロゴ全体を表示するため、アイコンの周りに余白が付きます。正方形のロゴ画像を用意すると、アイコンを大きく表示できます。"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// RFC 015 phase 2a: SVG advisory texts (fixed by the architect; do not reword)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn svg_toast_texts_match_the_specification() {
+    let en = Translator::for_locale(Locale::En);
+    assert_eq!(
+        en.t(MessageKey::ToastSvgPartsTitle),
+        "Some parts of your SVG are not shown"
+    );
+    assert_eq!(
+        en.t(MessageKey::ToastSvgImagesBody),
+        "It refers to image files on your computer. For your safety Logolig does not read them. Embed the images in the SVG to include them."
+    );
+    assert_eq!(
+        en.t(MessageKey::ToastSvgTextBody),
+        "Logolig does not draw text in SVG files yet. Convert the text to outlines (paths) in your design tool and load the SVG again."
+    );
+    let ja = Translator::for_locale(Locale::Ja);
+    assert_eq!(
+        ja.t(MessageKey::ToastSvgPartsTitle),
+        "SVG の一部が表示されません"
+    );
+    assert_eq!(
+        ja.t(MessageKey::ToastSvgImagesBody),
+        "SVG がこのコンピューター上の画像ファイルを参照しています。安全のため、Logolig はそれらを読み込みません。画像を SVG に埋め込むと反映されます。"
+    );
+    assert_eq!(
+        ja.t(MessageKey::ToastSvgTextBody),
+        "Logolig は SVG 内の文字をまだ描画できません。デザインツールで文字をアウトライン化（パス化）してから、SVG を読み込み直してください。"
     );
 }

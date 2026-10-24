@@ -211,6 +211,12 @@ pub enum MessageKey {
     ToastNonSquareInputTitle,
     /// Toast body for a non-square source. Suggests a square version of the logo.
     ToastNonSquareInputBody,
+    /// Toast title for an SVG with parts that are not shown (RFC 015 phase 2a).
+    ToastSvgPartsTitle,
+    /// Toast body sentence: the SVG refers to image files on the computer (not read).
+    ToastSvgImagesBody,
+    /// Toast body sentence: the SVG contains text (not drawn yet).
+    ToastSvgTextBody,
 
     // --- v1.12.0: Edit screen navigation + preview area refresh ---
     /// Edit/preview screen page title ("Preview & Generate Favicon").

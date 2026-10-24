@@ -161,6 +161,9 @@ toast_jpeg_input_title = "JPEG cannot have transparency"
 toast_jpeg_input_body = "Logolig will use this image, but JPEG cannot store a transparent background. For a favicon that adapts to dark and light browser tabs, export your logo to PNG with the background cut out, then load that here."
 toast_non_square_input_title = "Your logo is not square"
 toast_non_square_input_body = "It is shown in full, with empty space around it, so the icon may look small. A square version of your logo gives a larger icon."
+toast_svg_parts_title = "Some parts of your SVG are not shown"
+toast_svg_images_body = "It refers to image files on your computer. For your safety Logolig does not read them. Embed the images in the SVG to include them."
+toast_svg_text_body = "Logolig does not draw text in SVG files yet. Convert the text to outlines (paths) in your design tool and load the SVG again."
 
 # --- Edit-screen flow + preview redesign (v1.12.0) ---
 page_title_edit = "Preview & Generate Favicon"

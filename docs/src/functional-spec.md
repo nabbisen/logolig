@@ -240,6 +240,7 @@ Toasts appear at the top-right corner (TopEnd) for a short duration.
 | Transparency warning (PNG/SVG/WebP) | Advisory when the source is fully opaque |
 | **JPEG educational warning** | "JPEG cannot store transparency. Consider converting to PNG." |
 | **Non-square source advisory** | "Your logo is not square" / the logo is shown in full with empty space around it, so the icon may look small. Shown once per loaded image when the sides differ by more than 2 % (any source kind). |
+| **SVG parts not shown** | "Some parts of your SVG are not shown": one toast per loaded SVG when it refers to image files on the computer (not read, for safety) and/or contains text (not drawn yet); the body holds the applicable sentences, images first. Nothing is shown for an SVG without either. |
 | Error | Decode failure, write failure, etc. |
 
 ### JPEG vs. generic transparency warning
@@ -303,7 +304,7 @@ No network communication. All processing runs on the local CPU.
 | Task | Library |
 |---|---|
 | Image decode (PNG / WebP / JPEG) | `image` crate |
-| SVG rasterisation | `resvg` (uses OS fonts) |
+| SVG rasterisation | `resvg` (SVG text is not drawn yet: no fonts are loaded; images are read only from `data:` URLs, never from files) |
 | Vectorisation | `vtracer` |
 | Resize | `fast_image_resize` (SIMD-accelerated) |
 | ICO assembly | `ico` crate |
