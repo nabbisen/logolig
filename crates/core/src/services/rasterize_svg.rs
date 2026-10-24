@@ -41,7 +41,7 @@ pub fn rasterize_to_canvas(
     }
 
     // 1. Parse into a usvg tree
-    let opt = usvg::Options::default();
+    let opt = crate::services::svg::options();
     let tree = usvg::Tree::from_data(&asset.raw, &opt)
         .map_err(|e| AppError::rasterize(format!("usvg parse: {e}")))?;
 

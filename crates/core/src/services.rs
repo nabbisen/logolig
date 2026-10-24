@@ -55,5 +55,6 @@ pub mod monochrome;
 pub mod preview;
 pub mod rasterize_svg;
 pub mod resize;
+pub mod svg;
 pub mod transparency_audit;
 pub mod vectorize;

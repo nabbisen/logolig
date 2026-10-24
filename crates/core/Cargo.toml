@@ -101,5 +101,9 @@ path = "tests/artifact_paths.rs"
 name = "non_square"
 path = "tests/non_square.rs"
 
+[[test]]
+name = "svg"
+path = "tests/svg.rs"
+
 [lints]
 workspace = true

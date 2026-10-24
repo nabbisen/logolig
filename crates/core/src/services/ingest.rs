@@ -160,7 +160,7 @@ fn parse_png_size(bytes: &[u8]) -> Option<(u32, u32)> {
 /// On parse failure, return `None` and let ingest succeed.
 /// (The error is more contextual if it appears at rasterise time.)
 fn parse_svg_size(bytes: &[u8]) -> Option<(u32, u32)> {
-    let opt = usvg::Options::default();
+    let opt = crate::services::svg::options();
     let tree = usvg::Tree::from_data(bytes, &opt).ok()?;
     let size = tree.size();
     Some((size.width().ceil() as u32, size.height().ceil() as u32))

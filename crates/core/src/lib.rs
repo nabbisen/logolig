@@ -29,5 +29,6 @@ pub use error::AppError;
 pub use message_key::MessageKey;
 pub use services::exporter::{ExportReport, InMemoryArtifact};
 pub use services::preview::PreviewCache;
+pub use services::svg::SvgReport;
 pub use services::transparency_audit::TransparencyReport;
 pub use settings::SettingsStore;

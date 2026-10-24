@@ -104,3 +104,39 @@ pub fn png_rgba(width: u32, height: u32, rgba: [u8; 4]) -> Vec<u8> {
         .expect("PNG encoding for fixture should not fail");
     out
 }
+
+// ---------------------------------------------------------------------------
+// SVG fixtures for RFC 015 phase 2a (tests/svg.rs)
+// ---------------------------------------------------------------------------
+
+/// 64×64 SVG whose only content is an `<image>` pointing at `href`.
+pub fn svg_with_image(href: &str) -> String {
+    format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64" height="64" viewBox="0 0 64 64"><image x="0" y="0" width="64" height="64" xlink:href="{href}"/></svg>"#
+    )
+}
+
+/// 128×128 SVG that draws only text (no shapes).
+pub const SVG_TEXT_ONLY: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><text x="8" y="100" font-size="100" font-family="sans-serif" fill="#000000">Aa</text></svg>"##;
+
+/// 64×64 SVG with a text element and two `<image>` references (`href1`, `href2`).
+pub fn svg_text_and_two_images(href1: &str, href2: &str) -> String {
+    format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64" height="64" viewBox="0 0 64 64"><image x="0" y="0" width="32" height="32" xlink:href="{href1}"/><image x="32" y="32" width="32" height="32" xlink:href="{href2}"/><text x="4" y="60" font-size="20" font-family="sans-serif">Hi</text></svg>"#
+    )
+}
+
+/// 64×64 SVG with a solid green square (used as the "nested SVG" target).
+pub const SVG_GREEN_64: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="#00c800"/></svg>"##;
+
+/// Text inside nested groups (drawn).
+pub const SVG_TEXT_IN_GROUPS: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><g><g><text x="2" y="30" font-size="20">Hi</text></g></g></svg>"##;
+
+/// Text defined in `<defs>` and drawn through `<use>`.
+pub const SVG_TEXT_VIA_USE: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64" height="64"><defs><text id="t" x="2" y="30" font-size="20">Hi</text></defs><use xlink:href="#t"/></svg>"##;
+
+/// Text only inside `<defs>`: never drawn.
+pub const SVG_TEXT_ONLY_IN_DEFS: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><defs><text id="t" x="2" y="30" font-size="20">Hi</text></defs><rect width="8" height="8"/></svg>"##;
+
+/// An empty text element: nothing to draw.
+pub const SVG_EMPTY_TEXT: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><text x="2" y="30" font-size="20"></text></svg>"##;
