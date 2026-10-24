@@ -131,7 +131,7 @@ dropped.
 | Individual download | Save dialog → single file written |
 | Download all (ZIP) | Save dialog → zip bundle written |
 | ← Back (Result screen) | Result → Empty, with the last result kept for session history |
-| ESC key | **Not implemented** (deferred) |
+| Esc key | Closes the newest message; with none, Result → Empty (the same as ← Back). Other keyboard shortcuts: §14 |
 
 ZIP bundle entries carry a local wall-clock modified timestamp so desktop
 archive tools show useful "Last Modified" metadata alongside the created file.
@@ -230,6 +230,12 @@ selection is persisted.
 
 System / Light / Dark cycle. Persisted across sessions.
 
+### Keyboard shortcuts
+
+A list of the global keyboard shortcuts (keys and what they do, in the
+interface language) with a note that moving between buttons and fields with
+the Tab key is not available yet. F1 opens this page.
+
 ## 10. Notifications (toasts)
 
 Toasts appear at the top-right corner (TopEnd). How long a toast stays scales with the length
@@ -293,10 +299,13 @@ Not persisted: the Advanced accordion's expanded/collapsed state
 
 - Active state (current nav item, current language/theme) is indicated
   by both a visual fill **and** the `▣` prefix (not colour alone).
-- Keyboard: not supported yet. The "Choose file…" control is an alternative to
-  drag and drop that is opened with a mouse click; no control can be reached or
-  activated with the keyboard. See `ui-a11y.md` ("Keyboard support (current)")
-  and RFC 019.
+- Keyboard: the main task has global shortcuts: Ctrl+O (choose a file), Ctrl+S
+  (download all), Esc (close the newest message, or go back), Ctrl+1/2/3 (Home,
+  Customize, Settings) and F1 (Settings, where the list is shown); Cmd replaces
+  Ctrl on macOS. A shortcut works only when the button it stands for is available.
+  Tab traversal, Enter/Space activation, a focus indicator and keyboard operation
+  of the Customize page are not available yet. See `ui-a11y.md` ("Keyboard
+  support (current)"), RFC 019 and RFC 027.
 - Accessibility labels are defined as constants in `ui::accessibility`
   for future screen-reader support (iced 0.14 does not yet expose a full
   a11y API).

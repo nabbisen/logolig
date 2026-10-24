@@ -16,33 +16,67 @@ anywhere in the layout code.
 ## Keyboard support (current)
 
 **Goal.** Full keyboard parity: every operation reachable by mouse is also
-reachable by keyboard. This is **not met yet**; the work is tracked in
-[RFC 019](../../rfcs/accepted/019-keyboard-accessibility.md).
+reachable by keyboard. This is **not met yet**. The main task (choose a file,
+download all, go back, switch pages) has a keyboard path through a small set of
+global shortcuts (RFC 019 phase 2). Moving between buttons and fields with Tab,
+and operating the Customize page, are still to come
+([RFC 019](../../rfcs/accepted/019-keyboard-accessibility.md),
+[RFC 027](../../rfcs/accepted/027-keyboard-focus-model.md)).
 
-The lists below were verified by running Logolig 1.26.2 (release build) on
-Linux under the niri compositor: through the X11 backend (XWayland) on every
-screen, and on native Wayland on the Home screen only (the other screens need a
-mouse to reach). Windows and macOS have not been tested.
+Everything below was verified by running a debug build of the development tree
+(after RFC 019 phase 2) on Linux under the niri compositor, with an English
+interface: through the X11 backend (XWayland) and on native Wayland. Windows and
+macOS have not been tested (on macOS the command key is Cmd instead of Ctrl; that
+is the intended mapping and is not verified). Non-Latin keyboard layouts
+(for example a Japanese one) are covered by unit tests of the key mapping only,
+not by a run on such a layout. The statements about Tab, Enter, Space and the focus
+indicator were verified in phase 1 on release 1.26.2 and have not changed.
 
-**Supported today**
+**Supported today: global shortcuts**
+
+The list is also shown in the application, on the Settings page (press F1).
+
+| Keys | Action | Works when |
+|---|---|---|
+| Ctrl+O | Choose a file (opens the operating system's file chooser) | Home page, start or Result screen |
+| Ctrl+S | Download all (ZIP) (opens the save dialog) | Home page, Result screen |
+| Esc | Close the newest message; with no message, go back to the start screen | message: any page; back: Home page, Result screen |
+| Ctrl+1 / 2 / 3 | Go to Home / Customize / Settings | always |
+| F1 | Go to Settings (the shortcut list) | always |
+
+A shortcut works exactly when the button it stands for is available to the
+mouse. While a file is being converted, Ctrl+O and Ctrl+S do nothing. Keys
+held down (key repeat) do nothing. Letters and digits are matched by their
+position on the keyboard, so a non-Latin layout is meant to work too. Shift or
+Alt on top of Ctrl make a different combination that is not bound.
 
 - Text fields (custom PNG size, web manifest name, short name and colours)
   accept typed text once they have been focused with a mouse click. Enter in
   the custom-size field adds the size.
 - The operating system's file chooser and save dialogs can be operated with the
-  keyboard once they are open. They are opened with a mouse click.
+  keyboard once they are open.
 
-**Not supported yet (tracked in RFC 019)**
+**Known behaviour with text fields and long conversions (observed)**
 
-- Tab and Shift+Tab move no focus: no control can be reached, including text
-  fields, and Tab does not move between text fields.
+- While the custom-size field has focus, Ctrl+O does nothing (no file chooser
+  opens), Ctrl+3 and F1 still change the page, and Ctrl+1 types a "1" into the
+  field instead of going Home (the field takes the key first). Observed on
+  X11 only.
+- When a conversion takes a very long time (a 50-second test image), shortcuts
+  pressed meanwhile were not acted on at once: Ctrl+O and Ctrl+S opened nothing,
+  and Ctrl+2 took effect only after the conversion had finished. Typical logos
+  convert in well under a second.
+
+**Not supported yet (RFC 019 / RFC 027)**
+
+- Tab and Shift+Tab move no focus: no button or control can be reached, including
+  text fields, and Tab does not move between text fields.
 - Enter and Space activate nothing: not the drop-zone card or "Choose file…",
   the navigation items, the download buttons, "Back", the toggles, the sliders,
   or "Advanced settings".
-- As a result, the main path (choose a file, download, go back, switch between
-  Home, Customize and Settings) needs a mouse.
-- There are no keyboard shortcuts (for example Ctrl+O, Ctrl+S), Esc does
-  nothing, and arrow and paging keys do not scroll.
+- The Customize page (size checkboxes, sliders, toggles, text fields) can only be
+  operated with the mouse. Individual downloads ("Save" on a card) need the mouse.
+- Arrow and paging keys do not scroll.
 - There is no visible keyboard-focus indicator. The drop-zone card also shows no
   hover feedback; the navigation items and the download buttons do.
 - Window-close shortcuts are not handled by the application; they depend on the
@@ -93,6 +127,6 @@ leaving power-user controls discoverable.
 - We do **not** rely on hover-only interactions.
 - We do **not** use color as the only indicator of state.
 - We do **not** require drag-and-drop to choose a file: the file chooser is the
-  alternative. It is opened with a mouse click today (see "Keyboard support
-  (current)").
+  alternative. It is opened with a mouse click or with Ctrl+O (see "Keyboard
+  support (current)").
 - We do **not** auto-dismiss error notifications.
