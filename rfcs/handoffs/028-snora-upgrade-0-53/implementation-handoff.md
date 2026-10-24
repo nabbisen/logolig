@@ -82,7 +82,7 @@ All GUI work follows `.git-exclude/rules/project-instructions-gui-common.md` plu
 - A dialog is a window that appeared after your click; after each step assert that the screen changed as expected; **abort the run at the first anomaly** and report it instead of repeating the whole set.
 - No frame-sampling loops. A measurement that needs more than a few captures must be replaced by reading the source or by a single timed check.
 - If the same capture set has to be repeated a second time, stop and ask the architect before a third.
-- The architect proposes to the owner that these rules also be added to `project-instructions-gui-common.md`.
+- These rules are now part of `.git-exclude/rules/project-instructions-gui-common.md` (owner approved, 2026-10-24, section "GUI Evidence and Automation Rules"); that file is authoritative for all GUI work.
 
 ## 7. Required validation (report exactly what was and was not run)
 
