@@ -26,6 +26,7 @@ Project rules say test cases validate the **design specification**, not the code
 | 11 | README "Settings persistence": `docs.rs` badges for `logolig-app` etc. | crates not yet published (README says "after publication") | Owner: publication plan |
 | 12 | Source comments cite spec sections (`§6.2`, `§12`) of a document that is not in the repository | n/a | Replace with doc/RFC references over time |
 | 13 | `docs/src/architecture.md` links to `../rfcs/...`, which resolves to `docs/rfcs/` (does not exist) | the RFC folder is `../../rfcs/` from `docs/src/`; the links were already wrong before the 2026-10-21 renumbering | Docs only (closed by the RFC 008 migration, 2026-10-21) |
+| 14 | The README shows no screenshot; `docs/assets/screenshot-01.png` (Linux, Dark, 11 cards, retaken in the RFC 028 job) is referenced by nothing | after the 1.28.0 UI settles (focus indicators RFC 027, selection indicators RFC 021), retake **once** with a framing that includes "Download all (ZIP)" and "Back", reference it from the README and use it for the Flathub MetaInfo (RFC 023) | Owner decision on the README layout |
 
 ## Design
 

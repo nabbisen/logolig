@@ -24,7 +24,7 @@ Requirements verified by fetching the Flathub documentation on 2026-10-21 (`docs
 Local facts (verified by execution unless stated):
 
 - The application reports an **empty Wayland `app_id`** (`niri msg windows`), so a desktop entry cannot be matched to the window (RFC 025).
-- No `.desktop` file, MetaInfo file or Linux icon exists in the repository; a master icon is not available (RFC 020 D5). `docs/assets/screenshot-01.png` (1026 × 943) exists.
+- No `.desktop` file, MetaInfo file or Linux icon exists in the repository; a master icon is not available (RFC 020 D5). `docs/assets/screenshot-01.png` (1026 × 943, retaken on Linux in the RFC 028 job, Dark, 11 cards) exists but is not yet suitable for MetaInfo (it is cropped before "Download all"); MetaInfo screenshots are taken once after the 1.28.0 UI settles (RFC 018 row 14).
 - Settings are stored through `app-json-settings` in the user's config directory; Flatpak redirects `XDG_CONFIG_HOME`; to be confirmed.
 - The locked dependencies need Rust 1.90 (RFC 024); a current Flatpak SDK extension provides a recent stable Rust (to be confirmed at build time).
 - Not verified: wgpu/iced rendering inside the sandbox (GPU access, fallback renderer), font visibility inside the sandbox (matters for SVG text, RFC 015 phase 2b, because fontdb scans default directories and the sandbox exposes a different font set).

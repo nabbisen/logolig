@@ -53,3 +53,7 @@ Local single-user app, so this is robustness hardening, not a remote-attack fix.
 ## Risk
 
 Low. Limits may reject unusually large but legitimate logos; the owner chooses the numbers.
+
+## Addendum (architect, 2026-10-24, from the RFC 028 review)
+
+The error toast for an unsupported file shows the **full path** ("Unsupported file format: /home/<user>/.../notes.png"): it wraps over five lines and exposes the directory and user name. Decide in this RFC's work that user-facing errors for a file show the **file name only** (the full path stays in logs and in the `AppError` fields). The translation templates `error_unsupported_file` and `error_io` (`{path}`) keep the placeholder; the caller passes the file name.
