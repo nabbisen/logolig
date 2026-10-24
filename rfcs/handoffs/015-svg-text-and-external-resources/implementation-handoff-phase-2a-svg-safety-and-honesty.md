@@ -28,7 +28,7 @@ Two defects confirmed by execution in phase 1, fixed with the smallest change th
 Core (`crates/core`):
 - New module `src/services/svg.rs` (declare `pub mod svg;` in `services.rs`) with:
   - `pub(crate) fn options() -> usvg::Options<'static>`: the **single** options builder, with the data-URL-only resolver. Used by `rasterize_svg::rasterize_to_canvas` and `ingest::parse_svg_size` (replace both `usvg::Options::default()`), so the two call sites cannot diverge.
-  - `pub fn analyze(bytes: &[u8]) -> SvgReport` and `#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)] #[non_exhaustive] pub struct SvgReport { pub has_text: bool, pub ignored_external_images: usize }` (additive public API approved by the architect; `non_exhaustive` so phase 2b can add `missing_families`). `analyze` parses with an options value whose `resolve_string` counts calls (an `Arc<AtomicUsize>` captured by the closure), walks the tree for text nodes (recursing into groups) and returns the report. It must never panic; unparsable input returns `SvgReport::default()` (the ingest and render paths report their own errors).
+  - `pub fn analyze(bytes: &[u8]) -> SvgReport` and `#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)] #[non_exhaustive] pub struct SvgReport { pub has_text: bool, pub ignored_external_images: usize }` (additive public API approved by the architect; `non_exhaustive` so phase 2b can add `missing_families`). `analyze` parses with an options value whose `resolve_string` counts calls (an `Arc<AtomicUsize>` captured by the closure), detects text by **counting calls of a font-selection hook** (see 5.2; the tree walk was proven impossible by the implementer's stop-and-ask report) and returns the report. Our own code in `analyze` must not `unwrap`/`expect`/index unchecked; unparsable input returns `SvgReport::default()` (the ingest and render paths report their own errors). **Do not wrap it in `catch_unwind`** (decision below).
   - Re-export `SvgReport` from `lib.rs` next to the other service types.
 - `src/services/rasterize_svg.rs` and `src/services/ingest.rs`: only the options line.
 - Core tests in `tests/svg.rs` (new file; **register it in `crates/core/Cargo.toml` `[[test]]`, `autotests = false`**), fixtures in `tests/fixtures.rs` (add helpers; do not change existing ones).
@@ -51,7 +51,7 @@ No code path reads a file named inside an SVG. Verified for both call sites (see
 
 ### 5.2 Report
 `analyze(svg)` returns: `has_text` true iff the SVG contains a text element; `ignored_external_images` equals the number of non-`data:` image references that were refused (absolute path, relative path, nested SVG file all count; a `data:` image does not).
-**Verify first** that usvg keeps text nodes in the tree when the font database is empty (phase 1 saw `has_text = true` with a database loaded; with none, it is not yet proven). If it does not, stop and report with options; do **not** add a dependency or an XML parser on your own.
+**Decided by the architect (2026-10-24, after the implementer's stop-and-ask report; option A).** usvg 0.45.1 does not keep text nodes when it cannot resolve a font (`src/parser/text.rs`: `if text::convert(..).is_none() { return; }`), so the tree never contains text in this phase. `has_text` is therefore derived from the documented `usvg::FontResolver` extension point: in `analyze` only, set `options.font_resolver.select_font` to a closure that counts its calls and returns `None`, and `select_fallback` to `usvg::FontResolver::default_fallback_selector()`; `has_text = calls > 0`. Meaning: "text that usvg would try to draw and that has content" (unused `<defs>` text and empty `<text>` do not count, which is right: the toast must not claim a loss where nothing is lost). The rendering options built by `options()` keep the default font resolver: rendering is unchanged and no font is loaded. Pin the behaviour with T6/T7 and the two extra cases below, so a future usvg that stops calling the hook fails a test at the next upgrade. No new dependency, no XML parser, no tree walk.
 
 ### 5.3 Advisory in the app
 - After `IngestCompleted(Ok(asset))` for `SourceKind::Svg`, start one `Task` that runs `logolig::services::svg::analyze(&asset.raw)` off the UI thread and returns `Message::SvgAnalyzed(PathBuf, SvgReport)` (path = the asset's path).
@@ -77,8 +77,9 @@ Core, `tests/svg.rs`. Create every referenced file yourself in a temporary direc
 | T3 | Same with a relative href, process working directory containing the file and not containing it | no magenta in either case; count 1. (Changing the working directory affects the whole test process: keep this test serial, in its own `#[test]`, and restore the directory; or resolve it differently if cleaner and say how.) |
 | T4 | Nested SVG file reference (`href="inner.svg"`) | not loaded (no pixels of the inner SVG's colour); count 1 |
 | T5 | `data:image/png;base64,...` image (generate a small PNG in the test) | renders with that image's pixels; count 0 |
-| T6 | SVG with `<text>` | `has_text == true`; render is transparent as today (the test documents the current limit; phase 2b will change this assertion) |
+| T6 | SVG with `<text>` (also inside nested groups, and drawn through `<use>`) | `has_text == true`; render is transparent as today (the test documents the current limit; phase 2b will change this assertion) |
 | T7 | SVG with text **and** two external images | `has_text == true`, count 2 |
+| T6b | Text that is **not** drawn: `<text>` only inside `<defs>`; an empty `<text></text>` | `has_text == false` (documents the chosen meaning) |
 | T8 | Garbage bytes and an empty slice | `analyze` returns the default report, no panic |
 | T9 | `ingest::ingest_bytes` for an SVG referencing a file: **the file is not opened** | Prove it (Unix: a named pipe created with `mkfifo` as the referenced "file"; a non-blocking open of its write end succeeds only if some process opened it for reading; skip with a clear message if `mkfifo` is unavailable, never silently pass). Must fail on the unmodified code |
 
@@ -109,7 +110,7 @@ T1–T9 and the app and i18n tests exist and pass, T2 and T9 shown failing befor
 
 ## 11. Known risks
 
-- If usvg drops text nodes when no fonts exist, `has_text` cannot be derived from the tree: stop and report (see 5.2).
+- The hook relies on usvg calling `select_font` while it converts text (observed in 0.45.1 with an empty database, pinned by `Cargo.lock`); T6, T6b and T7 guard it.
 - Changing the process working directory in a test can disturb parallel tests; keep T3 isolated.
 - The advisory text must stay true: when phase 2b renders text, the text sentence will change. Do not make it more general than the facts.
 

@@ -56,6 +56,10 @@ Phase 1 was executed (spike, evidence only). Verified by execution on one Linux 
 - **Why split:** 2a closes a privacy-relevant file read and ends silent misleading output with little code and no cross-platform font risk; 2b is a visible feature with platform-dependent behaviour (including Flatpak, whose sandbox exposes a different font set: RFC 023) and needs its own evidence.
 - **Release scope** (whether 2a must precede the first AUR release) is the owner's decision; the architect recommends yes.
 
+## Phase 2a design amendment (architect, 2026-10-24)
+
+The phase 2a implementer stopped at the handoff's stop condition and proved by execution (experiment E16) that usvg 0.45.1 never keeps text nodes when no font can be resolved (`src/parser/text.rs`), so `has_text` cannot be read from the parsed tree as phase 1 suggested. **Decision: `SvgReport::has_text` is the result of counting calls of the `usvg::FontResolver::select_font` hook (a documented extension point) during an analysis-only parse.** It means "text that usvg would try to draw and that has content". Rejected: an XML scan (second parse; false positives for never-drawn and empty text, and a hand-rolled parser the project forbids), loading fonts (contradicts the 2a scope). The hook is also the natural place for phase 2b to record missing font families. The job is **not split**: nothing ships before the whole of J3 is reviewed, so one reviewed step is simpler than two. `analyze` is not wrapped in `catch_unwind`: usvg is already parsed by ingest and rendering without such a wrapper, and hiding panics would hide bugs; resource limits for hostile input belong to RFC 014.
+
 ## Tests (design-derived)
 
 - Fixture SVG with `<text>` renders non-transparent pixels where glyphs are expected (skip with a clear message when the test machine has no fonts; do not silently pass).
