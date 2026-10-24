@@ -4,6 +4,7 @@ mod native_store;
 mod result;
 mod shell;
 mod task_queue;
+mod toast_time;
 mod ui;
 mod window;
 

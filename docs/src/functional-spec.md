@@ -232,7 +232,11 @@ System / Light / Dark cycle. Persisted across sessions.
 
 ## 10. Notifications (toasts)
 
-Toasts appear at the top-right corner (TopEnd) for a short duration.
+Toasts appear at the top-right corner (TopEnd). How long a toast stays scales with the length
+of its message, so that it can be read: at least 4 seconds and at most 20 seconds (a
+longer message, or a long file path, stays longer; Japanese text is counted by character).
+The "saved" toast keeps a minimum of 7 seconds. Error toasts stay until they are dismissed.
+Every toast has a close button (`×`).
 
 | Event | Content |
 |---|---|
