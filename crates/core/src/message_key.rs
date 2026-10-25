@@ -217,6 +217,10 @@ pub enum MessageKey {
     ToastSvgImagesBody,
     /// Toast body sentence: the SVG contains text (not drawn yet).
     ToastSvgTextBody,
+    /// Toast title for a very large traced favicon.svg (RFC 030).
+    ToastSvgLargeTitle,
+    /// Toast body: the image looks like a photograph, the SVG is large and approximate.
+    ToastSvgLargeBody,
 
     // --- v1.12.0: Edit screen navigation + preview area refresh ---
     /// Edit/preview screen page title ("Preview & Generate Favicon").

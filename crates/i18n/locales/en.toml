@@ -164,6 +164,8 @@ toast_non_square_input_body = "It is shown in full, with empty space around it, 
 toast_svg_parts_title = "Some parts of your SVG are not shown"
 toast_svg_images_body = "It refers to image files on your computer. For your safety Logolig does not read them. Embed the images in the SVG to include them."
 toast_svg_text_body = "Logolig does not draw text in SVG files yet. Convert the text to outlines (paths) in your design tool and load the SVG again."
+toast_svg_large_title = "favicon.svg is large and only approximate"
+toast_svg_large_body = "This image looks like a photograph, so tracing it to a vector gives a large file and only a rough likeness. Turn off SVG output in Customize if you do not need favicon.svg."
 
 # --- Edit-screen flow + preview redesign (v1.12.0) ---
 page_title_edit = "Preview & Generate Favicon"

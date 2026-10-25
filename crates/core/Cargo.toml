@@ -105,5 +105,9 @@ path = "tests/non_square.rs"
 name = "svg"
 path = "tests/svg.rs"
 
+[[test]]
+name = "vectorize_cap"
+path = "tests/vectorize_cap.rs"
+
 [lints]
 workspace = true

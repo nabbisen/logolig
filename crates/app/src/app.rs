@@ -728,9 +728,14 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         // v1.16.0: in-memory conversion complete
         Message::ConvertCompleted(Ok(assets)) => {
+            let large_trace = is_large_traced_svg(state, &assets);
             state.result_assets = Some(assets);
             state.screen = Screen::Result;
             state.busy = false;
+            // RFC 030: once, when the conversion has just produced it.
+            if large_trace {
+                push_svg_large_advisory(state);
+            }
             Task::none()
         }
         Message::ConvertCompleted(Err(err)) => fail(state, err),
@@ -1209,6 +1214,32 @@ fn handle_shortcut(state: &mut AppState, shortcut: crate::shortcuts::Shortcut) -
         Shortcut::ChooseFile | Shortcut::DownloadAll => return Task::none(),
     };
     update(state, message)
+}
+
+/// A traced `favicon.svg` larger than this (2 MB) earns one advisory toast (RFC 030).
+/// Flat logos trace to about 10 KB; a photograph traced at the 512 px cap gives about 3 MB.
+const SVG_ADVISORY_BYTES: usize = 2 * 1024 * 1024;
+
+/// Whether `assets` holds a `favicon.svg` that was **traced from a raster** and is larger than
+/// [`SVG_ADVISORY_BYTES`]. An SVG source is copied verbatim, not traced, so the advisory's
+/// "looks like a photograph" would be false for it.
+fn is_large_traced_svg(state: &AppState, assets: &crate::result::ResultAssets) -> bool {
+    let traced = state
+        .source_asset
+        .as_ref()
+        .is_some_and(|asset| asset.kind != logolig::SourceKind::Svg);
+    traced
+        && assets
+            .items
+            .iter()
+            .any(|item| item.file_name == "favicon.svg" && item.bytes.len() > SVG_ADVISORY_BYTES)
+}
+
+/// Pushes the large-`favicon.svg` advisory (RFC 030).
+fn push_svg_large_advisory(state: &mut AppState) {
+    let title = state.translator.t(MessageKey::ToastSvgLargeTitle);
+    let body = state.translator.t(MessageKey::ToastSvgLargeBody);
+    push_warning_toast(state, &title, &body);
 }
 
 /// Pushes a persistent error toast. Stays until the user dismisses it.
@@ -2055,5 +2086,95 @@ mod tests {
         let _ = press(&mut converting, Shortcut::Page(NavPage::Customize));
         assert_eq!(converting.nav_page, NavPage::Customize);
         assert_eq!(converting.screen, Screen::Converting);
+    }
+
+    // ---- RFC 030: advisory for a large traced favicon.svg ------------------
+
+    fn assets_with_svg_of(bytes: usize) -> ResultAssets {
+        let mut assets = dummy_result_assets();
+        assets.items.push(ResultAssetItem {
+            file_name: "favicon.svg".to_string(),
+            relative_path: "favicon.svg".to_string(),
+            bytes: vec![b' '; bytes],
+            kind: ResultAssetKind::Svg,
+            dimensions: None,
+            thumbnail: None,
+        });
+        assets
+    }
+
+    fn converting_state(kind: logolig::SourceKind) -> AppState {
+        let mut asset = dummy_source_asset();
+        asset.kind = kind;
+        AppState {
+            screen: Screen::Converting,
+            source_asset: Some(asset),
+            ..AppState::default()
+        }
+    }
+
+    #[test]
+    fn a_traced_svg_over_two_megabytes_gets_exactly_one_advisory() {
+        let mut state = converting_state(logolig::SourceKind::Jpeg);
+        let _ = update(
+            &mut state,
+            Message::ConvertCompleted(Ok(assets_with_svg_of(SVG_ADVISORY_BYTES + 1))),
+        );
+        assert_eq!(state.screen, Screen::Result);
+        assert_eq!(state.toasts.len(), 1);
+        let t = &state.translator;
+        let (title, body) = (
+            t.t(MessageKey::ToastSvgLargeTitle),
+            t.t(MessageKey::ToastSvgLargeBody),
+        );
+        assert_eq!(state.toasts[0].title, title);
+        assert_eq!(state.toasts[0].message, body);
+        assert_eq!(
+            state.toasts[0].lifetime,
+            ToastLifetime::seconds(seconds_for(&title, &body))
+        );
+    }
+
+    #[test]
+    fn a_svg_of_exactly_two_megabytes_or_none_gets_no_advisory() {
+        let mut state = converting_state(logolig::SourceKind::Png);
+        let _ = update(
+            &mut state,
+            Message::ConvertCompleted(Ok(assets_with_svg_of(SVG_ADVISORY_BYTES))),
+        );
+        assert!(
+            state.toasts.is_empty(),
+            "exactly 2 MB is not above the limit"
+        );
+
+        let mut state = converting_state(logolig::SourceKind::Png);
+        let _ = update(
+            &mut state,
+            Message::ConvertCompleted(Ok(dummy_result_assets())),
+        );
+        assert!(state.toasts.is_empty(), "no favicon.svg item, no advisory");
+    }
+
+    #[test]
+    fn a_large_svg_source_copied_verbatim_gets_no_photograph_advisory() {
+        // An SVG source is copied as it is, not traced: the toast's claim would be false.
+        let mut state = converting_state(logolig::SourceKind::Svg);
+        let _ = update(
+            &mut state,
+            Message::ConvertCompleted(Ok(assets_with_svg_of(SVG_ADVISORY_BYTES + 1))),
+        );
+        assert!(state.toasts.is_empty());
+    }
+
+    #[test]
+    fn the_large_svg_advisory_is_not_repeated_by_going_back_and_returning() {
+        let mut state = converting_state(logolig::SourceKind::Jpeg);
+        let _ = update(
+            &mut state,
+            Message::ConvertCompleted(Ok(assets_with_svg_of(SVG_ADVISORY_BYTES + 1))),
+        );
+        let _ = update(&mut state, Message::EditCancelled);
+        let _ = update(&mut state, Message::ShowLastResultRequested);
+        assert_eq!(state.toasts.len(), 1);
     }
 }

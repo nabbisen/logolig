@@ -166,6 +166,8 @@ toast_non_square_input_body = "ロゴ全体を表示するため、アイコン�
 toast_svg_parts_title = "SVG の一部が表示されません"
 toast_svg_images_body = "SVG がこのコンピューター上の画像ファイルを参照しています。安全のため、Logolig はそれらを読み込みません。画像を SVG に埋め込むと反映されます。"
 toast_svg_text_body = "Logolig は SVG 内の文字をまだ描画できません。デザインツールで文字をアウトライン化（パス化）してから、SVG を読み込み直してください。"
+toast_svg_large_title = "favicon.svg が大きく、近似になります"
+toast_svg_large_body = "この画像は写真のようなので、ベクターに変換すると大きなファイルになり、似せるだけの近似になります。favicon.svg が不要な場合は、「カスタマイズ」で SVG の出力をオフにしてください。"
 
 # --- 編集画面の動線整備 + プレビュー領域刷新 (v1.12.0) ---
 page_title_edit = "プレビュー確認・Favicon ファイル作成"

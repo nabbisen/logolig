@@ -174,6 +174,8 @@ pub(crate) struct Dictionary {
     pub toast_svg_parts_title: String,
     pub toast_svg_images_body: String,
     pub toast_svg_text_body: String,
+    pub toast_svg_large_title: String,
+    pub toast_svg_large_body: String,
 
     // Edit-screen flow + preview redesign (v1.12.0)
     pub page_title_edit: String,
@@ -403,6 +405,8 @@ impl Dictionary {
             MessageKey::ToastSvgPartsTitle => &self.toast_svg_parts_title,
             MessageKey::ToastSvgImagesBody => &self.toast_svg_images_body,
             MessageKey::ToastSvgTextBody => &self.toast_svg_text_body,
+            MessageKey::ToastSvgLargeTitle => &self.toast_svg_large_title,
+            MessageKey::ToastSvgLargeBody => &self.toast_svg_large_body,
 
             // v1.12.0
             MessageKey::PageTitleEdit => &self.page_title_edit,

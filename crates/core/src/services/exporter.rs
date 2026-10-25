@@ -111,7 +111,14 @@ pub fn run_in_memory(
                     let src = decoded_raster
                         .as_ref()
                         .ok_or_else(|| AppError::export("internal: missing decoded raster"))?;
-                    let svg_string = vectorize::vectorize(src, plan.vtracer_preset)?;
+                    // RFC 030: the tracer sees at most `VECTORIZE_MAX_SIDE` px (scaled with the plan's
+                    // algorithm); every raster output is rendered from the full source.
+                    let svg_string = vectorize::vectorize_with_cap(
+                        src,
+                        plan.vtracer_preset,
+                        vectorize::VECTORIZE_MAX_SIDE,
+                        plan.algorithm,
+                    )?;
                     push_artifact(&mut artifacts, "favicon.svg", svg_string.into_bytes());
                     true
                 } else {

@@ -2340,6 +2340,7 @@ dependencies = [
  "logolig-i18n",
  "rfd",
  "snora",
+ "tokio",
  "zip",
 ]
 

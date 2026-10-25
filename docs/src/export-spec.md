@@ -31,6 +31,17 @@ in v1.2.0 control the SVG output:
 When the input is already SVG, `vectorize_on_raster` is irrelevant: the
 source bytes are copied to `favicon.svg` unchanged.
 
+**Size of the traced image.** For tracing, a raster whose longest side is longer
+than 512 px is scaled down first (aspect ratio kept, with the resize algorithm of
+the output plan), because the tracer's time and the size of its output grow
+faster than the pixel count. The SVG is resolution independent, so a flat logo
+loses nothing visible; a raster of 512 px or less is traced as it is. This only
+affects `favicon.svg`: every PNG and ICO output is rendered from the full source
+and does not depend on it. For a photograph, `favicon.svg` is an approximation
+and can be large (about 3 MB for a noisy image at 512 px); when it is larger than
+2 MB the application says so once, after the conversion, and points to the
+"SVG output" switch in Customize.
+
 
 ## Optional Microsoft app logos (v1.26.0)
 

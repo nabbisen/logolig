@@ -61,15 +61,35 @@ pub fn analyze_svg_task(asset: Arc<SourceAsset>) -> Task<Message> {
 }
 
 /// Spawn a task that generates preview images (16×16 and 120×120). CPU-bound,
-/// dispatched via `iced::Task::perform` off the UI thread.
+/// run on the blocking pool via `run_blocking` (RFC 030).
 ///
 /// `SourceAsset` is wrapped in `Arc` so that `raw: Arc<[u8]>`
 /// to avoid copying the raw byte buffer.
 pub fn build_preview_task(asset: Arc<SourceAsset>, algorithm: ResizeAlgorithm) -> Task<Message> {
     Task::perform(
-        async move { logolig::services::preview::build_preview(&asset, algorithm) },
+        run_blocking("preview", move || {
+            logolig::services::preview::build_preview(&asset, algorithm)
+        }),
         Message::PreviewBuilt,
     )
+}
+
+/// Run CPU-bound `work` on tokio's blocking pool and wait for it (RFC 030).
+///
+/// Synchronous work inside an `async` block occupies an executor worker; the measurement in
+/// RFC 030 showed that events delivered through subscriptions (keyboard shortcuts, drag and
+/// drop) were not served until it ended. On the blocking pool the executor stays free.
+///
+/// A job that panics (or a pool that shuts down) is reported as an `AppError` named after
+/// `label`, never lost and never re-thrown on the UI side.
+async fn run_blocking<T, F>(label: &'static str, work: F) -> Result<T, AppError>
+where
+    T: Send + 'static,
+    F: FnOnce() -> Result<T, AppError> + Send + 'static,
+{
+    tokio::task::spawn_blocking(work)
+        .await
+        .map_err(|e| AppError::export(format!("{label} task failed: {e}")))?
 }
 
 // ---------------------------------------------------------------------------
@@ -97,7 +117,7 @@ pub fn build_preview_task(asset: Arc<SourceAsset>, algorithm: ResizeAlgorithm) -
 /// "in_memory" is now implied (all conversions are in-memory).
 pub fn convert_task(asset: Arc<SourceAsset>, plan: ExportPlan) -> Task<Message> {
     Task::perform(
-        async move { run_convert(&asset, &plan) },
+        run_blocking("conversion", move || run_convert(&asset, &plan)),
         Message::ConvertCompleted,
     )
 }
@@ -359,6 +379,9 @@ fn current_zip_modified_time() -> zip::DateTime {
     )
     .unwrap_or_else(|_| zip::DateTime::default())
 }
+
+#[cfg(test)]
+mod blocking_tests;
 
 #[cfg(test)]
 mod zip_tests;
