@@ -30,6 +30,10 @@ Verified by source reading; **not executed**.
 
 Task cancellation via `Task::abortable` is possible but needs handle storage and does not stop CPU-bound work already running on the executor; the id check is sufficient and stateless.
 
+## Addendum (2026-10-25, RFC 019 phase 2 review)
+
+Two more concurrency observations: (1) pressing Cmd+O twice quickly (or clicking the drop zone twice) may open two file choosers, since nothing records that a chooser is already open; the job-identity design should also cover "a chooser is open". (2) CPU-bound conversion work blocks a tokio worker and starves other events during long conversions: tracked and quantified in RFC 030.
+
 ## Open question
 
 - **Q1** CPU-bound conversion runs inside `async move { .. }` on iced's executor. If a worker thread is blocked by a long vectorisation, UI responsiveness depends on the runtime's thread count. Measure with a 4000 × 4000 PNG before deciding whether to move the work to a blocking pool. Not part of this RFC's acceptance.

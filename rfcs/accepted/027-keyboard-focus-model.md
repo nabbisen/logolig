@@ -43,6 +43,10 @@ Non-goals: screen-reader support (iced 0.14 exposes no accessibility tree; confi
 6. **No traps:** Esc leaves a text input and returns to the model; there is always a next target.
 7. **Documentation:** `ui-a11y.md` "Keyboard support (current)" is updated from the evidence of the finished work, never before.
 
+## Requirement found by RFC 019 phase 2 (architect, 2026-10-25)
+
+A focused text field takes some shortcut keys before the application sees them: with the custom-size field focused, **Ctrl+1 types a "1"** instead of going Home, Ctrl+O does nothing, while Ctrl+3 and F1 still navigate (observed on X11). The focus model must therefore **know when a text field owns the keyboard** and define, per key, whether a global shortcut or the field wins (a shortcut such as Ctrl+digit must never insert text). Esc inside a field (leave the field) is to be observed and specified in phase 0.
+
 ## Tests
 
 - Pure unit tests: ordering for each screen and state (for example Advanced collapsed vs expanded; Result with and without monochrome cards); wrap-around at both ends; Shift+Tab reverse; skipping of hidden targets; activation mapping (target → message) equals the mouse mapping.

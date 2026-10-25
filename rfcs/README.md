@@ -48,6 +48,7 @@ RFC 009 and RFC 010 are implemented on `main` and move to `done/` with the relea
 
 | # | Title | Priority |
 | --- | --- | --- |
+| [030](./proposed/030-bound-vectorization-cost-and-keep-ui-responsive.md) | Bound the cost of vectorization and keep the UI responsive during conversion (P1, owner decides scope) | P1 |
 | [011](./proposed/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
 | [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
 | [013](./proposed/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |
