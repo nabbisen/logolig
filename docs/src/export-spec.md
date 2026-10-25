@@ -38,9 +38,8 @@ faster than the pixel count. The SVG is resolution independent, so a flat logo
 loses nothing visible; a raster of 512 px or less is traced as it is. This only
 affects `favicon.svg`: every PNG and ICO output is rendered from the full source
 and does not depend on it. For a photograph, `favicon.svg` is an approximation
-and can be large (about 3 MB for a noisy image at 512 px); when it is larger than
-2 MB the application says so once, after the conversion, and points to the
-"SVG output" switch in Customize.
+and can be large (about 3 MB for a noisy image at 512 px). Turn off "SVG output"
+in Customize if you do not need it.
 
 
 ## Optional Microsoft app logos (v1.26.0)

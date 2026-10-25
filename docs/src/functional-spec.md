@@ -251,7 +251,6 @@ Every toast has a close button (`×`).
 | **JPEG educational warning** | "JPEG cannot store transparency. Consider converting to PNG." |
 | **Non-square source advisory** | "Your logo is not square" / the logo is shown in full with empty space around it, so the icon may look small. Shown once per loaded image when the sides differ by more than 2 % (any source kind). |
 | **SVG parts not shown** | "Some parts of your SVG are not shown": one toast per loaded SVG when it refers to image files on the computer (not read, for safety) and/or contains text (not drawn yet); the body holds the applicable sentences, images first. Nothing is shown for an SVG without either. |
-| **Large traced `favicon.svg`** | "favicon.svg is large and only approximate": once after a conversion of a PNG/WebP/JPEG whose traced `favicon.svg` is larger than 2 MB (a photograph, not a flat logo); it suggests turning off SVG output in Customize. Never shown for an SVG source (copied unchanged) or for a smaller result. |
 | Error | Decode failure, write failure, etc. |
 
 ### JPEG vs. generic transparency warning

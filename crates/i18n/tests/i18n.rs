@@ -169,8 +169,6 @@ fn japanese_translation_differs_from_english_for_ui_text() {
         MessageKey::ToastSvgPartsTitle,
         MessageKey::ToastSvgImagesBody,
         MessageKey::ToastSvgTextBody,
-        MessageKey::ToastSvgLargeTitle,
-        MessageKey::ToastSvgLargeBody,
     ];
     for key in differing_keys {
         let en_text = en.t(key);
@@ -220,8 +218,6 @@ fn japanese_every_key_has_non_empty_translation() {
         MessageKey::ToastSvgPartsTitle,
         MessageKey::ToastSvgImagesBody,
         MessageKey::ToastSvgTextBody,
-        MessageKey::ToastSvgLargeTitle,
-        MessageKey::ToastSvgLargeBody,
         MessageKey::ErrorUnsupportedFile,
         MessageKey::ErrorIo,
         MessageKey::ErrorDecode,
@@ -384,44 +380,4 @@ fn shortcut_texts_match_the_specification() {
         assert_eq!(en.t(key), en_text, "en {key:?}");
         assert_eq!(ja.t(key), ja_text, "ja {key:?}");
     }
-}
-
-// ---------------------------------------------------------------------------
-// RFC 030: the large-favicon.svg advisory
-// ---------------------------------------------------------------------------
-
-#[test]
-fn svg_large_texts_exist_in_both_languages_and_differ() {
-    let en = Translator::for_locale(Locale::En);
-    let ja = Translator::for_locale(Locale::Ja);
-    for key in [
-        MessageKey::ToastSvgLargeTitle,
-        MessageKey::ToastSvgLargeBody,
-    ] {
-        assert!(!en.t(key).is_empty(), "en {key:?} is empty");
-        assert!(!ja.t(key).is_empty(), "ja {key:?} is empty");
-        assert_ne!(en.t(key), ja.t(key), "{key:?} should differ between en/ja");
-    }
-}
-
-#[test]
-fn svg_large_texts_match_the_specification() {
-    let en = Translator::for_locale(Locale::En);
-    assert_eq!(
-        en.t(MessageKey::ToastSvgLargeTitle),
-        "favicon.svg is large and only approximate"
-    );
-    assert_eq!(
-        en.t(MessageKey::ToastSvgLargeBody),
-        "This image looks like a photograph, so tracing it to a vector gives a large file and only a rough likeness. Turn off SVG output in Customize if you do not need favicon.svg."
-    );
-    let ja = Translator::for_locale(Locale::Ja);
-    assert_eq!(
-        ja.t(MessageKey::ToastSvgLargeTitle),
-        "favicon.svg が大きく、近似になります"
-    );
-    assert_eq!(
-        ja.t(MessageKey::ToastSvgLargeBody),
-        "この画像は写真のようなので、ベクターに変換すると大きなファイルになり、似せるだけの近似になります。favicon.svg が不要な場合は、「カスタマイズ」で SVG の出力をオフにしてください。"
-    );
 }
