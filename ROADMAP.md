@@ -27,8 +27,8 @@
 | J3 | RFC 015 phase 2a (**Done and reviewed 2026-10-24**: 202 tests, five CI jobs green; both usvg parse sites now data-URL-only; one combined advisory): data-URL-only SVG resolver, `svg::analyze`, one advisory | M | J2b | Closes the local-file read; ends silent misleading SVG output |
 | J3b | RFC 029: toast lifetime proportional to its content (advisories need 9–17 s to read, live 4 s) | S | J3 | **Done and reviewed 2026-10-24** (220 tests, five CI jobs green; advisories now live 12 / 17 / 20 s; GUI: still visible at 8 s, gone by 14 s). Authorized by the owner 2026-10-24 |
 | J4 | RFC 019 phase 2: global shortcuts (Cmd+O, Cmd+S, Esc, Cmd+1/2/3, F1) and the list on the Settings page | M | J3b | **Done and reviewed 2026-10-25** (240 tests, five CI jobs green; verified on native Wayland by `wtype` and on X11; known: a focused text field takes Ctrl+1 → RFC 027) |
-| J4b | **Proposed, not authorized:** RFC 030 bound vectorization cost and keep the UI responsive (flat logos < 0.1 s, noisy/photo input 4–13 s at 1024–1400 px with a 24 MB `favicon.svg`) | M | J4 | Owner decision requested; measure first, then a small change |
-| J5 | RFC 020 phase 2: AUR source package (`logolig`), packaging CI | M | J4, **owner: master icon** | Files named by the application ID; local dry run only |
+| J4b | RFC 030: bound vectorization cost (cap 512 px) and keep the UI responsive (`spawn_blocking`); advisory when `favicon.svg` > 2 MB | M | J4 | **Authorized by the owner 2026-10-25**; measure first (does the blocked worker starve events?), then fix; handoff `rfcs/handoffs/030-bound-vectorization-cost-and-keep-ui-responsive/` |
+| J5 | RFC 020 phase 2: AUR source package (`logolig`), packaging CI | M | J4b (icon approved and committed: `packaging/icons/logolig.svg`) | Files named by the application ID; local dry run only |
 | J6 | Release preparation: version 1.27.0, release notes, final gates, candidate verification | S | J5 | The architect submits a release recommendation |
 | J7 | **Owner:** authorize 1.27.0, tag, first manual AUR publication (RFC 020 phase 3), then the README install section | S | J6 | Owner actions |
 

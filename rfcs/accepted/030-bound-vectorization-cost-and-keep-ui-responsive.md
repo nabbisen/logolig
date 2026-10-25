@@ -1,7 +1,8 @@
 # RFC 030 — Bound the cost of vectorization and keep the UI responsive during conversion
 
-**Status.** Proposed
-**Priority.** P1 (a default-settings hang on a common input; architect recommends 1.27.0, owner decides scope)
+**Status.** Accepted (owner authorized it into release 1.27.0 as job J4b, 2026-10-25; measure first, then fix)
+**Priority.** P1
+**Handoffs.** [rfcs/handoffs/030-bound-vectorization-cost-and-keep-ui-responsive/](../handoffs/030-bound-vectorization-cost-and-keep-ui-responsive/README.md)
 **Tracks.** Found by the RFC 019 phase 2 implementer (shortcuts not served during a long conversion) and quantified by the architect.
 **Touches.** `crates/app/src/task_queue.rs` (`convert_task`, `build_preview_task`), `crates/core/src/services/vectorize.rs` and `exporter.rs` (input size cap), `docs/src/export-spec.md`, tests.
 
@@ -29,7 +30,7 @@ Converting a **photographic or noisy** raster with the default settings (`includ
 
 1. **Run CPU-bound work on a blocking thread.** `convert_task` and `build_preview_task` use `tokio::task::spawn_blocking` (the application already depends on `tokio` through iced; no new dependency), so the executor keeps serving events. The effect on shortcut starvation is verified by a repeatable measurement (see Tests); if the hypothesis is wrong the RFC is amended with the real cause.
 2. **Bound the tracing cost.** Before vectorizing a raster, scale it down so that its longest side is at most **`VECTORIZE_MAX_SIDE` (proposal: 512 px)**, with the project's own resize (Lanczos3). Rationale: the SVG is resolution independent and every raster output is rendered from the source, not from the traced SVG; the favicon sizes are at most 512 px by default (1024 at most by the setting range); the cost at 512 px is under a second even for noise (table above) and the SVG stays near 3 MB at worst. Flat logos lose nothing visible. Decision D1 on the number.
-3. **Say it when it matters.** If the source was scaled down for tracing and/or the resulting SVG exceeds a size (proposal: 2 MB), the existing advisory mechanism shows one toast: "This image looks like a photograph, so favicon.svg is only an approximation. Turn off SVG output in Customize if you do not need it." (texts decided with the handoff). No new setting.
+3. **Say it when it matters, judged by the result.** After a conversion, if the produced `favicon.svg` is larger than **2 MB** (`SVG_ADVISORY_BYTES`), the application shows **one** warning toast; flat logos (about 10 KB) never trigger it. The trigger is the size of the result item, evaluated in the app on `ConvertCompleted`; **not** "the source was scaled down" (that would warn about every large flat logo, where nothing is lost). Texts (architect-defined; the ja text has not had a native review): en title `favicon.svg is large and only approximate` / body `This image looks like a photograph, so tracing it to a vector gives a large file and only a rough likeness. Turn off SVG output in Customize if you do not need favicon.svg.`; ja title `favicon.svg が大きく、近似になります` / body `この画像は写真のようなので、ベクターに変換すると大きなファイルになり、似せるだけの近似になります。favicon.svg が不要な場合は、「カスタマイズ」で SVG の出力をオフにしてください。` Keys `ToastSvgLargeTitle` / `ToastSvgLargeBody` (`toast_svg_large_*`). Its lifetime comes from RFC 029. No new setting.
 4. **Out of scope** (separate RFC if needed): a cancel button, a determinate progress indicator, size limits on input files (RFC 014), skipping the SVG automatically for photos.
 
 ## Alternatives considered
@@ -48,8 +49,9 @@ Converting a **photographic or noisy** raster with the default settings (`includ
 
 ## Decisions requested
 
-- **D1** Cap 512 px (architect's proposal), or another number?
-- **D2** Add as job **J4b** to release 1.27.0? Recommended: the defect is on the default path for a common input (photos and JPEGs are accepted formats, and the educational JPEG toast invites them), a 1.27.0 user dropping a photograph can see the application appear to hang for minutes. Size: M (a spike-sized evidence step first, then a small change).
+- **D1** Cap 512 px: accepted as the architect's proposal (the owner approved the job as proposed, 2026-10-25); a different number is a one-constant change.
+- **D2 — decided by the owner (2026-10-25): yes, as job J4b in release 1.27.0.** The defect is on the default path for a common input (photos and JPEGs are accepted formats, and the educational JPEG toast invites them).
+- **Binding details fixed with the handoff:** the cap is applied in `exporter::run_in_memory` just before `vectorize::vectorize` (so `vectorize` itself keeps its meaning and the raster outputs are untouched); scaling is uniform (aspect ratio kept), by the project's own `resize` with the plan's algorithm; the traced SVG's declared size therefore follows the scaled image; the cap constant lives in `vectorize.rs` and tests use a `vectorize_with_cap` variant with a small cap so that no test needs a heavy image. `spawn_blocking` is used through a **direct `tokio` dependency of `logolig-app`** (`tokio = { workspace = true, features = ["rt"] }`; tokio is already in the tree through iced and the workspace declares it): pre-approved by the architect; a `std::thread` + oneshot alternative is acceptable only if the implementer justifies it.
 
 ## Risks
 
