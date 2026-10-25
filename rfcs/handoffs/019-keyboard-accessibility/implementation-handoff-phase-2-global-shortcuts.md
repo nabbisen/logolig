@@ -65,7 +65,7 @@ A guard that the two stale comments are gone is **not** required.
 ## 7. Required evidence (proportional; evidence by state, pictures only where listed)
 
 1. Gates, chained: `cargo fmt --check && cargo clippy --workspace --all-targets --all-features --locked -- -D warnings && cargo test --workspace --all-features --locked && cargo +1.90 check --workspace --all-targets --all-features --locked && cargo audit` (expected: 0 vulnerabilities, 12 warnings unchanged).
-2. **GUI evidence on both backends.** Isolated config, binary named `logolig`, one instance, window 1280 × 720 focused first. **X11 backend** (`env -u WAYLAND_DISPLAY`, keys by `xdotool key --clearmodifiers`) **and native Wayland** (keys by `wtype`). Native Wayland now has a **positive control** because a shortcut has a visible effect (the page changes), which was missing in phase 1: record it. For each backend, assert by machine (window list or screenshot compare):
+2. **GUI evidence on native Wayland, by `wtype`, under the updated rules (`.git-exclude/rules/project-instructions-gui-common.md`; they were revised on 2026-10-25 and override anything older you may have read).** In particular: isolate **both** `XDG_CONFIG_HOME` and `XDG_STATE_HOME` (and any other directory the app reads) under a scratch directory, binary named `logolig`, exactly one instance; **do not resize, float or move a running window**: take the window at the size the app opens with and state that size next to the evidence (shortcuts do not depend on size, so 1280 × 720 is not required here); capture with `niri msg action screenshot-window --id <id> --path <ABSOLUTE path under the project root>` (niri rejects a relative path); **immediately before every `wtype` keystroke confirm that niri's focused window is the instance under test** (`niri msg -j focused-window`, its `pid`) and abort the run otherwise. `xdotool` keys do **not** reach this app (probed by the owner 2026-10-25), so keyboard evidence on the X11 backend is **not** required and not possible; this differs from phase 1 (where `xdotool` typing worked in a 1.26.2 build), so report if you observe the same. Mouse input that the rules assign to AT-SPI cannot be done that way here (iced 0.14 exposes no accessibility tree, per snora's guides): if you need the mouse (for example to focus the custom-size field), use `xdotool` on the X11 backend as in earlier jobs and **say so in the review request as a deviation from the rules** rather than improvising. Native Wayland has a **positive control** because a shortcut has a visible effect (the page changes), which was missing in phase 1: record it. Assert by machine (window list or screenshot compare):
    - Cmd+2 → Customize page, Cmd+3 → Settings, Cmd+1 → Home (screenshot differs; one capture each is enough, compare by bytes);
    - F1 → Settings page with the shortcut list;
    - Cmd+O on Home Empty → a file dialog window appears (a new window, not a capture); choose a PNG with `wtype` as in earlier jobs;
@@ -73,12 +73,12 @@ A guard that the two stale comments are gone is **not** required.
    - Esc with a toast visible (for example drop a non-square image) → the toast disappears and the screen stays; Esc again on Result → back to the start screen;
    - typing the plain letter `o` in the custom-size field of Customize (focus it by mouse on X11) enters `o` into the field and opens nothing; Cmd+O in that field: **record what happens** (no new window expected to be wrong; report the observed behaviour either way);
    - keys pressed while Converting do nothing harmful (Cmd+O and Cmd+S: no new window).
-3. **Pictures (at most two):** the Settings page with the shortcut list in English and the same in Japanese. Everything else is evidence by state. Say which backend.
+3. **Pictures (at most two):** the Settings page with the shortcut list in English and the same in Japanese (absolute `--path`). Everything else is evidence by state. Say which backend and which window size.
 4. CI: the run of the final commit and each of the five job conclusions (if a job shows `in_progress` while the run is completed, read the raw job log).
 
 ## 8. Acceptance criteria
 
-Every row of section 3 behaves as specified on X11 and native Wayland (evidence by state); the pure and state tests exist and pass, written first; the list is visible on the Settings page in both languages; the two stale comments and the docs are corrected from evidence; gates and CI green; no change outside section 4.
+Every row of section 3 behaves as specified on native Wayland (evidence by state); the pure and state tests exist and pass, written first; the list is visible on the Settings page in both languages; the two stale comments and the docs are corrected from evidence; gates and CI green; no change outside section 4.
 
 ## 9. Prohibited shortcuts
 
@@ -97,4 +97,4 @@ Key handling reads events only; no I/O, no new input path. A shortcut never bypa
 
 ## 12. Required review request
 
-`.git-exclude/review-request/rfc-019-phase-2-shortcuts/README.md` with everything required by section 7 of the mid-capability operating instructions, plus: the mapping function and handler code; a table of every shortcut × backend with the evidence (state), the recorded behaviour of Cmd+O inside a text field; the documentation changes with before/after text; gates and CI verdicts; skipped checks; deviations; open questions. Report to the owner only the path of the `README.md`.
+`.git-exclude/review-request/rfc-019-phase-2-shortcuts/README.md` with everything required by section 7 of the mid-capability operating instructions, plus: the mapping function and handler code; a table of every shortcut with the evidence (state) and the backend, the recorded behaviour of Cmd+O inside a text field; the documentation changes with before/after text; gates and CI verdicts; skipped checks; deviations; open questions. Report to the owner only the path of the `README.md`.
