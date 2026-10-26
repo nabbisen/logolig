@@ -1,0 +1,75 @@
+# Template rendered by scripts/render-aur.sh: the version, the source URL and the SHA-256 are filled in.
+# Maintainer: nabbisen
+pkgname=logolig
+pkgver=@PKGVER@
+pkgrel=1
+pkgdesc='Local-first favicon and logo asset generator (offline GUI)'
+arch=('x86_64')
+url='https://github.com/nabbisen/logolig'
+license=('Apache-2.0')
+# Each entry is backed by the evidence in the packaging review request:
+#  glibc, libgcc            linked (ldd)
+#  libxkbcommon, wayland    loaded at run time (winit; Wayland keyboard and window)
+#  libx11, libxcb, libxcursor, libxi, libxkbcommon-x11
+#                           loaded at run time (winit X11 backend, also mapped in a Wayland session)
+#  vulkan-icd-loader        loaded at run time (wgpu renderer)
+#  ttf-font                 the UI text uses system fonts (only the icon font is bundled):
+#                           with every system font hidden the window shows no text at all
+#  xdg-desktop-portal       the file chooser and the Save dialogs (rfd) talk to the portal
+#  hicolor-icon-theme       the installed icons use the hicolor hierarchy (namcap)
+depends=(
+  'glibc'
+  'libgcc'
+  'libxkbcommon'
+  'libxkbcommon-x11'
+  'wayland'
+  'libx11'
+  'libxcb'
+  'libxcursor'
+  'libxi'
+  'vulkan-icd-loader'
+  'ttf-font'
+  'xdg-desktop-portal'
+  'hicolor-icon-theme'
+)
+makedepends=('cargo')
+optdepends=(
+  'xdg-desktop-portal-impl: a portal backend (for example xdg-desktop-portal-gtk or the one of your desktop) so that the file chooser opens'
+  'vulkan-driver: GPU rendering (for example vulkan-radeon, vulkan-intel, nvidia-utils)'
+  'libglvnd: OpenGL fallback for rendering when Vulkan is unavailable'
+)
+source=("$pkgname-$pkgver.tar.gz::@SOURCE_URL@")
+sha256sums=('@SHA256@')
+
+prepare() {
+  cd "$pkgname-$pkgver"
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo build --frozen --release -p logolig-app
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo test --frozen -p logolig -p logolig-i18n
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 target/release/logolig "$pkgdir/usr/bin/logolig"
+  install -Dm644 packaging/linux/io.github.nabbisen.Logolig.desktop \
+    "$pkgdir/usr/share/applications/io.github.nabbisen.Logolig.desktop"
+  # No `|| true`: a missing icon directory must fail the package build.
+  local icons=packaging/linux/icons/hicolor
+  [[ -d $icons ]] || { echo "missing $icons" >&2; return 1; }
+  install -d "$pkgdir/usr/share/icons/hicolor"
+  cp -a "$icons/." "$pkgdir/usr/share/icons/hicolor/"
+  find "$pkgdir/usr/share/icons" -type f -exec chmod 644 {} +
+  find "$pkgdir/usr/share/icons" -type d -exec chmod 755 {} +
+}
