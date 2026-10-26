@@ -1,0 +1,102 @@
+name: Packaging
+
+# Dry-run check of the AUR source package (RFC 020, phase 2). It renders the PKGBUILD template
+# from the checked-out tree, builds it in a clean Arch Linux container and lints the result.
+# It never reads a secret and never pushes anywhere: publication to the AUR is a manual owner
+# action (RFC 020, phase 3).
+
+on:
+  pull_request:
+    paths:
+      - 'packaging/**'
+      - 'scripts/render-aur.sh'
+      - '.github/workflows/packaging.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'packaging/**'
+      - 'scripts/render-aur.sh'
+      - '.github/workflows/packaging.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  aur-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # archlinux:base-devel pinned by the digest of its multi-platform index (taken 2026-10-26).
+    # To refresh: read the `docker-content-digest` header of
+    #   GET https://registry-1.docker.io/v2/library/archlinux/manifests/base-devel
+    # (Accept: application/vnd.oci.image.index.v1+json, with an anonymous pull token), or run
+    # `docker buildx imagetools inspect archlinux:base-devel`, then replace the digest below.
+    container: archlinux@sha256:3cbf69d2d5958d6a294f3722c5668e6187c4df8e00fa27f72352f0bf83e495e1
+    steps:
+      # The container is a bare image: tools first (this step runs as root inside it).
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git rust namcap desktop-file-utils shellcheck
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Create the build user (makepkg refuses to run as root)
+        run: |
+          useradd --create-home builder
+          echo 'builder ALL=(ALL) NOPASSWD: /usr/bin/pacman' > /etc/sudoers.d/builder
+          chmod 0440 /etc/sudoers.d/builder
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Lint the helper script and the desktop entry
+        run: |
+          shellcheck scripts/render-aur.sh
+          desktop-file-validate packaging/linux/io.github.nabbisen.Logolig.desktop
+
+      - name: Archive this checkout and render the PKGBUILD
+        run: |
+          # The archive holds exactly the tracked files of this checkout under the prefix a real
+          # tag archive has, so the pull request's own packaging files are what gets built.
+          # Version 0.0.0 cannot collide with a release.
+          git archive --format=tar.gz --prefix=logolig-0.0.0/ -o /tmp/logolig-0.0.0.tar.gz HEAD
+          install -d -o builder -g builder /home/builder/render
+          chmod a+r /tmp/logolig-0.0.0.tar.gz
+          runuser -u builder -- "$GITHUB_WORKSPACE/scripts/render-aur.sh" logolig 0.0.0 /home/builder/render \
+            --tarball /tmp/logolig-0.0.0.tar.gz
+          cat /home/builder/render/PKGBUILD
+
+      - name: Build the package (makepkg, tests included)
+        run: |
+          cd /home/builder/render
+          runuser -u builder -- makepkg -f --syncdeps --noconfirm
+          ls -l ./*.pkg.tar.zst
+
+      - name: namcap (PKGBUILD and package; an error line fails the job)
+        run: |
+          cd /home/builder/render
+          namcap PKGBUILD | tee /tmp/namcap-pkgbuild.txt
+          namcap ./*.pkg.tar.zst | tee /tmp/namcap-package.txt
+          if grep -E '^[^ ]+ E: ' /tmp/namcap-pkgbuild.txt /tmp/namcap-package.txt; then
+            echo "namcap reported errors" >&2
+            exit 1
+          fi
+
+      - name: Package contents are exactly the expected files
+        run: |
+          cd /home/builder/render
+          pacman -Qlp ./*.pkg.tar.zst | awk '{print $2}' | grep -v '/$' | sort > /tmp/actual.txt
+          cat /tmp/actual.txt
+          printf '%s\n' \
+            /usr/bin/logolig \
+            /usr/share/applications/io.github.nabbisen.Logolig.desktop \
+            /usr/share/icons/hicolor/128x128/apps/io.github.nabbisen.Logolig.png \
+            /usr/share/icons/hicolor/256x256/apps/io.github.nabbisen.Logolig.png \
+            /usr/share/icons/hicolor/48x48/apps/io.github.nabbisen.Logolig.png \
+            /usr/share/icons/hicolor/64x64/apps/io.github.nabbisen.Logolig.png \
+            /usr/share/icons/hicolor/scalable/apps/io.github.nabbisen.Logolig.svg \
+            | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
