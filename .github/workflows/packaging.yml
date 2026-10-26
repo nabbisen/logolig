@@ -73,13 +73,18 @@ jobs:
         run: |
           cd /home/builder/render
           runuser -u builder -- makepkg -f --syncdeps --noconfirm
+          # The container's makepkg.conf also builds a split `logolig-debug` package; the
+          # checks below look at the installable package only.
           ls -l ./*.pkg.tar.zst
+          # (`logolig-0.0.0-*` does not match `logolig-debug-0.0.0-*`.)
+          test "$(printf '%s\n' ./logolig-0.0.0-*.pkg.tar.zst | wc -l)" = 1
 
       - name: namcap (PKGBUILD and package; an error line fails the job)
         run: |
           cd /home/builder/render
           namcap PKGBUILD | tee /tmp/namcap-pkgbuild.txt
-          namcap ./*.pkg.tar.zst | tee /tmp/namcap-package.txt
+          pkg=$(printf '%s\n' ./logolig-0.0.0-*.pkg.tar.zst)
+          namcap "$pkg" | tee /tmp/namcap-package.txt
           if grep -E '^[^ ]+ E: ' /tmp/namcap-pkgbuild.txt /tmp/namcap-package.txt; then
             echo "namcap reported errors" >&2
             exit 1
@@ -88,7 +93,8 @@ jobs:
       - name: Package contents are exactly the expected files
         run: |
           cd /home/builder/render
-          pacman -Qlp ./*.pkg.tar.zst | awk '{print $2}' | grep -v '/$' | sort > /tmp/actual.txt
+          pkg=$(printf '%s\n' ./logolig-0.0.0-*.pkg.tar.zst)
+          pacman -Qlp "$pkg" | awk '{print $2}' | grep -v '/$' | sort > /tmp/actual.txt
           cat /tmp/actual.txt
           printf '%s\n' \
             /usr/bin/logolig \
