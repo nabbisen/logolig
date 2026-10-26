@@ -5,5 +5,5 @@ Comment=Make favicons and app logos from one image, offline
 Comment[ja]=1枚の画像から favicon とアプリ用ロゴを作成（オフライン）
 Exec=logolig
 Icon=io.github.nabbisen.Logolig
-Terminal=false
+Terminal=maybe
 Categories=Graphics;
