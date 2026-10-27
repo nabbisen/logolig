@@ -2,7 +2,7 @@
 
 `logolig.svg` is the master application icon. Every platform size is generated from it (Linux hicolor sizes, the Microsoft Store tiles), ideally with Logolig itself.
 
-**Status: candidate, pending the owner's approval.** If the owner supplies original vector artwork, it replaces this file; nothing else changes.
+**Status: approved by the owner as the master application icon.** If the owner supplies original vector artwork, it replaces this file; nothing else changes.
 
 ## Provenance (please keep; Flathub asks for disclosure of AI-assisted material)
 
@@ -13,5 +13,4 @@
 
 ## Checks still to do
 
-- The owner's visual approval (design decision).
 - Legibility at 16, 24, 32, 48 and 64 px (the dev job that installs the icons renders and reviews each size).

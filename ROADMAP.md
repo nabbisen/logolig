@@ -29,7 +29,7 @@
 | J4 | RFC 019 phase 2: global shortcuts (Cmd+O, Cmd+S, Esc, Cmd+1/2/3, F1) and the list on the Settings page | M | J3b | **Done and reviewed 2026-10-25** (240 tests, five CI jobs green; verified on native Wayland by `wtype` and on X11; known: a focused text field takes Ctrl+1 → RFC 027) |
 | J4b | RFC 030: bound vectorization cost (cap 512 px) and keep the UI responsive (`spawn_blocking`) | M | J4 | **Implemented and reviewed 2026-10-25** (cap and blocking pool Approved: 1400 px noise 10.4 s → 0.38 s, SVG 25.6 → 1.75 MB; A/B proves the blocking pool removes the starvation; 259 tests, five CI jobs green). The 2 MB advisory is removed by the follow-up J4b-fix (the cap made it moot; real images give 0.01–1 MB) |
 | J4b-fix | RFC 030 follow-up: remove the large-SVG advisory, keys and tests | S | J4b | **Done and reviewed 2026-10-25** (253 tests, five CI jobs green; `app.rs` identical to its pre-J4b state) |
-| J5 | RFC 020 phase 2: AUR source package (`logolig`), packaging CI | M | J4b-fix (icon approved and committed: `packaging/icons/logolig.svg`) | Files named by the application ID; local dry run only |
+| J5 | RFC 020 phase 2: AUR source package (`logolig`), packaging CI | M | J4b-fix (icon approved and committed: `packaging/icons/logolig.svg`) | **Implemented and reviewed 2026-10-27** (dry-run package builds and passes `namcap`; Packaging CI green incl. a demonstrated red; five CI jobs green). Files named by the application ID; local dry run only |
 | J6 | Release preparation: version 1.27.0, release notes, final gates, candidate verification | S | J5 | The architect submits a release recommendation |
 | J7 | **Owner:** authorize 1.27.0, tag, first manual AUR publication (RFC 020 phase 3), then the README install section | S | J6 | Owner actions |
 
@@ -45,6 +45,7 @@
 | J9 | RFC 021: selection-state indicators | M | Settles icons and cues before the focus indicator is designed |
 | J10 | RFC 027: keyboard focus model (phase 0 spike, then Home, Result, Customize, Settings) | L | The owner's priority: makes "accessible" true |
 | J11 | RFC 026: result screen layout | S | Back button must always be reachable |
+| J11b | RFC 031: a file dialog that cannot open must not fail silently (spike first) | S | Found in J5; proposed, owner/architect decision when 1.28.0 is planned |
 | J12 | RFC 018: documentation synchronisation | S | Closed last, from the evidence of the finished work |
 | J12b | RFC 008 remainder: `scripts/check-rfcs.sh` (RFC 000 invariants), wired into CI | S | The migration itself was executed on 2026-10-21 |
 | T1 | RFC 020 phases 3–4: `logolig-bin`, `release.yml` with attestation, AUR automation | M | Needs the owner's `aur` environment and CI key (RFC 020 D4) |

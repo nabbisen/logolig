@@ -101,7 +101,7 @@ Prefer, in this order: a clean chroot (`devtools`: `extra-x86_64-build`), a cont
 
 1. `makepkg -f --syncdeps --noconfirm` on the rendered dry-run PKGBUILD. Record success, build time and the size of the package.
 2. `namcap PKGBUILD` and `namcap <package>`: record every message; resolve errors; explain warnings you leave.
-3. `desktop-file-validate packaging/linux/logolig.desktop`.
+3. `desktop-file-validate packaging/linux/io.github.nabbisen.Logolig.desktop`.
 4. `ldd /usr/bin/logolig` inside the environment: list unresolved libraries (there must be none).
 5. **`dlopen` analysis.** Determine which shared libraries the binary may load at run time (inspect with `strings`/`readelf` on the binary and the crates `winit`, `wgpu`, `ashpd`/`zbus`, `rfd`, `fontdb` as locked in `Cargo.lock`). Produce a table: library, loaded by, needed for (Wayland, X11, Vulkan, GL, fontconfig, D-Bus), package that provides it on Arch, proposed dependency type (`depends` / `optdepends`).
 6. **Launch test on the host session** (the maintainer uses niri on Wayland; follow `.git-exclude/rules/project-instructions-gui-common.md`): run the built binary from the package's `pkg/` directory (not installed), confirm the window opens, choose a file through the file chooser, and capture a screenshot, all under the **updated GUI rules** (`.git-exclude/rules/project-instructions-gui-common.md`, revised 2026-10-25, authoritative): isolate `XDG_CONFIG_HOME` **and** `XDG_STATE_HOME` under a scratch directory; do not resize, float or move a running window (state the size the window opened with); capture with `niri msg action screenshot-window --id <id> --path <ABSOLUTE path under the project root>` (niri rejects relative paths); never ImageMagick `import`; before every `wtype` keystroke confirm niri's focused window belongs to the instance under test (`niri msg -j focused-window`, `pid`). If a rule cannot be met by this application (for example AT-SPI actions: iced 0.14 exposes none), say so in the review request instead of improvising.
@@ -112,7 +112,7 @@ Prefer, in this order: a clean chroot (`devtools`: `extra-x86_64-build`), a cont
 
 RFC 020 D5: the repository only has the 150 × 150 Microsoft tile (`packaging/windows/Assets/Square150x150Logo.png`); there is no master. The owner will commit master artwork (SVG, or PNG of at least 1024 px) under `packaging/icons/`. **When it exists** (check at the start of work; if absent, do everything else first and mark this step blocked):
 
-- Generate `48×48`, `64×64`, `128×128`, `256×256` PNGs for `packaging/linux/icons/hicolor/<size>x<size>/apps/logolig.png` **with Logolig itself** (the application, default settings, Lanczos3) from the master, and record the exact procedure; if the master is SVG and an SVG icon is wanted, install it as `scalable/apps/logolig.svg` unchanged.
+- Generate `48×48`, `64×64`, `128×128`, `256×256` PNGs for `packaging/linux/icons/hicolor/<size>x<size>/apps/io.github.nabbisen.Logolig.png` **with Logolig itself** (the application, default settings, Lanczos3) from the master, and record the exact procedure; if the master is SVG and an SVG icon is wanted, install it as `scalable/apps/io.github.nabbisen.Logolig.svg` unchanged.
 - Verify the icons visually at each size and report any quality problem.
 - Until then, for the dry run only, you may create a **temporary** placeholder icon in the dry-run archive (never committed, clearly labelled in the review request). A published package without a real icon is not acceptable.
 

@@ -58,6 +58,7 @@ RFC 009 and RFC 010 are implemented on `main` and move to `done/` with the relea
 | [021](./proposed/021-selection-state-indicators.md) | Selection-state indicators | P2 |
 | [023](./proposed/023-flatpak-publication.md) | Flatpak publication (Flathub) | P2 |
 | [026](./proposed/026-result-screen-layout-small-windows.md) | Result screen layout at small window heights | P2 |
+| [031](./proposed/031-silent-file-dialog-failure.md) | A file dialog that cannot open must not fail silently | P2 |
 | [004](./proposed/004-locale-zh-cn.md) | Simplified Chinese locale (deferred) | P3 |
 | [007](./proposed/007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | P3 |
 | [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
