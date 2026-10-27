@@ -1,7 +1,7 @@
 # Logolig Functional Specification
 
 > This document describes **what logolig can do and how it behaves** at
-> v1.26.2, as observable behaviour rather than implementation detail.
+> v1.27.0, as observable behaviour rather than implementation detail.
 > It is intended as input for UX review and external design decisions.
 >
 > The document separates **functional specification** (what it does) from

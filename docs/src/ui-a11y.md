@@ -30,7 +30,10 @@ macOS have not been tested (on macOS the command key is Cmd instead of Ctrl; tha
 is the intended mapping and is not verified). Non-Latin keyboard layouts
 (for example a Japanese one) are covered by unit tests of the key mapping only,
 not by a run on such a layout. The statements about Tab, Enter, Space and the focus
-indicator were verified in phase 1 on release 1.26.2 and have not changed.
+indicator were verified in phase 1 on release 1.26.2; no focus code was changed for
+1.27.0 (the shortcuts are the only keyboard addition), and a Tab press on the start
+screen of the 1.27.0 release build still changed nothing on screen (Enter and Space
+were not re-run).
 
 **Supported today: global shortcuts**
 

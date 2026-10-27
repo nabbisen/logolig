@@ -11,7 +11,7 @@ project:
 
 | File | Purpose |
 | --- | --- |
-| `favicon.svg` | Vector format. Modern browsers prefer it on high-DPI displays. SVG sources are written verbatim (non-destructive); PNG/WebP sources are vectorized via [vtracer](https://github.com/visioncortex/vtracer) using its defaults. |
+| `favicon.svg` | Vector format. Modern browsers prefer it on high-DPI displays. SVG sources are written verbatim (non-destructive); PNG/WebP/JPEG sources are vectorized via [vtracer](https://github.com/visioncortex/vtracer) using its defaults. |
 | `favicon.ico` | Backwards compatibility (Windows / older browsers). Contains 16, 32, and 48 px frames so each size is rasterized **independently** rather than scaled from a single source — this preserves quality at small sizes (§6.2). |
 | `apple-touch-icon.png` | 180×180 PNG; iOS / iPadOS home-screen icon. |
 | `favicon-32.png` | High-DPI browser tab. |
@@ -24,7 +24,7 @@ intentionally short. Two toggles
 in v1.2.0 control the SVG output:
 
 - `include_svg` (default: `true`) — write `favicon.svg` at all
-- `vectorize_on_raster` (default: `true`) — when the source is PNG/WebP,
+- `vectorize_on_raster` (default: `true`) — when the source is PNG/WebP/JPEG,
   attempt vectorization. Turn this off for photos or noisy images where
   tracing produces poor results
 
