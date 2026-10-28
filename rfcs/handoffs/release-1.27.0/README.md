@@ -3,3 +3,4 @@
 Roadmap job J6 (see [`ROADMAP.md`](../../../ROADMAP.md) §2). This handoff has no RFC of its own: its authority is the authorized release plan. The owner authorizes the tag and the publication separately (J7).
 
 - [`implementation-handoff.md`](./implementation-handoff.md) — release candidate: version, documentation, release notes, verification
+- [`implementation-handoff-followup-notes-and-smoke.md`](./implementation-handoff-followup-notes-and-smoke.md) — J6b: release notes without RFC numbers, the last smoke run
