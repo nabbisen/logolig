@@ -1,6 +1,6 @@
 # RFC 025 — Window application ID and desktop integration
 
-**Status.** Accepted (owner, 2026-10-21)
+**Status.** Implemented (1.27.0)
 **Priority.** P1 for packaging (affects the AUR package and any Flatpak)
 **Handoffs.** [rfcs/handoffs/025-window-application-id/](../handoffs/025-window-application-id/README.md)
 **Tracks.** The application reports an empty Wayland `app_id`.

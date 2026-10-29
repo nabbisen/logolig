@@ -1,6 +1,6 @@
 # RFC 030 — Bound the cost of vectorization and keep the UI responsive during conversion
 
-**Status.** Accepted (owner authorized it into release 1.27.0 as job J4b, 2026-10-25; measure first, then fix)
+**Status.** Implemented (1.27.0)
 **Priority.** P1
 **Handoffs.** [rfcs/handoffs/030-bound-vectorization-cost-and-keep-ui-responsive/](../handoffs/030-bound-vectorization-cost-and-keep-ui-responsive/README.md)
 **Tracks.** Found by the RFC 019 phase 2 implementer (shortcuts not served during a long conversion) and quantified by the architect.

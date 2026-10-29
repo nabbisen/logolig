@@ -1,6 +1,6 @@
 # Handoffs for RFC 025
 
-Governing RFC: [RFC 025](../../accepted/025-window-application-id.md). The handoffs are execution documents; the RFC remains the authority for design and for lifecycle status. If a handoff conflicts with its RFC, the RFC wins and the handoff is corrected (RFC 000).
+Governing RFC: [RFC 025](../../done/025-window-application-id.md). The handoffs are execution documents; the RFC remains the authority for design and for lifecycle status. If a handoff conflicts with its RFC, the RFC wins and the handoff is corrected (RFC 000).
 
 Implementation handoff.
 

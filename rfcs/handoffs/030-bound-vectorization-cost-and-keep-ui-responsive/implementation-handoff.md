@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (Rust 2024, 2018+ module style without `mod.rs`, English only, tests separated from implementation, `unsafe` forbidden; relative paths with `cd`). **GUI evidence rules: `.git-exclude/rules/project-instructions-gui-common.md`, revised 2026-10-25 and authoritative**: fixed window size only at launch (never resize or float a running window; state the size the window opened with), screenshots with an **absolute** `--path`, `wtype` only after confirming niri's focused window is the instance under test (by `pid` for a Wayland window), isolate `XDG_CONFIG_HOME` **and** `XDG_STATE_HOME`, binary named `logolig`, one instance.
 
-Governing RFC: [RFC 030](../../accepted/030-bound-vectorization-cost-and-keep-ui-responsive.md) (Accepted; owner authorized it into release 1.27.0 on 2026-10-25), including its "Binding details fixed with the handoff". On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 030](../../done/030-bound-vectorization-cost-and-keep-ui-responsive.md) (Accepted; owner authorized it into release 1.27.0 on 2026-10-25), including its "Binding details fixed with the handoff". On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused or misled.
 

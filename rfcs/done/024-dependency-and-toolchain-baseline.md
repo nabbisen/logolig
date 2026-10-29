@@ -1,6 +1,6 @@
 # RFC 024 — Dependency and toolchain baseline (MSRV, `cargo audit`)
 
-**Status.** Accepted (owner, 2026-10-21: "Yes" to D1 and D2 as recommended)
+**Status.** Implemented (1.27.0)
 **Priority.** P1 (CI is red on two jobs; the declared MSRV is false)
 **Handoffs.** [rfcs/handoffs/024-dependency-and-toolchain-baseline/](../handoffs/024-dependency-and-toolchain-baseline/README.md)
 **Tracks.** Findings of the RFC 020 phase-1 CI work.

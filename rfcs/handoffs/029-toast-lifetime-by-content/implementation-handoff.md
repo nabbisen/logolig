@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (Rust 2024, 2018+ module style without `mod.rs`, English only, tests separated from implementation, `unsafe` forbidden; relative paths with `cd`; GUI evidence rules in `.git-exclude/rules/project-instructions-gui-common.md`, "GUI Evidence and Automation Rules").
 
-Governing RFC: [RFC 029](../../accepted/029-toast-lifetime-by-content.md) (Accepted; owner authorized it into release 1.27.0 on 2026-10-24). The RFC (with its **corrected formula**) is authoritative. On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 029](../../done/029-toast-lifetime-by-content.md) (Accepted; owner authorized it into release 1.27.0 on 2026-10-24). The RFC (with its **corrected formula**) is authoritative. On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused or misled.
 

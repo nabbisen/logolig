@@ -1,6 +1,6 @@
 # RFC 009 — Result artifact identity and ZIP integrity
 
-**Status.** Accepted (owner, 2026-10-21)
+**Status.** Implemented (1.27.0)
 **Priority.** P1 (functional defect; a shipped option makes "Download all (ZIP)" fail)
 **Handoffs.** [rfcs/handoffs/009-result-artifact-identity-and-zip-integrity/](../handoffs/009-result-artifact-identity-and-zip-integrity/implementation-handoff.md)
 **Tracks.** Defect: ZIP download fails and leaves a partial file when monochrome output is enabled.

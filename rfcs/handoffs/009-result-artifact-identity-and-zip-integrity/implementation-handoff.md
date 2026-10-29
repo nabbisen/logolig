@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (Rust 2024, 2018+ module style without `mod.rs`, English only, tests separated from implementation, `unsafe` forbidden).
 
-Governing RFC: [RFC 009](../../accepted/009-result-artifact-identity-and-zip-integrity.md) (Accepted). The RFC defines what and why; this handoff defines how and how to prove it. On any conflict between them, stop and send a clarification request. The RFC's section "Decisions" (Q1, case-insensitive uniqueness, one additive public function) is binding.
+Governing RFC: [RFC 009](../../done/009-result-artifact-identity-and-zip-integrity.md) (Accepted). The RFC defines what and why; this handoff defines how and how to prove it. On any conflict between them, stop and send a clarification request. The RFC's section "Decisions" (Q1, case-insensitive uniqueness, one additive public function) is binding.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused or misled.
 

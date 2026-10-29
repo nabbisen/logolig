@@ -1,6 +1,6 @@
 # RFC 028 — Upgrade snora from 0.25.2 to 0.53.0
 
-**Status.** Accepted (owner, 2026-10-21: D1 authorized, scheduled as J2b in release 1.27.0)
+**Status.** Implemented (1.27.0)
 **Priority.** P1 if the owner authorizes it into release 1.27.0 (architect's recommendation); otherwise P2
 **Tracks.** Dependency currency, UI correctness fixes, and the basis for the keyboard work (RFC 019 phase 2, RFC 027).
 **Handoffs.** [rfcs/handoffs/028-snora-upgrade-0-53/](../handoffs/028-snora-upgrade-0-53/README.md)

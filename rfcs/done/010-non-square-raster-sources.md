@@ -1,6 +1,6 @@
 # RFC 010 — Non-square raster sources in square outputs
 
-**Status.** Accepted (owner approval conditional on reasonableness; architect assessment below, 2026-10-21)
+**Status.** Implemented (1.27.0)
 **Priority.** P1 (output quality is a stated product value)
 **Handoffs.** [rfcs/handoffs/010-non-square-raster-sources/](../handoffs/010-non-square-raster-sources/implementation-handoff.md)
 **Tracks.** Defect/design gap: non-square PNG/WebP/JPEG sources are stretched into square favicon outputs.

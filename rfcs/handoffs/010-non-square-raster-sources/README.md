@@ -1,6 +1,6 @@
 # Handoffs for RFC 010
 
-Governing RFC: [RFC 010](../../accepted/010-non-square-raster-sources.md). The handoffs are execution documents; the RFC remains the authority for design and for lifecycle status. If a handoff conflicts with its RFC, the RFC wins and the handoff is corrected (RFC 000).
+Governing RFC: [RFC 010](../../done/010-non-square-raster-sources.md). The handoffs are execution documents; the RFC remains the authority for design and for lifecycle status. If a handoff conflicts with its RFC, the RFC wins and the handoff is corrected (RFC 000).
 
 Implementation handoff.
 

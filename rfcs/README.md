@@ -25,24 +25,22 @@ recommendation; the owner authorizes the plan.
 | [000](./done/000-rfc-lifecycle-policy.md) | RFC lifecycle policy | policy in effect |
 | [005](./done/005-microsoft-app-logos.md) | Microsoft app logos | 1.26.0 |
 | [006](./done/006-drop-zone-drag-drop-repair.md) | Drop-zone drag-and-drop repair | 1.26.1 |
+| [009](./done/009-result-artifact-identity-and-zip-integrity.md) | Result artifact identity and ZIP integrity | 1.27.0 |
+| [010](./done/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | 1.27.0 |
+| [024](./done/024-dependency-and-toolchain-baseline.md) | Dependency and toolchain baseline (MSRV, `cargo audit`) | 1.27.0 |
+| [025](./done/025-window-application-id.md) | Window application ID and desktop integration | 1.27.0 |
+| [028](./done/028-snora-upgrade-0-53.md) | Upgrade snora 0.25.2 → 0.53.0 | 1.27.0 |
+| [029](./done/029-toast-lifetime-by-content.md) | Toast lifetime proportional to its content | 1.27.0 |
+| [030](./done/030-bound-vectorization-cost-and-keep-ui-responsive.md) | Bound the cost of vectorization and keep the UI responsive during conversion | 1.27.0 |
 
 ### Accepted (`accepted/`)
-
-RFC 009 and RFC 010 are implemented on `main` and move to `done/` with the release that ships them.
 
 | # | Title | Priority |
 | --- | --- | --- |
 | [020](./accepted/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging (phased) | P1 |
-| [024](./accepted/024-dependency-and-toolchain-baseline.md) | Dependency and toolchain baseline (MSRV, `cargo audit`) | P1 |
-| [025](./accepted/025-window-application-id.md) | Window application ID and desktop integration | P1 |
-| [028](./accepted/028-snora-upgrade-0-53.md) | Upgrade snora 0.25.2 → 0.53.0 | P1 |
-| [030](./accepted/030-bound-vectorization-cost-and-keep-ui-responsive.md) | Bound the cost of vectorization and keep the UI responsive during conversion | P1 |
-| [029](./accepted/029-toast-lifetime-by-content.md) | Toast lifetime proportional to its content | P1 |
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
 | [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phase 1 done; phase 2 shortcuts next) | P1 |
 | [027](./accepted/027-keyboard-focus-model.md) | Keyboard focus model (phased: spike first) | P1 |
-| [009](./accepted/009-result-artifact-identity-and-zip-integrity.md) | Result artifact identity and ZIP integrity | P1 (implemented, unreleased) |
-| [010](./accepted/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | P1 (implemented, unreleased) |
 | [008](./accepted/008-rfc-portfolio-migration.md) | RFC portfolio migration to the RFC 000 layout | P2 (script outstanding) |
 
 ### Proposed (`proposed/`)

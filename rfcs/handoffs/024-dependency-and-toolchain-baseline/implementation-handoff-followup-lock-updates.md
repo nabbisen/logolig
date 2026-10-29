@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (relative paths with `cd`).
 
-Governing RFC: [RFC 024](../../accepted/024-dependency-and-toolchain-baseline.md) ("Review outcome and further decisions"). On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 024](../../done/024-dependency-and-toolchain-baseline.md) ("Review outcome and further decisions"). On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design.
 

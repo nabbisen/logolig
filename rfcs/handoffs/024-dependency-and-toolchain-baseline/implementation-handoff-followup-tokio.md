@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (relative paths with `cd`).
 
-Governing RFC: [RFC 024](../../accepted/024-dependency-and-toolchain-baseline.md). Workflow: directly on `main`, no branches, no concurrent jobs; chain every gate with `&&` and push only when all pass; never rewrite history; no tags.
+Governing RFC: [RFC 024](../../done/024-dependency-and-toolchain-baseline.md). Workflow: directly on `main`, no branches, no concurrent jobs; chain every gate with `&&` and push only when all pass; never rewrite history; no tags.
 
 **Position:** job J2a in `ROADMAP.md`, after J2 (reviewed), before J2b (snora upgrade, which will also touch `Cargo.lock`).
 

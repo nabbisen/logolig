@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (Rust 2024, 2018+ module style without `mod.rs`, English only, tests separated from implementation, `unsafe` forbidden; relative paths with `cd`).
 
-Governing RFC: [RFC 025](../../accepted/025-window-application-id.md) (Accepted). The RFC defines what and why; this handoff defines how and how to prove it. On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 025](../../done/025-window-application-id.md) (Implemented in 1.27.0). The RFC defines what and why; this handoff defines how and how to prove it. On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused or misled.
 

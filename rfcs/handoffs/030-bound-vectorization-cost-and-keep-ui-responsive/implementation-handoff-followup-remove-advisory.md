@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 030 follow-up: remove the large-SVG advisory (job J4b-fix)
 
-Same roles, rules and workflow as [`implementation-handoff.md`](./implementation-handoff.md) (directly on `main`, `git pull --ff-only` first, gates chained with `&&`, no red push, no tags). Governing text: [RFC 030](../../accepted/030-bound-vectorization-cost-and-keep-ui-responsive.md) Design 3 (amended 2026-10-25). Review of J4b: `.git-exclude/reviewed/rfc-030-vectorization-cost-review-2026-10-25.md`.
+Same roles, rules and workflow as [`implementation-handoff.md`](./implementation-handoff.md) (directly on `main`, `git pull --ff-only` first, gates chained with `&&`, no red push, no tags). Governing text: [RFC 030](../../done/030-bound-vectorization-cost-and-keep-ui-responsive.md) Design 3 (amended 2026-10-25). Review of J4b: `.git-exclude/reviewed/rfc-030-vectorization-cost-review-2026-10-25.md`.
 
 ## Why
 

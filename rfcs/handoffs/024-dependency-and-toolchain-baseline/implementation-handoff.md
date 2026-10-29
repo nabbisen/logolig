@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (Rust 2024, 2018+ module style without `mod.rs`, English only, tests separated from implementation, `unsafe` forbidden; relative paths with `cd`).
 
-Governing RFC: [RFC 024](../../accepted/024-dependency-and-toolchain-baseline.md) (Accepted). The RFC defines what and why; this handoff defines how and how to prove it. On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 024](../../done/024-dependency-and-toolchain-baseline.md) (Accepted). The RFC defines what and why; this handoff defines how and how to prove it. On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused or misled. A false compatibility statement and a dependency with known vulnerabilities are both things this job removes.
 

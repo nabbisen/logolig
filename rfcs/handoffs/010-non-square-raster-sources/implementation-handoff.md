@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and the project rules in `.git-exclude/rules/` (Rust 2024, Rust 2018+ module style without `mod.rs`, English only, tests separated from implementation, `unsafe` forbidden).
 
-Governing RFC: [RFC 010](../../accepted/010-non-square-raster-sources.md) (Accepted). The RFC defines **what and why**; this handoff defines **how to implement and prove it**. If you find a conflict between the two, stop and send a clarification request; do not resolve it yourself.
+Governing RFC: [RFC 010](../../done/010-non-square-raster-sources.md) (Accepted). The RFC defines **what and why**; this handoff defines **how to implement and prove it**. If you find a conflict between the two, stop and send a clarification request; do not resolve it yourself.
 
 Owner philosophy to keep in mind while deciding local details: a clean, safe, robust design; users must not be confused or misled.
 

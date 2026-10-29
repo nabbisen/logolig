@@ -1,6 +1,6 @@
 # RFC 029 — Toast lifetime proportional to its content
 
-**Status.** Accepted (owner authorized it into release 1.27.0 as job J3b, 2026-10-24)
+**Status.** Implemented (1.27.0)
 **Priority.** P1
 **Handoffs.** [rfcs/handoffs/029-toast-lifetime-by-content/](../handoffs/029-toast-lifetime-by-content/README.md)
 **Tracks.** UX defect: advisory toasts disappear before they can be read.
