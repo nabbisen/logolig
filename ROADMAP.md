@@ -39,29 +39,46 @@
 
 **Not in 1.27.0.** Full focus model, SVG text rendering, `logolig-bin`, AUR automation, Flatpak, robustness items.
 
-## 3. Release 1.28.0: keyboard and UI correctness (proposed)
+## 3. Release 1.28.0: keyboard and UI correctness (proposed 2026-10-30; awaiting the owner's authorization)
+
+**Objective.** Make the word "accessible" true for the main task and remove the places where the interface can mislead or leave the user without feedback. Theme: *a user is never confused*: the keyboard works everywhere, one cue has one meaning, a result always belongs to the file the user chose, and a dead-looking button says why.
+
+**Why a minor version.** Visible behaviour changes (focus model, selection cues, layout, new messages). No setting is removed; persisted settings stay readable (RFC 017 Q1 is decided so, see the table).
+
+**Order is by dependency, strictly serial, one job at a time on `main`** (the rules in §1 hold). The large mechanical refactor goes first so that every later review stays small.
+
+| Job | RFC / handoff | Size | Blocked by | Notes |
+|---|---|---|---|---|
+| J7c | README install section (`yay -S logolig`, font and portal-backend notes) | S | owner's first AUR publication | Not part of 1.28.0 scope; runs whenever the owner has published. Handoff by the architect after the publication |
+| J8 | RFC 017: source structure (inline tests out, `app.rs` split, dead code, stale scaffolding) | L | owner authorization | Behaviour-preserving, one commit per step, reviewed with `git diff -M`; same 253 tests, same names. **Decision (architect, RFC 017 Q1): remove `ExportPlan::overrides`/`SizeOverride`** (no feature behind it; old settings files still load, a test proves it) |
+| J9 | RFC 026: result screen layout (Back always reachable) | S | J8 | Small and visible; done before the focus model touches the Result page |
+| J10 | RFC 021: selection-state indicators (one meaning per cue, lucide icons, no font-glyph dependence) | M | J9 | Settles the cues before the focus indicator is designed. **Owner question Q1** (accent bar or fill-only for the active nav item); architect recommends the accent bar plus bold label |
+| J11 | RFC 011: conversion job identity and "a chooser is already open" | S | J10 | A newer file can show an older file's results (verified by reading; with the 1.27.0 blocking pool the window is real). Message signatures change internally; needs J8's split |
+| J12 | RFC 031: a file dialog that cannot open must not fail silently | S–M | J11 | Spike first (probe of the portal on the session bus, no new package); decision after the spike, "document only" is an allowed outcome |
+| J13 | RFC 027 phase 0: spike (evidence only): F6 zones, text-field key ownership, focus hand-over | S | J12 | Freezes the design only after the architect's review |
+| J14 | RFC 027 steps 1–4: Home, Result, Customize, Settings (one reviewed step each; none released unless the previous one is complete) | L (4 × M) | J13 | The owner's priority. `ui-a11y.md` is updated from the evidence at the end, never before. Acceptance: a keyboard-only user can choose a file, convert, download, go back, change every setting, switch pages |
+| J15 | RFC 018: documentation synchronisation (closed last, from the evidence of the finished work) | S | J14 | |
+| J16 | RFC 008 remainder: `scripts/check-rfcs.sh` (RFC 000 invariants), wired into CI | S | J15 | The migration itself was executed on 2026-10-21 |
+| T1 | RFC 020 phases 3–4: `logolig-bin`, `release.yml` with attestation, AUR automation | M | owner's `aur` environment and CI key (RFC 020 D4) | Parallel track, **not** a 1.28.0 gate: it starts only when the owner has set up the environment, and it runs between jobs, never concurrently with one |
+
+**Readiness criteria for 1.28.0:** all five CI jobs green on the release commit; `cargo audit` 0 vulnerabilities; J8 to J16 reviewed; a keyboard-only walk-through of the main task recorded on native Wayland with `wtype` (and X11 where a key path differs) as the acceptance evidence of RFC 027; the documentation states the shipped behaviour; release notes list the remaining limits (no screen-reader support: iced 0.14 exposes no accessibility tree; Windows and macOS not exercised unless the owner can test them).
+
+**Effort and dates.** Sizes are relative. 1.27.0 took nine days for fourteen jobs with strictly serial review, about one and a half jobs per day. On that pace J8 to J16 (about fifteen job-steps, with the focus model the long pole) suggests **three to four weeks of calendar time**; this is an estimate, not a promise, and the architect will report deviations as they appear (J8 and J14 are the likeliest to slip).
+
+**Not in 1.28.0 (moved to 1.29.0 or later):** Flatpak, SVG text rendering, input validation and limits, manifest validation, system-theme following, i18n hygiene, preset check, new locales.
+
+**Decisions requested from the owner:** (1) authorize this scope and order (changes are announced before they are made); (2) RFC 021 Q1, the nav indicator: accent bar plus bold (recommended) or fill-only.
+
+## 4. Release 1.29.0: distribution reach and robustness (proposed; scope to be confirmed when 1.28.0 ships)
 
 | Job | RFC | Size | Notes |
 |---|---|---|---|
-| J8 | RFC 017: source structure (inline tests out, `app.rs` split, dead code) | L | Enabler: do it before the large UI work so reviews stay mechanical |
-| J9 | RFC 021: selection-state indicators | M | Settles icons and cues before the focus indicator is designed |
-| J10 | RFC 027: keyboard focus model (phase 0 spike, then Home, Result, Customize, Settings) | L | The owner's priority: makes "accessible" true |
-| J11 | RFC 026: result screen layout | S | Back button must always be reachable |
-| J11b | RFC 031: a file dialog that cannot open must not fail silently (spike first) | S | Found in J5; proposed, owner/architect decision when 1.28.0 is planned |
-| J12 | RFC 018: documentation synchronisation | S | Closed last, from the evidence of the finished work |
-| J12b | RFC 008 remainder: `scripts/check-rfcs.sh` (RFC 000 invariants), wired into CI | S | The migration itself was executed on 2026-10-21 |
-| T1 | RFC 020 phases 3–4: `logolig-bin`, `release.yml` with attestation, AUR automation | M | Needs the owner's `aur` environment and CI key (RFC 020 D4) |
+| J17 | RFC 023: Flatpak (upstream files, MetaInfo, validation CI; the owner writes the manifest and submits to Flathub) | M–L | Owner prefers the ordinary Flathub route; AI-policy decision pending |
+| J18 | RFC 015 phase 2b: text rendering with generic-family repair and substitution advisory | M | Includes the Flatpak font set |
+| J19 | RFC 012, 014: manifest validation, input limits | M | Robustness and safety (RFC 011 moved to 1.28.0) |
+| J20 | RFC 013, 016, 022: system theme, i18n hygiene, vtracer preset check; `vtracer` dependency-hygiene spike (RFC 024) | M | Polish and correctness |
 
-## 4. Release 1.29.0: distribution reach and robustness (proposed)
-
-| Job | RFC | Size | Notes |
-|---|---|---|---|
-| J13 | RFC 023: Flatpak (upstream files, MetaInfo, validation CI; the owner writes the manifest and submits to Flathub) | M–L | Owner prefers the ordinary Flathub route; AI-policy decision pending |
-| J14 | RFC 015 phase 2b: text rendering with generic-family repair and substitution advisory | M | Includes the Flatpak font set |
-| J15 | RFC 011, 012, 014: stale results, manifest validation, input limits | M | Robustness and safety |
-| J16 | RFC 013, 016, 022: system theme, i18n hygiene, vtracer preset check; `vtracer` dependency-hygiene spike (RFC 024) | M | Polish and correctness |
-
-The architect may split or reorder these as evidence arrives and will say so before acting. RFC 001–003 are withdrawn and RFC 004 is deferred (RFC 008 D4, decided 2026-10-21); RFC 027's phase 0 spike (J10) is the first step of the focus model.
+The architect may split or reorder these as evidence arrives and will say so before acting. RFC 001–003 are withdrawn and RFC 004 is deferred (RFC 008 D4, decided 2026-10-21); RFC 027's phase 0 spike (J13) is the first step of the focus model, in 1.28.0.
 
 ## 4a. Distribution track
 
