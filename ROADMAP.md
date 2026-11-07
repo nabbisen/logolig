@@ -85,7 +85,7 @@ The architect may split or reorder these as evidence arrives and will say so bef
 | Step | Owner | Architect/dev |
 |---|---|---|
 | Master icon (SVG or ≥ 1024 px PNG) in `packaging/icons/` | provides (request issued 2026-10-21) | J5 uses it |
-| First AUR publication of `logolig` | publishes by hand | prepares and verifies the package |
+| First AUR publication of `logolig` | publishes by hand; stated 2026-11-07: will prepare the AUR repositories `logolig` and `logolig-bin` "in a few days" | prepares and verifies the package (verified files for 1.27.0 are ready) |
 | `aur` environment and CI-only key | sets up (conditions in RFC 020 D4) | T1 after confirmation |
 | Flathub | reads the policy, writes the manifest and the submission | upstream files and validation only |
 
