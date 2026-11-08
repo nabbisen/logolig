@@ -33,7 +33,8 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
     let mut layout = AppLayout::new(body(state))
         .direction(LayoutDirection::Ltr)
         .toasts(state.toasts.clone())
-        .on_close_modals(Message::CloseModals);
+        .on_close_modals(Message::CloseModals)
+        .on_toast_attention(Message::ToastAttention);
 
     if mobile {
         // Mobile: footer holds the navigation bar.

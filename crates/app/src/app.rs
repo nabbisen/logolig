@@ -67,6 +67,10 @@ pub struct AppState {
     pub toasts: Vec<Toast<Message>>,
     /// Monotonic counter used to assign unique IDs to toasts.
     pub next_toast_id: u64,
+    /// Which toasts the reader is attending to (pointer on the toast). snora's expiry sweep
+    /// keeps those and restarts their countdown when the attention leaves, so this lives as
+    /// long as the application state (RFC 032): a temporary per tick would forget every hold.
+    pub holds: snora::toast::Holds,
 
     // v1.3.0: text buffer for the custom-size input in the Customize page.
     // Transient UI state: belongs in the app layer, not in logolig (core).
@@ -246,6 +250,7 @@ impl Default for AppState {
             busy: false,
             toasts: Vec::new(),
             next_toast_id: 0,
+            holds: snora::toast::Holds::default(),
             png_size_input: String::new(),
             ico_size_input: String::new(),
             store: None,
@@ -435,6 +440,9 @@ pub enum Message {
 
     // Toast lifecycle
     ToastTick,
+    /// The reader's attention reached or left a toast (pointer on it; RFC 032). Passed to
+    /// `Holds::attend` as it comes: the value is `#[non_exhaustive]` and is not matched here.
+    ToastAttention(u64, snora::ToastAttention),
     DismissToast(u64),
 
     // snora: outside-click to close modals
@@ -1126,7 +1134,13 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // v1.19.0: ExportRequested / ExportDirPicked / ExportCompleted handlers removed.
         // v1.16.0 moved to the ConvertCompleted + per-asset download path.
         Message::ToastTick => {
-            snora::toast::sweep_expired(&mut state.toasts, Instant::now());
+            state.holds.sweep(&mut state.toasts, Instant::now());
+            Task::none()
+        }
+        Message::ToastAttention(id, attention) => {
+            state
+                .holds
+                .attend(id, attention, &mut state.toasts, Instant::now());
             Task::none()
         }
         Message::DismissToast(id) => {
@@ -1443,6 +1457,9 @@ fn persist_settings(state: &mut AppState) {
 // `&mut AppState` and `AppState: Default`, so plain construction plus
 // assertion is sufficient. `persist_settings` is a no-op when
 // `state.store` is `None` (the default), so these tests never touch disk.
+
+#[cfg(test)]
+mod toast_hold_tests;
 
 #[cfg(test)]
 mod tests {
