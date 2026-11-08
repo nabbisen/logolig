@@ -45,17 +45,18 @@
 
 **Why a minor version.** Visible behaviour changes (focus model, selection cues, layout, new messages). No setting is removed; persisted settings stay readable (RFC 017 Q1 is decided so, see the table).
 
-**Order is by dependency, strictly serial, one job at a time on `main`** (the rules in §1 hold). The large mechanical refactor goes first so that every later review stays small.
+**Order is by dependency, strictly serial, one job at a time on `main`** (the rules in §1 hold). The snora upgrade (J7d, small, one line of real code) goes first so that everything after it is built and reviewed on the engine we will ship; then the large mechanical refactor, so that every later review stays small.
 
 | Job | RFC / handoff | Size | Blocked by | Notes |
 |---|---|---|---|---|
 | J7c | README install section (`yay -S logolig`, font and portal-backend notes) | S | owner's first AUR publication | Not part of 1.28.0 scope; runs whenever the owner has published. Handoff by the architect after the publication |
+| J7d | RFC 032: upgrade snora 0.53 → 0.57 (alone; no new feature except toast attention, D1) | S | owner authorization | Added 2026-11-09 after snora's notice. Spike by the architect: one compile error (`sweep_expired` removed), 253 tests pass. `AppState` must own a `Holds`. Advisory count 12 → 14 to be explained. First job of 1.28.0 |
 | J8 | RFC 017: source structure (inline tests out, `app.rs` split, dead code, stale scaffolding) | L | owner authorization | Behaviour-preserving, one commit per step, reviewed with `git diff -M`; same 253 tests, same names. **Decision (architect, RFC 017 Q1): remove `ExportPlan::overrides`/`SizeOverride`** (no feature behind it; old settings files still load, a test proves it) |
 | J9 | RFC 026: result screen layout (Back always reachable) | S | J8 | Small and visible; done before the focus model touches the Result page |
 | J10 | RFC 021: selection-state indicators (one meaning per cue, lucide icons, no font-glyph dependence) | M | J9 | Settles the cues before the focus indicator is designed. **Owner question Q1** (accent bar or fill-only for the active nav item); architect recommends the accent bar plus bold label |
 | J11 | RFC 011: conversion job identity and "a chooser is already open" | S | J10 | A newer file can show an older file's results (verified by reading; with the 1.27.0 blocking pool the window is real). Message signatures change internally; needs J8's split |
 | J12 | RFC 031: a file dialog that cannot open must not fail silently | S–M | J11 | Spike first (probe of the portal on the session bus, no new package); decision after the spike, "document only" is an allowed outcome |
-| J13 | RFC 027 phase 0: spike (evidence only): F6 zones, text-field key ownership, focus hand-over | S | J12 | Freezes the design only after the architect's review |
+| J13 | RFC 027 phase 0: spike (evidence only) **on snora 0.57**: Option D (snora's focus engine: `traverse`, its side bar, `design::button`, `AppLayout::shortcuts`/`escape`) against Option A (app-owned model); coverage of checkboxes, slider, radio groups, text-field key ownership, focus hand-over | S | J12, J7d | Freezes the design only after the architect's review. snora's notice of 2026-11-08 changes the starting point: see the update in RFC 027 |
 | J14 | RFC 027 steps 1–4: Home, Result, Customize, Settings (one reviewed step each; none released unless the previous one is complete) | L (4 × M) | J13 | The owner's priority. `ui-a11y.md` is updated from the evidence at the end, never before. Acceptance: a keyboard-only user can choose a file, convert, download, go back, change every setting, switch pages |
 | J15 | RFC 018: documentation synchronisation (closed last, from the evidence of the finished work) | S | J14 | |
 | J16 | RFC 008 remainder: `scripts/check-rfcs.sh` (RFC 000 invariants), wired into CI | S | J15 | The migration itself was executed on 2026-10-21 |
@@ -67,7 +68,7 @@
 
 **Not in 1.28.0 (moved to 1.29.0 or later):** Flatpak, SVG text rendering, input validation and limits, manifest validation, system-theme following, i18n hygiene, preset check, new locales.
 
-**Decisions requested from the owner:** (1) authorize this scope and order (changes are announced before they are made); (2) RFC 021 Q1, the nav indicator: accent bar plus bold (recommended) or fill-only.
+**Decisions requested from the owner:** (1) authorize this scope and order, **including J7d (RFC 032) as the first job** (changes are announced before they are made); (2) RFC 021 Q1, the nav indicator: accent bar plus bold (recommended) or fill-only.
 
 ## 4. Release 1.29.0: distribution reach and robustness (proposed; scope to be confirmed when 1.28.0 ships)
 

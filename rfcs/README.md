@@ -57,6 +57,7 @@ recommendation; the owner authorizes the plan.
 | [023](./proposed/023-flatpak-publication.md) | Flatpak publication (Flathub) | P2 |
 | [026](./proposed/026-result-screen-layout-small-windows.md) | Result screen layout at small window heights | P2 |
 | [031](./proposed/031-silent-file-dialog-failure.md) | A file dialog that cannot open must not fail silently | P2 |
+| [032](./proposed/032-snora-0-57-upgrade.md) | Upgrade snora from 0.53 to 0.57 | P1 |
 | [004](./proposed/004-locale-zh-cn.md) | Simplified Chinese locale (deferred) | P3 |
 | [007](./proposed/007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | P3 |
 | [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
