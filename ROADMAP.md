@@ -39,7 +39,7 @@
 
 **Not in 1.27.0.** Full focus model, SVG text rendering, `logolig-bin`, AUR automation, Flatpak, robustness items.
 
-## 3. Release 1.28.0: keyboard and UI correctness (proposed 2026-10-30; awaiting the owner's authorization)
+## 3. Release 1.28.0: keyboard and UI correctness (proposed 2026-10-30; **authorized by the owner 2026-11-09**, with J7d as the first job)
 
 **Objective.** Make the word "accessible" true for the main task and remove the places where the interface can mislead or leave the user without feedback. Theme: *a user is never confused*: the keyboard works everywhere, one cue has one meaning, a result always belongs to the file the user chose, and a dead-looking button says why.
 
@@ -50,8 +50,8 @@
 | Job | RFC / handoff | Size | Blocked by | Notes |
 |---|---|---|---|---|
 | J7c | README install section (`yay -S logolig`, font and portal-backend notes) | S | owner's first AUR publication | Not part of 1.28.0 scope; runs whenever the owner has published. Handoff by the architect after the publication |
-| J7d | RFC 032: upgrade snora 0.53 → 0.57 (alone; no new feature except toast attention, D1) | S | owner authorization | Added 2026-11-09 after snora's notice. Spike by the architect: one compile error (`sweep_expired` removed), 253 tests pass. `AppState` must own a `Holds`. Advisory count 12 → 14 to be explained. First job of 1.28.0 |
-| J8 | RFC 017: source structure (inline tests out, `app.rs` split, dead code, stale scaffolding) | L | owner authorization | Behaviour-preserving, one commit per step, reviewed with `git diff -M`; same 253 tests, same names. **Decision (architect, RFC 017 Q1): remove `ExportPlan::overrides`/`SizeOverride`** (no feature behind it; old settings files still load, a test proves it) |
+| J7d | RFC 032: upgrade snora 0.53 → 0.57 (alone; no new feature except toast attention, D1) | S | none (authorized 2026-11-09); **handoff issued** | Added 2026-11-09 after snora's notice. Spike by the architect: one compile error (`sweep_expired` removed), 253 tests pass. `AppState` must own a `Holds`. Advisory count 12 → 14 to be explained. First job of 1.28.0 |
+| J8 | RFC 017: source structure (inline tests out, `app.rs` split, dead code, stale scaffolding) | L | J7d | Behaviour-preserving, one commit per step, reviewed with `git diff -M`; same 253 tests, same names. **Decision (architect, RFC 017 Q1): remove `ExportPlan::overrides`/`SizeOverride`** (no feature behind it; old settings files still load, a test proves it) |
 | J9 | RFC 026: result screen layout (Back always reachable) | S | J8 | Small and visible; done before the focus model touches the Result page |
 | J10 | RFC 021: selection-state indicators (one meaning per cue, lucide icons, no font-glyph dependence) | M | J9 | Settles the cues before the focus indicator is designed. **Owner question Q1** (accent bar or fill-only for the active nav item); architect recommends the accent bar plus bold label |
 | J11 | RFC 011: conversion job identity and "a chooser is already open" | S | J10 | A newer file can show an older file's results (verified by reading; with the 1.27.0 blocking pool the window is real). Message signatures change internally; needs J8's split |
@@ -68,7 +68,7 @@
 
 **Not in 1.28.0 (moved to 1.29.0 or later):** Flatpak, SVG text rendering, input validation and limits, manifest validation, system-theme following, i18n hygiene, preset check, new locales.
 
-**Decisions requested from the owner:** (1) authorize this scope and order, **including J7d (RFC 032) as the first job** (changes are announced before they are made); (2) RFC 021 Q1, the nav indicator: accent bar plus bold (recommended) or fill-only.
+**Decisions (owner, 2026-11-09):** (1) scope and order authorized, including J7d (RFC 032) as the first job; changes are announced before they are made; (2) RFC 021 Q1 decided: accent bar plus bold label for the active nav item; (3) RFC 032 D1 decided: toasts wait while the pointer rests on them. RFC 017, 021, 026, 011, 031 and 032 were moved to `accepted/` the same day.
 
 ## 4. Release 1.29.0: distribution reach and robustness (proposed; scope to be confirmed when 1.28.0 ships)
 
@@ -104,7 +104,9 @@ The architect may split or reorder these as evidence arrives and will say so bef
 1. **Granted 2026-10-21:** this plan, in particular the scope and order of 1.27.0 and the recommendation of a minor version.
 2. **Granted 2026-10-21:** the ordering of jobs J1–J7 (strictly serial).
 3. Resolved: the reviewed work was integrated into `main` as J0.
-4. **Still to be authorized separately, when the time comes:** the release tag and publication of 1.27.0 (J7), the first AUR publication, and every later release.
+4. **Granted 2026-10-29/30:** tag and publication of 1.27.0 (GitHub Release, crates.io). The first AUR publication is the owner's own action.
+5. **Granted 2026-11-09:** the scope and order of 1.28.0 (§3), RFC 021 Q1 (accent bar plus bold) and RFC 032 D1 (toast attention).
+6. **Still to be authorized separately, when the time comes:** the release tag and publication of 1.28.0 and every later release.
 
 ## 7. Risks to the schedule
 

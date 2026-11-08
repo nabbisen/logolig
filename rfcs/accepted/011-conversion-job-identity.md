@@ -1,6 +1,6 @@
 # RFC 011 — Conversion job identity and concurrent-input policy
 
-**Status.** Proposed
+**Status.** Accepted (owner authorization 2026-11-09, release 1.28.0)
 **Priority.** P2 (race with low probability and confusing effect; cheap to fix)
 **Tracks.** Defect: results of an older conversion can overwrite a newer one.
 **Touches.** `crates/app/src/app.rs` (`AppState`, `Message`, `update`), `crates/app/src/task_queue.rs`, app tests.
@@ -34,9 +34,9 @@ Task cancellation via `Task::abortable` is possible but needs handle storage and
 
 Two more concurrency observations: (1) pressing Cmd+O twice quickly (or clicking the drop zone twice) may open two file choosers, since nothing records that a chooser is already open; the job-identity design should also cover "a chooser is open". (2) CPU-bound conversion work blocks a tokio worker and starves other events during long conversions: tracked and quantified in RFC 030.
 
-## Open question
+## Open question (answered)
 
-- **Q1** CPU-bound conversion runs inside `async move { .. }` on iced's executor. If a worker thread is blocked by a long vectorisation, UI responsiveness depends on the runtime's thread count. Measure with a 4000 × 4000 PNG before deciding whether to move the work to a blocking pool. Not part of this RFC's acceptance.
+- **Q1 (answered by RFC 030, shipped in 1.27.0: conversion and preview run on the blocking pool; no longer part of this RFC)** CPU-bound conversion runs inside `async move { .. }` on iced's executor. If a worker thread is blocked by a long vectorisation, UI responsiveness depends on the runtime's thread count. Measure with a 4000 × 4000 PNG before deciding whether to move the work to a blocking pool. Not part of this RFC's acceptance.
 
 ## Tests (design-derived)
 

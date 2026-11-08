@@ -1,6 +1,6 @@
 # RFC 021 — Selection-state indicators
 
-**Status.** Proposed
+**Status.** Accepted (owner authorization 2026-11-09, release 1.28.0)
 **Priority.** P2
 **Tracks.** UI/UX: one glyph is used for different meanings, and the documented glyph is not the implemented one. Raised by RFC 018 D1.
 **Touches.** `crates/app/src/ui/accessibility.rs` (`marker`), `ui/preview_panel.rs`, `ui/settings_page.rs`, `ui/sidebar.rs`, `ui/result_view.rs`, `docs/src/ui-a11y.md`, tests.
@@ -41,9 +41,9 @@ Verified by source reading; **not verified visually on all platforms**.
 - Adopt `▣` as documented: distinct, but it has no established meaning for users, so it must be learned, and it has the same font dependency.
 - Wait for the Snora Design System (DEC-004), which brings tokens and primitives: may supersede the hand-made styles, but should not block a correctness-of-meaning fix.
 
-## Questions for the owner
+## Decision (owner, 2026-11-09)
 
-- **Q1** Is the accent-bar treatment for navigation acceptable visually, or do you prefer a simpler fill-only treatment with bold label? (A fill plus bold is not colour alone, because weight and fill change shape and contrast, but the bar is the stronger cue.)
+- **Q1 decided: the active navigation item gets the accent bar plus a bold label** (the architect's recommendation, accepted). A bar is a shape cue, not colour alone. It applies to the desktop side navigation and the mobile bottom navigation alike.
 
 ## Tests
 

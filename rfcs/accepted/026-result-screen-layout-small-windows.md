@@ -1,6 +1,6 @@
 # RFC 026 — Result screen layout at small window heights
 
-**Status.** Proposed
+**Status.** Accepted (owner authorization 2026-11-09, release 1.28.0)
 **Priority.** P2
 **Tracks.** The "← Back" button is clipped at the bottom of the Result screen.
 **Touches.** `crates/app/src/ui/result_view.rs`, possibly `shell.rs`.

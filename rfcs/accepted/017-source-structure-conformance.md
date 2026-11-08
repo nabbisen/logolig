@@ -1,6 +1,6 @@
 # RFC 017 — Source structure conformance (tests, file size, dead code)
 
-**Status.** Proposed
+**Status.** Accepted (owner authorization 2026-11-09, release 1.28.0)
 **Priority.** P2 (enabler: should land before RFC 011, 012, 016 touch `app.rs`)
 **Tracks.** Technical debt against `project-instructions-rust.md` and the development instructions.
 **Touches.** `crates/app/src/app.rs` and its UI modules, `crates/core/src/services/flatten.rs`, `crates/app/src/task_queue.rs`, `crates/app/tests/app_state.rs`, `crates/core/tests/exporter.rs`, working-tree hygiene.
@@ -40,9 +40,9 @@ The prior review (2026-07-09) already named thin app-level tests; the current ga
 6. **Hygiene.** Delete the empty directories locally; they are not tracked.
 7. Each step is its own commit so reviews stay mechanical.
 
-## Open question
+## Decision (architect, authorized with the 1.28.0 scope, 2026-11-09)
 
-- **Q1** `ExportPlan::overrides: Vec<SizeOverride>` is persisted API surface with no feature behind it. Remove, or keep as a reserved extension point?
+- **Q1 decided: remove `ExportPlan::overrides` and `SizeOverride`.** It is persisted surface with no feature behind it; a reserved extension point nobody uses confuses readers and widens the settings format ("Less is more"). Old `settings.json` files that still contain an `overrides` key must keep loading (unknown fields are ignored; a test with such a file proves it), and the key is not written any more. Binding for the handoff.
 
 ## Acceptance criteria
 

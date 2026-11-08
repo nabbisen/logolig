@@ -42,22 +42,22 @@ recommendation; the owner authorizes the plan.
 | [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phase 1 done; phase 2 shortcuts next) | P1 |
 | [027](./accepted/027-keyboard-focus-model.md) | Keyboard focus model (phased: spike first) | P1 |
 | [008](./accepted/008-rfc-portfolio-migration.md) | RFC portfolio migration to the RFC 000 layout | P2 (script outstanding) |
+| [032](./accepted/032-snora-0-57-upgrade.md) | Upgrade snora from 0.53 to 0.57 | P1 |
+| [017](./accepted/017-source-structure-conformance.md) | Source structure conformance (tests, file size, dead code) | P2 |
+| [026](./accepted/026-result-screen-layout-small-windows.md) | Result screen layout at small window heights | P2 |
+| [021](./accepted/021-selection-state-indicators.md) | Selection-state indicators | P2 |
+| [011](./accepted/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
+| [031](./accepted/031-silent-file-dialog-failure.md) | A file dialog that cannot open must not fail silently | P2 |
 
 ### Proposed (`proposed/`)
 
 | # | Title | Priority |
 | --- | --- | --- |
-| [011](./proposed/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
 | [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
 | [013](./proposed/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |
 | [014](./proposed/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
-| [017](./proposed/017-source-structure-conformance.md) | Source structure conformance (tests, file size, dead code) | P2 |
 | [018](./proposed/018-documentation-synchronisation.md) | Documentation synchronisation | P2 |
-| [021](./proposed/021-selection-state-indicators.md) | Selection-state indicators | P2 |
 | [023](./proposed/023-flatpak-publication.md) | Flatpak publication (Flathub) | P2 |
-| [026](./proposed/026-result-screen-layout-small-windows.md) | Result screen layout at small window heights | P2 |
-| [031](./proposed/031-silent-file-dialog-failure.md) | A file dialog that cannot open must not fail silently | P2 |
-| [032](./proposed/032-snora-0-57-upgrade.md) | Upgrade snora from 0.53 to 0.57 | P1 |
 | [004](./proposed/004-locale-zh-cn.md) | Simplified Chinese locale (deferred) | P3 |
 | [007](./proposed/007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | P3 |
 | [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |

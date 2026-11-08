@@ -1,6 +1,6 @@
 # RFC 031 — A file dialog that cannot open must not fail silently
 
-**Status.** Proposed
+**Status.** Accepted (owner authorization 2026-11-09, release 1.28.0)
 **Priority.** P2
 **Tracks.** Found by the J5 implementer (RFC 020 phase 2), verified by the architect in the `rfd` source.
 **Touches.** `crates/app/src/task_queue.rs` (`pick_file_task`, the two `save_file` tasks), `crates/app/src/app.rs` (messages), i18n (one toast), docs.

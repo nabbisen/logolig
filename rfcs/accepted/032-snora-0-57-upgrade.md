@@ -1,6 +1,6 @@
 # RFC 032 — Upgrade snora from 0.53 to 0.57
 
-**Status.** Proposed
+**Status.** Accepted (owner authorization 2026-11-09, release 1.28.0)
 **Priority.** P1 (a build break is waiting on the next `cargo update`; the keyboard work of 1.28.0 builds on the result)
 **Tracks.** snora's general notice to application teams, 0.57.0 (received 2026-11-08) and its migration guides 0.53 → 0.54 → 0.55 → 0.56 → 0.57.
 **Touches.** `Cargo.toml`, `Cargo.lock`, `crates/app/src/app.rs` (toast sweep, toast subscription, optionally toast attention), docs. **Not** the views, the sidebar, or the keyboard handling (see "Out of scope").
