@@ -58,6 +58,7 @@ recommendation; the owner authorizes the plan.
 | [014](./proposed/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
 | [018](./proposed/018-documentation-synchronisation.md) | Documentation synchronisation | P2 |
 | [023](./proposed/023-flatpak-publication.md) | Flatpak publication (Flathub) | P2 |
+| [033](./proposed/033-new-application-logo.md) | Adopt the new application logo (docs, Linux package, Microsoft Store) | P2 |
 | [004](./proposed/004-locale-zh-cn.md) | Simplified Chinese locale (deferred) | P3 |
 | [007](./proposed/007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | P3 |
 | [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
