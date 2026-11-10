@@ -8,15 +8,14 @@ mod download;
 
 mod nav;
 
+mod settings;
+
 use std::time::Instant;
 
 use iced::Task;
 
-use logolig::{ExportPlan, MessageKey};
-use logolig_i18n::{Translator, detect_system_locale};
-
 use super::persist::persist_settings;
-use super::toast::{push_error_toast, push_success_toast, push_warning_toast};
+use super::toast::push_error_toast;
 use super::{AppState, Message, Screen};
 use convert::fail;
 use input::start_ingest;
@@ -113,51 +112,22 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         // v1.17.0: PNG preset size checkbox toggled
-        Message::PngPresetSizeAdded(size) => {
-            if state.export_plan.add_png_size(size) {
-                persist_settings(state);
-            }
-            Task::none()
-        }
+        Message::PngPresetSizeAdded(size) => settings::png_preset_size_added(state, size),
         // v1.22.0: side-nav page switch
         Message::NavPageSelected(page) => {
             state.nav_page = page;
             Task::none()
         }
         Message::ShortcutPressed(shortcut) => handle_shortcut(state, shortcut),
-        Message::LocalePicked(opt) => {
-            state.locale_override = opt;
-            let resolved = opt.unwrap_or_else(detect_system_locale);
-            state.translator = Translator::for_locale(resolved);
-            persist_settings(state);
-            Task::none()
-        }
+        Message::LocalePicked(opt) => settings::locale_picked(state, opt),
         Message::ThemePicked(theme) => {
             state.theme = theme;
             persist_settings(state);
             Task::none()
         }
 
-        Message::AlgorithmChanged(alg) => {
-            state.export_plan.algorithm = alg;
-            persist_settings(state);
-            // Resize algorithm changed — rebuild the preview cache.
-            // Discard stale cache (UI shows a loading state while cache is None).
-
-            state.preview_cache = None;
-            if let Some(asset) = state.source_asset.as_ref() {
-                let arc = std::sync::Arc::new(asset.clone());
-                crate::task_queue::build_preview_task(arc, alg)
-            } else {
-                Task::none()
-            }
-        }
-        Message::IncludeSvgToggled(on) => {
-            // Output plan change only; does not affect the preview.
-            state.export_plan.include_svg = on;
-            persist_settings(state);
-            Task::none()
-        }
+        Message::AlgorithmChanged(alg) => settings::algorithm_changed(state, alg),
+        Message::IncludeSvgToggled(on) => settings::include_svg_toggled(state, on),
         Message::VectorizeOnRasterToggled(on) => {
             state.export_plan.vectorize_on_raster = on;
             persist_settings(state);
@@ -177,56 +147,9 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             persist_settings(state);
             Task::none()
         }
-        Message::PngSizeInputChanged(s) => {
-            // Lightweight digit filter — digits pass through; non-digits are ignored.
-            // Whitespace from pastes is stripped at parse time.
-            state.png_size_input = s;
-            Task::none()
-        }
-        Message::PngSizeAddRequested => {
-            let raw = state.png_size_input.trim().to_string();
-            match parse_size(&raw, logolig::PNG_SIZE_MIN, logolig::PNG_SIZE_MAX) {
-                Ok(size) => {
-                    if state.export_plan.add_png_size(size) {
-                        state.png_size_input.clear();
-                        persist_settings(state);
-                    } else {
-                        // parse_size already caught out-of-range; duplicates reach here.
-                        let title = state.translator.t(MessageKey::ToastSizeAlreadyInSetTitle);
-                        let body = state.translator.t_args(
-                            MessageKey::ToastPngSizeAlreadyInSetBody,
-                            &[("size", &size.to_string())],
-                        );
-                        push_warning_toast(state, &title, &body);
-                    }
-                }
-                Err(SizeParseError::Empty) => {
-                    // Ignore Add on empty input (prevents accidental Enter-key repeats).
-                }
-                Err(SizeParseError::NotANumber) => {
-                    let title = state.translator.t(MessageKey::ToastInvalidSizeTitle);
-                    let body = state
-                        .translator
-                        .t_args(MessageKey::ToastInvalidSizeBody, &[("input", &raw)]);
-                    push_warning_toast(state, &title, &body);
-                }
-                Err(SizeParseError::OutOfRange { min, max }) => {
-                    let title = state.translator.t(MessageKey::ToastSizeOutOfRangeTitle);
-                    let body = state.translator.t_args(
-                        MessageKey::ToastPngSizeOutOfRangeBody,
-                        &[("min", &min.to_string()), ("max", &max.to_string())],
-                    );
-                    push_warning_toast(state, &title, &body);
-                }
-            }
-            Task::none()
-        }
-        Message::PngSizeRemoveRequested(size) => {
-            if state.export_plan.remove_png_size(size) {
-                persist_settings(state);
-            }
-            Task::none()
-        }
+        Message::PngSizeInputChanged(s) => settings::png_size_input_changed(state, s),
+        Message::PngSizeAddRequested => settings::png_size_add_requested(state),
+        Message::PngSizeRemoveRequested(size) => settings::png_size_remove_requested(state, size),
         // -----------------------------------------------------------------
         // v1.4.1: vtracer preset + ExportPlan reset
         // -----------------------------------------------------------------
@@ -235,28 +158,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             persist_settings(state);
             Task::none()
         }
-        Message::ExportPlanResetRequested => {
-            // Reset ExportPlan only. theme, locale, and nav state are unaffected
-            // (§v1.4.1 reset scope decision).
-            state.export_plan = ExportPlan::default();
-            // Also clear text input buffers so stale values don't reappear.
-            state.png_size_input.clear();
-            // Algorithm may have changed (reset restores Lanczos3); rebuild preview.
-            // Discard stale cache; rebuild with the restored algorithm.
-            state.preview_cache = None;
-            persist_settings(state);
-            // Transient success toast confirms the reset happened.
-            let title = state.translator.t(MessageKey::ToastResetTitle);
-            let body = state.translator.t(MessageKey::ToastResetBody);
-            push_success_toast(state, &title, &body);
-            // Rebuild preview cache if a source is loaded.
-            if let Some(asset) = state.source_asset.as_ref() {
-                let arc = std::sync::Arc::new(asset.clone());
-                crate::task_queue::build_preview_task(arc, state.export_plan.algorithm)
-            } else {
-                Task::none()
-            }
-        }
+        Message::ExportPlanResetRequested => settings::export_plan_reset_requested(state),
 
         // v1.19.0: old LocaleCycled / AppCloseRequested handlers removed.
 
@@ -345,19 +247,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // -----------------------------------------------------------------
         // v1.21.0: keep-transparency toggle
         // -----------------------------------------------------------------
-        Message::KeepTransparencyToggled(on) => {
-            // Persisted (Q4-a). Backward compat with older settings JSON is handled
-            // by the struct-level `#[serde(default)]` on ExportPlan; missing fields
-            // default to true.
-            //
-            // The preview cache does not reflect keep_transparency in v1.21.0.
-            // The setting's effect is visible in Result card thumbnails and
-            // downloaded files only.
-
-            state.export_plan.keep_transparency = on;
-            persist_settings(state);
-            Task::none()
-        }
+        Message::KeepTransparencyToggled(on) => settings::keep_transparency_toggled(state, on),
 
         // v1.19.0: ExportRequested / ExportDirPicked / ExportCompleted handlers removed.
         // v1.16.0 moved to the ConvertCompleted + per-asset download path.
@@ -378,29 +268,4 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // The application opens no modal or menu overlay, so there is nothing to close.
         Message::CloseModals => Task::none(),
     }
-}
-
-// ----------------------------------------------------------------------
-// v1.3.0: size input parsing + warning toast
-// ----------------------------------------------------------------------
-
-#[derive(Debug)]
-enum SizeParseError {
-    Empty,
-    NotANumber,
-    OutOfRange { min: u32, max: u32 },
-}
-
-/// Parses a digit string to `u32` and validates the range.
-/// `add_*_size` also validates, but doing it here lets us show a specific
-/// error (out-of-range / not a number / duplicate) to the user.
-fn parse_size(raw: &str, min: u32, max: u32) -> Result<u32, SizeParseError> {
-    if raw.is_empty() {
-        return Err(SizeParseError::Empty);
-    }
-    let n: u32 = raw.parse().map_err(|_| SizeParseError::NotANumber)?;
-    if n < min || n > max {
-        return Err(SizeParseError::OutOfRange { min, max });
-    }
-    Ok(n)
 }
