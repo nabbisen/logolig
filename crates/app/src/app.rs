@@ -6,6 +6,17 @@
 //! - errors are surfaced as snora `Toast` notifications, not screen transitions
 //!   (aligns with §12 ABDD: state is not expressed through colour alone)
 //! - heavy work is offloaded via `iced::Task` to avoid blocking the UI thread (§2.4)
+//!
+//! ## Layout (RFC 017)
+//!
+//! | File | Contents |
+//! |---|---|
+//! | `app.rs` | the runtime wiring: `run`, window title, theme, `subscription`, `view` |
+//! | `app/state.rs` | `Screen`, `NavPage`, `AppState`, `resolve_theme`, `is_mobile` |
+//! | `app/message.rs` | `Message` |
+//! | `app/update.rs`, `app/update/*.rs` | the dispatch and the handlers |
+//! | `app/toast.rs` | the toast helpers and the advisory toasts |
+//! | `app/persist.rs` | saving the settings |
 
 mod message;
 mod persist;

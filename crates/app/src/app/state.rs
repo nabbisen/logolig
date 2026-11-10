@@ -1,5 +1,4 @@
-//! Application state: screens, navigation pages, `AppState`, and the helpers that read it
-//! (RFC 017: moved out of `app.rs`, unchanged).
+//! Application state: screens, navigation pages, `AppState`, and the helpers that read it.
 
 use std::path::PathBuf;
 

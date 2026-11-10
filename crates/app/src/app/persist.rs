@@ -1,4 +1,4 @@
-//! Saving the settings (RFC 017: moved out of `app.rs`, unchanged apart from visibility).
+//! Saving the settings.
 
 use logolig::{MessageKey, SettingsStore};
 

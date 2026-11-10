@@ -1,5 +1,4 @@
-//! Toast helpers: the push functions, the toast id counter and the advisory toasts
-//! (RFC 017: moved out of `app.rs`, unchanged apart from visibility).
+//! Toast helpers: the push functions, the toast id counter and the advisory toasts.
 
 use snora::{Toast, ToastIntent, ToastLifetime};
 

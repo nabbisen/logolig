@@ -1,17 +1,24 @@
-//! `update`: the state transitions (RFC 017: moved out of `app.rs`, unchanged apart from visibility).
-
-mod input;
+//! `update`: the dispatch from a `Message` to what it does (RFC 017).
+//!
+//! An arm of one to three body lines stays in the dispatch below. Every longer arm is a function
+//! in one of the handler files, named after what happens; its body is the old arm body, unchanged.
+//!
+//! | File | Handles |
+//! |---|---|
+//! | `update/input.rs` | choosing a file, ingest, the SVG analysis, the preview build |
+//! | `update/convert.rs` | preview context and background, the common error handler |
+//! | `update/download.rs` | the save dialogs and the write results |
+//! | `update/nav.rs` | going back, the last result, keyboard shortcuts |
+//! | `update/settings.rs` | size sets, algorithm, transparency, reset, language, theme |
+//! | `update/manifest.rs` | web manifest, monochrome and Microsoft app logo options |
+//! | `update/toast.rs` | the reader's attention on a toast |
 
 mod convert;
-
 mod download;
-
-mod nav;
-
-mod settings;
-
+mod input;
 mod manifest;
-
+mod nav;
+mod settings;
 mod toast;
 
 use std::time::Instant;

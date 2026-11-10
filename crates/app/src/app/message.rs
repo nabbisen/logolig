@@ -1,4 +1,4 @@
-//! The application's message type (RFC 017: moved out of `app.rs`, unchanged).
+//! The application's message type.
 
 use std::path::PathBuf;
 
