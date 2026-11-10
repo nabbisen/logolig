@@ -55,7 +55,8 @@ logolig/
     └── logolig-app/                 # iced + snora GUI binary
         ├── src/
         │   ├── main.rs              # 5-line entry point
-        │   ├── app.rs               # AppState / Message / update / view / run
+        │   ├── app.rs               # run / theme / subscription / view (wiring only)
+        │   ├── app/                 # state.rs, message.rs, update.rs + update/*.rs, toast.rs, persist.rs
         │   ├── shell.rs             # snora::AppLayout assembly
         │   ├── native_store.rs      # SettingsStore impl for the native target (v1.4+)
         │   ├── task_queue.rs        # iced::Task helpers
