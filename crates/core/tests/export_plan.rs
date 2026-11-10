@@ -29,6 +29,7 @@ fn resize_default_is_lanczos3() {
 }
 
 #[test]
+#[allow(deprecated)] // pins the behaviour of a published method until it is removed
 fn theme_mode_cycles() {
     // Theme cycle: System → Light → Dark → System
     assert_eq!(ThemeMode::System.next(), ThemeMode::Light);

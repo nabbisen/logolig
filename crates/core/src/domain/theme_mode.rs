@@ -23,6 +23,10 @@ impl ThemeMode {
     }
 
     /// Cycle to the next value (used by a toggle button).
+    #[deprecated(
+        since = "1.28.0",
+        note = "no caller in the application; it will be removed in the next major version"
+    )]
     pub fn next(self) -> Self {
         match self {
             Self::System => Self::Light,
