@@ -51,10 +51,6 @@ pub enum Screen {
 pub struct AppState {
     pub screen: Screen,
     pub theme: ThemeMode,
-    /// Vestigial since v1.22.0. The Customize page is now a nav page;
-    /// this field is reset to `false` on `CloseModals` and `EditCancelled`
-    /// but never set to `true` by any handler. Kept for future use.
-    pub advanced_open: bool,
     pub source_path: Option<PathBuf>,
     pub source_asset: Option<SourceAsset>,
     pub preview: Option<PreviewProfile>,
@@ -62,7 +58,6 @@ pub struct AppState {
     /// Rebuilt when the source asset is loaded or the resize algorithm changes.
     pub preview_cache: Option<PreviewCache>,
     pub export_plan: ExportPlan,
-    pub busy: bool,
     /// snora toast queue. All error and success notifications go through this.
     pub toasts: Vec<Toast<Message>>,
     /// Monotonic counter used to assign unique IDs to toasts.
@@ -241,13 +236,11 @@ impl Default for AppState {
         Self {
             screen: Screen::default(),
             theme: ThemeMode::default(),
-            advanced_open: false,
             source_path: None,
             source_asset: None,
             preview: None,
             preview_cache: None,
             export_plan: ExportPlan::default(),
-            busy: false,
             toasts: Vec::new(),
             next_toast_id: 0,
             holds: snora::toast::Holds::default(),
@@ -279,7 +272,6 @@ impl Default for AppState {
 ///
 /// `snora::AppLayout<Element, Message>` requires `Message: Clone`, so
 /// every variant must be cloneable.
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum Message {
     // Input
@@ -330,8 +322,6 @@ pub enum Message {
     /// Adds a preset PNG size (checked in the Customize page).
     /// Expected to be one of 16/32/48/96/192/512.
     PngPresetSizeAdded(u32),
-    /// No-op placeholder for partially-implemented UI toggles.
-    NoOp,
 
     // v1.22.0: side-nav page switch
     /// Side-nav item clicked — switches to the given page.
@@ -345,8 +335,6 @@ pub enum Message {
 
     // Theme / UI
     // v1.19.0: old `ThemeToggled` (cycle UI) removed; replaced by `ThemePicked`.
-    /// Navigate to the Customize page (replaces the former settings-drawer toggle).
-    AdvancedToggled,
     AlgorithmChanged(ResizeAlgorithm),
     /// v1.2.0: toggle SVG output on/off.
     IncludeSvgToggled(bool),
@@ -354,7 +342,12 @@ pub enum Message {
     VectorizeOnRasterToggled(bool),
 
     // v1.3.0: Customize page editing UI
+    //
+    // The four ICO messages below have working handlers, but the Customize page currently offers
+    // no ICO controls, so nothing sends them. Whether to restore the editor or retire the
+    // handlers is a product decision (open question in the RFC 017 part 1 review request).
     /// Whether to output favicon.ico.
+    #[allow(dead_code)] // handler kept, no control sends it (see above)
     IncludeIcoToggled(bool),
     /// Whether to output apple-touch-icon.png.
     IncludeAppleTouchToggled(bool),
@@ -367,10 +360,13 @@ pub enum Message {
     /// PNG size removed (chip × button).
     PngSizeRemoveRequested(u32),
     /// ICO size set input text changed.
+    #[allow(dead_code)] // handler kept, no control sends it (see above)
     IcoSizeInputChanged(String),
     /// ICO size added.
+    #[allow(dead_code)] // handler kept, no control sends it (see above)
     IcoSizeAddRequested,
     /// ICO size removed.
+    #[allow(dead_code)] // handler kept, no control sends it (see above)
     IcoSizeRemoveRequested(u32),
 
     // v1.4.1: vtracer preset switch + ExportPlan reset
@@ -378,10 +374,6 @@ pub enum Message {
     VtracerPresetChanged(logolig::VtracerPreset),
     /// Resets ExportPlan to defaults. Does not affect theme or locale.
     ExportPlanResetRequested,
-
-    // v1.5.0: i18n
-    /// Locale selected. `None` resets to the OS default.
-    LocaleChanged(Option<Locale>),
 
     // v1.19.0: old `LocaleCycled` and `AppCloseRequested` removed.
 
@@ -612,7 +604,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.transparency = None;
             state.result_preview_open = false;
             state.screen = Screen::Empty;
-            state.advanced_open = false;
             Task::none()
         }
         Message::ShowLastResultRequested => {
@@ -643,7 +634,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             //   (b) conversion (in-memory, assembles ResultAssets)
             // (b) completion transitions to Screen::Result.
             state.screen = Screen::Converting;
-            state.busy = false;
             // v1.7.0: reset transparency status for the new image.
             // Audit runs in PreviewBuilt; this prevents:
             // - stale warnings carrying over on re-load
@@ -738,7 +728,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::ConvertCompleted(Ok(assets)) => {
             state.result_assets = Some(assets);
             state.screen = Screen::Result;
-            state.busy = false;
             Task::none()
         }
         Message::ConvertCompleted(Err(err)) => fail(state, err),
@@ -819,9 +808,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        // v1.17.0: placeholder toggle — currently a no-op
-        Message::NoOp => Task::none(),
-
         // v1.22.0: side-nav page switch
         Message::NavPageSelected(page) => {
             state.nav_page = page;
@@ -841,11 +827,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::AdvancedToggled => {
-            // Navigate to the Customize page.
-            state.nav_page = NavPage::Customize;
-            Task::none()
-        }
         Message::AlgorithmChanged(alg) => {
             state.export_plan.algorithm = alg;
             persist_settings(state);
@@ -1018,18 +999,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
         }
 
-        // -----------------------------------------------------------------
-        // v1.5.0: locale change
-        // -----------------------------------------------------------------
-        Message::LocaleChanged(opt) => {
-            // None = revert to OS locale; Some(loc) = use that locale.
-            state.locale_override = opt;
-            let resolved = opt.unwrap_or_else(detect_system_locale);
-            state.translator = Translator::for_locale(resolved);
-            persist_settings(state);
-            Task::none()
-        }
-
         // v1.19.0: old LocaleCycled / AppCloseRequested handlers removed.
 
         // -----------------------------------------------------------------
@@ -1147,11 +1116,8 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.toasts.retain(|t| t.id != id);
             Task::none()
         }
-        Message::CloseModals => {
-            // Reset advanced_open for safety (vestigial but harmless since v1.22.0).
-            state.advanced_open = false;
-            Task::none()
-        }
+        // The application opens no modal or menu overlay, so there is nothing to close.
+        Message::CloseModals => Task::none(),
     }
 }
 
@@ -1163,7 +1129,6 @@ fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message> {
     state.file_drag_hovering = false;
     state.source_path = Some(path.clone());
     state.screen = Screen::Converting;
-    state.busy = true;
     // Discard stale preview cache and asset bundle; they will be rebuilt
     // when the new ingest completes.
     state.preview_cache = None;
@@ -1174,12 +1139,10 @@ fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message> {
 
 /// Common error handler.
 ///
-/// - clears the busy flag
 /// - returns to Result if a source is loaded, otherwise Empty
 ///   (v1.16: the former Preview state was removed)
 /// - pushes a persistent error toast (stays until dismissed)
 fn fail(state: &mut AppState, err: AppError) -> Task<Message> {
-    state.busy = false;
     state.screen = if state.result_assets.is_some() {
         Screen::Result
     } else {

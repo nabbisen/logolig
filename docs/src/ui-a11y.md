@@ -100,15 +100,10 @@ across screens.
 ## Labels, not glyphs
 
 Every interactive widget has a meaningful text label even when its
-visual representation is short. The canonical labels are centralized
-in `crate::ui::accessibility::label`:
-
-- `APP_TITLE`, `DROP_ZONE`, `CHOOSE_FILE_BTN`, `TOGGLE_THEME_BTN`,
-  `TOGGLE_ADVANCED_BTN`, `EXPORT_BTN`.
-
-Centralization is deliberate: when a screen reader pronounces a
-button, it should match what the user just heard the same button
-pronounce on a different screen.
+visual representation is short. The labels are the texts of the controls
+themselves (translated through `logolig-i18n`). iced 0.14 exposes no
+accessibility tree, so no screen reader reads them yet. (An earlier module
+of label constants was never used and was removed in 1.28.0.)
 
 ## Errors as toasts, not screens
 

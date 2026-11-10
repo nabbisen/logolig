@@ -13,8 +13,6 @@
 //! - Click a per-card download button to save a single file via a dialog
 //! - Click "Download all (ZIP)" to bundle everything into a zip
 
-#![allow(dead_code)]
-
 use logolig::Rgba8;
 
 /// Full set of conversion results held in memory.
@@ -25,11 +23,6 @@ pub struct ResultAssets {
 }
 
 impl ResultAssets {
-    /// Total byte size of all assets (for UI display).
-    pub fn total_bytes(&self) -> usize {
-        self.items.iter().map(|i| i.bytes.len()).sum()
-    }
-
     /// Asset count.
     pub fn count(&self) -> usize {
         self.items.len()
@@ -112,13 +105,12 @@ impl ResultAssetKind {
     }
 
     /// Whether a raster thumbnail can be rendered for this kind.
+    ///
+    /// SVG: no raster thumbnail (the card shows its badge only).
     pub fn has_visual_thumbnail(self) -> bool {
         matches!(
             self,
-            ResultAssetKind::Png
-                | ResultAssetKind::Ico
-                | ResultAssetKind::Svg
-                | ResultAssetKind::PngMono
+            ResultAssetKind::Png | ResultAssetKind::Ico | ResultAssetKind::PngMono
         )
     }
 }

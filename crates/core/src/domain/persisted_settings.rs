@@ -12,7 +12,7 @@
 //!
 //! ## What is NOT persisted
 //!
-//! UI-only state (`advanced_open`, active previews, in-flight tasks) is
+//! UI-only state (active previews, in-flight tasks) is
 //! ephemeral and intentionally excluded. Restarting the app restores
 //! settings but starts fresh on screen state.
 

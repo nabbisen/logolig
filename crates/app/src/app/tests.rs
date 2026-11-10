@@ -38,15 +38,6 @@ fn nav_page_selected_switches_page() {
 }
 
 #[test]
-fn advanced_toggled_routes_to_customize() {
-    // v1.22.0 behaviour pin: the former settings-drawer toggle now
-    // navigates to the Customize page rather than flipping a bool.
-    let mut state = AppState::default();
-    let _ = update(&mut state, Message::AdvancedToggled);
-    assert_eq!(state.nav_page, NavPage::Customize);
-}
-
-#[test]
 fn theme_picked_updates_theme() {
     let mut state = AppState::default();
     assert_eq!(state.theme, ThemeMode::System); // default
@@ -144,7 +135,6 @@ fn file_drop_clears_hover_and_starts_converting() {
     assert!(!state.file_drag_hovering);
     assert_eq!(state.source_path, Some(path));
     assert_eq!(state.screen, Screen::Converting);
-    assert!(state.busy);
     assert!(state.result_assets.is_none());
     assert!(!state.result_preview_open);
 }
