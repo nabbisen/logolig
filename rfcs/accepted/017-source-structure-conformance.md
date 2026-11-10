@@ -40,13 +40,14 @@ The prior review (2026-07-09) already named thin app-level tests; the current ga
 6. **Hygiene.** Delete the empty directories locally; they are not tracked.
 7. Each step is its own commit so reviews stay mechanical.
 
-## Decision (architect, authorized with the 1.28.0 scope, 2026-11-09)
+## Decision (architect, authorized with the 1.28.0 scope, 2026-11-09; **amended 2026-11-10**)
 
-- **Q1 decided: remove `ExportPlan::overrides` and `SizeOverride`.** It is persisted surface with no feature behind it; a reserved extension point nobody uses confuses readers and widens the settings format ("Less is more"). Old `settings.json` files that still contain an `overrides` key must keep loading (unknown fields are ignored; a test with such a file proves it), and the key is not written any more. Binding for the handoff.
+- **Q1: `ExportPlan::overrides` and `SizeOverride` are retired, not deleted.** The first text of this decision said "remove". That overlooked that `logolig` (the core crate) was published on crates.io as 1.27.0 and that its public items are API: removing a public field, struct or method in a **minor** release is a SemVer break, and a major version is the owner's decision alone. So, in the **core crate**, nothing public is removed in 1.x: the unused public items (`ExportPlan::overrides`, `SizeOverride`, and `ThemeMode::next` / `PreviewContext::label` if nothing uses them) get `#[deprecated(since = "1.28.0", note = "...")]` with an honest note, are no longer read or written by the application, and are removed at the next major version if the owner ever opens one. `overrides` is not written to `settings.json` any more (`skip_serializing_if = "Vec::is_empty"`); an old file that still has the key loads unchanged (a test proves both). Code inside the **application crate** (a binary, no public API) is removed outright. Rule for everything that follows: **a public item of `logolig` or `logolig-i18n` is never removed in 1.x; it is deprecated.**
+- The work is delivered in **three jobs**, each reviewed before the next (J8a: tests moved, dead code, stale scaffolding; J8b: `app.rs` split; J8c: the other large files and test files). One commit per step inside each job.
 
 ## Acceptance criteria
 
-- `cargo fmt --check`, `cargo clippy ... -D warnings`, `cargo test --workspace --all-features` unchanged (same 147 tests, same names).
+- `cargo fmt --check`, `cargo clippy ... -D warnings`, `cargo test --workspace --all-features` unchanged: **the same test names** (the list from `cargo test -- --list` before and after differs only by the tests of removed code, named in each review request, and by the tests this RFC adds); 261 tests at the start of J8a.
 - No `.rs` file over 500 lines (target: over 300 only with a stated reason).
 - No inline `#[cfg(test)] mod tests { .. }` in `src/`.
 - `git diff --stat` shows moves, not rewrites (review with `git diff -M`).
