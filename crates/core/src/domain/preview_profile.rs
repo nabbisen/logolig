@@ -25,6 +25,10 @@ pub enum PreviewContext {
 }
 
 impl PreviewContext {
+    #[deprecated(
+        since = "1.28.0",
+        note = "no caller: the interface texts come from logolig-i18n; it will be removed in the next major version"
+    )]
     pub fn label(self) -> &'static str {
         match self {
             Self::BrowserTab16 => "Browser tab (16×16)",

@@ -28,12 +28,21 @@ pub const ICO_SIZE_MIN: u32 = 16;
 pub const ICO_SIZE_MAX: u32 = 256;
 
 /// Per-size source image override.
+///
+/// Retired: nothing reads it. It is kept so that the published API does not break (and so that
+/// old `settings.json` files that still carry an `overrides` list keep loading).
+#[deprecated(
+    since = "1.28.0",
+    note = "no effect: nothing reads size overrides; it will be removed in the next major version"
+)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SizeOverride {
     pub size: u32,
     pub source_path: PathBuf,
 }
 
+// The derives name the retired `overrides` field and its deprecated type.
+#[allow(deprecated)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ExportPlan {
@@ -43,6 +52,12 @@ pub struct ExportPlan {
     pub png_sizes: Vec<u32>,
     pub include_html_snippet: bool,
     pub algorithm: ResizeAlgorithm,
+    /// Retired: no effect, never written to `settings.json`, still accepted on load.
+    #[deprecated(
+        since = "1.28.0",
+        note = "no effect: nothing reads size overrides; it will be removed in the next major version"
+    )]
+    #[serde(skip_serializing)]
     pub overrides: Vec<SizeOverride>,
     /// Frame sizes to include in the ICO file.
     pub ico_sizes: Vec<u32>,
@@ -105,6 +120,8 @@ pub struct ExportPlan {
     pub include_microsoft_app_logos: bool,
 }
 
+// The retired `overrides` field still has to be filled in.
+#[allow(deprecated)]
 impl Default for ExportPlan {
     fn default() -> Self {
         Self {

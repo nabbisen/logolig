@@ -182,3 +182,58 @@ fn entirely_empty_json_object_yields_full_default() {
     assert_eq!(restored.theme, default.theme);
     assert_eq!(restored.locale, default.locale);
 }
+
+// ---------------------------------------------------------------------------
+// RFC 017: `ExportPlan::overrides` is retired (kept for compatibility, never written)
+// ---------------------------------------------------------------------------
+
+/// Parse JSON text into a generic value (to inspect keys without touching the retired field).
+fn json_value(text: &str) -> serde_json::Value {
+    serde_json::from_str(text).expect("valid JSON")
+}
+
+#[test]
+fn an_old_settings_file_with_overrides_still_loads_with_every_other_value_intact() {
+    let text = r#"{
+        "export_plan": {
+            "png_sizes": [64, 128],
+            "include_ico": false,
+            "overrides": [{"size": 32, "source_path": "x.png"}]
+        },
+        "theme": "Dark",
+        "locale": "ja"
+    }"#;
+    let settings: PersistedSettings = serde_json::from_str(text).expect("an old file must load");
+    assert_eq!(settings.export_plan.png_sizes, vec![64, 128]);
+    assert!(!settings.export_plan.include_ico);
+    assert_eq!(settings.theme, ThemeMode::Dark);
+    assert_eq!(settings.locale.as_deref(), Some("ja"));
+    // Values the file did not mention come from the default.
+    assert!(settings.export_plan.include_apple_touch);
+}
+
+#[test]
+fn default_settings_are_written_without_an_overrides_key() {
+    let text = serde_json::to_string(&PersistedSettings::default()).expect("serialize");
+    let plan = &json_value(&text)["export_plan"];
+    assert!(
+        plan.get("overrides").is_none(),
+        "the retired field must not be written: {plan}"
+    );
+    // Sanity: the plan is there and carries its other keys.
+    assert!(plan.get("png_sizes").is_some());
+}
+
+#[test]
+fn an_old_file_is_saved_again_without_its_overrides_entry() {
+    let text = r#"{"export_plan": {"png_sizes": [48], "overrides": [{"size": 32, "source_path": "x.png"}]}, "theme": "Light"}"#;
+    let loaded: PersistedSettings = serde_json::from_str(text).expect("load");
+    let saved = serde_json::to_string(&loaded).expect("save");
+    let value = json_value(&saved);
+    assert!(
+        value["export_plan"].get("overrides").is_none(),
+        "saved again: {saved}"
+    );
+    assert_eq!(value["export_plan"]["png_sizes"], serde_json::json!([48]));
+    assert_eq!(value["theme"], "Light");
+}

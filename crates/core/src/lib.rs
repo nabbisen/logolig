@@ -23,8 +23,11 @@ pub mod settings;
 pub use domain::{
     ExportPlan, ICO_SIZE_MAX, ICO_SIZE_MIN, MICROSOFT_APP_LOGOS, MicrosoftAppLogoSpec,
     PNG_SIZE_MAX, PNG_SIZE_MIN, PersistedSettings, PreviewContext, PreviewProfile, ResizeAlgorithm,
-    Rgba8, SizeOverride, SourceAsset, SourceKind, ThemeMode, VtracerPreset, WebManifestSettings,
+    Rgba8, SourceAsset, SourceKind, ThemeMode, VtracerPreset, WebManifestSettings,
 };
+// Re-exported although deprecated: removing a public item would break the published API.
+#[allow(deprecated)]
+pub use domain::SizeOverride;
 pub use error::AppError;
 pub use message_key::MessageKey;
 pub use services::exporter::{ExportReport, InMemoryArtifact};

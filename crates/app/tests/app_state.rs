@@ -25,5 +25,4 @@ fn defaults_match_spec() {
     assert!(plan.include_ico);
     assert!(plan.include_apple_touch);
     assert!(plan.include_html_snippet);
-    assert!(plan.overrides.is_empty());
 }
