@@ -12,6 +12,8 @@ mod settings;
 
 mod manifest;
 
+mod toast;
+
 use std::time::Instant;
 
 use iced::Task;
@@ -211,12 +213,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.holds.sweep(&mut state.toasts, Instant::now());
             Task::none()
         }
-        Message::ToastAttention(id, attention) => {
-            state
-                .holds
-                .attend(id, attention, &mut state.toasts, Instant::now());
-            Task::none()
-        }
+        Message::ToastAttention(id, attention) => toast::toast_attention(state, id, attention),
         Message::DismissToast(id) => {
             state.toasts.retain(|t| t.id != id);
             Task::none()
