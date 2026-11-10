@@ -5,7 +5,7 @@ Governing RFC: [RFC 017](../../accepted/017-source-structure-conformance.md). Th
 RFC 017 is delivered in three jobs, each reviewed before the next is issued:
 
 - [`implementation-handoff-part-1.md`](./implementation-handoff-part-1.md) (J8a): inline tests to their own files, vestigial code, stale test scaffolding, doc comments.
-- J8b: split `app.rs` (handoff written after J8a is reviewed, from the real file layout).
-- J8c: split `advanced_drawer.rs`, `preview_panel.rs`, `core/tests/exporter.rs` (after J8b).
+- [`implementation-handoff-part-2.md`](./implementation-handoff-part-2.md) (J8b): retire the four unreachable ICO messages and deprecate `ThemeMode::next` (Step 0), then split `app.rs`.
+- J8c: split `advanced_drawer.rs`, `preview_panel.rs`, `core/tests/exporter.rs` and `app/tests.rs` (after J8b; handoff written after J8b is reviewed).
 
 Review requests and evidence produced by the implementer are working material and are not stored here.
