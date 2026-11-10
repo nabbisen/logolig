@@ -70,7 +70,6 @@ pub struct AppState {
     // v1.3.0: text buffer for the custom-size input in the Customize page.
     // Transient UI state: belongs in the app layer, not in logolig (core).
     pub png_size_input: String,
-    pub ico_size_input: String,
 
     // v1.4.0: settings persistence store. Loaded at startup via load_or_default();
     // updated immediately on every settings change.
@@ -245,7 +244,6 @@ impl Default for AppState {
             next_toast_id: 0,
             holds: snora::toast::Holds::default(),
             png_size_input: String::new(),
-            ico_size_input: String::new(),
             store: None,
             translator: Translator::default(),
             locale_override: None,
@@ -342,13 +340,6 @@ pub enum Message {
     VectorizeOnRasterToggled(bool),
 
     // v1.3.0: Customize page editing UI
-    //
-    // The four ICO messages below have working handlers, but the Customize page currently offers
-    // no ICO controls, so nothing sends them. Whether to restore the editor or retire the
-    // handlers is a product decision (open question in the RFC 017 part 1 review request).
-    /// Whether to output favicon.ico.
-    #[allow(dead_code)] // handler kept, no control sends it (see above)
-    IncludeIcoToggled(bool),
     /// Whether to output apple-touch-icon.png.
     IncludeAppleTouchToggled(bool),
     /// Whether to output favicon-snippet.html.
@@ -359,15 +350,6 @@ pub enum Message {
     PngSizeAddRequested,
     /// PNG size removed (chip × button).
     PngSizeRemoveRequested(u32),
-    /// ICO size set input text changed.
-    #[allow(dead_code)] // handler kept, no control sends it (see above)
-    IcoSizeInputChanged(String),
-    /// ICO size added.
-    #[allow(dead_code)] // handler kept, no control sends it (see above)
-    IcoSizeAddRequested,
-    /// ICO size removed.
-    #[allow(dead_code)] // handler kept, no control sends it (see above)
-    IcoSizeRemoveRequested(u32),
 
     // v1.4.1: vtracer preset switch + ExportPlan reset
     /// vtracer preset changed (Sharp / Default / PhotoRich).
@@ -856,11 +838,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // -----------------------------------------------------------------
         // v1.3.0: Customize page editing UI handlers
         // -----------------------------------------------------------------
-        Message::IncludeIcoToggled(on) => {
-            state.export_plan.include_ico = on;
-            persist_settings(state);
-            Task::none()
-        }
         Message::IncludeAppleTouchToggled(on) => {
             state.export_plan.include_apple_touch = on;
             persist_settings(state);
@@ -921,52 +898,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::IcoSizeInputChanged(s) => {
-            state.ico_size_input = s;
-            Task::none()
-        }
-        Message::IcoSizeAddRequested => {
-            let raw = state.ico_size_input.trim().to_string();
-            match parse_size(&raw, logolig::ICO_SIZE_MIN, logolig::ICO_SIZE_MAX) {
-                Ok(size) => {
-                    if state.export_plan.add_ico_size(size) {
-                        state.ico_size_input.clear();
-                        persist_settings(state);
-                    } else {
-                        let title = state.translator.t(MessageKey::ToastSizeAlreadyInSetTitle);
-                        let body = state.translator.t_args(
-                            MessageKey::ToastIcoSizeAlreadyInSetBody,
-                            &[("size", &size.to_string())],
-                        );
-                        push_warning_toast(state, &title, &body);
-                    }
-                }
-                Err(SizeParseError::Empty) => {}
-                Err(SizeParseError::NotANumber) => {
-                    let title = state.translator.t(MessageKey::ToastInvalidSizeTitle);
-                    let body = state
-                        .translator
-                        .t_args(MessageKey::ToastInvalidSizeBody, &[("input", &raw)]);
-                    push_warning_toast(state, &title, &body);
-                }
-                Err(SizeParseError::OutOfRange { min, max }) => {
-                    let title = state.translator.t(MessageKey::ToastSizeOutOfRangeTitle);
-                    let body = state.translator.t_args(
-                        MessageKey::ToastIcoSizeOutOfRangeBody,
-                        &[("min", &min.to_string()), ("max", &max.to_string())],
-                    );
-                    push_warning_toast(state, &title, &body);
-                }
-            }
-            Task::none()
-        }
-        Message::IcoSizeRemoveRequested(size) => {
-            if state.export_plan.remove_ico_size(size) {
-                persist_settings(state);
-            }
-            Task::none()
-        }
-
         // -----------------------------------------------------------------
         // v1.4.1: vtracer preset + ExportPlan reset
         // -----------------------------------------------------------------
@@ -981,7 +912,6 @@ fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.export_plan = ExportPlan::default();
             // Also clear text input buffers so stale values don't reappear.
             state.png_size_input.clear();
-            state.ico_size_input.clear();
             // Algorithm may have changed (reset restores Lanczos3); rebuild preview.
             // Discard stale cache; rebuild with the restored algorithm.
             state.preview_cache = None;
