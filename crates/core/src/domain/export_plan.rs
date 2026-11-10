@@ -103,7 +103,6 @@ pub struct ExportPlan {
     ///   transparent areas. The modern favicon standard.
     /// - `false`: composite alpha against **white**, making every pixel opaque.
     ///   SVG outputs are unaffected (flatten is a raster operation).
-
     ///   JPEG sources have alpha=255 already; results are the same either way.
     ///
     /// Persisted. Old settings JSON without this field gets `true` via

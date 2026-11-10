@@ -17,7 +17,6 @@
 //! `run_in_memory(source, plan)` is the single entry point. It accepts a
 //! `SourceAsset` and an `ExportPlan` and returns `Vec<InMemoryArtifact>`.
 //! The caller (logolig-app `task_queue`) wraps this in `iced::Task::perform`.
-
 //!
 //! - [`run`] — writes to disk. Was the primary API before v1.16.0.
 //!   Now a thin wrapper: calls `run_in_memory` then writes atomically
