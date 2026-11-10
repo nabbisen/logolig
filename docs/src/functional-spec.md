@@ -242,6 +242,8 @@ Toasts appear at the top-right corner (TopEnd). How long a toast stays scales wi
 of its message, so that it can be read: at least 4 seconds and at most 20 seconds (a
 longer message, or a long file path, stays longer; Japanese text is counted by character).
 The "saved" toast keeps a minimum of 7 seconds. Error toasts stay until they are dismissed.
+A toast does not expire while the mouse pointer rests on it; when the pointer leaves, its
+countdown starts again from the full time, so the message can be read to the end.
 Every toast has a close button (`×`).
 
 | Event | Content |
