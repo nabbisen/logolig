@@ -121,7 +121,6 @@ A single `AppState` lives in `logolig-app`. Pure functional `view` and
 | `preview: Option<PreviewProfile>` | Current preview context + background |
 | `result_assets: Option<ResultAssets>` | In-memory generated artifacts shown on the Result screen |
 | `export_plan: ExportPlan` | What and how to generate |
-| `busy: bool` | Whether a long task is in flight |
 | `toasts: Vec<Toast<Message>>` | Notifications (errors, successes) |
 | `next_toast_id: u64` | Monotonic id source for toasts |
 
