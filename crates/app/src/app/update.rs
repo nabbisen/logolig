@@ -4,6 +4,8 @@ mod input;
 
 mod convert;
 
+mod download;
+
 use std::time::Instant;
 
 use iced::Task;
@@ -12,9 +14,7 @@ use logolig::{ExportPlan, MessageKey};
 use logolig_i18n::{Translator, detect_system_locale};
 
 use super::persist::persist_settings;
-use super::toast::{
-    push_error_toast, push_long_success_toast, push_success_toast, push_warning_toast,
-};
+use super::toast::{push_error_toast, push_success_toast, push_warning_toast};
 use super::{AppState, Message, NavPage, Screen};
 use convert::fail;
 use input::start_ingest;
@@ -89,53 +89,22 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::ConvertCompleted(Err(err)) => fail(state, err),
 
         // v1.16.0: download buttons
-        Message::DownloadOneRequested(idx) => {
-            // Extract the filename and open a save dialog with the right extension.
-            let Some(assets) = state.result_assets.as_ref() else {
-                return Task::none();
-            };
-            let Some(item) = assets.items.get(idx) else {
-                return Task::none();
-            };
-            crate::task_queue::pick_save_one_task(idx, item.file_name.clone())
-        }
+        Message::DownloadOneRequested(idx) => download::download_one_requested(state, idx),
         Message::DownloadAllRequested => crate::task_queue::pick_save_all_task(),
         Message::DownloadOneTargetPicked(_, None) => Task::none(),
         Message::DownloadOneTargetPicked(idx, Some(path)) => {
-            let Some(assets) = state.result_assets.as_ref() else {
-                return Task::none();
-            };
-            let Some(item) = assets.items.get(idx) else {
-                return Task::none();
-            };
-            let bytes = item.bytes.clone();
-            crate::task_queue::write_one_task(path, bytes)
+            download::download_one_target_picked(state, idx, path)
         }
         Message::DownloadAllTargetPicked(None) => Task::none(),
         Message::DownloadAllTargetPicked(Some(path)) => {
-            let Some(assets) = state.result_assets.as_ref() else {
-                return Task::none();
-            };
-            // ZIP assembly runs as a task to avoid blocking the UI thread.
-            let items_clone = assets.items.clone();
-            crate::task_queue::write_zip_task(path, items_clone)
+            download::download_all_target_picked(state, path)
         }
-        Message::DownloadOneCompleted(Ok(path)) => {
-            let title = state.translator.t(MessageKey::ToastExportTitle);
-            let body = format!("{}", path.display());
-            push_long_success_toast(state, &title, &body);
-            Task::none()
-        }
+        Message::DownloadOneCompleted(Ok(path)) => download::download_one_completed(state, path),
         Message::DownloadOneCompleted(Err(err)) => {
             push_error_toast(state, err);
             Task::none()
         }
-        Message::DownloadAllCompleted(Ok(path)) => {
-            let title = state.translator.t(MessageKey::ToastExportTitle);
-            let body = format!("{}", path.display());
-            push_long_success_toast(state, &title, &body);
-            Task::none()
-        }
+        Message::DownloadAllCompleted(Ok(path)) => download::download_all_completed(state, path),
         Message::DownloadAllCompleted(Err(err)) => {
             push_error_toast(state, err);
             Task::none()
