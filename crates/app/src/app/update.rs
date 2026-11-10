@@ -1,23 +1,20 @@
 //! `update`: the state transitions (RFC 017: moved out of `app.rs`, unchanged apart from visibility).
 
-use std::path::PathBuf;
+mod input;
+
 use std::time::Instant;
 
 use iced::Task;
 
-use logolig::{
-    AppError, ExportPlan, MessageKey, PreviewProfile,
-    services::transparency_audit::audit as audit_transparency,
-};
+use logolig::{AppError, ExportPlan, MessageKey};
 use logolig_i18n::{Translator, detect_system_locale};
 
 use super::persist::persist_settings;
 use super::toast::{
-    is_non_square, push_error_toast, push_jpeg_input_warning, push_long_success_toast,
-    push_non_square_warning, push_success_toast, push_svg_parts_warning, push_transparency_warning,
-    push_warning_toast,
+    push_error_toast, push_long_success_toast, push_success_toast, push_warning_toast,
 };
 use super::{AppState, Message, NavPage, Screen};
+use input::start_ingest;
 
 // ----------------------------------------------------------------------
 // Update (state transitions)
@@ -41,13 +38,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             // File picker cancelled — no state change.
             Task::none()
         }
-        Message::PickFileRequested => {
-            // Launch the native file picker as a Task (§12 accessibility alternative).
-            // Result arrives as Message::FilePicked(Option<PathBuf>).
-            // v1.12.0: re-select also reuses this message (keeps current screen,
-            // cancelling returns to whatever screen was active).
-            crate::task_queue::pick_file_task()
-        }
+        Message::PickFileRequested => input::pick_file_requested(),
 
         // v1.12.0: back navigation.
         //
@@ -75,104 +66,12 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.screen = Screen::Result;
             Task::none()
         }
-        Message::IngestCompleted(Ok(asset)) => {
-            // RFC 010: decide before `asset` is moved into the state.
-            let non_square = is_non_square(asset.intrinsic_size);
-            // RFC 015 phase 2a: only SVG sources are analysed for parts that are not shown.
-            let is_svg = asset.kind == logolig::SourceKind::Svg;
-            // Arc the asset so it can be moved into the async preview task.
-            // SourceAsset is Clone (Arc<[u8]>-backed) so this is cheap.
-            let arc = std::sync::Arc::new(asset.clone());
-            state.source_asset = Some(asset);
-            state.preview = Some(PreviewProfile::default());
-            state.preview_cache = None;
-            // v1.24.0: clear the previous history now that a new file is being
-            // processed. The history card (if shown) disappears at this point.
-            state.result_assets = None;
-            // v1.16.0: ingest complete → auto-convert. Prior to v1.15 the app
-            // waited on the Preview screen; v1.16 converts immediately.
-            // Two parallel tasks are launched:
-            //   (a) preview build (for the collapsible preview panel)
-            //   (b) conversion (in-memory, assembles ResultAssets)
-            // (b) completion transitions to Screen::Result.
-            state.screen = Screen::Converting;
-            // v1.7.0: reset transparency status for the new image.
-            // Audit runs in PreviewBuilt; this prevents:
-            // - stale warnings carrying over on re-load
-            // - duplicate warning toasts for the same image
-            state.transparency = None;
-            // RFC 010: one advisory per loaded image when the logo will be padded.
-            if non_square {
-                push_non_square_warning(state);
-            }
-            // Launch (a) and (b) in parallel; for an SVG also (c) the analysis for the advisory.
-            let mut tasks = vec![
-                crate::task_queue::build_preview_task(arc.clone(), state.export_plan.algorithm),
-                crate::task_queue::convert_task(arc.clone(), state.export_plan.clone()),
-            ];
-            if is_svg {
-                tasks.push(crate::task_queue::analyze_svg_task(arc));
-            }
-            Task::batch(tasks)
-        }
-        Message::SvgAnalyzed(path, report) => {
-            // Stale result (another file was loaded since): ignore.
-            let is_current = state
-                .source_asset
-                .as_ref()
-                .is_some_and(|asset| asset.path == path);
-            if is_current && (report.has_text || report.ignored_external_images > 0) {
-                push_svg_parts_warning(state, report);
-            }
-            Task::none()
-        }
+        Message::IngestCompleted(Ok(asset)) => input::ingest_completed(state, asset),
+        Message::SvgAnalyzed(path, report) => input::svg_analyzed(state, path, report),
         Message::IngestCompleted(Err(err)) => fail(state, err),
 
-        Message::PreviewBuilt(Ok(cache)) => {
-            // Verify the cache matches the current source and algorithm.
-            // Discard stale cache (wrong source or algorithm).
-            let asset_path = state.source_asset.as_ref().map(|a| a.path.clone());
-            let still_valid = asset_path.as_ref() == Some(&cache.source_path)
-                && cache.algorithm == state.export_plan.algorithm;
-            if still_valid {
-                // v1.7.0: transparency audit
-                // Run the transparency audit on the first cache built for this image.
-                // Skip if already audited (state.transparency is Some) to avoid
-                // duplicate warning toasts when the preview is rebuilt (e.g. after
-                // changing the resize algorithm). The audit itself is idempotent,
-                // but showing it once per image is the right UX.
-                let needs_audit = state.transparency.is_none();
-                if needs_audit {
-                    let report = audit_transparency(&cache.icon_120);
-                    state.transparency = Some(report);
-                    if report.needs_warning() {
-                        // v1.11.0: JPEG cannot carry alpha so the audit always returns
-                        // FullyOpaque. This is a format constraint, not a user mistake;
-                        // show the JPEG-specific educational warning instead of the
-                        // generic fully-opaque warning.
-
-                        let is_jpeg = state
-                            .source_asset
-                            .as_ref()
-                            .map(|a| a.kind == logolig::SourceKind::Jpeg)
-                            .unwrap_or(false);
-                        if is_jpeg {
-                            push_jpeg_input_warning(state);
-                        } else {
-                            push_transparency_warning(state, report);
-                        }
-                    }
-                }
-                state.preview_cache = Some(cache);
-            }
-            Task::none()
-        }
-        Message::PreviewBuilt(Err(err)) => {
-            // Preview build failure is non-fatal (source data is intact).
-            // Stay on the current screen; notify via toast only.
-            push_error_toast(state, err);
-            Task::none()
-        }
+        Message::PreviewBuilt(Ok(cache)) => input::preview_built(state, cache),
+        Message::PreviewBuilt(Err(err)) => input::preview_build_failed(state, err),
         Message::PreviewContextSelected(ctx) => {
             if let Some(p) = state.preview.as_mut() {
                 p.context = ctx;
@@ -529,22 +428,6 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // The application opens no modal or menu overlay, so there is nothing to close.
         Message::CloseModals => Task::none(),
     }
-}
-
-/// Shared helper: starts an ingest task for the given file path.
-///
-/// v1.16.0: the former Screen::Importing was merged into Screen::Converting.
-/// All phases (ingest, preview build, asset bundle) now share the Converting state.
-fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message> {
-    state.file_drag_hovering = false;
-    state.source_path = Some(path.clone());
-    state.screen = Screen::Converting;
-    // Discard stale preview cache and asset bundle; they will be rebuilt
-    // when the new ingest completes.
-    state.preview_cache = None;
-    state.result_assets = None;
-    state.result_preview_open = false;
-    crate::task_queue::ingest_task(path)
 }
 
 /// Common error handler.
