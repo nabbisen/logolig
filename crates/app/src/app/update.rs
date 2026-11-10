@@ -2,11 +2,13 @@
 
 mod input;
 
+mod convert;
+
 use std::time::Instant;
 
 use iced::Task;
 
-use logolig::{AppError, ExportPlan, MessageKey};
+use logolig::{ExportPlan, MessageKey};
 use logolig_i18n::{Translator, detect_system_locale};
 
 use super::persist::persist_settings;
@@ -14,6 +16,7 @@ use super::toast::{
     push_error_toast, push_long_success_toast, push_success_toast, push_warning_toast,
 };
 use super::{AppState, Message, NavPage, Screen};
+use convert::fail;
 use input::start_ingest;
 
 // ----------------------------------------------------------------------
@@ -72,17 +75,9 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         Message::PreviewBuilt(Ok(cache)) => input::preview_built(state, cache),
         Message::PreviewBuilt(Err(err)) => input::preview_build_failed(state, err),
-        Message::PreviewContextSelected(ctx) => {
-            if let Some(p) = state.preview.as_mut() {
-                p.context = ctx;
-            }
-            Task::none()
-        }
+        Message::PreviewContextSelected(ctx) => convert::preview_context_selected(state, ctx),
         Message::PreviewBackgroundSelected(theme) => {
-            if let Some(p) = state.preview.as_mut() {
-                p.background = theme;
-            }
-            Task::none()
+            convert::preview_background_selected(state, theme)
         }
 
         // v1.16.0: in-memory conversion complete
@@ -428,21 +423,6 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // The application opens no modal or menu overlay, so there is nothing to close.
         Message::CloseModals => Task::none(),
     }
-}
-
-/// Common error handler.
-///
-/// - returns to Result if a source is loaded, otherwise Empty
-///   (v1.16: the former Preview state was removed)
-/// - pushes a persistent error toast (stays until dismissed)
-fn fail(state: &mut AppState, err: AppError) -> Task<Message> {
-    state.screen = if state.result_assets.is_some() {
-        Screen::Result
-    } else {
-        Screen::Empty
-    };
-    push_error_toast(state, err);
-    Task::none()
 }
 
 /// Apply a keyboard shortcut (RFC 019 phase 2).
