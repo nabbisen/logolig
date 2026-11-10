@@ -10,6 +10,8 @@ mod nav;
 
 mod settings;
 
+mod manifest;
+
 use std::time::Instant;
 
 use iced::Task;
@@ -174,74 +176,28 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // -----------------------------------------------------------------
         // v1.8.0: web manifest settings
         // -----------------------------------------------------------------
-        Message::IncludeWebManifestToggled(on) => {
-            // On: insert WebManifestSettings::default(). Off: set to None.
-            // Any user-entered values are discarded on toggle-off (simple state model).
-            // Preserving values across toggle-off can be added in a future version.
-            state.export_plan.web_manifest = if on {
-                Some(logolig::WebManifestSettings::default())
-            } else {
-                None
-            };
-            persist_settings(state);
-            Task::none()
-        }
-        Message::WebManifestNameChanged(s) => {
-            if let Some(m) = state.export_plan.web_manifest.as_mut() {
-                m.name = s;
-                persist_settings(state);
-            }
-            Task::none()
-        }
+        Message::IncludeWebManifestToggled(on) => manifest::include_web_manifest_toggled(state, on),
+        Message::WebManifestNameChanged(s) => manifest::web_manifest_name_changed(state, s),
         Message::WebManifestShortNameChanged(s) => {
-            if let Some(m) = state.export_plan.web_manifest.as_mut() {
-                m.short_name = s;
-                persist_settings(state);
-            }
-            Task::none()
+            manifest::web_manifest_short_name_changed(state, s)
         }
         Message::WebManifestThemeColorChanged(s) => {
-            // No live validation — interrupting the user mid-type is poor UX.
-            // `is_valid_color` is validated at export time, not here,
-            // so partial values like #FF or #FFFFF are accepted while typing.
-            if let Some(m) = state.export_plan.web_manifest.as_mut() {
-                m.theme_color = s;
-                persist_settings(state);
-            }
-            Task::none()
+            manifest::web_manifest_theme_color_changed(state, s)
         }
         Message::WebManifestBackgroundColorChanged(s) => {
-            if let Some(m) = state.export_plan.web_manifest.as_mut() {
-                m.background_color = s;
-                persist_settings(state);
-            }
-            Task::none()
+            manifest::web_manifest_background_color_changed(state, s)
         }
 
         // -----------------------------------------------------------------
         // v1.9.0: monochrome output set
         // -----------------------------------------------------------------
-        Message::IncludeMonochromeToggled(on) => {
-            // Simple bool flag. Same persist_settings pattern as include_ico
-            // and include_apple_touch.
-            //
-            // No effect on the preview cache — monochrome output is generated
-            // only at export time and has no preview representation.
-
-            state.export_plan.monochrome = on;
-            persist_settings(state);
-            Task::none()
-        }
+        Message::IncludeMonochromeToggled(on) => manifest::include_monochrome_toggled(state, on),
 
         // -----------------------------------------------------------------
         // v1.26.0: Microsoft app logo output
         // -----------------------------------------------------------------
         Message::IncludeMicrosoftAppLogosToggled(on) => {
-            // Advanced, opt-in output group. Like monochrome, it only affects
-            // generated result assets; preview cache is unchanged.
-            state.export_plan.include_microsoft_app_logos = on;
-            persist_settings(state);
-            Task::none()
+            manifest::include_microsoft_app_logos_toggled(state, on)
         }
 
         // -----------------------------------------------------------------
