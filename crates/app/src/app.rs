@@ -8,7 +8,9 @@
 //! - heavy work is offloaded via `iced::Task` to avoid blocking the UI thread (§2.4)
 
 mod message;
+mod persist;
 mod state;
+mod toast;
 
 pub use message::Message;
 pub use state::{AppState, NavPage, Screen};
@@ -18,17 +20,25 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use iced::{Element, Subscription, Task, Theme};
-use snora::{Toast, ToastIntent, ToastLifetime};
 
 use logolig::{
-    AppError, ExportPlan, MessageKey, PreviewProfile, SettingsStore,
-    services::transparency_audit::{TransparencyReport, audit as audit_transparency},
+    AppError, ExportPlan, MessageKey, PreviewProfile,
+    services::transparency_audit::audit as audit_transparency,
 };
 use logolig_i18n::{Translator, detect_system_locale};
+
+use persist::persist_settings;
+use toast::{
+    is_non_square, push_error_toast, push_jpeg_input_warning, push_long_success_toast,
+    push_non_square_warning, push_success_toast, push_svg_parts_warning, push_transparency_warning,
+    push_warning_toast,
+};
 
 // Names the tests under `app/` reach through `use super::*` (they moved out of this file).
 #[cfg(test)]
 use logolig::{SourceAsset, ThemeMode};
+#[cfg(test)]
+use snora::Toast;
 
 // ----------------------------------------------------------------------
 // Entry point
@@ -685,76 +695,6 @@ fn handle_shortcut(state: &mut AppState, shortcut: crate::shortcuts::Shortcut) -
     update(state, message)
 }
 
-/// Pushes a persistent error toast. Stays until the user dismisses it.
-/// v1.5.0: translates the error via `AppError::key()` + `args()`.
-fn push_error_toast(state: &mut AppState, err: AppError) {
-    let id = next_id(state);
-    let body = state.translator.translate_error(&err);
-    // Title is a generic 'operation failed' string.
-    // Currently hardcoded to English; a dedicated MessageKey could be added later.
-
-    state.toasts.push(
-        Toast::new(
-            id,
-            ToastIntent::Error,
-            "Operation failed",
-            body,
-            Message::DismissToast(id),
-        )
-        .persistent(),
-    );
-}
-
-/// Pushes a short-lived success toast; its lifetime is proportional to its text (RFC 029).
-fn push_success_toast(state: &mut AppState, title: &str, body: &str) {
-    let id = next_id(state);
-    state.toasts.push(
-        Toast::new(
-            id,
-            ToastIntent::Success,
-            title.to_string(),
-            body.to_string(),
-            Message::DismissToast(id),
-        )
-        .with_lifetime(crate::toast_time::lifetime_for(title, body)),
-    );
-}
-
-/// Pushes a longer (7-second) transient success toast (v1.4.2).
-///
-/// v1.4.1 originally used a persistent toast that required manual dismiss.
-/// User feedback showed persistent was overkill but 4 s was too short.
-/// v1.4.2 settled on a 7-second transient.
-///
-/// 7 s rationale: snora's default 4 s suits short messages; export notifications
-/// can include long paths and need extra read time. 10+ s feels intrusive,
-/// so 7 s is the pragmatic middle ground.
-///
-/// Toast position is bottom-right (snora default). Improving this is tracked
-/// as a future snora upstream request.
-fn push_long_success_toast(state: &mut AppState, title: &str, body: &str) {
-    let id = next_id(state);
-    state.toasts.push(
-        Toast::new(
-            id,
-            ToastIntent::Success,
-            title.to_string(),
-            body.to_string(),
-            Message::DismissToast(id),
-        )
-        // 7 s is a minimum: a long saved path may need more (RFC 029).
-        .with_lifetime(ToastLifetime::seconds(
-            crate::toast_time::seconds_for(title, body).max(7),
-        )),
-    );
-}
-
-fn next_id(state: &mut AppState) -> u64 {
-    let id = state.next_toast_id;
-    state.next_toast_id += 1;
-    id
-}
-
 // ----------------------------------------------------------------------
 // v1.3.0: size input parsing + warning toast
 // ----------------------------------------------------------------------
@@ -778,130 +718,6 @@ fn parse_size(raw: &str, min: u32, max: u32) -> Result<u32, SizeParseError> {
         return Err(SizeParseError::OutOfRange { min, max });
     }
     Ok(n)
-}
-
-/// Pushes a transient warning toast for input validation failures.
-/// Sits between push_error_toast (persistent) and push_success_toast in severity.
-fn push_warning_toast(state: &mut AppState, title: &str, body: &str) {
-    let id = next_id(state);
-    state.toasts.push(
-        Toast::new(
-            id,
-            ToastIntent::Warning,
-            title.to_string(),
-            body.to_string(),
-            Message::DismissToast(id),
-        )
-        .with_lifetime(crate::toast_time::lifetime_for(title, body)),
-    );
-}
-
-/// v1.7.0: transparency audit warning. Shown when the loaded image is fully opaque
-/// or fully transparent. Uses the standard transient lifetime — this is an advisory
-/// notice, not a blocking error.
-fn push_transparency_warning(state: &mut AppState, report: TransparencyReport) {
-    let (title_key, body_key) = match report {
-        TransparencyReport::FullyOpaque => (
-            MessageKey::ToastFullyOpaqueTitle,
-            MessageKey::ToastFullyOpaqueBody,
-        ),
-        TransparencyReport::FullyTransparent => (
-            MessageKey::ToastFullyTransparentTitle,
-            MessageKey::ToastFullyTransparentBody,
-        ),
-        TransparencyReport::HasTransparency => {
-            // needs_warning() == false here; defensive no-op.
-            return;
-        }
-    };
-    let title = state.translator.t(title_key);
-    let body = state.translator.t(body_key);
-    push_warning_toast(state, &title, &body);
-}
-
-/// RFC 010: `true` when the intrinsic sides differ by more than 2 %
-/// (`abs(w - h) * 100 > 2 * max(w, h)`). The tolerance avoids false alarms from
-/// the `ceil()` rounding in `parse_svg_size`. Unknown size is never non-square.
-fn is_non_square(size: Option<(u32, u32)>) -> bool {
-    match size {
-        Some((w, h)) => u64::from(w.abs_diff(h)) * 100 > 2 * u64::from(w.max(h)),
-        None => false,
-    }
-}
-
-/// RFC 010: educational warning for a non-square source. The logo is shown in
-/// full with transparent padding, so the icon may look small. Transient, non-blocking.
-fn push_non_square_warning(state: &mut AppState) {
-    let title = state.translator.t(MessageKey::ToastNonSquareInputTitle);
-    let body = state.translator.t(MessageKey::ToastNonSquareInputBody);
-    push_warning_toast(state, &title, &body);
-}
-
-/// RFC 015 phase 2a: one combined warning for an SVG whose parts are not shown. The body holds
-/// the applicable sentences (images first, then text), one per line, so there is never more than
-/// one toast per loaded SVG. Transient and non-blocking.
-fn push_svg_parts_warning(state: &mut AppState, report: logolig::SvgReport) {
-    let title = state.translator.t(MessageKey::ToastSvgPartsTitle);
-    let mut sentences: Vec<String> = Vec::with_capacity(2);
-    if report.ignored_external_images > 0 {
-        sentences.push(state.translator.t(MessageKey::ToastSvgImagesBody));
-    }
-    if report.has_text {
-        sentences.push(state.translator.t(MessageKey::ToastSvgTextBody));
-    }
-    push_warning_toast(state, &title, &sentences.join("\n"));
-}
-
-/// v1.11.0: educational warning for JPEG input.
-///
-/// JPEG cannot carry alpha, so the v1.7 transparency audit always returns
-/// FullyOpaque. Unlike the generic opaque warning (forgot to remove background),
-/// this is a format constraint. A dedicated educational message suggests
-/// using PNG for better favicon quality.
-fn push_jpeg_input_warning(state: &mut AppState) {
-    let title = state.translator.t(MessageKey::ToastJpegInputTitle);
-    let body = state.translator.t(MessageKey::ToastJpegInputBody);
-    push_warning_toast(state, &title, &body);
-}
-
-// ----------------------------------------------------------------------
-// v1.4.0: settings persistence
-// ----------------------------------------------------------------------
-
-/// Assembles a `PersistedSettings` snapshot from the current `AppState`.
-fn snapshot_persisted(state: &AppState) -> logolig::PersistedSettings {
-    logolig::PersistedSettings {
-        export_plan: state.export_plan.clone(),
-        theme: state.theme,
-        // v1.5.0: save the user locale override as a BCP-47 tag.
-        // None means fall back to OS detection on next launch.
-        locale: state.locale_override.map(|loc| loc.as_bcp47().to_string()),
-    }
-}
-
-/// Saves settings immediately (eager-save strategy, §1.4.0).
-///
-/// No-op if `state.store` is `None` (storage init failed at startup).
-/// Shows a warning toast on save failure; the app continues running.
-///
-/// Note: this is called on every settings change. The current
-/// `PersistedSettings` payload is a few KB so I/O cost is negligible,
-/// but a debounce / lazy-save strategy may be needed if it grows.
-fn persist_settings(state: &mut AppState) {
-    let Some(store) = state.store.as_ref() else {
-        return;
-    };
-    let snapshot = snapshot_persisted(state);
-    if let Err(err) = store.save(&snapshot) {
-        // Use a transient warning (not persistent) to avoid flooding the UI.
-        // v1.5.0: uses the active Translator.
-        let title = state.translator.t(MessageKey::ToastSettingsSaveFailedTitle);
-        let body = state.translator.t_args(
-            MessageKey::ToastSettingsSaveFailedBody,
-            &[("error", &err.to_string())],
-        );
-        push_warning_toast(state, &title, &body);
-    }
 }
 
 // ----------------------------------------------------------------------

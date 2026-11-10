@@ -11,7 +11,8 @@ use logolig::{
 };
 use logolig_i18n::{Locale, Translator, detect_system_locale};
 
-use super::{Message, push_warning_toast};
+use super::Message;
+use super::toast::push_warning_toast;
 
 // ----------------------------------------------------------------------
 // State model
