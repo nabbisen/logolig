@@ -122,3 +122,16 @@ fn artifact_count_includes_microsoft_app_logos_when_enabled() {
         base + logolig::MICROSOFT_APP_LOGOS.len()
     );
 }
+
+#[test]
+fn defaults_match_spec() {
+    // The defaults that `AppState::default()` depends on are consistent with
+    // spec §4.2 / §5.3 / §6.2 / §7.1.
+    assert_eq!(ThemeMode::default(), ThemeMode::System);
+    assert_eq!(ResizeAlgorithm::default(), ResizeAlgorithm::Lanczos3);
+
+    let plan = ExportPlan::default();
+    assert!(plan.include_ico);
+    assert!(plan.include_apple_touch);
+    assert!(plan.include_html_snippet);
+}
