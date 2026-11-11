@@ -49,6 +49,7 @@ recommendation; the owner authorizes the plan.
 | [011](./accepted/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
 | [031](./accepted/031-silent-file-dialog-failure.md) | A file dialog that cannot open must not fail silently | P2 |
 | [033](./accepted/033-new-application-logo.md) | Adopt the new application logo (docs, Linux package, Microsoft Store) | P2 |
+| [034](./accepted/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | P2 |
 | [035](./accepted/035-headless-ui-test-level.md) | A headless UI test level (layout, size, language and theme matrix without a window) | P1 |
 
 ### Proposed (`proposed/`)
@@ -60,7 +61,6 @@ recommendation; the owner authorizes the plan.
 | [014](./proposed/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
 | [018](./proposed/018-documentation-synchronisation.md) | Documentation synchronisation | P2 |
 | [023](./proposed/023-flatpak-publication.md) | Flatpak publication (Flathub) | P2 |
-| [034](./proposed/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision | P2 |
 | [004](./proposed/004-locale-zh-cn.md) | Simplified Chinese locale (deferred) | P3 |
 | [007](./proposed/007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | P3 |
 | [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |

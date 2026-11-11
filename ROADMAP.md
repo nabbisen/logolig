@@ -64,7 +64,7 @@
 | JS | Shared GUI session script `scripts/gui-session.sh` (isolation, launch, window by pid, capture, teardown; fixtures folder with checksums) | S | J11 (promotes the script J11 leaves) | The owner's rules require reusing one; none exists. Needed before J13's real keyboard runs. Handoff written when J11 delivers its script |
 | J13 | RFC 027 phase 0: spike (evidence only) **on snora 0.57**: Option D (snora's focus engine: `traverse`, its side bar, `design::button`, `AppLayout::shortcuts`/`escape`) against Option A (app-owned model); coverage of checkboxes, slider, radio groups, text-field key ownership, focus hand-over | S | J12, J7d | Freezes the design only after the architect's review. snora's notice of 2026-11-08 changes the starting point: see the update in RFC 027 |
 | J14 | RFC 027 steps 1–4: Home, Result, Customize, Settings (one reviewed step each; none released unless the previous one is complete) | L (4 × M) | J13 | The owner's priority. `ui-a11y.md` is updated from the evidence at the end, never before. Acceptance: a keyboard-only user can choose a file, convert, download, go back, change every setting, switch pages |
-| J15 | RFC 018: documentation synchronisation (closed last, from the evidence of the finished work) | S | J14 | |
+| J15 | RFC 018: documentation synchronisation (closed last, from the evidence of the finished work) | S | J14 | **Also one paragraph for older readers (RFC 034 D4): how to enlarge the application with the operating system's display scaling** |
 | J16 | RFC 008 remainder: `scripts/check-rfcs.sh` (RFC 000 invariants), wired into CI | S | J15 | The migration itself was executed on 2026-10-21 |
 | T1 | RFC 020 phases 3–4: `logolig-bin`, `release.yml` with attestation, AUR automation | M | owner's `aur` environment and CI key (RFC 020 D4) | Parallel track, **not** a 1.28.0 gate: it starts only when the owner has set up the environment, and it runs between jobs, never concurrently with one |
 
@@ -86,6 +86,10 @@
 | J18 | RFC 015 phase 2b: text rendering with generic-family repair and substitution advisory | M | Includes the Flatpak font set |
 | J19 | RFC 012, 014: manifest validation, input limits | M | Robustness and safety (RFC 011 moved to 1.28.0) |
 | J20 | RFC 013, 016, 022: system theme, i18n hygiene, vtracer preset check; `vtracer` dependency-hygiene spike (RFC 024) | M | Polish and correctness |
+| J21 | RFC 034 step 1: contrast (all text 7:1 in Light and Dark, solid secondary text, darker primary button, 3:1 for control borders; a contrast test over every colour pair) | M | J14 | Pure functions plus palette constants; owner decision D3 (no fourth theme) |
+| J22 | RFC 034 step 2: type scale module, target sizes (≥ 44 / ≥ 32 px), SVG quality slider → three labelled choices | L | J21 | Headless properties P1/P3 raised and their exception lists emptied; source test: no numeric `.size(...)` |
+| J23 | RFC 034 step 3: plain-language Customize labels (en, ja) | M | J22 | Technical names stay as a secondary line; no change to what options do |
+| J24 | RFC 034 step 4: "Interface size" setting (Normal / Large / Extra large) via `scale_factor`, persisted, always reachable | S | J23 | Headless matrix at every step; invalid stored value loads as Normal |
 
 The architect may split or reorder these as evidence arrives and will say so before acting. RFC 001–003 are withdrawn and RFC 004 is deferred (RFC 008 D4, decided 2026-10-21); RFC 027's phase 0 spike (J13) is the first step of the focus model, in 1.28.0.
 
@@ -115,7 +119,8 @@ The architect may split or reorder these as evidence arrives and will say so bef
 3. Resolved: the reviewed work was integrated into `main` as J0.
 4. **Granted 2026-10-29/30:** tag and publication of 1.27.0 (GitHub Release, crates.io). The first AUR publication is the owner's own action.
 5. **Granted 2026-11-09:** the scope and order of 1.28.0 (§3), RFC 021 Q1 (accent bar plus bold) and RFC 032 D1 (toast attention).
-6. **Still to be authorized separately, when the time comes:** the release tag and publication of 1.28.0 and every later release.
+6. **Delegated 2026-11-12:** the four questions of RFC 034 (sizes, interface-size steps, contrast approach, release split) were left to the architect under the owner's philosophy; decided and recorded in RFC 034 (D1–D5), release 1.29.0. The owner can overrule any of them.
+7. **Still to be authorized separately, when the time comes:** the release tag and publication of 1.28.0 and every later release.
 
 ## 7. Risks to the schedule
 
