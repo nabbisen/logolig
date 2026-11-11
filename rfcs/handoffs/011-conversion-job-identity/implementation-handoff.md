@@ -44,6 +44,7 @@ All as `update()` tests with hand-built messages, in a new test file `crates/app
 7. `PickFileRequested` twice ⇒ the second returns no task (assert on the returned task being the "none" one in the way the existing tests detect it: look at how `shortcuts_tests.rs` counts task units); after `FilePicked(None)` it works again; after `FilePicked(Some(path))` it works again; a `FileDropped` while the flag is set neither clears it nor opens anything.
 8. The Ctrl+O shortcut while a chooser is open does nothing (it goes through the same message).
 9. `job_id` increments exactly once per `start_ingest`, and not on any other message.
+10. **Settings leaves (logic level, replaces the real-window run J8c could not finish):** for each of these messages, build the persisted settings from the state before and after `update()` and assert that **exactly the expected leaf** differs and nothing else: toggling "Keep transparency"; toggling one PNG preset checkbox; adding a custom size; switching the language; picking a theme. Put them in `settings_tests.rs` (extend the existing helpers; look at what `persisted_settings.rs` already compares). If one of the five already has such a test, name it instead of duplicating.
 
 ## 4. Required evidence
 
@@ -51,11 +52,18 @@ All as `update()` tests with hand-built messages, in a new test file `crates/app
 - Proof of "guard first": for each of the four handlers, show the first statement is the id check (the diff).
 - `rg` listing of all callers of the four task constructors, each passing `state.job_id` (or the new value in `start_ingest`).
 - Gates chained on every pushed commit: `cargo fmt --check && cargo clippy --workspace --all-targets --all-features --locked -- -D warnings && cargo test --workspace --all-features --locked && cargo +1.90 check --workspace --all-targets --all-features --locked && cargo audit && cargo doc --workspace --no-deps --locked` (the four existing doc warnings expected). CI per commit by name.
-- **Application run (required; native Wayland, `wtype`; the session must be unlocked: check `loginctl show-session <id> -p LockedHint`, and if it is locked stop and report; isolated `XDG_CONFIG_HOME` and `XDG_STATE_HOME`; a pinned `settings.json` copied with the copy asserted; analyse captures AFTER the run, never inside a timed loop; measure pixel criteria on this window before the run):**
-  1. Ctrl+O sent **twice in quick succession** ⇒ **exactly one** new window (the chooser). Close it with Esc (cancel) ⇒ the app is on the start screen; Ctrl+O again ⇒ exactly one new window. Choose a PNG ⇒ Result screen (the J7e criteria).
-  2. Click "Choose file…" **twice quickly** (the pointer is needed: X11; if you cannot, say so and rely on item 1 and the tests).
-  3. The regression-by-use set that J8c could not finish, each step compared leaf by leaf in `settings.json` (nothing else changes): Customize: toggle "Keep transparency", one PNG preset checkbox, add a custom size; Settings: switch the language. (Pointer: X11.)
-  4. Real configuration: the owner's `~/.config/logolig/settings.json` modification time unchanged (record before and after). Stop at the first anomaly; a repeat is a question to the architect.
+- **Evidence plan (amended 2026-11-12 to the owner's updated GUI test rules; read `.git-exclude/rules/project-instructions-gui-common.md`, "GUI Evidence and Automation Rules" and "Test Optimization Rules").**
+
+  | Question | Level | Evidence |
+  |---|---|---|
+  | Are stale results of any of the four messages ignored, errors included? One job at a time? | logic and state | the §3 tests |
+  | Does a second `PickFileRequested` (button click, Ctrl+O, any route) open nothing while a chooser is open? | logic and state | §3 tests 7 and 8 (the click and the shortcut send the same message; a double click needs no pointer run) |
+  | Do the settings changes still change exactly their own leaf of `settings.json`? (the J8b/J8c "regression-by-use" run, now at the cheapest level) | logic and state | §3 test 10 |
+  | Does the **real** chooser open exactly once on a double Ctrl+O, and can it be cancelled and reopened? | **real UI** (only a real portal chooser can show this) | the one run below |
+  | Is the owner's real configuration untouched? | recorded state | modification time before and after |
+
+- **The one real-UI run** (native Wayland, `wtype`, because the keyboard is what is tested; the session must be unlocked: `loginctl show-session <id> -p LockedHint`, and if locked stop and report; isolated `XDG_CONFIG_HOME` and `XDG_STATE_HOME` with a pinned `settings.json` copied and the copy asserted; one instance, window chosen by pid; the focus check before every keystroke; analyse after the run). Steps, asserting after each: (1) Ctrl+O sent twice in quick succession ⇒ **exactly one** new window (count windows by `niri msg -j windows`, no screenshot needed); (2) close it with Esc ⇒ the app shows the start screen (one capture at most, or a state check); (3) Ctrl+O again ⇒ exactly one new window; (4) choose a PNG ⇒ Result screen (the J7e criterion; one capture). **Write the run as a script and keep it** (path stated in the review request): it will become the project's shared session script (job JS), so isolation, launch, window selection, capture and teardown must be separate functions. Stop at the first anomaly; a repeat is a question to the architect. Not run, by design: the pointer double-click on "Choose file…" and the settings leaf-by-leaf run (both are covered above at the logic level); say so.
+- Real configuration: the owner's `~/.config/logolig/settings.json` modification time unchanged (record before and after).
 - A real two-file race (drop A, then B while A converts) cannot be injected under the GUI rules here; the tests of §3 are its evidence. Say so.
 - Review request: `.git-exclude/review-request/rfc-011-job-identity/README.md`; report only its path.
 

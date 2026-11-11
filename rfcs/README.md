@@ -49,6 +49,7 @@ recommendation; the owner authorizes the plan.
 | [011](./accepted/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
 | [031](./accepted/031-silent-file-dialog-failure.md) | A file dialog that cannot open must not fail silently | P2 |
 | [033](./accepted/033-new-application-logo.md) | Adopt the new application logo (docs, Linux package, Microsoft Store) | P2 |
+| [035](./accepted/035-headless-ui-test-level.md) | A headless UI test level (layout, size, language and theme matrix without a window) | P1 |
 
 ### Proposed (`proposed/`)
 

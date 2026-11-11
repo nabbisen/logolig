@@ -3,7 +3,7 @@
 **Status.** Proposed (question from the owner, 2026-11-12: "I wonder the app UI is optimized for elder people"; the answer is: not yet)
 **Priority.** P2 (the owner's philosophy: users must not be confused; the keyboard work of RFC 027 is P1 and comes first)
 **Tracks.** Audit of text size, contrast, target size, effects, wording and settings, from the source and the palette constants (no user study).
-**Touches.** `crates/app/src/ui/*` (type sizes, paddings), `app.rs` (one `scale_factor` call), Settings page, persisted settings (one new value), i18n texts, `docs/src/ui-a11y.md`. Interacts with RFC 021 (selection cues), RFC 026 (result layout) and RFC 027 (focus): all four touch the same views, so they are ordered, not parallel.
+**Touches.** `crates/app/src/ui/*` (type sizes, paddings), `app.rs` (one `scale_factor` call), Settings page, persisted settings (one new value), i18n texts, `docs/src/ui-a11y.md`. Depends on the headless test level of RFC 035. Interacts with RFC 021 (selection cues), RFC 026 (result layout) and RFC 027 (focus): all four touch the same views, so they are ordered, not parallel.
 
 ## Summary
 
@@ -42,10 +42,12 @@ Do after RFC 021 (cues), RFC 026 (result layout) and RFC 027 (focus), because th
 
 ## Tests and evidence
 
-- Unit: the type scale has no value below the stated minimum; every `text(...).size(...)` call in `ui/` uses a named step (a source-level test that fails on a numeric literal); the scale-factor setting round-trips through persisted settings; old settings load with Normal.
-- Contrast: a test computes the contrast of every text colour pair of every theme against its background and fails below the stated ratio (AA in Light/Dark, AAA in High contrast).
-- Target size: measured on screenshots per theme (machine pixel measurement of the control boxes), recorded in the review request.
-- GUI: before/after captures at 100 % and 150 % for the Home, Result, Customize and Settings pages at the launch size and at the RFC 026 small-window size; every difference described.
+Levels follow the owner's test rules (2026-11-12) and the headless level of RFC 035:
+
+- **Logic and state:** the type scale has no value below the stated minimum; every `text(...).size(...)` call in `ui/` uses a named step (a source-level test that fails on a numeric literal); the scale-factor setting round-trips through persisted settings; old settings load with Normal.
+- **Pure functions:** contrast of every text colour pair of every theme against its background, failing below the stated ratio (AA in Light/Dark, AAA in High contrast).
+- **Headless UI (every CI run):** target sizes (≥ 44 / ≥ 32 px, the property P3 of RFC 035 with its thresholds raised and its exception list emptied), no overflow and primary controls reachable at every window size, **at every Interface-size step (100/125/150 %)**, in every language, Light/Dark/High contrast.
+- **Real UI (human eyes only):** the worst case (largest Interface size, longest-labelled language, narrowest window) plus one baseline, per theme, for "does it read well"; every difference described. Nothing else is photographed.
 
 ## Questions for the owner
 
