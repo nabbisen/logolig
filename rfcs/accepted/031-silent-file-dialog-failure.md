@@ -44,3 +44,10 @@ Unit: the mapping from the probe result to a message (pure function). Manual (na
 ## Security considerations
 
 A bus-name probe reads no user data. No file access changes.
+
+## Amendment 2026-11-12 (from the J11 review): two dialog findings joined to this RFC
+
+RFC 011 (J11) made the file **chooser** open at most once (`chooser_open`). Its implementer reported two things it was told not to fix there; both belong to "a dialog must behave predictably", so they are decided here, not in a new RFC:
+
+1. **The two Save dialogs (download one, download all) have no guard** (`update/download.rs`, `update.rs`): reading the code, Ctrl+S twice or a double click opens two dialogs, as the chooser did. Policy (decided): **at most one dialog of each kind at a time**, the same pattern as `chooser_open` (a flag set when the dialog is requested, cleared by its answer). The spike must first show whether the defect is real (two Save windows after a double request, by the window count as in the J11 run; one real-UI check) and the fix needs logic-level tests like J11's.
+2. **A dialog that never answers leaves its flag set** (`chooser_open` stays true; Ctrl+O then does nothing until restart). `rfd` reports a failed or cancelled dialog as `None`, which clears the flag; only a dialog that never answers at all is stuck. Decide with the spike's evidence whether any recovery is needed (for example clearing a flag when the window regains focus is **not** assumed: no timeouts or heuristics unless a stuck case is actually reproduced). "Document only" stays an allowed outcome.
