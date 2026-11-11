@@ -6,6 +6,6 @@ RFC 017 is delivered in three jobs, each reviewed before the next is issued:
 
 - [`implementation-handoff-part-1.md`](./implementation-handoff-part-1.md) (J8a): inline tests to their own files, vestigial code, stale test scaffolding, doc comments.
 - [`implementation-handoff-part-2.md`](./implementation-handoff-part-2.md) (J8b): retire the four unreachable ICO messages and deprecate `ThemeMode::next` (Step 0), then split `app.rs`.
-- J8c: split `advanced_drawer.rs`, `preview_panel.rs`, `core/tests/exporter.rs` and `app/tests.rs` (after J8b; handoff written after J8b is reviewed).
+- [`implementation-handoff-part-3.md`](./implementation-handoff-part-3.md) (J8c): split `preview_panel.rs`, `advanced_drawer.rs`, `core/tests/exporter.rs` and `app/tests.rs`; includes the application run J8b could not do.
 
 Review requests and evidence produced by the implementer are working material and are not stored here.
