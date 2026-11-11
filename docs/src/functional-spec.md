@@ -123,6 +123,13 @@ events are unavailable or unreliable. When the runtime reports file-hover events
 the card border and background are strengthened to show that a file can be
 dropped.
 
+Choosing or dropping a new file while one is still being converted replaces it: the
+newest file wins, and anything the earlier file produces afterwards (its result or
+its error) is discarded without a message. Only one file chooser can be open at a
+time; asking for a second one (the button or Ctrl+O) does nothing until the first is
+closed. A file dropped while the chooser is open is accepted; the file chosen later
+then replaces it.
+
 ### Transition triggers
 
 | Action | Result |
