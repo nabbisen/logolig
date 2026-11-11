@@ -7,6 +7,8 @@ mod shortcuts;
 mod task_queue;
 mod toast_time;
 mod ui;
+#[cfg(test)]
+mod ui_layout_tests;
 mod window;
 
 fn main() -> iced::Result {

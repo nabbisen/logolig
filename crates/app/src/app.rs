@@ -159,7 +159,7 @@ mod settings_tests;
 mod shortcuts_tests;
 
 #[cfg(test)]
-mod test_support;
+pub(crate) mod test_support;
 
 #[cfg(test)]
 mod toast_hold_tests;

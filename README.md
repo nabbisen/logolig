@@ -324,6 +324,22 @@ translation, and BCP-47 locale resolution. The app crate has focused
 `update()` smoke tests for navigation, settings changes, history, and
 drag/drop state.
 
+The tests run at three levels, each used for what it can prove cheaply. **Logic and state** (above)
+are plain `update()` tests with no interface. **The headless interface** lays the whole `view` out
+on the CPU, without a window, a GPU or a display (`iced_test`), and checks properties of the layout
+in every combination of window size, screen, language and theme: nothing lies beyond the right
+edge, no text is squeezed to nothing, every interactive area is at least 24 x 24 px, and the
+main controls are fully visible. These tests are in `crates/app/src/ui_layout_tests/`, run with the
+rest of `cargo test` and in CI (about 20 seconds); `.cargo/config.toml` selects the CPU renderer.
+**The real window** is for what needs eyes or a real desktop portal, a few captures at a time.
+
+A headless property that fails today is not committed red: its known failures are a named list in
+the test (`KNOWN`), and a job that fixes one deletes its entry; a test also fails if an entry no
+longer matches anything, so the lists end empty. The headless layout uses a bundled font (Fira
+Sans) where the real window uses the system's, so its sizes agree with the real window to within
+about a pixel (measured: 0.6 px on two buttons at 1042 x 1144), not exactly: it finds layout
+defects, it does not judge how text reads.
+
 ## Versioning
 
 This repository contains **v1**: the iced-based native desktop
