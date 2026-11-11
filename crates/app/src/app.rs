@@ -145,6 +145,9 @@ fn view(state: &AppState) -> Element<'_, Message> {
 mod input_tests;
 
 #[cfg(test)]
+mod job_tests;
+
+#[cfg(test)]
 mod result_tests;
 
 #[cfg(test)]

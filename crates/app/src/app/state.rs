@@ -151,6 +151,16 @@ pub struct AppState {
     /// - `Customize` — output settings (replaces the former right-side drawer).
     /// - `Settings`  — language and theme (replaces the former popup pickers).
     pub nav_page: NavPage,
+
+    // ---------------------------------------------------------------
+    // RFC 011: conversion job identity
+    // ---------------------------------------------------------------
+    /// Id of the newest job; results that carry another id are stale.
+    ///
+    /// Monotonic, starts at 0, and is incremented only when a new file starts loading
+    /// (`start_ingest`). The four asynchronous results (ingest, preview, conversion, SVG
+    /// analysis) carry the id of the job that started them.
+    pub job_id: u64,
 }
 
 /// v1.22.0: side-nav page discriminant.
@@ -251,6 +261,8 @@ impl Default for AppState {
             advanced_extras_open: false,
             // v1.18.0 → v1.22.0
             nav_page: NavPage::Home,
+            // RFC 011
+            job_id: 0,
         }
     }
 }

@@ -151,12 +151,15 @@ fn stale_analysis_result_is_ignored() {
 fn analysis_is_started_only_for_svg_sources() {
     // Preview and conversion are always started (2 units); an SVG adds the analysis (3).
     let mut png = AppState::default();
-    let task = update(&mut png, Message::IngestCompleted(Ok(dummy_source_asset())));
+    let task = update(
+        &mut png,
+        Message::IngestCompleted(0, Ok(dummy_source_asset())),
+    );
     assert_eq!(task.units(), 2, "PNG source: no analysis");
     let mut svg = AppState::default();
     let task = update(
         &mut svg,
-        Message::IngestCompleted(Ok(svg_asset("logo.svg"))),
+        Message::IngestCompleted(0, Ok(svg_asset("logo.svg"))),
     );
     assert_eq!(task.units(), 3, "SVG source: analysis started");
 }

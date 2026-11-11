@@ -27,10 +27,12 @@ pub enum Message {
     FilePicked(Option<PathBuf>),
 
     // Loading
-    IngestCompleted(Result<SourceAsset, AppError>),
+    /// The file read of job `u64` finished (RFC 011: the id travels with every result).
+    IngestCompleted(u64, Result<SourceAsset, AppError>),
 
     // Preview
-    PreviewBuilt(Result<PreviewCache, AppError>),
+    /// The preview of job `u64` is ready.
+    PreviewBuilt(u64, Result<PreviewCache, AppError>),
     PreviewContextSelected(PreviewContext),
     PreviewBackgroundSelected(ThemeMode),
 
@@ -39,7 +41,7 @@ pub enum Message {
     /// Distinct from the former `Message::ExportCompleted` (which wrote to disk);
     /// this variant only places the asset bundle into app state.
     /// The user triggers the actual write later via individual or ZIP download.
-    ConvertCompleted(Result<crate::result::ResultAssets, logolig::AppError>),
+    ConvertCompleted(u64, Result<crate::result::ResultAssets, logolig::AppError>),
 
     /// v1.16.0: individual download button pressed. Carries the asset index.
     DownloadOneRequested(usize),
@@ -176,5 +178,5 @@ pub enum Message {
     // RFC 015 phase 2a: result of the off-thread SVG analysis.
     /// The SVG at `PathBuf` was analysed. Ignored when it is no longer the current source
     /// (a newer file was loaded in the meantime). Never sent for non-SVG sources.
-    SvgAnalyzed(PathBuf, logolig::SvgReport),
+    SvgAnalyzed(u64, PathBuf, logolig::SvgReport),
 }

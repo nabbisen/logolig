@@ -37,7 +37,7 @@ pub(super) fn algorithm_changed(state: &mut AppState, alg: ResizeAlgorithm) -> T
     state.preview_cache = None;
     if let Some(asset) = state.source_asset.as_ref() {
         let arc = std::sync::Arc::new(asset.clone());
-        crate::task_queue::build_preview_task(arc, alg)
+        crate::task_queue::build_preview_task(arc, alg, state.job_id)
     } else {
         Task::none()
     }
@@ -125,7 +125,7 @@ pub(super) fn export_plan_reset_requested(state: &mut AppState) -> Task<Message>
     // Rebuild preview cache if a source is loaded.
     if let Some(asset) = state.source_asset.as_ref() {
         let arc = std::sync::Arc::new(asset.clone());
-        crate::task_queue::build_preview_task(arc, state.export_plan.algorithm)
+        crate::task_queue::build_preview_task(arc, state.export_plan.algorithm, state.job_id)
     } else {
         Task::none()
     }

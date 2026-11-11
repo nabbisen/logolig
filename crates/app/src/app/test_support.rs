@@ -32,7 +32,9 @@ pub(super) fn ingest_ok(state: &mut AppState, size: Option<(u32, u32)>) {
         intrinsic_size: size,
         ..dummy_source_asset()
     };
-    let _ = update(state, Message::IngestCompleted(Ok(asset)));
+    // The result of the current job (RFC 011).
+    let job = state.job_id;
+    let _ = update(state, Message::IngestCompleted(job, Ok(asset)));
 }
 
 pub(super) const SVG_TEXT: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><text x="2" y="30" font-size="20">Hi</text></svg>"#;
@@ -59,5 +61,9 @@ pub(super) fn state_with_svg_source() -> AppState {
 
 pub(super) fn analyzed(state: &mut AppState, path: &str, svg: &str) {
     let report = logolig::services::svg::analyze(svg.as_bytes());
-    let _ = update(state, Message::SvgAnalyzed(PathBuf::from(path), report));
+    let job = state.job_id;
+    let _ = update(
+        state,
+        Message::SvgAnalyzed(job, PathBuf::from(path), report),
+    );
 }

@@ -26,7 +26,11 @@ pub(super) fn pick_file_requested() -> Task<Message> {
 }
 
 /// Handler for `Message::IngestCompleted`.
-pub(super) fn ingest_completed(state: &mut AppState, asset: SourceAsset) -> Task<Message> {
+pub(super) fn ingest_completed(
+    state: &mut AppState,
+    _job: u64,
+    asset: SourceAsset,
+) -> Task<Message> {
     // RFC 010: decide before `asset` is moved into the state.
     let non_square = is_non_square(asset.intrinsic_size);
     // RFC 015 phase 2a: only SVG sources are analysed for parts that are not shown.
@@ -58,11 +62,15 @@ pub(super) fn ingest_completed(state: &mut AppState, asset: SourceAsset) -> Task
     }
     // Launch (a) and (b) in parallel; for an SVG also (c) the analysis for the advisory.
     let mut tasks = vec![
-        crate::task_queue::build_preview_task(arc.clone(), state.export_plan.algorithm),
-        crate::task_queue::convert_task(arc.clone(), state.export_plan.clone()),
+        crate::task_queue::build_preview_task(
+            arc.clone(),
+            state.export_plan.algorithm,
+            state.job_id,
+        ),
+        crate::task_queue::convert_task(arc.clone(), state.export_plan.clone(), state.job_id),
     ];
     if is_svg {
-        tasks.push(crate::task_queue::analyze_svg_task(arc));
+        tasks.push(crate::task_queue::analyze_svg_task(arc, state.job_id));
     }
     Task::batch(tasks)
 }
@@ -70,6 +78,7 @@ pub(super) fn ingest_completed(state: &mut AppState, asset: SourceAsset) -> Task
 /// Handler for `Message::SvgAnalyzed`.
 pub(super) fn svg_analyzed(
     state: &mut AppState,
+    _job: u64,
     path: PathBuf,
     report: logolig::SvgReport,
 ) -> Task<Message> {
@@ -85,7 +94,7 @@ pub(super) fn svg_analyzed(
 }
 
 /// Handler for `Message::PreviewBuilt`.
-pub(super) fn preview_built(state: &mut AppState, cache: PreviewCache) -> Task<Message> {
+pub(super) fn preview_built(state: &mut AppState, _job: u64, cache: PreviewCache) -> Task<Message> {
     // Verify the cache matches the current source and algorithm.
     // Discard stale cache (wrong source or algorithm).
     let asset_path = state.source_asset.as_ref().map(|a| a.path.clone());
@@ -126,7 +135,11 @@ pub(super) fn preview_built(state: &mut AppState, cache: PreviewCache) -> Task<M
 }
 
 /// Handler for `Message::PreviewBuilt`.
-pub(super) fn preview_build_failed(state: &mut AppState, err: AppError) -> Task<Message> {
+pub(super) fn preview_build_failed(
+    state: &mut AppState,
+    _job: u64,
+    err: AppError,
+) -> Task<Message> {
     // Preview build failure is non-fatal (source data is intact).
     // Stay on the current screen; notify via toast only.
     push_error_toast(state, err);
@@ -138,6 +151,8 @@ pub(super) fn preview_build_failed(state: &mut AppState, err: AppError) -> Task<
 /// v1.16.0: the former Screen::Importing was merged into Screen::Converting.
 /// All phases (ingest, preview build, asset bundle) now share the Converting state.
 pub(super) fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message> {
+    // RFC 011: a new file is a new job; the results of every earlier job are stale from here on.
+    state.job_id += 1;
     state.file_drag_hovering = false;
     state.source_path = Some(path.clone());
     state.screen = Screen::Converting;
@@ -146,5 +161,5 @@ pub(super) fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message>
     state.preview_cache = None;
     state.result_assets = None;
     state.result_preview_open = false;
-    crate::task_queue::ingest_task(path)
+    crate::task_queue::ingest_task(path, state.job_id)
 }

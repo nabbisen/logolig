@@ -65,24 +65,24 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // Resets transient UI state (nav page, extras open, etc.).
         Message::EditCancelled => nav::edit_cancelled(state),
         Message::ShowLastResultRequested => nav::show_last_result_requested(state),
-        Message::IngestCompleted(Ok(asset)) => input::ingest_completed(state, asset),
-        Message::SvgAnalyzed(path, report) => input::svg_analyzed(state, path, report),
-        Message::IngestCompleted(Err(err)) => fail(state, err),
+        Message::IngestCompleted(job, Ok(asset)) => input::ingest_completed(state, job, asset),
+        Message::SvgAnalyzed(job, path, report) => input::svg_analyzed(state, job, path, report),
+        Message::IngestCompleted(_job, Err(err)) => fail(state, err),
 
-        Message::PreviewBuilt(Ok(cache)) => input::preview_built(state, cache),
-        Message::PreviewBuilt(Err(err)) => input::preview_build_failed(state, err),
+        Message::PreviewBuilt(job, Ok(cache)) => input::preview_built(state, job, cache),
+        Message::PreviewBuilt(job, Err(err)) => input::preview_build_failed(state, job, err),
         Message::PreviewContextSelected(ctx) => convert::preview_context_selected(state, ctx),
         Message::PreviewBackgroundSelected(theme) => {
             convert::preview_background_selected(state, theme)
         }
 
         // v1.16.0: in-memory conversion complete
-        Message::ConvertCompleted(Ok(assets)) => {
+        Message::ConvertCompleted(_job, Ok(assets)) => {
             state.result_assets = Some(assets);
             state.screen = Screen::Result;
             Task::none()
         }
-        Message::ConvertCompleted(Err(err)) => fail(state, err),
+        Message::ConvertCompleted(_job, Err(err)) => fail(state, err),
 
         // v1.16.0: download buttons
         Message::DownloadOneRequested(idx) => download::download_one_requested(state, idx),

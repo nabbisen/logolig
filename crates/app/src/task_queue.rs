@@ -19,12 +19,12 @@ use crate::result::{ResultAssetItem, ResultAssetKind, ResultAssets};
 
 /// Spawn a file ingestion task.
 ///
-/// Completion is delivered as `Message::IngestCompleted(Result<_,_>)`.
-pub fn ingest_task(path: PathBuf) -> Task<Message> {
-    Task::perform(
-        logolig::services::ingest::ingest(path),
-        Message::IngestCompleted,
-    )
+/// Completion is delivered as `Message::IngestCompleted(job, Result<_,_>)`; `job` is the id of
+/// the job that started it (RFC 011).
+pub fn ingest_task(path: PathBuf, job: u64) -> Task<Message> {
+    Task::perform(logolig::services::ingest::ingest(path), move |result| {
+        Message::IngestCompleted(job, result)
+    })
 }
 
 /// Opens an rfd native file picker; the chosen path is sent as
@@ -50,13 +50,13 @@ pub fn pick_file_task() -> Task<Message> {
 ///
 /// CPU-bound, off the UI thread. The result carries the source path so the receiver can
 /// discard it if a newer file has been loaded in the meantime.
-pub fn analyze_svg_task(asset: Arc<SourceAsset>) -> Task<Message> {
+pub fn analyze_svg_task(asset: Arc<SourceAsset>, job: u64) -> Task<Message> {
     Task::perform(
         async move {
             let report = logolig::services::svg::analyze(&asset.raw);
             (asset.path.clone(), report)
         },
-        |(path, report)| Message::SvgAnalyzed(path, report),
+        move |(path, report)| Message::SvgAnalyzed(job, path, report),
     )
 }
 
@@ -65,12 +65,16 @@ pub fn analyze_svg_task(asset: Arc<SourceAsset>) -> Task<Message> {
 ///
 /// `SourceAsset` is wrapped in `Arc` so that `raw: Arc<[u8]>`
 /// to avoid copying the raw byte buffer.
-pub fn build_preview_task(asset: Arc<SourceAsset>, algorithm: ResizeAlgorithm) -> Task<Message> {
+pub fn build_preview_task(
+    asset: Arc<SourceAsset>,
+    algorithm: ResizeAlgorithm,
+    job: u64,
+) -> Task<Message> {
     Task::perform(
         run_blocking("preview", move || {
             logolig::services::preview::build_preview(&asset, algorithm)
         }),
-        Message::PreviewBuilt,
+        move |result| Message::PreviewBuilt(job, result),
     )
 }
 
@@ -115,10 +119,10 @@ where
 ///
 /// Renamed from `convert_in_memory_task` to `convert_task` in v1.19:
 /// "in_memory" is now implied (all conversions are in-memory).
-pub fn convert_task(asset: Arc<SourceAsset>, plan: ExportPlan) -> Task<Message> {
+pub fn convert_task(asset: Arc<SourceAsset>, plan: ExportPlan, job: u64) -> Task<Message> {
     Task::perform(
         run_blocking("conversion", move || run_convert(&asset, &plan)),
-        Message::ConvertCompleted,
+        move |result| Message::ConvertCompleted(job, result),
     )
 }
 
