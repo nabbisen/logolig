@@ -251,3 +251,109 @@ fn the_current_jobs_errors_are_shown() {
     assert_eq!(state.toasts.len(), 1);
     assert_eq!(state.screen, Screen::Converting);
 }
+
+// ---- one file chooser at a time (decision 3) -----------------------------------------------
+
+use crate::shortcuts::Shortcut;
+
+/// The task a message starts, as a count of started units (0 = nothing).
+fn units_of(state: &mut AppState, message: Message) -> usize {
+    update(state, message).units()
+}
+
+/// 7: a second request opens nothing while the chooser is open; the answer, a cancel or a
+/// choice, makes it work again; a drop neither clears the flag nor opens anything.
+#[test]
+fn a_second_chooser_is_not_opened_while_one_is_open() {
+    let mut state = AppState::default();
+    assert!(
+        units_of(&mut state, Message::PickFileRequested) > 0,
+        "the first opens a chooser"
+    );
+    assert!(state.chooser_open);
+    assert_eq!(
+        units_of(&mut state, Message::PickFileRequested),
+        0,
+        "the second opens nothing"
+    );
+    assert!(state.chooser_open, "and the first is still open");
+
+    // Cancelled: the flag is cleared, a new request works.
+    let _ = update(&mut state, Message::FilePicked(None));
+    assert!(!state.chooser_open);
+    assert!(
+        units_of(&mut state, Message::PickFileRequested) > 0,
+        "works after a cancel"
+    );
+
+    // Chosen: the flag is cleared (and the file starts a job), a new request works.
+    let _ = update(
+        &mut state,
+        Message::FilePicked(Some(PathBuf::from("a.png"))),
+    );
+    assert!(!state.chooser_open);
+    assert_eq!(state.job_id, 1, "the chosen file is a job");
+    assert!(
+        units_of(&mut state, Message::PickFileRequested) > 0,
+        "works after a choice"
+    );
+}
+
+/// 7 (drop): a drop while the chooser is open is accepted, but it does not touch the flag, and
+/// the chooser's own answer later starts its own, newer job.
+#[test]
+fn a_drop_while_the_chooser_is_open_leaves_it_open_and_the_choice_still_wins() {
+    let mut state = AppState::default();
+    assert!(units_of(&mut state, Message::PickFileRequested) > 0);
+
+    let drop = units_of(
+        &mut state,
+        Message::FileDropped(PathBuf::from("dropped.png")),
+    );
+    assert!(drop > 0, "the drop starts its job (latest intent wins)");
+    assert_eq!(state.job_id, 1);
+    assert!(
+        state.chooser_open,
+        "a drop must not clear a flag that belongs to the chooser"
+    );
+    assert_eq!(
+        units_of(&mut state, Message::PickFileRequested),
+        0,
+        "and opens no second chooser"
+    );
+
+    let _ = update(
+        &mut state,
+        Message::FilePicked(Some(PathBuf::from("chosen.png"))),
+    );
+    assert_eq!(
+        state.job_id, 2,
+        "the choice, arriving later, is the newest intent"
+    );
+    assert_eq!(state.source_path, Some(PathBuf::from("chosen.png")));
+    assert!(!state.chooser_open);
+}
+
+/// 8: Ctrl+O goes through the same message, so it does nothing while a chooser is open (a
+/// double Ctrl+O, or a click and Ctrl+O), and works again after the answer.
+#[test]
+fn ctrl_o_does_nothing_while_a_chooser_is_open() {
+    let mut state = AppState::default();
+    let press = |state: &mut AppState| {
+        update(state, Message::ShortcutPressed(Shortcut::ChooseFile)).units()
+    };
+
+    assert!(press(&mut state) > 0, "the first Ctrl+O opens the chooser");
+    assert_eq!(press(&mut state), 0, "the second Ctrl+O opens nothing");
+    assert_eq!(
+        units_of(&mut state, Message::PickFileRequested),
+        0,
+        "nor does the button"
+    );
+
+    let _ = update(&mut state, Message::FilePicked(None));
+    assert!(
+        press(&mut state) > 0,
+        "Ctrl+O works again after the chooser was cancelled"
+    );
+}

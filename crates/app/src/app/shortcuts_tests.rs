@@ -35,6 +35,8 @@ fn choose_file_starts_the_same_task_as_the_button_on_empty_and_result() {
         };
         let mouse = units_of(&mut state, Message::PickFileRequested);
         assert!(mouse > 0, "the mouse path starts a task");
+        // The chooser the button opened is closed again (RFC 011: one chooser at a time).
+        state.chooser_open = false;
         let key = press(&mut state, Shortcut::ChooseFile).units();
         assert_eq!(key, mouse, "{screen:?}");
     }

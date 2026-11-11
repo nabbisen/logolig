@@ -18,7 +18,13 @@ use super::super::{AppState, Message, Screen};
 use super::convert::fail;
 
 /// Handler for `Message::PickFileRequested`.
-pub(super) fn pick_file_requested() -> Task<Message> {
+pub(super) fn pick_file_requested(state: &mut AppState) -> Task<Message> {
+    // RFC 011: one chooser at a time. The flag is cleared by the chooser's own answer
+    // (`FilePicked`), never by a drop.
+    if state.chooser_open {
+        return Task::none();
+    }
+    state.chooser_open = true;
     // Launch the native file picker as a Task (§12 accessibility alternative).
     // Result arrives as Message::FilePicked(Option<PathBuf>).
     // v1.12.0: re-select also reuses this message (keeps current screen,

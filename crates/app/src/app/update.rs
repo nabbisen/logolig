@@ -37,7 +37,13 @@ use nav::handle_shortcut;
 
 pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
     match message {
-        Message::FileDropped(path) | Message::FilePicked(Some(path)) => {
+        Message::FileDropped(path) => {
+            state.file_drag_hovering = false;
+            start_ingest(state, path)
+        }
+        // RFC 011: the chooser has answered; a drop (above) never clears this flag.
+        Message::FilePicked(Some(path)) => {
+            state.chooser_open = false;
             state.file_drag_hovering = false;
             start_ingest(state, path)
         }
@@ -50,10 +56,11 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::FilePicked(None) => {
-            // File picker cancelled — no state change.
+            // File picker cancelled: only the chooser flag changes.
+            state.chooser_open = false;
             Task::none()
         }
-        Message::PickFileRequested => input::pick_file_requested(),
+        Message::PickFileRequested => input::pick_file_requested(state),
 
         // v1.12.0: back navigation.
         //

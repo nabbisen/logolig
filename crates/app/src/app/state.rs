@@ -161,6 +161,11 @@ pub struct AppState {
     /// (`start_ingest`). The four asynchronous results (ingest, preview, conversion, SVG
     /// analysis) carry the id of the job that started them.
     pub job_id: u64,
+    /// A file chooser opened by `PickFileRequested` is open and has not answered yet.
+    ///
+    /// While it is set, a further `PickFileRequested` opens nothing. Cleared by the chooser's
+    /// result (`FilePicked`), never by a drop.
+    pub chooser_open: bool,
 }
 
 /// v1.22.0: side-nav page discriminant.
@@ -263,6 +268,7 @@ impl Default for AppState {
             nav_page: NavPage::Home,
             // RFC 011
             job_id: 0,
+            chooser_open: false,
         }
     }
 }
