@@ -29,3 +29,11 @@ At 1280 × 720 and at the mobile width, with every output option enabled, "← B
 ## Risk
 
 Low. Layout only. Coordinate with RFC 021 (indicators) and RFC 019 (keyboard) so the same screen is not reworked three times.
+
+## Amendment 2026-11-12 (from the JH review): the headless level measured it, and found a second page
+
+The headless layout tests of RFC 035 (job JH) measured the defect on all seven matrix sizes (1280 × 720 down to 360 × 640, both languages, 7 or 16 cards): "← Back" and "Download all (ZIP)" are **not fully visible on the Result screen at any size** (on the 1280 × 720 reproduction: window height 720, "← Back" at y = 835). They also found a defect nobody had listed:
+
+- **The Settings page is not scrollable and `iced` squeezes its last rows to zero width when the window is short or narrow:** at 1024 × 600 and 800 × 600 the "Show this list" row and the Tab-key note vanish; at 768 × 480 the five shortcut descriptions; at 767 and 640 × 480 the heading "Keyboard shortcuts" too; at 360 × 640 the last row and the note (English only; the Japanese strings fit). In the usual window (1042 × 1144) the list is complete.
+
+Decision (same principle as above, "the whole page scrolls as one, so nothing is unreachable at any height"): **every page** (Home, Result, Customize, Settings) scrolls as one when its content is taller than the window, or is laid out so that nothing is squeezed out; the shortcut list on Settings is covered by the same rule. Acceptance additions: the entries "Back" and "Download all (ZIP)" are added to property P2 of `ui_layout_tests/reachable.rs` (asserted, red-first) together with the fix; the Settings entries of `overflow.rs::KNOWN` (26 entries today) are deleted; the headless matrix is green without them. RFC 021 and RFC 034 keep their own jobs; this one fixes layout reachability only.
