@@ -17,6 +17,7 @@
 //! | `app/update.rs`, `app/update/*.rs` | the dispatch and the handlers |
 //! | `app/toast.rs` | the toast helpers and the advisory toasts |
 //! | `app/persist.rs` | saving the settings |
+//! | `app/*_tests.rs`, `app/test_support.rs` | the `update` tests, by theme, and the helpers they share |
 
 mod message;
 mod persist;
@@ -141,7 +142,22 @@ fn view(state: &AppState) -> Element<'_, Message> {
 // `state.store` is `None` (the default), so these tests never touch disk.
 
 #[cfg(test)]
+mod input_tests;
+
+#[cfg(test)]
+mod result_tests;
+
+#[cfg(test)]
+mod settings_tests;
+
+#[cfg(test)]
+mod shortcuts_tests;
+
+#[cfg(test)]
+mod test_support;
+
+#[cfg(test)]
 mod toast_hold_tests;
 
 #[cfg(test)]
-mod tests;
+mod toast_lifetime_tests;
