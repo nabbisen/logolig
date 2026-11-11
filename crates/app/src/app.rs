@@ -42,6 +42,8 @@ use iced::Task;
 #[cfg(test)]
 use logolig::{AppError, SourceAsset, ThemeMode};
 #[cfg(test)]
+use persist::snapshot_persisted;
+#[cfg(test)]
 use snora::Toast;
 #[cfg(test)]
 use std::{path::PathBuf, time::Instant};

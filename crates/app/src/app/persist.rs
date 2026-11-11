@@ -10,7 +10,7 @@ use super::toast::push_warning_toast;
 // ----------------------------------------------------------------------
 
 /// Assembles a `PersistedSettings` snapshot from the current `AppState`.
-fn snapshot_persisted(state: &AppState) -> logolig::PersistedSettings {
+pub(super) fn snapshot_persisted(state: &AppState) -> logolig::PersistedSettings {
     logolig::PersistedSettings {
         export_plan: state.export_plan.clone(),
         theme: state.theme,
