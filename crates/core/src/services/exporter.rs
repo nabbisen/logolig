@@ -247,7 +247,7 @@ pub fn ensure_unique_paths(artifacts: &[InMemoryArtifact]) -> Result<(), AppErro
 /// calls `run_in_memory` to assemble all artifacts, then writes atomically
 /// via a staging directory.
 ///
-/// Existing tests (`tests/exporter.rs`, 12 cases) call this API directly,
+/// Existing tests (`tests/exporter_disk.rs` and `tests/exporter_monochrome.rs`, 12 cases) call this API directly,
 /// so its signature is kept compatible with v1.18.
 pub fn run(
     asset: &SourceAsset,

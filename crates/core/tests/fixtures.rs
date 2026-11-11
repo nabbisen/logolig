@@ -5,6 +5,8 @@
 
 #![allow(dead_code)]
 
+use std::path::PathBuf;
+
 /// 16×16 SVG with a blue grid centred.
 /// Has explicit width/height attributes for reliable resvg parsing.
 ///
@@ -140,3 +142,16 @@ pub const SVG_TEXT_ONLY_IN_DEFS: &str = r##"<svg xmlns="http://www.w3.org/2000/s
 
 /// An empty text element: nothing to draw.
 pub const SVG_EMPTY_TEXT: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><text x="2" y="30" font-size="20"></text></svg>"##;
+
+/// Create a unique temporary directory (temp_dir + nanoseconds).
+pub fn fresh_tmp_dir(label: &str) -> PathBuf {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let pid = std::process::id();
+    let dir = std::env::temp_dir().join(format!("logolig-test-{label}-{pid}-{nanos}"));
+    std::fs::create_dir_all(&dir).unwrap();
+    dir
+}

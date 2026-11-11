@@ -42,8 +42,24 @@ name = "export_plan"
 path = "tests/export_plan.rs"
 
 [[test]]
-name = "exporter"
-path = "tests/exporter.rs"
+name = "exporter_disk"
+path = "tests/exporter_disk.rs"
+
+[[test]]
+name = "exporter_monochrome"
+path = "tests/exporter_monochrome.rs"
+
+[[test]]
+name = "exporter_in_memory"
+path = "tests/exporter_in_memory.rs"
+
+[[test]]
+name = "exporter_transparency"
+path = "tests/exporter_transparency.rs"
+
+[[test]]
+name = "exporter_microsoft_logos"
+path = "tests/exporter_microsoft_logos.rs"
 
 [[test]]
 name = "decode_webp"
