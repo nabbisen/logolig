@@ -15,6 +15,7 @@ use super::super::toast::{
     push_svg_parts_warning, push_transparency_warning,
 };
 use super::super::{AppState, Message, Screen};
+use super::convert::fail;
 
 /// Handler for `Message::PickFileRequested`.
 pub(super) fn pick_file_requested() -> Task<Message> {
@@ -28,9 +29,13 @@ pub(super) fn pick_file_requested() -> Task<Message> {
 /// Handler for `Message::IngestCompleted`.
 pub(super) fn ingest_completed(
     state: &mut AppState,
-    _job: u64,
+    job: u64,
     asset: SourceAsset,
 ) -> Task<Message> {
+    // RFC 011: only the newest job may change anything; a stale result is dropped first.
+    if job != state.job_id {
+        return Task::none();
+    }
     // RFC 010: decide before `asset` is moved into the state.
     let non_square = is_non_square(asset.intrinsic_size);
     // RFC 015 phase 2a: only SVG sources are analysed for parts that are not shown.
@@ -75,13 +80,26 @@ pub(super) fn ingest_completed(
     Task::batch(tasks)
 }
 
+/// Handler for `Message::IngestCompleted` with an error.
+pub(super) fn ingest_failed(state: &mut AppState, job: u64, err: AppError) -> Task<Message> {
+    // RFC 011: only the newest job may change anything; a stale result is dropped first.
+    if job != state.job_id {
+        return Task::none();
+    }
+    fail(state, err)
+}
+
 /// Handler for `Message::SvgAnalyzed`.
 pub(super) fn svg_analyzed(
     state: &mut AppState,
-    _job: u64,
+    job: u64,
     path: PathBuf,
     report: logolig::SvgReport,
 ) -> Task<Message> {
+    // RFC 011: only the newest job may change anything; a stale result is dropped first.
+    if job != state.job_id {
+        return Task::none();
+    }
     // Stale result (another file was loaded since): ignore.
     let is_current = state
         .source_asset
@@ -94,7 +112,11 @@ pub(super) fn svg_analyzed(
 }
 
 /// Handler for `Message::PreviewBuilt`.
-pub(super) fn preview_built(state: &mut AppState, _job: u64, cache: PreviewCache) -> Task<Message> {
+pub(super) fn preview_built(state: &mut AppState, job: u64, cache: PreviewCache) -> Task<Message> {
+    // RFC 011: only the newest job may change anything; a stale result is dropped first.
+    if job != state.job_id {
+        return Task::none();
+    }
     // Verify the cache matches the current source and algorithm.
     // Discard stale cache (wrong source or algorithm).
     let asset_path = state.source_asset.as_ref().map(|a| a.path.clone());
@@ -135,11 +157,11 @@ pub(super) fn preview_built(state: &mut AppState, _job: u64, cache: PreviewCache
 }
 
 /// Handler for `Message::PreviewBuilt`.
-pub(super) fn preview_build_failed(
-    state: &mut AppState,
-    _job: u64,
-    err: AppError,
-) -> Task<Message> {
+pub(super) fn preview_build_failed(state: &mut AppState, job: u64, err: AppError) -> Task<Message> {
+    // RFC 011: only the newest job may change anything; a stale result is dropped first.
+    if job != state.job_id {
+        return Task::none();
+    }
     // Preview build failure is non-fatal (source data is intact).
     // Stay on the current screen; notify via toast only.
     push_error_toast(state, err);

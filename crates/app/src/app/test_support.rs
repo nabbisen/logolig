@@ -67,3 +67,25 @@ pub(super) fn analyzed(state: &mut AppState, path: &str, svg: &str) {
         Message::SvgAnalyzed(job, PathBuf::from(path), report),
     );
 }
+
+/// A preview cache for `path` with fully opaque pixels, as the preview build would deliver
+/// for a source without transparency (the audit of the first cache raises an advisory toast).
+pub(super) fn opaque_preview_cache(
+    path: &str,
+    algorithm: logolig::ResizeAlgorithm,
+) -> logolig::PreviewCache {
+    let raster = |side: u32| {
+        logolig::Rgba8::try_from_raw(
+            side,
+            side,
+            Arc::<[u8]>::from(vec![0xFF; (side * side * 4) as usize]),
+        )
+        .expect("a square of side*side*4 bytes")
+    };
+    logolig::PreviewCache {
+        source_path: PathBuf::from(path),
+        algorithm,
+        tab_16: raster(16),
+        icon_120: raster(120),
+    }
+}

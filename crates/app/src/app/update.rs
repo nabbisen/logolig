@@ -6,7 +6,7 @@
 //! | File | Handles |
 //! |---|---|
 //! | `update/input.rs` | choosing a file, ingest, the SVG analysis, the preview build |
-//! | `update/convert.rs` | preview context and background, the common error handler |
+//! | `update/convert.rs` | preview context and background, the conversion result, the common error handler |
 //! | `update/download.rs` | the save dialogs and the write results |
 //! | `update/nav.rs` | going back, the last result, keyboard shortcuts |
 //! | `update/settings.rs` | size sets, algorithm, transparency, reset, language, theme |
@@ -27,8 +27,7 @@ use iced::Task;
 
 use super::persist::persist_settings;
 use super::toast::push_error_toast;
-use super::{AppState, Message, Screen};
-use convert::fail;
+use super::{AppState, Message};
 use input::start_ingest;
 use nav::handle_shortcut;
 
@@ -67,7 +66,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::ShowLastResultRequested => nav::show_last_result_requested(state),
         Message::IngestCompleted(job, Ok(asset)) => input::ingest_completed(state, job, asset),
         Message::SvgAnalyzed(job, path, report) => input::svg_analyzed(state, job, path, report),
-        Message::IngestCompleted(_job, Err(err)) => fail(state, err),
+        Message::IngestCompleted(job, Err(err)) => input::ingest_failed(state, job, err),
 
         Message::PreviewBuilt(job, Ok(cache)) => input::preview_built(state, job, cache),
         Message::PreviewBuilt(job, Err(err)) => input::preview_build_failed(state, job, err),
@@ -77,12 +76,10 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         // v1.16.0: in-memory conversion complete
-        Message::ConvertCompleted(_job, Ok(assets)) => {
-            state.result_assets = Some(assets);
-            state.screen = Screen::Result;
-            Task::none()
+        Message::ConvertCompleted(job, Ok(assets)) => {
+            convert::convert_completed(state, job, assets)
         }
-        Message::ConvertCompleted(_job, Err(err)) => fail(state, err),
+        Message::ConvertCompleted(job, Err(err)) => convert::convert_failed(state, job, err),
 
         // v1.16.0: download buttons
         Message::DownloadOneRequested(idx) => download::download_one_requested(state, idx),
