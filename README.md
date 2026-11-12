@@ -335,10 +335,14 @@ rest of `cargo test` and in CI (about 20 seconds); the probe names the CPU rende
 
 A headless property that fails today is not committed red: its known failures are a named list in
 the test (`KNOWN`), and a job that fixes one deletes its entry; a test also fails if an entry no
-longer matches anything, so the lists end empty. The headless layout uses a bundled font (Fira
-Sans) where the real window uses the system's, so its sizes agree with the real window to within
-about a pixel (measured: 0.6 px on two buttons at 1042 x 1144), not exactly: it finds layout
-defects, it does not judge how text reads.
+longer matches anything, so the lists end empty.
+
+The headless layout does not use the machine's fonts at all: it uses Fira Sans, the icon fonts
+and a small Japanese test subset kept with its checksums in `crates/app/test-assets/fonts/` (not
+shipped), so it gives the same answer on every machine. The real window uses the system's fonts,
+so the headless sizes agree with it to within about a pixel (measured: 0.6 px on two buttons at
+1042 x 1144), not exactly: the headless level finds layout defects, it does not judge how text
+reads.
 
 ## Versioning
 

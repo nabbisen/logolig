@@ -9,6 +9,9 @@ authors.workspace       = true
 license.workspace       = true
 repository.workspace    = true
 
+# The headless-test fonts are fixtures, not part of the published package (RFC 035).
+exclude     = ["test-assets/"]
+
 # Binary name is `logolig`.
 [[bin]]
 name = "logolig"

@@ -6,7 +6,7 @@
 //! press (the mouse interaction `iced` reports for a hover, which is also how buttons,
 //! checkboxes, pick lists and the slider, none of which the selector reports, are found).
 
-use std::sync::{Arc, Mutex, Once};
+use std::sync::{Arc, Mutex};
 
 use iced::{Element, Font, Pixels, Point, Rectangle, Renderer, Size, Theme, mouse};
 use iced_test::core::widget::{self, Operation as _};
@@ -48,7 +48,9 @@ pub(super) struct Probe<'a, M = Message> {
 
 impl<'a, M> Probe<'a, M> {
     pub(super) fn new(element: Element<'a, M>, size: Size) -> Self {
-        static FONTS: Once = Once::new();
+        // The font system first: it is process-global and must be the hermetic one before any
+        // text is measured.
+        super::fonts::ensure();
         let mut renderer = iced_test::futures::futures::executor::block_on(
             <Renderer as iced_test::core::renderer::Headless>::new(
                 Font::with_name("Fira Sans"),
@@ -59,13 +61,6 @@ impl<'a, M> Probe<'a, M> {
             ),
         )
         .expect("a headless renderer");
-        // The application loads the Lucide icon font at start-up; do the same, once.
-        FONTS.call_once(|| {
-            iced_test::renderer::graphics::text::font_system()
-                .write()
-                .expect("the font system")
-                .load_font(std::borrow::Cow::Borrowed(snora::lucide::LUCIDE_FONT_BYTES));
-        });
         let ui = UserInterface::build(
             element,
             size,
