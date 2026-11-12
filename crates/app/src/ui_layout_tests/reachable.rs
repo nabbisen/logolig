@@ -7,7 +7,7 @@
 use iced::Rectangle;
 use logolig::MessageKey;
 
-use super::support::{Case, Combo, Finding, Kind, Probe, Seen, matrix, probe_of};
+use super::support::{Case, Combo, Finding, Kind, Probe, Seen, layout_matrix, probe_of};
 
 /// How much of an edge may be lost to rounding, in logical pixels.
 const TOLERANCE: f32 = 0.5;
@@ -57,7 +57,7 @@ fn controls(combo: &Combo, state: &crate::app::AppState) -> Vec<(&'static str, S
 /// Every control of every combination that is not reachable.
 pub(super) fn unreachable_controls() -> Vec<Finding> {
     let mut out = Vec::new();
-    for combo in matrix() {
+    for combo in layout_matrix() {
         let state = combo.state();
         let mut probe = probe_of(&state, combo.size);
         let seen = probe.walk();

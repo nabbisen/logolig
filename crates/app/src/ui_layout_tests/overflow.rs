@@ -7,7 +7,7 @@
 
 use iced::Size;
 
-use super::support::{Combo, Finding, Kind, Seen, matrix, probe_of};
+use super::support::{Combo, Finding, Kind, Seen, layout_matrix, probe_of};
 
 /// How far past the edge a piece may reach before it counts (rounding of the layout).
 const TOLERANCE: f32 = 0.5;
@@ -44,7 +44,7 @@ fn findings(combo: &Combo, pieces: Vec<&Seen>, what: &str) -> Vec<Finding> {
 /// P1 over the whole matrix: nothing holds today, so there is no exception.
 #[test]
 fn nothing_lies_beyond_the_right_edge_of_the_window() {
-    let all: Vec<Finding> = matrix()
+    let all: Vec<Finding> = layout_matrix()
         .iter()
         .flat_map(|combo| {
             let state = combo.state();
@@ -64,7 +64,7 @@ fn nothing_lies_beyond_the_right_edge_of_the_window() {
 /// crowded or too-short page shows as text squeezed out rather than as text past the edge.
 #[test]
 fn no_text_is_squeezed_out() {
-    let all: Vec<Finding> = matrix()
+    let all: Vec<Finding> = layout_matrix()
         .iter()
         .flat_map(|combo| {
             let state = combo.state();
@@ -77,7 +77,7 @@ fn no_text_is_squeezed_out() {
         unexpected.is_empty(),
         "{} finding(s) of {} combinations:\n{}",
         unexpected.len(),
-        matrix().len(),
+        layout_matrix().len(),
         join(&unexpected)
     );
     // An exception that no longer matches a finding is a fixed defect: delete the entry.

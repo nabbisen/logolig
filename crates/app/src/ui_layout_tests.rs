@@ -14,6 +14,7 @@
 //! | `ui_layout_tests/support.rs` | the probe (layout, widget bounds, hover hit-testing), the states and the matrix |
 //! | `ui_layout_tests/overflow.rs` | P1: nothing lies beyond the right edge of the window |
 //! | `ui_layout_tests/hit_area.rs` | P3: every interactive area is at least 24 × 24 px |
+//! | `ui_layout_tests/theme.rs` | the proof that Light and Dark lay out identically (so the properties run on Light only) |
 //! | `ui_layout_tests/reachable.rs` | P2: the main controls are fully visible without scrolling |
 
 mod fonts;
@@ -21,3 +22,4 @@ mod hit_area;
 mod overflow;
 mod reachable;
 mod support;
+mod theme;

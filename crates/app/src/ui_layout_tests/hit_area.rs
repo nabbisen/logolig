@@ -8,7 +8,7 @@
 
 use iced::{Rectangle, Size};
 
-use super::support::{Combo, Finding, Seen, label_in, matrix, probe_of};
+use super::support::{Combo, Finding, Seen, label_in, layout_matrix, probe_of};
 
 /// The least size, in logical pixels, of an interactive area.
 pub(super) const MINIMUM: f32 = 24.0;
@@ -51,13 +51,13 @@ pub(super) fn findings_of(combo: &Combo) -> Vec<Finding> {
 /// P3 over the whole matrix, minus the exceptions named in [`KNOWN`].
 #[test]
 fn every_interactive_area_is_at_least_24_by_24() {
-    let all: Vec<Finding> = matrix().iter().flat_map(findings_of).collect();
+    let all: Vec<Finding> = layout_matrix().iter().flat_map(findings_of).collect();
     let unexpected: Vec<_> = all.iter().filter(|f| !is_known(f)).collect();
     assert!(
         unexpected.is_empty(),
         "{} finding(s) of {} combinations:\n{}",
         unexpected.len(),
-        matrix().len(),
+        layout_matrix().len(),
         unexpected
             .iter()
             .map(|f| f.to_string())

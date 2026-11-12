@@ -30,7 +30,7 @@ pub(super) enum Kind {
 }
 
 /// One piece of the widget tree: its layout bounds and the part of it a viewport shows.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(super) struct Seen {
     pub(super) kind: Kind,
     /// The text of a `Text` or `TextInput`, empty for the rest.
@@ -358,6 +358,17 @@ pub(super) fn matrix() -> Vec<Combo> {
         }
     }
     all
+}
+
+/// The combinations whose layout is measured and hovered: the whole matrix on the Light theme,
+/// and the Settings page on both themes. Elsewhere the layout does not depend on the theme, so
+/// Dark would repeat every answer; Settings marks the selected theme with a check mark and so
+/// lays out differently (both proved over the whole matrix by `theme`).
+pub(super) fn layout_matrix() -> Vec<Combo> {
+    matrix()
+        .into_iter()
+        .filter(|combo| !combo.dark || combo.case == Case::Settings)
+        .collect()
 }
 
 /// The interface of `state` laid out at `size`.
