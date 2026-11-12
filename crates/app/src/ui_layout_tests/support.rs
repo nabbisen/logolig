@@ -49,12 +49,13 @@ pub(super) struct Probe<'a, M = Message> {
 impl<'a, M> Probe<'a, M> {
     pub(super) fn new(element: Element<'a, M>, size: Size) -> Self {
         static FONTS: Once = Once::new();
-        let backend = std::env::var("ICED_TEST_BACKEND").ok();
         let mut renderer = iced_test::futures::futures::executor::block_on(
             <Renderer as iced_test::core::renderer::Headless>::new(
                 Font::with_name("Fira Sans"),
                 Pixels(16.0),
-                backend.as_deref(),
+                // The CPU renderer, named here and not through the environment: no GPU, the
+                // same result on every machine, and far faster than probing for an adapter.
+                Some("tiny-skia"),
             ),
         )
         .expect("a headless renderer");

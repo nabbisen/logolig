@@ -102,9 +102,9 @@ fn join(findings: &[Finding]) -> String {
 
 /// Texts squeezed out today. Cause: the Settings page is not scrollable, so at a height that
 /// does not hold its content the last rows of the shortcut list (and, at narrow widths, the
-/// whole description column) are laid out with no height or width left. Belongs to RFC 034
-/// (jobs J9 and J10): each entry is one combination (screen, size, language; the theme does not
-/// matter) and the text; the jobs delete entries as they fix them, and the list must end empty.
+/// whole description column) are laid out with no height or width left. Belongs to RFC 026,
+/// job J9: each entry is one combination (screen, size, language; the theme does not matter) and
+/// the text; the job deletes entries as it fixes them, and the list must end empty.
 const KNOWN: &[(&str, &str)] = &[
     (
         "Settings 1024x600 en",

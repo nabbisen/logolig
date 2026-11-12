@@ -330,7 +330,7 @@ on the CPU, without a window, a GPU or a display (`iced_test`), and checks prope
 in every combination of window size, screen, language and theme: nothing lies beyond the right
 edge, no text is squeezed to nothing, every interactive area is at least 24 x 24 px, and the
 main controls are fully visible. These tests are in `crates/app/src/ui_layout_tests/`, run with the
-rest of `cargo test` and in CI (about 20 seconds); `.cargo/config.toml` selects the CPU renderer.
+rest of `cargo test` and in CI (about 20 seconds); the probe names the CPU renderer explicitly.
 **The real window** is for what needs eyes or a real desktop portal, a few captures at a time.
 
 A headless property that fails today is not committed red: its known failures are a named list in

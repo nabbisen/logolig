@@ -68,10 +68,10 @@ fn every_interactive_area_is_at_least_24_by_24() {
 
 /// Interactive areas smaller than 24 x 24 today. Cause: every checkbox row is 16.5 px high, and
 /// the custom-size field and its button are 23.5 px high, and the SVG slider is 16 px high.
-/// Belongs to RFC 034 (jobs J9 and J10): each entry is a control by its label (the field and the
-/// slider have none) and the whole pixels of its smallest side, as the finding prints them; the
-/// jobs delete entries as they fix them, and the list must end empty. A loosened threshold would
-/// hide them; a named list does not.
+/// Belongs to RFC 034, job J22: each entry is a control by its label (the field and the slider
+/// have none) and the whole pixels of its smallest side, as the finding prints them; the job
+/// deletes entries as it fixes them, and the list must end empty. No new `(no label)` entry may
+/// be added. A loosened threshold would hide them; a named list does not.
 const KNOWN: &[(&str, &str)] = &[
     ("(no label)", "15"),
     ("(no label)", "23"),
