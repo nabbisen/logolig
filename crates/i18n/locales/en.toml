@@ -224,3 +224,8 @@ shortcut_escape = "Close the message, or go back to the start"
 shortcut_pages = "Go to Home, Customize or Settings"
 shortcut_help = "Show this list"
 shortcuts_limit_note = "Moving between buttons and fields with the Tab key is not available yet."
+
+# RFC 031: no file dialog can appear (no portal, or no portal backend, and no zenity).
+toast_dialog_unavailable_title = "No file dialog available"
+toast_dialog_unavailable_chooser_body = "No file dialog is available on this system. Drag a file onto the window instead, or install a desktop portal with a file dialog (for example xdg-desktop-portal-gtk)."
+toast_dialog_unavailable_save_body = "No save dialog is available on this system. Install a desktop portal with a file dialog (for example xdg-desktop-portal-gtk)."

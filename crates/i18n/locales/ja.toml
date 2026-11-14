@@ -226,3 +226,8 @@ shortcut_escape = "メッセージを閉じる、または最初の画面に戻�
 shortcut_pages = "ホーム・カスタマイズ・設定を開く"
 shortcut_help = "この一覧を表示"
 shortcuts_limit_note = "Tab キーでボタンや入力欄の間を移動する機能は、まだありません。"
+
+# RFC 031: ファイルダイアログを出せない環境 (ポータルが無い、または ポータルのバックエンドが無く、 zenity も無い)。
+toast_dialog_unavailable_title = "ファイルダイアログを開けません"
+toast_dialog_unavailable_chooser_body = "このシステムでは、ファイルダイアログを利用できません。ウィンドウにファイルをドラッグするか、ファイルダイアログを備えたデスクトップポータル (例: xdg-desktop-portal-gtk) をインストールしてください。"
+toast_dialog_unavailable_save_body = "このシステムでは、保存ダイアログを利用できません。ファイルダイアログを備えたデスクトップポータル (例: xdg-desktop-portal-gtk) をインストールしてください。"

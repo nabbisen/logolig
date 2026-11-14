@@ -35,14 +35,23 @@ pub fn ingest_task(path: PathBuf, job: u64) -> Task<Message> {
 pub fn pick_file_task() -> Task<Message> {
     Task::perform(
         async {
-            rfd::AsyncFileDialog::new()
-                .add_filter("Images", &["png", "svg", "webp", "jpg", "jpeg"])
-                .set_title("Choose a PNG, SVG, WebP, or JPEG to forge favicons from")
-                .pick_file()
-                .await
-                .map(|handle| handle.path().to_path_buf())
+            // RFC 031: with positive evidence that no dialog can appear, say so instead.
+            if crate::portal::no_dialog_can_appear().await {
+                return None;
+            }
+            Some(
+                rfd::AsyncFileDialog::new()
+                    .add_filter("Images", &["png", "svg", "webp", "jpg", "jpeg"])
+                    .set_title("Choose a PNG, SVG, WebP, or JPEG to forge favicons from")
+                    .pick_file()
+                    .await
+                    .map(|handle| handle.path().to_path_buf()),
+            )
         },
-        Message::FilePicked,
+        |picked| match picked {
+            Some(path) => Message::FilePicked(path),
+            None => Message::DialogUnavailable(crate::app::DialogKind::Chooser),
+        },
     )
 }
 
@@ -295,11 +304,18 @@ fn build_thumbnail(kind: ResultAssetKind, bytes: &[u8]) -> Option<Rgba8> {
 pub fn pick_save_one_task(idx: usize, default_name: String) -> Task<Message> {
     Task::perform(
         async move {
+            // RFC 031: with positive evidence that no dialog can appear, say so instead.
+            if crate::portal::no_dialog_can_appear().await {
+                return None;
+            }
             let dialog = rfd::AsyncFileDialog::new().set_file_name(&default_name);
             let chosen = dialog.save_file().await;
-            (idx, chosen.map(|h| h.path().to_path_buf()))
+            Some((idx, chosen.map(|h| h.path().to_path_buf())))
         },
-        |(idx, path)| Message::DownloadOneTargetPicked(idx, path),
+        |picked| match picked {
+            Some((idx, path)) => Message::DownloadOneTargetPicked(idx, path),
+            None => Message::DialogUnavailable(crate::app::DialogKind::Save),
+        },
     )
 }
 
@@ -307,13 +323,20 @@ pub fn pick_save_one_task(idx: usize, default_name: String) -> Task<Message> {
 pub fn pick_save_all_task() -> Task<Message> {
     Task::perform(
         async move {
+            // RFC 031: with positive evidence that no dialog can appear, say so instead.
+            if crate::portal::no_dialog_can_appear().await {
+                return None;
+            }
             let dialog = rfd::AsyncFileDialog::new()
                 .set_file_name("favicon-bundle.zip")
                 .add_filter("ZIP", &["zip"]);
             let chosen = dialog.save_file().await;
-            chosen.map(|h| h.path().to_path_buf())
+            Some(chosen.map(|h| h.path().to_path_buf()))
         },
-        Message::DownloadAllTargetPicked,
+        |picked| match picked {
+            Some(path) => Message::DownloadAllTargetPicked(path),
+            None => Message::DialogUnavailable(crate::app::DialogKind::Save),
+        },
     )
 }
 

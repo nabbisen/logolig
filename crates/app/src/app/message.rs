@@ -11,6 +11,15 @@ use super::NavPage;
 // Messages
 // ----------------------------------------------------------------------
 
+/// Which kind of file dialog could not appear (RFC 031).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DialogKind {
+    /// The file chooser ("Choose file…", Ctrl+O).
+    Chooser,
+    /// One of the Save dialogs (download one, download all).
+    Save,
+}
+
 /// All events fired by the UI and service layers (§4.3).
 ///
 /// `snora::AppLayout<Element, Message>` requires `Message: Clone`, so
@@ -25,6 +34,9 @@ pub enum Message {
     FileDragLeft,
     PickFileRequested,
     FilePicked(Option<PathBuf>),
+    /// No file dialog can appear on this system (RFC 031): the probe found positive evidence
+    /// that there is no portal (or no portal backend) and no `zenity`. The dialog was not opened.
+    DialogUnavailable(DialogKind),
 
     // Loading
     /// The file read of job `u64` finished (RFC 011: the id travels with every result).

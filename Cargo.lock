@@ -2407,6 +2407,7 @@ name = "logolig-app"
 version = "1.27.0"
 dependencies = [
  "app-json-settings",
+ "ashpd",
  "chrono",
  "iced",
  "iced_test",

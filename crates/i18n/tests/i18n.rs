@@ -381,3 +381,35 @@ fn shortcut_texts_match_the_specification() {
         assert_eq!(ja.t(key), ja_text, "ja {key:?}");
     }
 }
+
+// ---------------------------------------------------------------------------
+// RFC 031: the texts of a file dialog that cannot appear
+// ---------------------------------------------------------------------------
+
+#[test]
+fn dialog_unavailable_texts_exist_in_both_languages_and_differ() {
+    let en = Translator::for_locale(Locale::En);
+    let ja = Translator::for_locale(Locale::Ja);
+    for key in [
+        MessageKey::ToastDialogUnavailableTitle,
+        MessageKey::ToastDialogUnavailableChooserBody,
+        MessageKey::ToastDialogUnavailableSaveBody,
+    ] {
+        assert!(!en.t(key).trim().is_empty(), "{key:?} en");
+        assert!(!ja.t(key).trim().is_empty(), "{key:?} ja");
+        assert_ne!(en.t(key), ja.t(key), "{key:?}");
+    }
+}
+
+#[test]
+fn dialog_unavailable_texts_match_the_specification() {
+    let en = Translator::for_locale(Locale::En);
+    assert_eq!(
+        en.t(MessageKey::ToastDialogUnavailableChooserBody),
+        "No file dialog is available on this system. Drag a file onto the window instead, or install a desktop portal with a file dialog (for example xdg-desktop-portal-gtk)."
+    );
+    assert_eq!(
+        en.t(MessageKey::ToastDialogUnavailableSaveBody),
+        "No save dialog is available on this system. Install a desktop portal with a file dialog (for example xdg-desktop-portal-gtk)."
+    );
+}

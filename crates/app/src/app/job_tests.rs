@@ -514,3 +514,38 @@ fn a_request_without_a_dialog_does_not_set_the_flag() {
     assert_eq!(units_of(&mut state, Message::DownloadOneRequested(99)), 0);
     assert!(!state.dialog_open);
 }
+
+// ---- a dialog that cannot appear (RFC 031, D2) ------------------------------------------------
+
+/// The handler of `DialogUnavailable` ends the dialog (flag cleared, so the next request works)
+/// and tells the user exactly once, with a persistent error toast and the text of the kind.
+#[test]
+fn an_unavailable_dialog_clears_the_flag_and_pushes_exactly_one_error_toast() {
+    use crate::app::DialogKind;
+    for kind in [DialogKind::Chooser, DialogKind::Save] {
+        let mut state = result_with_one_asset();
+        state.dialog_open = true;
+        let task = update(&mut state, Message::DialogUnavailable(kind));
+        assert_eq!(task.units(), 0, "{kind:?}: nothing else is started");
+        assert!(!state.dialog_open, "{kind:?}: the flag is cleared");
+        assert_eq!(state.toasts.len(), 1, "{kind:?}: exactly one toast");
+        let toast = &state.toasts[0];
+        assert_eq!(toast.intent, snora::ToastIntent::Error, "{kind:?}");
+        assert_eq!(toast.lifetime, snora::ToastLifetime::Persistent, "{kind:?}");
+        let t = &state.translator;
+        let body_key = match kind {
+            DialogKind::Chooser => logolig::MessageKey::ToastDialogUnavailableChooserBody,
+            DialogKind::Save => logolig::MessageKey::ToastDialogUnavailableSaveBody,
+        };
+        assert_eq!(
+            toast.title,
+            t.t(logolig::MessageKey::ToastDialogUnavailableTitle)
+        );
+        assert_eq!(toast.message, t.t(body_key));
+        // The next request works again.
+        assert!(
+            units_of(&mut state, Message::PickFileRequested) > 0,
+            "{kind:?}"
+        );
+    }
+}

@@ -26,6 +26,27 @@ pub(super) fn push_error_toast(state: &mut AppState, err: AppError) {
     );
 }
 
+/// Pushes the persistent error toast of a file dialog that cannot appear (RFC 031). It stays until
+/// the user dismisses it: it explains why nothing happened and what to do instead.
+pub(super) fn push_dialog_unavailable_toast(state: &mut AppState, kind: super::DialogKind) {
+    let id = next_id(state);
+    let title = state.translator.t(MessageKey::ToastDialogUnavailableTitle);
+    let body = state.translator.t(match kind {
+        super::DialogKind::Chooser => MessageKey::ToastDialogUnavailableChooserBody,
+        super::DialogKind::Save => MessageKey::ToastDialogUnavailableSaveBody,
+    });
+    state.toasts.push(
+        Toast::new(
+            id,
+            ToastIntent::Error,
+            title,
+            body,
+            Message::DismissToast(id),
+        )
+        .persistent(),
+    );
+}
+
 /// Pushes a short-lived success toast; its lifetime is proportional to its text (RFC 029).
 pub(super) fn push_success_toast(state: &mut AppState, title: &str, body: &str) {
     let id = next_id(state);

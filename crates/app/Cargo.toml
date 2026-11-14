@@ -29,9 +29,15 @@ app-json-settings       = { workspace = true }
 
 chrono                  = { workspace = true }
 # RFC 030: `spawn_blocking` for CPU-bound tasks. Already in the tree through iced's `tokio` feature.
-tokio                   = { workspace = true, features = ["rt"] }
+tokio                   = { workspace = true, features = ["rt", "time"] }
 image                   = { workspace = true }
 zip                     = { workspace = true }
+
+# RFC 031: the probe for a missing file dialog asks the session bus through `ashpd::zbus`.
+# `ashpd` is already in the tree through `rfd`, on exactly these targets; default features off,
+# so the feature set `rfd` chose is unchanged.
+[target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "dragonfly", target_os = "netbsd", target_os = "openbsd"))'.dependencies]
+ashpd                   = { version = "0.11", default-features = false }
 
 [dev-dependencies]
 iced_test               = { workspace = true }

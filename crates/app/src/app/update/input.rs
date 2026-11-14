@@ -11,10 +11,10 @@ use logolig::{
 };
 
 use super::super::toast::{
-    is_non_square, push_error_toast, push_jpeg_input_warning, push_non_square_warning,
-    push_svg_parts_warning, push_transparency_warning,
+    is_non_square, push_dialog_unavailable_toast, push_error_toast, push_jpeg_input_warning,
+    push_non_square_warning, push_svg_parts_warning, push_transparency_warning,
 };
-use super::super::{AppState, Message, Screen};
+use super::super::{AppState, DialogKind, Message, Screen};
 use super::convert::fail;
 
 /// Handler for `Message::PickFileRequested`.
@@ -30,6 +30,15 @@ pub(super) fn pick_file_requested(state: &mut AppState) -> Task<Message> {
     // v1.12.0: re-select also reuses this message (keeps current screen,
     // cancelling returns to whatever screen was active).
     crate::task_queue::pick_file_task()
+}
+
+/// Handler for `Message::DialogUnavailable` (RFC 031): the dialog was not opened because there is
+/// positive evidence that none can appear. The dialog is over, so the flag is cleared, and the user
+/// is told once.
+pub(super) fn dialog_unavailable(state: &mut AppState, kind: DialogKind) -> Task<Message> {
+    state.dialog_open = false;
+    push_dialog_unavailable_toast(state, kind);
+    Task::none()
 }
 
 /// Handler for `Message::IngestCompleted`.

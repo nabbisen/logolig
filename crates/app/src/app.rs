@@ -25,7 +25,7 @@ mod state;
 mod toast;
 mod update;
 
-pub use message::Message;
+pub use message::{DialogKind, Message};
 pub use state::{AppState, NavPage, Screen};
 pub(crate) use state::{is_mobile, resolve_theme};
 

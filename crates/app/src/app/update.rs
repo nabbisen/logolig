@@ -61,6 +61,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::PickFileRequested => input::pick_file_requested(state),
+        Message::DialogUnavailable(kind) => input::dialog_unavailable(state, kind),
 
         // v1.12.0: back navigation.
         //

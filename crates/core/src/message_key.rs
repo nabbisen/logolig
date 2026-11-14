@@ -207,6 +207,12 @@ pub enum MessageKey {
     ToastJpegInputTitle,
     /// Toast body for JPEG input. Suggests converting to PNG.
     ToastJpegInputBody,
+    /// Toast title when no file dialog can appear on this system (RFC 031).
+    ToastDialogUnavailableTitle,
+    /// Toast body when the file chooser cannot appear: names drag and drop and a portal backend.
+    ToastDialogUnavailableChooserBody,
+    /// Toast body when a Save dialog cannot appear: names a portal backend.
+    ToastDialogUnavailableSaveBody,
     /// Toast title for a non-square source (RFC 010): the logo is shown in full with padding.
     ToastNonSquareInputTitle,
     /// Toast body for a non-square source. Suggests a square version of the logo.

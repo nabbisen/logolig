@@ -171,6 +171,9 @@ pub(crate) struct Dictionary {
     pub toast_jpeg_input_body: String,
     pub toast_non_square_input_title: String,
     pub toast_non_square_input_body: String,
+    pub toast_dialog_unavailable_title: String,
+    pub toast_dialog_unavailable_chooser_body: String,
+    pub toast_dialog_unavailable_save_body: String,
     pub toast_svg_parts_title: String,
     pub toast_svg_images_body: String,
     pub toast_svg_text_body: String,
@@ -400,6 +403,11 @@ impl Dictionary {
             MessageKey::ToastJpegInputBody => &self.toast_jpeg_input_body,
             MessageKey::ToastNonSquareInputTitle => &self.toast_non_square_input_title,
             MessageKey::ToastNonSquareInputBody => &self.toast_non_square_input_body,
+            MessageKey::ToastDialogUnavailableTitle => &self.toast_dialog_unavailable_title,
+            MessageKey::ToastDialogUnavailableChooserBody => {
+                &self.toast_dialog_unavailable_chooser_body
+            }
+            MessageKey::ToastDialogUnavailableSaveBody => &self.toast_dialog_unavailable_save_body,
             MessageKey::ToastSvgPartsTitle => &self.toast_svg_parts_title,
             MessageKey::ToastSvgImagesBody => &self.toast_svg_images_body,
             MessageKey::ToastSvgTextBody => &self.toast_svg_text_body,
