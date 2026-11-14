@@ -6,4 +6,6 @@ Governing RFC: [RFC 031](../../accepted/031-silent-file-dialog-failure.md). The 
 
 - [`implementation-handoff.md`](./implementation-handoff.md) (J12b): after the spike. One dialog at a time (D1), a conservative notice when no dialog can appear (D2/D3), documentation and packaging text (D4/D5).
 
+- [`implementation-handoff-followup-no-stacked-notice.md`](./implementation-handoff-followup-no-stacked-notice.md) (J12c): the notice does not stack on repeated requests.
+
 Review requests and evidence produced by the implementer are working material and are not stored here.
