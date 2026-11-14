@@ -4,4 +4,6 @@ Governing RFC: [RFC 031](../../accepted/031-silent-file-dialog-failure.md). The 
 
 - [`implementation-handoff-spike.md`](./implementation-handoff-spike.md) (J12, phase 0): evidence only. Answers whether the Save dialogs double-open, whether a missing portal can be detected without a new package, and whether a never-answering dialog can be reproduced. An implementation handoff follows the architect's decision.
 
+- [`implementation-handoff.md`](./implementation-handoff.md) (J12b): after the spike. One dialog at a time (D1), a conservative notice when no dialog can appear (D2/D3), documentation and packaging text (D4/D5).
+
 Review requests and evidence produced by the implementer are working material and are not stored here.
