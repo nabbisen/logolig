@@ -270,17 +270,17 @@ fn a_second_chooser_is_not_opened_while_one_is_open() {
         units_of(&mut state, Message::PickFileRequested) > 0,
         "the first opens a chooser"
     );
-    assert!(state.chooser_open);
+    assert!(state.dialog_open);
     assert_eq!(
         units_of(&mut state, Message::PickFileRequested),
         0,
         "the second opens nothing"
     );
-    assert!(state.chooser_open, "and the first is still open");
+    assert!(state.dialog_open, "and the first is still open");
 
     // Cancelled: the flag is cleared, a new request works.
     let _ = update(&mut state, Message::FilePicked(None));
-    assert!(!state.chooser_open);
+    assert!(!state.dialog_open);
     assert!(
         units_of(&mut state, Message::PickFileRequested) > 0,
         "works after a cancel"
@@ -291,7 +291,7 @@ fn a_second_chooser_is_not_opened_while_one_is_open() {
         &mut state,
         Message::FilePicked(Some(PathBuf::from("a.png"))),
     );
-    assert!(!state.chooser_open);
+    assert!(!state.dialog_open);
     assert_eq!(state.job_id, 1, "the chosen file is a job");
     assert!(
         units_of(&mut state, Message::PickFileRequested) > 0,
@@ -313,7 +313,7 @@ fn a_drop_while_the_chooser_is_open_leaves_it_open_and_the_choice_still_wins() {
     assert!(drop > 0, "the drop starts its job (latest intent wins)");
     assert_eq!(state.job_id, 1);
     assert!(
-        state.chooser_open,
+        state.dialog_open,
         "a drop must not clear a flag that belongs to the chooser"
     );
     assert_eq!(
@@ -331,7 +331,7 @@ fn a_drop_while_the_chooser_is_open_leaves_it_open_and_the_choice_still_wins() {
         "the choice, arriving later, is the newest intent"
     );
     assert_eq!(state.source_path, Some(PathBuf::from("chosen.png")));
-    assert!(!state.chooser_open);
+    assert!(!state.dialog_open);
 }
 
 /// 8: Ctrl+O goes through the same message, so it does nothing while a chooser is open (a
@@ -356,4 +356,161 @@ fn ctrl_o_does_nothing_while_a_chooser_is_open() {
         press(&mut state) > 0,
         "Ctrl+O works again after the chooser was cancelled"
     );
+}
+
+// ---- one dialog at a time, of any kind (RFC 031, D1) -----------------------------------------
+
+/// A Result screen with one asset, as a Save request needs.
+fn result_with_one_asset() -> AppState {
+    AppState {
+        screen: Screen::Result,
+        source_asset: Some(dummy_source_asset()),
+        result_assets: Some(assets_named("a.png")),
+        ..AppState::default()
+    }
+}
+
+/// The three ways to ask for a dialog: (name, message).
+fn dialog_requests() -> Vec<(&'static str, Message)> {
+    vec![
+        ("choose file", Message::PickFileRequested),
+        ("save one", Message::DownloadOneRequested(0)),
+        ("save all", Message::DownloadAllRequested),
+    ]
+}
+
+/// A second request for the same Save dialog does nothing, whatever sent it (the button message
+/// or Ctrl+S).
+#[test]
+fn a_second_save_request_opens_nothing_while_one_is_open() {
+    for (name, message) in [
+        ("save all", Message::DownloadAllRequested),
+        ("save one", Message::DownloadOneRequested(0)),
+    ] {
+        let mut state = result_with_one_asset();
+        assert!(
+            units_of(&mut state, message.clone()) > 0,
+            "{name}: the first opens a dialog"
+        );
+        assert!(state.dialog_open, "{name}");
+        assert_eq!(
+            units_of(&mut state, message),
+            0,
+            "{name}: the second opens nothing"
+        );
+    }
+    let mut state = result_with_one_asset();
+    let press = |state: &mut AppState| {
+        update(state, Message::ShortcutPressed(Shortcut::DownloadAll)).units()
+    };
+    assert!(press(&mut state) > 0, "the first Ctrl+S opens the dialog");
+    assert_eq!(press(&mut state), 0, "the second Ctrl+S opens nothing");
+}
+
+/// While any dialog is open a request for any other kind does nothing, in every order.
+#[test]
+fn no_dialog_opens_while_another_kind_is_open() {
+    for (first, first_msg) in dialog_requests() {
+        for (second, second_msg) in dialog_requests() {
+            let mut state = result_with_one_asset();
+            assert!(
+                units_of(&mut state, first_msg.clone()) > 0,
+                "{first}: opens"
+            );
+            assert_eq!(
+                units_of(&mut state, second_msg),
+                0,
+                "{second} must do nothing while {first} is open"
+            );
+        }
+    }
+}
+
+/// Every answer of every dialog re-enables the next request: the chooser's two, and the two of
+/// each Save dialog.
+#[test]
+fn every_dialog_answer_clears_the_flag() {
+    let answers: Vec<(&str, Message, Message)> = vec![
+        (
+            "chooser cancel",
+            Message::PickFileRequested,
+            Message::FilePicked(None),
+        ),
+        (
+            "chooser choice",
+            Message::PickFileRequested,
+            Message::FilePicked(Some(PathBuf::from("a.png"))),
+        ),
+        (
+            "save one cancel",
+            Message::DownloadOneRequested(0),
+            Message::DownloadOneTargetPicked(0, None),
+        ),
+        (
+            "save one choice",
+            Message::DownloadOneRequested(0),
+            Message::DownloadOneTargetPicked(0, Some(PathBuf::from("out.png"))),
+        ),
+        (
+            "save all cancel",
+            Message::DownloadAllRequested,
+            Message::DownloadAllTargetPicked(None),
+        ),
+        (
+            "save all choice",
+            Message::DownloadAllRequested,
+            Message::DownloadAllTargetPicked(Some(PathBuf::from("out.zip"))),
+        ),
+    ];
+    for (name, request, answer) in answers {
+        let mut state = result_with_one_asset();
+        assert!(
+            units_of(&mut state, request.clone()) > 0,
+            "{name}: the request opens a dialog"
+        );
+        assert!(state.dialog_open, "{name}");
+        let _ = update(&mut state, answer);
+        assert!(!state.dialog_open, "{name}: the answer clears the flag");
+        // A chosen file starts a new job and drops the old result, so only a request that does
+        // not need the old result is asked for again in that case.
+        if !name.starts_with("chooser") {
+            assert!(
+                units_of(&mut state, request.clone()) > 0,
+                "{name}: the same dialog works again"
+            );
+            state.dialog_open = false;
+        }
+        assert!(
+            units_of(&mut state, Message::PickFileRequested) > 0,
+            "{name}: the chooser works again"
+        );
+    }
+}
+
+/// A drop while a Save dialog is open neither clears the flag nor opens anything.
+#[test]
+fn a_drop_leaves_a_save_dialog_open() {
+    let mut state = result_with_one_asset();
+    assert!(units_of(&mut state, Message::DownloadAllRequested) > 0);
+    let _ = update(
+        &mut state,
+        Message::FileDropped(PathBuf::from("dropped.png")),
+    );
+    assert!(
+        state.dialog_open,
+        "a drop must not clear a flag that belongs to a Save dialog"
+    );
+    assert_eq!(units_of(&mut state, Message::DownloadAllRequested), 0);
+}
+
+/// A request that has nothing to do (no result, an unknown card) opens no dialog and so must
+/// not set the flag.
+#[test]
+fn a_request_without_a_dialog_does_not_set_the_flag() {
+    let mut state = AppState::default();
+    assert_eq!(units_of(&mut state, Message::DownloadOneRequested(0)), 0);
+    assert!(!state.dialog_open);
+    let mut state = result_with_one_asset();
+    assert_eq!(units_of(&mut state, Message::DownloadOneRequested(99)), 0);
+    assert!(!state.dialog_open);
 }

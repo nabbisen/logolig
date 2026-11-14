@@ -19,7 +19,30 @@ pub(super) fn download_one_requested(state: &mut AppState, idx: usize) -> Task<M
     let Some(item) = assets.items.get(idx) else {
         return Task::none();
     };
-    crate::task_queue::pick_save_one_task(idx, item.file_name.clone())
+    // RFC 031: one dialog at a time, of any kind.
+    if state.dialog_open {
+        return Task::none();
+    }
+    let name = item.file_name.clone();
+    state.dialog_open = true;
+    crate::task_queue::pick_save_one_task(idx, name)
+}
+
+/// Handler for `Message::DownloadAllRequested`.
+pub(super) fn download_all_requested(state: &mut AppState) -> Task<Message> {
+    // RFC 031: one dialog at a time, of any kind.
+    if state.dialog_open {
+        return Task::none();
+    }
+    state.dialog_open = true;
+    crate::task_queue::pick_save_all_task()
+}
+
+/// Handler for `Message::DownloadOneTargetPicked` and `DownloadAllTargetPicked` with `None`: the
+/// Save dialog was cancelled. Only the dialog flag changes.
+pub(super) fn save_cancelled(state: &mut AppState) -> Task<Message> {
+    state.dialog_open = false;
+    Task::none()
 }
 
 /// Handler for `Message::DownloadOneTargetPicked`.
@@ -28,6 +51,8 @@ pub(super) fn download_one_target_picked(
     idx: usize,
     path: PathBuf,
 ) -> Task<Message> {
+    // The dialog has answered (RFC 031).
+    state.dialog_open = false;
     let Some(assets) = state.result_assets.as_ref() else {
         return Task::none();
     };
@@ -40,6 +65,8 @@ pub(super) fn download_one_target_picked(
 
 /// Handler for `Message::DownloadAllTargetPicked`.
 pub(super) fn download_all_target_picked(state: &mut AppState, path: PathBuf) -> Task<Message> {
+    // The dialog has answered (RFC 031).
+    state.dialog_open = false;
     let Some(assets) = state.result_assets.as_ref() else {
         return Task::none();
     };

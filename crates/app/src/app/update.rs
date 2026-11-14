@@ -41,9 +41,9 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.file_drag_hovering = false;
             start_ingest(state, path)
         }
-        // RFC 011: the chooser has answered; a drop (above) never clears this flag.
+        // RFC 011: the chooser has answered; a drop (above) never clears this flag (RFC 031).
         Message::FilePicked(Some(path)) => {
-            state.chooser_open = false;
+            state.dialog_open = false;
             state.file_drag_hovering = false;
             start_ingest(state, path)
         }
@@ -57,7 +57,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::FilePicked(None) => {
             // File picker cancelled: only the chooser flag changes.
-            state.chooser_open = false;
+            state.dialog_open = false;
             Task::none()
         }
         Message::PickFileRequested => input::pick_file_requested(state),
@@ -90,12 +90,12 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         // v1.16.0: download buttons
         Message::DownloadOneRequested(idx) => download::download_one_requested(state, idx),
-        Message::DownloadAllRequested => crate::task_queue::pick_save_all_task(),
-        Message::DownloadOneTargetPicked(_, None) => Task::none(),
+        Message::DownloadAllRequested => download::download_all_requested(state),
+        Message::DownloadOneTargetPicked(_, None) => download::save_cancelled(state),
         Message::DownloadOneTargetPicked(idx, Some(path)) => {
             download::download_one_target_picked(state, idx, path)
         }
-        Message::DownloadAllTargetPicked(None) => Task::none(),
+        Message::DownloadAllTargetPicked(None) => download::save_cancelled(state),
         Message::DownloadAllTargetPicked(Some(path)) => {
             download::download_all_target_picked(state, path)
         }
