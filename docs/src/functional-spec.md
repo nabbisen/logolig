@@ -38,6 +38,13 @@ use. Follows ABDD principles: accessible, internationalised, fully local.
 1. **File dialog** — click the drop zone or the "Choose file" control
 2. **Drag and drop** — anywhere on the window when the platform delivers native file-drop events
 
+The file dialogs (choosing a file, and the two Save dialogs) are provided by the desktop's
+portal. Where the system has no portal, or a portal with no file-dialog backend, and no `zenity`
+program, no dialog can appear: the application then says so in one message instead of doing
+nothing, and dragging a file onto the window still works. Known limit: a portal that accepts a
+dialog and never answers leaves the application waiting; if a dialog never appears and never
+answers, restart the application.
+
 ### Validation
 
 - Magic bytes and file extension must agree (prevents extension spoofing).

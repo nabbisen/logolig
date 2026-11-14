@@ -34,7 +34,7 @@ depends=(
 )
 makedepends=('cargo')
 optdepends=(
-  'xdg-desktop-portal-impl: a portal backend (for example xdg-desktop-portal-gtk or the one of your desktop) so that the file chooser opens'
+  'xdg-desktop-portal-impl: a portal backend (for example xdg-desktop-portal-gtk, or the one of your desktop); without one, Choose file and Save open no window (dragging a file onto the window still works)'
   'vulkan-driver: GPU rendering (for example vulkan-radeon, vulkan-intel, nvidia-utils)'
   'libglvnd: OpenGL fallback for rendering when Vulkan is unavailable'
 )
