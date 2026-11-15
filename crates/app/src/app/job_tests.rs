@@ -549,3 +549,81 @@ fn an_unavailable_dialog_clears_the_flag_and_pushes_exactly_one_error_toast() {
         );
     }
 }
+
+// ---- the notice does not stack (RFC 031, job J12c) ----------------------------------------------
+
+/// Asks for a dialog that cannot appear: sets the flag as the request would, then delivers the
+/// result of the probe.
+fn dialog_unavailable_for(state: &mut AppState, kind: crate::app::DialogKind) {
+    state.dialog_open = true;
+    let _ = update(state, Message::DialogUnavailable(kind));
+}
+
+/// While a notice of the same kind is still showing, a further request pushes no further toast,
+/// and still ends the dialog (the flag is cleared).
+#[test]
+fn a_notice_that_is_showing_is_not_stacked() {
+    use crate::app::DialogKind;
+    for kind in [DialogKind::Chooser, DialogKind::Save] {
+        let mut state = AppState::default();
+        for round in 1..=3 {
+            dialog_unavailable_for(&mut state, kind);
+            assert_eq!(
+                state.toasts.len(),
+                1,
+                "{kind:?}, request {round}: still one toast"
+            );
+            assert!(
+                !state.dialog_open,
+                "{kind:?}, request {round}: the flag is cleared"
+            );
+        }
+    }
+}
+
+/// After the user dismissed the notice, the next request shows it again.
+#[test]
+fn a_dismissed_notice_is_shown_again_by_the_next_request() {
+    use crate::app::DialogKind;
+    let mut state = AppState::default();
+    dialog_unavailable_for(&mut state, DialogKind::Chooser);
+    let id = state.toasts[0].id;
+    let _ = update(&mut state, Message::DismissToast(id));
+    assert!(state.toasts.is_empty(), "the notice was dismissed");
+    dialog_unavailable_for(&mut state, DialogKind::Chooser);
+    assert_eq!(state.toasts.len(), 1, "shown again");
+    assert!(!state.dialog_open);
+}
+
+/// The chooser notice and the Save notice have different texts: they are different notices, and
+/// both may show at once, each once.
+#[test]
+fn the_chooser_and_the_save_notice_are_different_notices() {
+    use crate::app::DialogKind;
+    let mut state = AppState::default();
+    for kind in [
+        DialogKind::Chooser,
+        DialogKind::Save,
+        DialogKind::Chooser,
+        DialogKind::Save,
+    ] {
+        dialog_unavailable_for(&mut state, kind);
+        assert!(!state.dialog_open);
+    }
+    assert_eq!(state.toasts.len(), 2, "one of each kind");
+    assert_ne!(state.toasts[0].message, state.toasts[1].message);
+}
+
+/// Only this notice is deduplicated: other toasts, even with identical text, behave as before.
+#[test]
+fn other_toasts_are_not_deduplicated() {
+    let mut state = AppState::default();
+    for _ in 0..2 {
+        state.dialog_open = false;
+        let _ = update(
+            &mut state,
+            Message::DownloadOneCompleted(Err(AppError::export("same"))),
+        );
+    }
+    assert_eq!(state.toasts.len(), 2, "two identical error toasts stay two");
+}
