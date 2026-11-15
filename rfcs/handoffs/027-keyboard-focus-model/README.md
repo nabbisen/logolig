@@ -4,4 +4,6 @@ Governing RFC: [RFC 027](../../accepted/027-keyboard-focus-model.md). The handof
 
 - [`implementation-handoff-phase-0-spike.md`](./implementation-handoff-phase-0-spike.md) (J13, with the shared session script of the former job JS): evidence only. Option A (app-owned model) against Option D (snora's engine) and the hybrid; the four step handoffs follow the architect's review.
 
+- [`implementation-handoff-ctrl-digit-in-field.md`](./implementation-handoff-ctrl-digit-in-field.md) (J13b): a command key must never type into a text field (reproduced defect).
+
 Review requests and evidence produced by the implementer are working material and are not stored here.

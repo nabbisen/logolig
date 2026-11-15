@@ -51,6 +51,7 @@ recommendation; the owner authorizes the plan.
 | [033](./accepted/033-new-application-logo.md) | Adopt the new application logo (docs, Linux package, Microsoft Store) | P2 |
 | [034](./accepted/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | P2 |
 | [035](./accepted/035-headless-ui-test-level.md) | A headless UI test level (layout, size, language and theme matrix without a window) | P1 |
+| [036](./accepted/036-snora-0-62-upgrade.md) | Upgrade snora 0.57 → 0.62 (the keyboard `control`) | P1 |
 
 ### Proposed (`proposed/`)
 

@@ -57,3 +57,8 @@ No glyph carries two meanings; no state cue is a plain text symbol that depends 
 ## Risk
 
 Low. Visual only; no logic change.
+
+## Amendment 2026-11-15 (from the RFC 027 spike): the focus ring is not the selection colour
+
+A focus ring drawn in the accent colour merges with an accent-filled, checked box (measured on headless snapshots). Rule: **the accent colour (fill, ✓) means "selected / active" and nothing else; keyboard focus is a neutral, high-contrast ring, 2 px, offset 2 px outside the control** (RFC 027). The radio-like groups defined here are also the replacement for the two pick lists and, with RFC 034 D5, for the SVG quality slider (RFC 027): each option is a keyboard-reachable row with the one selection cue. J10 builds the cues; J14 (Customize step) swaps the pick lists and the slider for them.
+
