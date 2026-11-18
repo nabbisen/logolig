@@ -22,6 +22,7 @@
 //! | `ui_layout_tests/focus_in_view.rs` | after every Tab and Shift+Tab the focused control is fully visible, on every page of the matrix |
 //! | `ui_layout_tests/focus_keys.rs` | Tab and Shift+Tab through the real key path: routed, in order, out of a text field, no wrap |
 //! | `ui_layout_tests/hit_area.rs` | P3: every interactive area is at least 24 × 24 px |
+//! | `ui_layout_tests/tab_stops.rs` | the Tab stops: in layout order, each one an interactive area, and every interactive area one of them except a named list (J14b empties it) |
 //! | `ui_layout_tests/theme.rs` | the proof that Light and Dark lay out identically (so the properties run on Light only) |
 //! | `ui_layout_tests/reachable.rs` | P2: the main controls are fully visible without scrolling |
 
@@ -38,4 +39,5 @@ mod reachable;
 mod ring;
 mod scroll_areas;
 mod support;
+mod tab_stops;
 mod theme;
