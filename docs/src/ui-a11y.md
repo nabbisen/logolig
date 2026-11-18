@@ -76,10 +76,15 @@ Alt on top of Ctrl make a different combination that is not bound.
 - Tab and Shift+Tab move no focus: no button or control can be reached, including
   text fields, and Tab does not move between text fields.
 - Enter and Space activate nothing: not the drop-zone card or "Choose file…",
-  the navigation items, the download buttons, "Back", the toggles, the sliders,
-  or "Advanced settings".
-- The Customize page (size checkboxes, sliders, toggles, text fields) can only be
-  operated with the mouse. Individual downloads ("Save" on a card) need the mouse.
+  the navigation items, the download buttons, "Back", the checkboxes, the
+  choice groups, or "Advanced settings".
+- The Customize page (size checkboxes, option checkboxes, the SVG conversion
+  and resize algorithm groups, text fields) can only be operated with the
+  mouse. Individual downloads ("Save" on a card) need the mouse.
+- The checkboxes and choice groups are controls the keyboard can reach (each one
+  Tab stop; Space or Enter toggles a checkbox, the arrow keys choose in a group),
+  but the application does not move focus with the Tab key yet, so nothing gives
+  them the focus.
 - Arrow and paging keys do not scroll.
 - There is no visible keyboard-focus indicator. The drop-zone card also shows no
   hover feedback; the navigation items and the download buttons do.
@@ -88,15 +93,24 @@ Alt on top of Ctrl make a different combination that is not bound.
 
 ## Status, not just color
 
-State is communicated by **text markers** in addition to color, so
-users with low vision or color-blindness do not lose information:
+State is communicated by a **shape** in addition to color, so users with low
+vision or color-blindness do not lose information. Each cue has one meaning:
 
-- Busy: prefixed with `⏳` (`marker::BUSY`)
-- Error: prefixed with `⚠` (`marker::ERROR`)
-- Ready: prefixed with `✓` (`marker::READY`)
+- Active page (navigation): a filled item, a **bold label** and a thin
+  **accent bar** on the edge facing the content (the right edge of the side
+  bar, the top edge of the bottom bar).
+- Chosen option of a single choice (language, theme, View as, Surface, SVG
+  conversion, resize algorithm): a **filled dot in a ring** (a radio group).
+- Checked option: a **box with a tick** (a checkbox). Both marks are black on
+  the light theme and white on the dark theme: the accent color is not used for
+  selection.
+- Busy: the **Loader** icon before the message.
+- Success: the **Check** icon on the Result headline.
 
-These live in `crate::ui::accessibility::marker` and are reused
-across screens.
+The marks are icons and drawn shapes from the bundled icon font, never text
+characters, so they do not depend on the fonts installed. They live in
+`crate::ui::choice` (choices, checkboxes) and `crate::ui::cues` (busy, success).
+Errors appear as toasts (next section); there is no text marker for them.
 
 ## Labels, not glyphs
 

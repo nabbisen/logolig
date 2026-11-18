@@ -201,8 +201,9 @@ A Surface picker (System / Light / Dark) controls the preview background.
 The Surface picker is disabled in Checker mode (background has no effect
 on the checkerboard).
 
-Active state is indicated by both background fill and the `▣` prefix
-(colour-blind safe per ABDD §12).
+Each picker is a radio group: the chosen option is a filled dot in a ring, the
+group is one Tab stop in the focus order and ↑ ↓ ← → choose (colour-blind safe
+per ABDD §12). The Surface group is dimmed as a whole in Checker mode.
 
 ## 8. Customize page
 
@@ -214,8 +215,10 @@ width, always reachable via the Customize nav item.
 **PNG output sizes** — six preset checkboxes (16/32/48/96/192/512) plus
 a custom-size input. Checked sizes are included in the export.
 
-**SVG conversion mode** — three-position slider (Simple ↔ Detailed)
-mapping to vtracer presets Sharp / Default / PhotoRich.
+**SVG conversion mode** — one group of three named choices, "Sharp (logos,
+icons)", "Default (balanced)" and "Photo-rich (gradients)", mapping to the
+vtracer presets Sharp / Default / PhotoRich. The same group is the only control
+for this setting (there is no separate preset list under the SVG option).
 
 **Misc** — "Keep transparency (alpha)" toggle. When off, raster outputs
 are composited against white (Porter-Duff over) before writing.
@@ -313,8 +316,10 @@ Not persisted: the Advanced accordion's expanded/collapsed state
 
 ## 14. Accessibility (ABDD §12)
 
-- Active state (current nav item, current language/theme) is indicated
-  by both a visual fill **and** the `▣` prefix (not colour alone).
+- Active state is never colour alone: the current nav item has a filled item, a
+  bold label and a thin accent bar toward the content; the chosen language,
+  theme and other single choices are a filled dot in a ring; a checked option is
+  a ticked box. The marks are drawn from the bundled icon font, not typed.
 - Keyboard: the main task has global shortcuts: Ctrl+O (choose a file), Ctrl+S
   (download all), Esc (close the newest message, or go back), Ctrl+1/2/3 (Home,
   Customize, Settings) and F1 (Settings, where the list is shown); Cmd replaces

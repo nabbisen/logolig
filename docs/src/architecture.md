@@ -71,7 +71,8 @@ logolig/
         │       ├── sidebar.rs          # Left sidebar, desktop (since v1.18)
         │       ├── picker_overlay.rs   # Locale/Theme popup (since v1.18)
         │       ├── bottom_nav.rs       # Bottom navigation, mobile (since v1.20)
-        │       └── accessibility.rs
+        │       ├── choice.rs           # Single-choice groups and checkboxes on snora's controls (1.28)
+        │       └── cues.rs             # Busy and success marks, drawn from the icon font (1.28)
         └── tests/
 ```
 

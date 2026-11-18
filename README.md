@@ -95,9 +95,12 @@ Japanese, and system default; themes are light, dark, and system default.
 
 The generated `favicon-snippet.html` is paste-ready for your `<head>`.
 
-Active picker buttons (View as / Surface, vtracer preset) are
-indicated **both** with a filled background and a `▣` text prefix, so
-the active state is conveyed without relying on color alone (ABDD §12).
+State is never conveyed by color alone (ABDD §12): the active page in the
+navigation has a filled item, a bold label and a thin accent bar toward the
+content; the chosen option of a choice (language, theme, View as, Surface, SVG
+conversion, resize algorithm) is a filled dot in a ring; a checked option is a
+ticked box. These marks are drawn, not typed, so they do not depend on the
+fonts installed.
 
 ## What gets written
 
