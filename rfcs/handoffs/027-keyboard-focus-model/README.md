@@ -6,4 +6,6 @@ Governing RFC: [RFC 027](../../accepted/027-keyboard-focus-model.md). The handof
 
 - [`implementation-handoff-ctrl-digit-in-field.md`](./implementation-handoff-ctrl-digit-in-field.md) (J13b): a command key must never type into a text field (reproduced defect).
 
+- [`implementation-handoff-j14a-engine.md`](./implementation-handoff-j14a-engine.md) (J14a): Tab is routed to snora's `traverse`, the focused control stays in view, Customize is one scroll area; headless properties. The page steps (J14b) follow.
+
 Review requests and evidence produced by the implementer are working material and are not stored here.
