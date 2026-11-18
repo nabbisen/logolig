@@ -70,6 +70,38 @@ impl<'a, M> Probe<'a, M> {
         Self { renderer, ui, size }
     }
 
+    /// Runs an operation on the tree the way the runtime does, following `Outcome::Chain`
+    /// (iced's `focus_next` is a `count` pass chained to a second pass).
+    pub(super) fn run_chained(&mut self, op: impl iced_test::core::widget::Operation + 'static) {
+        use iced_test::core::widget::operation::Outcome;
+        let mut current: Box<dyn iced_test::core::widget::Operation> = Box::new(op);
+        loop {
+            self.ui.operate(&self.renderer, current.as_mut());
+            match current.finish() {
+                Outcome::Chain(next) => current = next,
+                _ => break,
+            }
+        }
+    }
+
+    /// Delivers events as the window would: the statuses the tree answers and the messages its
+    /// widgets published.
+    pub(super) fn send(
+        &mut self,
+        events: &[Event],
+        cursor: mouse::Cursor,
+    ) -> (Vec<iced_test::core::event::Status>, Vec<M>) {
+        let mut messages: Vec<M> = Vec::new();
+        let (_state, statuses) = self.ui.update(
+            events,
+            cursor,
+            &mut self.renderer,
+            &mut clipboard::Null,
+            &mut messages,
+        );
+        (statuses, messages)
+    }
+
     /// Every text, container, scrollable and text input of the tree, depth first.
     pub(super) fn walk(&mut self) -> Vec<Seen> {
         let seen = Arc::new(Mutex::new(Vec::new()));

@@ -61,10 +61,11 @@ Alt on top of Ctrl make a different combination that is not bound.
 
 **Known behaviour with text fields and long conversions (observed)**
 
-- While the custom-size field has focus, Ctrl+O does nothing (no file chooser
-  opens), Ctrl+3 and F1 still change the page, and Ctrl+1 types a "1" into the
-  field instead of going Home (the field takes the key first). Observed on
-  X11 only.
+- While a text field has focus, the shortcut keys still work and never type
+  into the field: Ctrl+1 / 2 / 3 and F1 change the page. Ctrl+O does nothing
+  there, because the text fields are on the Customize page and the file chooser
+  belongs to the Home page. The field keeps its own keys (typing, Backspace,
+  the arrows, Enter, Ctrl+C / X / V / A).
 - When a conversion takes a very long time (a 50-second test image), shortcuts
   pressed meanwhile were not acted on at once: Ctrl+O and Ctrl+S opened nothing,
   and Ctrl+2 took effect only after the conversion had finished. Typical logos

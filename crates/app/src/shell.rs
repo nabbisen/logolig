@@ -46,7 +46,9 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
             .footer(app_name_footer(state));
     }
 
-    render(layout)
+    // The root of the view: a command chord is a shortcut, never text, in every present and
+    // future text field (RFC 027, key ownership).
+    crate::ui::command_keys::without_command_text(render(layout))
 }
 
 /// Routes the main body to the page selected in the sidebar nav.

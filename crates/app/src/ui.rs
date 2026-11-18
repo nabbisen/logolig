@@ -1,6 +1,7 @@
 pub mod accessibility;
 pub mod advanced_drawer;
 pub mod colors;
+pub mod command_keys;
 pub mod converting;
 pub mod customize_page;
 pub mod drop_zone;

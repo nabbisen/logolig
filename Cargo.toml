@@ -18,7 +18,7 @@ repository      = "https://github.com/nabbisen/logolig"
 logolig                 = { version = "1", path = "crates/core" }
 logolig-i18n            = { version = "1", path = "crates/i18n" }
 
-iced                    = { version = "0.14", features = ["tokio", "image"] }
+iced                    = { version = "0.14", features = ["tokio", "image", "advanced"] }
 iced_test               = "0.14"
 snora                   = { version = "0.62", default-features = false, features = ["widgets", "lucide-icons"] }
 

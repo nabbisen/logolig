@@ -93,7 +93,16 @@ fn subscription(state: &AppState) -> Subscription<Message> {
     // FilesHoveredLeft for visible drop-zone feedback.
     let toasts = snora::toast::subscription(&state.toasts, || Message::ToastTick);
 
-    let runtime_events = iced::event::listen_with(|event, status, _id| match event {
+    let runtime_events =
+        iced::event::listen_with(|event, status, _id| runtime_event(event, status));
+
+    Subscription::batch([toasts, runtime_events])
+}
+
+/// What the runtime event subscription makes of one event (a pure function so that the headless
+/// tests drive the path the application uses).
+pub(crate) fn runtime_event(event: iced::Event, status: iced::event::Status) -> Option<Message> {
+    match event {
         // RFC 019 phase 2: global shortcuts. A key a widget used (text typed into a field,
         // its own editing combinations) is not a shortcut.
         iced::Event::Keyboard(iced::keyboard::Event::KeyPressed {
@@ -120,9 +129,7 @@ fn subscription(state: &AppState) -> Subscription<Message> {
             Some(Message::WindowResized(size))
         }
         _ => None,
-    });
-
-    Subscription::batch([toasts, runtime_events])
+    }
 }
 
 fn view(state: &AppState) -> Element<'_, Message> {
