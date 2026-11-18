@@ -89,9 +89,15 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             text(t.t(MessageKey::SectionTitlePreview))
                 .size(13)
                 .color(colors::section_label(&theme)),
-            // Picker buttons (centred)
-            container(view_as_picker(state, context)).center_x(Length::Fill),
-            container(surface_picker(state, context, bg)).center_x(Length::Fill),
+            // The two groups, one block centred, their left edges aligned
+            container(
+                column![
+                    view_as_picker(state, context),
+                    surface_picker(state, context, bg)
+                ]
+                .spacing(12)
+            )
+            .center_x(Length::Fill),
             // Preview frame (content centred, 4/7 of height, max 560)
             container(preview_area)
                 .width(Length::Fill)

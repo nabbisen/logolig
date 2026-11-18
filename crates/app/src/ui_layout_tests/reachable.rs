@@ -42,7 +42,10 @@ fn controls(combo: &Combo, state: &crate::app::AppState) -> Vec<(&'static str, S
     ];
     match combo.case {
         Case::Home => list.push(("Choose file", t.t(MessageKey::ChooseFileButton))),
-        Case::ResultDefault | Case::ResultAllOptions => {
+        Case::ResultDefault
+        | Case::ResultAllOptions
+        | Case::ResultPreview
+        | Case::ResultPreviewChecker => {
             list.push(("Back", t.t(MessageKey::EditCancelButton)));
             list.push((
                 "Download all (ZIP)",

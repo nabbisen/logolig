@@ -329,15 +329,22 @@ pub(super) enum Case {
     /// Customize with the advanced settings open and every option on (the widest set of controls).
     CustomizeAdvanced,
     Settings,
+    /// The result of the default plan with the preview panel open (the "View as" and "Surface"
+    /// pickers, enabled).
+    ResultPreview,
+    /// The same with the transparency checker as the context: the Surface picker is disabled.
+    ResultPreviewChecker,
 }
 
-pub(super) const CASES: [Case; 6] = [
+pub(super) const CASES: [Case; 8] = [
     Case::Home,
     Case::Converting,
     Case::ResultDefault,
     Case::ResultAllOptions,
     Case::CustomizeAdvanced,
     Case::Settings,
+    Case::ResultPreview,
+    Case::ResultPreviewChecker,
 ];
 
 /// The window sizes, in logical pixels. 767 and 768 straddle the mobile breakpoint.
@@ -409,6 +416,17 @@ impl Combo {
                 state.advanced_extras_open = true;
             }
             Case::Settings => state.nav_page = NavPage::Settings,
+            Case::ResultPreview | Case::ResultPreviewChecker => {
+                state.screen = Screen::Result;
+                state.result_assets = Some(result_assets_of_cards(false));
+                state.result_preview_open = true;
+                if self.case == Case::ResultPreviewChecker {
+                    state.preview = Some(logolig::PreviewProfile {
+                        context: logolig::PreviewContext::TransparencyChecker,
+                        background: logolig::ThemeMode::Light,
+                    });
+                }
+            }
         }
         state
     }
@@ -448,6 +466,30 @@ pub(super) fn layout_matrix() -> Vec<Combo> {
 /// The interface of `state` laid out at `size`.
 pub(super) fn probe_of(state: &AppState, size: Size) -> Probe<'_, Message> {
     Probe::new(crate::shell::view(state), size)
+}
+
+/// A key press as the window delivers it, without text (arrows, Enter, Space, Tab).
+pub(super) fn key_press(key: iced::keyboard::Key) -> Event {
+    Event::Keyboard(iced_test::core::keyboard::Event::KeyPressed {
+        key: key.clone(),
+        modified_key: key,
+        physical_key: iced_test::core::keyboard::key::Physical::Code(
+            iced_test::core::keyboard::key::Code::Escape,
+        ),
+        location: iced_test::core::keyboard::Location::Standard,
+        modifiers: iced::keyboard::Modifiers::empty(),
+        repeat: false,
+        text: None,
+    })
+}
+
+/// The events of a left click at `at`: the pointer moves there, presses and releases.
+pub(super) fn click_events(at: Point) -> Vec<Event> {
+    vec![
+        Event::Mouse(mouse::Event::CursorMoved { position: at }),
+        Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)),
+        Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)),
+    ]
 }
 
 /// One focus target of the tree (see [`Probe::focus_targets`]).

@@ -7,10 +7,10 @@
 
 pub mod marker {
     pub const BUSY: &str = "⏳";
-    // Unused today: errors are shown as toasts. Kept because the marker set (BUSY, ERROR, READY)
+    // Unused today: errors are shown as toasts. Kept because the marker set (BUSY, ERROR)
     // is the documented ABDD vocabulary (docs/src/ui-a11y.md); the cues are reviewed in a later
-    // job and no constant may change meaning here.
+    // job (RFC 021) and no constant may change meaning here. The selected-option cue is no
+    // text marker any more: single choices are `snora::radio_group`s (`ui/choice.rs`).
     #[allow(dead_code)]
     pub const ERROR: &str = "⚠";
-    pub const READY: &str = "✓";
 }

@@ -159,6 +159,8 @@ fn the_measured_areas_cover_every_interactive_point() {
     for (case, height) in [
         (Case::CustomizeAdvanced, 1600.0),
         (Case::ResultAllOptions, 2400.0),
+        (Case::ResultPreview, 2400.0),
+        (Case::ResultPreviewChecker, 2400.0),
     ] {
         let combo = Combo {
             case,

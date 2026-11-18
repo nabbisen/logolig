@@ -1,5 +1,6 @@
 pub mod accessibility;
 pub mod advanced_drawer;
+pub mod choice;
 pub mod colors;
 pub mod command_keys;
 pub mod converting;

@@ -1,0 +1,172 @@
+//! The single-choice groups (RFC 021, job J10): Settings (language, theme) and the preview
+//! panel ("View as", "Surface"), each a `snora::radio_group`.
+//!
+//! Questions: is each group **one** Tab stop; do the arrow keys and a click publish the message
+//! the buttons published before (a choice made by an arrow selects at once); do Enter, Space and a
+//! click on the option already chosen publish nothing; is a disabled group out of the Tab order
+//! and deaf to the pointer.
+
+use iced::Size;
+use iced::keyboard::{Key, key::Named};
+use iced::mouse::Cursor;
+use logolig_i18n::Locale;
+
+use super::support::{Case, Combo, Probe, click_events, key_press, probe_of};
+use crate::app::{AppState, Message};
+
+const SIZE: Size = Size::new(720.0, 1700.0);
+
+fn state(case: Case) -> AppState {
+    Combo {
+        case,
+        size: SIZE,
+        locale: Locale::En,
+        dark: false,
+    }
+    .state()
+}
+
+fn debug(messages: &[Message]) -> Vec<String> {
+    messages.iter().map(|m| format!("{m:?}")).collect()
+}
+
+/// Focuses target `index`, presses `key`, and returns what the page published.
+fn press(state: &AppState, index: usize, key: Named) -> Vec<String> {
+    let mut p = probe_of(state, SIZE);
+    p.focus_target(index);
+    let (_status, messages) = p.send(&[key_press(Key::Named(key))], Cursor::Unavailable);
+    debug(&messages)
+}
+
+/// Clicks the centre of the text `label` and returns what the page published.
+fn click(state: &AppState, label: &str) -> Vec<String> {
+    let mut p = probe_of(state, SIZE);
+    let at = centre_of(&mut p, label);
+    let (_status, messages) = p.send(&click_events(at), Cursor::Available(at));
+    debug(&messages)
+}
+
+fn centre_of(p: &mut Probe<'_, Message>, label: &str) -> iced::Point {
+    p.walk()
+        .iter()
+        .find(|s| s.text == label)
+        .unwrap_or_else(|| panic!("no text {label:?} on the page"))
+        .bounds
+        .center()
+}
+
+#[test]
+fn each_group_is_one_tab_stop() {
+    let settings = state(Case::Settings);
+    let targets = probe_of(&settings, SIZE).focus_targets();
+    assert_eq!(
+        targets.len(),
+        2,
+        "Settings: the language group and the theme group: {targets:?}"
+    );
+    assert!(targets.iter().all(|t| !t.text_input));
+
+    // The result page has no other focus target yet; both preview groups are stops.
+    let preview = state(Case::ResultPreview);
+    assert_eq!(
+        probe_of(&preview, SIZE).focus_targets().len(),
+        2,
+        "View as, Surface"
+    );
+    // With the checker the Surface group is disabled: it is no Tab stop.
+    let checker = state(Case::ResultPreviewChecker);
+    assert_eq!(
+        probe_of(&checker, SIZE).focus_targets().len(),
+        1,
+        "View as only"
+    );
+}
+
+/// The keys and clicks of the Settings groups publish the messages the rows published.
+#[test]
+fn settings_groups_publish_the_messages_the_rows_published() {
+    let settings = state(Case::Settings); // English and Light selected
+    // Language: Ja, En, System in this order; English is selected.
+    assert_eq!(
+        press(&settings, 0, Named::ArrowDown),
+        ["LocalePicked(None)"],
+        "next: System"
+    );
+    assert_eq!(
+        press(&settings, 0, Named::ArrowUp),
+        ["LocalePicked(Some(Ja))"],
+        "previous: 日本語"
+    );
+    assert_eq!(click(&settings, "日本語"), ["LocalePicked(Some(Ja))"]);
+    // "System" is in both groups; the first one on the page is the language group's.
+    assert_eq!(click(&settings, "System"), ["LocalePicked(None)"]);
+    // Theme: Light, Dark, System; Light is selected.
+    assert_eq!(press(&settings, 1, Named::ArrowDown), ["ThemePicked(Dark)"]);
+    assert_eq!(
+        press(&settings, 1, Named::ArrowUp),
+        ["ThemePicked(System)"],
+        "wraps to the last"
+    );
+    // The option that is already chosen, Enter and Space publish nothing.
+    assert!(
+        click(&settings, "English").is_empty(),
+        "a click on the chosen option"
+    );
+    assert!(
+        click(&settings, "Light").is_empty(),
+        "a click on the chosen option"
+    );
+    for key in [Named::Enter, Named::Space] {
+        assert!(
+            press(&settings, 0, key).is_empty(),
+            "{key:?} on the language group"
+        );
+        assert!(
+            press(&settings, 1, key).is_empty(),
+            "{key:?} on the theme group"
+        );
+    }
+}
+
+/// The preview groups publish what the buttons published.
+#[test]
+fn preview_groups_publish_the_messages_the_buttons_published() {
+    let preview = state(Case::ResultPreview); // Browser tab and System selected
+    assert_eq!(
+        press(&preview, 0, Named::ArrowDown),
+        ["PreviewContextSelected(SmartphoneIcon)"]
+    );
+    assert_eq!(
+        click(&preview, "Smartphone home"),
+        ["PreviewContextSelected(SmartphoneIcon)"]
+    );
+    assert_eq!(
+        click(&preview, "Checker"),
+        ["PreviewContextSelected(TransparencyChecker)"]
+    );
+    assert_eq!(
+        press(&preview, 1, Named::ArrowDown),
+        ["PreviewBackgroundSelected(Light)"]
+    );
+    assert_eq!(click(&preview, "Dark"), ["PreviewBackgroundSelected(Dark)"]);
+    assert!(
+        click(&preview, "Browser tab (16×16)").is_empty(),
+        "the chosen option"
+    );
+    assert!(click(&preview, "System").is_empty(), "the chosen option");
+}
+
+/// A disabled group (Surface during the checker) ignores the pointer.
+#[test]
+fn the_disabled_surface_group_ignores_a_click() {
+    let checker = state(Case::ResultPreviewChecker);
+    assert!(
+        click(&checker, "Dark").is_empty(),
+        "the Surface group is disabled"
+    );
+    // The View as group still works.
+    assert_eq!(
+        click(&checker, "Smartphone home"),
+        ["PreviewContextSelected(SmartphoneIcon)"]
+    );
+}
