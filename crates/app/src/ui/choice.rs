@@ -61,3 +61,10 @@ where
         LayoutDirection::Ltr,
     )
 }
+
+/// A checkbox for an independent option (RFC 021): one Tab stop, Enter or Space toggles, the mark
+/// is a box with a tick (a shape), and the label is inside the target. The caller adds
+/// `.label(..)` and `.on_toggle(..)`. The application is left to right.
+pub(crate) fn checkbox<'a>(checked: bool) -> snora::Checkbox<'a, Message> {
+    snora::checkbox(checked, LayoutDirection::Ltr)
+}

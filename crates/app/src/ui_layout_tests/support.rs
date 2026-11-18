@@ -126,6 +126,39 @@ impl<'a, M> Probe<'a, M> {
         self.focus_target(index);
     }
 
+    /// The interface as pixels (RGBA, `scale` pixels per logical pixel), drawn with `theme` on the
+    /// CPU renderer, with whatever holds the focus drawn as focused.
+    pub(super) fn rgba(&mut self, theme: &Theme, scale: f32) -> Vec<u8> {
+        use iced_test::core::renderer::Headless as _;
+        let mut messages: Vec<M> = Vec::new();
+        let _ = self.ui.update(
+            &[Event::Window(iced::window::Event::RedrawRequested(
+                iced::time::Instant::now(),
+            ))],
+            mouse::Cursor::Unavailable,
+            &mut self.renderer,
+            &mut clipboard::Null,
+            &mut messages,
+        );
+        self.ui.draw(
+            &mut self.renderer,
+            theme,
+            &iced_test::core::renderer::Style {
+                text_color: iced::Color::BLACK,
+            },
+            mouse::Cursor::Unavailable,
+        );
+        let background = iced_test::core::theme::Base::base(theme).background_color;
+        self.renderer.screenshot(
+            Size::new(
+                (self.size.width * scale) as u32,
+                (self.size.height * scale) as u32,
+            ),
+            scale,
+            background,
+        )
+    }
+
     /// Delivers events as the window would: the statuses the tree answers and the messages its
     /// widgets published.
     pub(super) fn send(

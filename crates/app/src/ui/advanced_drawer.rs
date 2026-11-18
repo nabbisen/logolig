@@ -20,12 +20,13 @@ mod manifest;
 mod styles;
 mod svg;
 
-use iced::widget::{button, checkbox, column, container, row, text, text_input};
+use iced::widget::{button, column, container, row, text, text_input};
 use iced::{Alignment, Element, Length, Padding};
 
 use logolig::{MessageKey, VtracerPreset};
 
 use crate::app::{AppState, Message, resolve_theme};
+use crate::ui::choice::checkbox;
 use crate::ui::colors;
 use manifest::{subsection, web_manifest_body};
 use styles::{extras_header_style, reset_button_style, secondary_drawer_button_style};
@@ -34,6 +35,9 @@ use svg::{algorithm_row, svg_subsection};
 // v1.14.0: HEADING_COLOR / MUTED_COLOR / BADGE_MUTED_BG hardcoded constants
 // moved to theme-aware helpers in `crate::ui::colors`.
 // Fixes "grey text invisible on grey background" in dark mode.
+
+/// Room, in pixels, between the content of the scrolling area and its edge, for the focus ring.
+const RING_ROOM: f32 = 4.0;
 
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
@@ -78,18 +82,13 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     for px in preset_sizes {
         let checked = state.export_plan.png_sizes.contains(&px);
         let label = format!("{} × {}", px, px);
-        sizes_col = sizes_col.push(
-            checkbox(checked)
-                .label(label)
-                .on_toggle(move |on| {
-                    if on {
-                        Message::PngPresetSizeAdded(px)
-                    } else {
-                        Message::PngSizeRemoveRequested(px)
-                    }
-                })
-                .text_size(13),
-        );
+        sizes_col = sizes_col.push(checkbox(checked).label(label).on_toggle(move |on| {
+            if on {
+                Message::PngPresetSizeAdded(px)
+            } else {
+                Message::PngSizeRemoveRequested(px)
+            }
+        }));
     }
 
     // Show any user-added sizes not in the preset list as removable custom chips.
@@ -107,8 +106,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         sizes_col = sizes_col.push(
             checkbox(true)
                 .label(label)
-                .on_toggle(move |_| Message::PngSizeRemoveRequested(removed))
-                .text_size(13),
+                .on_toggle(move |_| Message::PngSizeRemoveRequested(removed)),
         );
     }
 
@@ -188,8 +186,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             .color(colors::section_label(&theme)),
         checkbox(state.export_plan.keep_transparency)
             .label(t.t(MessageKey::KeepTransparency))
-            .on_toggle(Message::KeepTransparencyToggled)
-            .text_size(13),
+            .on_toggle(Message::KeepTransparencyToggled),
     ]
     .spacing(8);
 
@@ -231,13 +228,11 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             // Apple touch icon
             checkbox(state.export_plan.include_apple_touch)
                 .label(t.t(MessageKey::IncludeAppleTouchLabel))
-                .on_toggle(Message::IncludeAppleTouchToggled)
-                .text_size(13),
+                .on_toggle(Message::IncludeAppleTouchToggled),
             // HTML snippet
             checkbox(state.export_plan.include_html_snippet)
                 .label(t.t(MessageKey::IncludeHtmlSnippetLabel))
-                .on_toggle(Message::IncludeHtmlSnippetToggled)
-                .text_size(13),
+                .on_toggle(Message::IncludeHtmlSnippetToggled),
             // SVG output toggle + vectorise-raster (grouped)
             svg_subsection(state),
             // Web manifest (with child fields)
@@ -254,7 +249,6 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
                 checkbox(state.export_plan.include_microsoft_app_logos)
                     .label(t.t(MessageKey::IncludeMicrosoftAppLogosLabel))
                     .on_toggle(Message::IncludeMicrosoftAppLogosToggled)
-                    .text_size(13)
                     .into(),
                 colors::muted_text(&theme),
             ),
@@ -265,7 +259,6 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
                 checkbox(state.export_plan.monochrome)
                     .label(t.t(MessageKey::IncludeMonochromeLabel))
                     .on_toggle(Message::IncludeMonochromeToggled)
-                    .text_size(13)
                     .into(),
                 colors::muted_text(&theme),
             ),
@@ -288,7 +281,13 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // ─────────────────────────────────────────────────────────────
     // Main body: scrollable area
     // ─────────────────────────────────────────────────────────────
-    let scroll_content = column![sizes_col, svg_section, misc_section, extras_section,].spacing(20);
+    // The scroll area clips what reaches past its edge, and the focus ring of a control sits 2 px
+    // outside the control (RFC 021, RFC 027): the content gets RING_ROOM of room on every side
+    // inside the area, and the page's own padding gives the same amount back outside it, so the
+    // content stays where it was.
+    let scroll_content = column![sizes_col, svg_section, misc_section, extras_section,]
+        .spacing(20)
+        .padding(RING_ROOM);
 
     let scrollable_body = container(
         iced::widget::scrollable(scroll_content)
@@ -318,9 +317,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .spacing(8)
     .align_y(Alignment::Center);
 
-    column![scrollable_body, footer]
-        .spacing(14)
-        .padding(20)
+    column![scrollable_body, container(footer).padding(RING_ROOM)]
+        .spacing(14.0 - 2.0 * RING_ROOM)
+        .padding(20.0 - RING_ROOM)
         .height(Length::Fill)
         .into()
 }

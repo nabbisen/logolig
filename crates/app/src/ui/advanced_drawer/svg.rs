@@ -1,11 +1,12 @@
 //! The SVG section of the Customize page: vectorisation, resize algorithm and trace preset rows.
 
-use iced::widget::{checkbox, column, container, pick_list, row, text};
+use iced::widget::{column, container, pick_list, row, text};
 use iced::{Alignment, Element, Padding};
 
 use logolig::{MessageKey, ResizeAlgorithm, VtracerPreset};
 
 use crate::app::{AppState, Message};
+use crate::ui::choice::checkbox;
 
 use super::choices::{
     LocalizedAlgorithm, LocalizedPreset, algorithm_message_key, preset_message_key,
@@ -16,8 +17,7 @@ pub(super) fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let main_toggle = checkbox(state.export_plan.include_svg)
         .label(t.t(MessageKey::IncludeSvgLabel))
-        .on_toggle(Message::IncludeSvgToggled)
-        .text_size(13);
+        .on_toggle(Message::IncludeSvgToggled);
 
     // When include_svg is off, no need to show sub-options
     if !state.export_plan.include_svg {
@@ -28,8 +28,7 @@ pub(super) fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
     let nested = column![
         checkbox(state.export_plan.vectorize_on_raster)
             .label(t.t(MessageKey::VectorizeOnRasterLabel))
-            .on_toggle(Message::VectorizeOnRasterToggled)
-            .text_size(13),
+            .on_toggle(Message::VectorizeOnRasterToggled),
         vtracer_preset_row(state),
     ]
     .spacing(6);

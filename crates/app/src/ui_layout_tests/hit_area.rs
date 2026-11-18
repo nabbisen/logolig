@@ -76,39 +76,19 @@ fn every_interactive_area_is_at_least_24_by_24() {
     );
 }
 
-/// Interactive areas smaller than 24 x 24 today. Cause: every checkbox row is 16.5 px high, and
-/// the custom-size field and its button are 23.5 px high, and the SVG slider is 16 px high.
-/// Belongs to RFC 034, job J22: each entry is a control by its label (the field and the slider
-/// have none) and the whole pixels of its smallest side, as the finding prints them; the job
-/// deletes entries as it fixes them, and the list must end empty. No new `(no label)` entry may
-/// be added. A loosened threshold would hide them; a named list does not.
+/// Interactive areas smaller than 24 x 24 today. Cause: the custom-size field and its button are
+/// 23.5 px high, and the SVG slider is 16 px high (the slider goes with RFC 021's SVG conversion
+/// choice; the field and the button belong to RFC 034, job J22). The checkboxes are gone from
+/// this list: they are `snora::checkbox`es now (30.5 px rows). Each entry is a control by its
+/// label (the field and the slider have none) and the whole pixels of its smallest side, as the
+/// finding prints them; the job deletes entries as it fixes them (a stale entry fails the test),
+/// and the list must end empty. No new `(no label)` entry may be added. A loosened threshold
+/// would hide them; a named list does not.
 const KNOWN: &[(&str, &str)] = &[
     ("(no label)", "15"),
     ("(no label)", "23"),
     ("+ Add custom size", "23"),
     ("+ カスタムサイズ追加", "23"),
-    ("16 × 16", "16"),
-    ("192 × 192", "16"),
-    ("32 × 32", "16"),
-    ("48 × 48", "16"),
-    ("512 × 512", "16"),
-    ("96 × 96", "16"),
-    ("Keep transparency (alpha)", "16"),
-    ("Microsoft app logos を出力", "16"),
-    ("Output Microsoft app logos", "16"),
-    ("Output favicon.svg", "16"),
-    ("Output manifest.webmanifest", "16"),
-    ("Output mono/ grayscale set", "16"),
-    ("Vectorize raster sources to SVG (vtracer)", "16"),
-    ("apple-touch-icon.png (iOS / iPadOS home screen)", "16"),
-    ("apple-touch-icon.png (iOS / iPadOS のホーム画面用)", "16"),
-    ("favicon-snippet.html (<head> に貼れるマークアップ)", "16"),
-    ("favicon-snippet.html (paste-ready <head> markup)", "16"),
-    ("favicon.svg を出力", "16"),
-    ("manifest.webmanifest を出力", "16"),
-    ("mono/ グレースケールセットを出力", "16"),
-    ("ラスタ画像を SVG にベクトル化 (vtracer)", "16"),
-    ("透過 (アルファ) を維持する", "16"),
 ];
 
 fn entry_matches(entry: &(&str, &str), f: &Finding) -> bool {

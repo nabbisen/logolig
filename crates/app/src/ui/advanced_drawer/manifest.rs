@@ -1,11 +1,12 @@
 //! The sub-section layout helpers and the web manifest form of the Customize page.
 
-use iced::widget::{checkbox, column, container, row, text, text_input};
+use iced::widget::{column, container, row, text, text_input};
 use iced::{Alignment, Color, Element, Length, Padding};
 
 use logolig::MessageKey;
 
 use crate::app::{AppState, Message};
+use crate::ui::choice::checkbox;
 
 // ---------------------------------------------------------------------------
 // Layout helpers
@@ -44,8 +45,7 @@ pub(super) fn web_manifest_body<'a>(state: &'a AppState) -> Element<'a, Message>
     let t = &state.translator;
     let toggle = checkbox(state.export_plan.web_manifest.is_some())
         .label(t.t(MessageKey::IncludeWebManifestLabel))
-        .on_toggle(Message::IncludeWebManifestToggled)
-        .text_size(13);
+        .on_toggle(Message::IncludeWebManifestToggled);
 
     let Some(manifest) = state.export_plan.web_manifest.as_ref() else {
         // Off: show only the toggle. Revealing all fields upfront
