@@ -20,7 +20,7 @@ mod manifest;
 mod styles;
 mod svg;
 
-use iced::widget::{button, column, container, row, text, text_input};
+use iced::widget::{button, column, row, text, text_input};
 use iced::{Alignment, Element, Length, Padding};
 
 use logolig::{MessageKey, VtracerPreset};
@@ -37,10 +37,8 @@ use svg::{algorithm_row, svg_subsection};
 // moved to theme-aware helpers in `crate::ui::colors`.
 // Fixes "grey text invisible on grey background" in dark mode.
 
-/// Room, in pixels, between the content of the scrolling area and its edge, for the focus ring.
-const RING_ROOM: f32 = 4.0;
-
-pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
+/// The sections of the Customize page, without the footer and without a scroll area.
+pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let theme = resolve_theme(state);
 
@@ -256,28 +254,19 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let extras_section = column![extras_header, extras_body].spacing(2);
 
     // ─────────────────────────────────────────────────────────────
-    // Main body: scrollable area
+    // Main body: the sections, one after the other. The page (`customize_page`) puts them in its
+    // one scroll area (RFC 027 J14a: no scroll area inside another).
     // ─────────────────────────────────────────────────────────────
-    // The scroll area clips what reaches past its edge, and the focus ring of a control sits 2 px
-    // outside the control (RFC 021, RFC 027): the content gets RING_ROOM of room on every side
-    // inside the area, and the page's own padding gives the same amount back outside it, so the
-    // content stays where it was.
-    let scroll_content = column![sizes_col, svg_section, misc_section, extras_section,]
+    column![sizes_col, svg_section, misc_section, extras_section,]
         .spacing(20)
-        .padding(RING_ROOM);
+        .into()
+}
 
-    let scrollable_body = container(
-        iced::widget::scrollable(scroll_content)
-            .width(Length::Fill)
-            .height(Length::Fill),
-    )
-    .height(Length::FillPortion(1))
-    .width(Length::Fill);
-
-    // ─────────────────────────────────────────────────────────────
-    // (5) Footer: ↻ Reset only
-    // ─────────────────────────────────────────────────────────────
-    let footer = row![
+/// The footer of the page: "Reset to defaults" (↻ and the label), outside the scroll area, so it
+/// stays in view.
+pub fn footer<'a>(state: &'a AppState) -> Element<'a, Message> {
+    let t = &state.translator;
+    row![
         button(
             row![
                 text("↻").size(13),
@@ -292,11 +281,6 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         iced::widget::Space::new().width(Length::Fill),
     ]
     .spacing(8)
-    .align_y(Alignment::Center);
-
-    column![scrollable_body, container(footer).padding(RING_ROOM)]
-        .spacing(14.0 - 2.0 * RING_ROOM)
-        .padding(20.0 - RING_ROOM)
-        .height(Length::Fill)
-        .into()
+    .align_y(Alignment::Center)
+    .into()
 }
