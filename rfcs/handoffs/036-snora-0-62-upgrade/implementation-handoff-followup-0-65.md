@@ -1,0 +1,9 @@
+# Developer Handoff — RFC 036, second step: snora 0.62 → 0.65 (job J13c)
+
+Same role, rules and workflow as `implementation-handoff.md` of this folder (that file's evidence plan and prohibitions apply unchanged, with "0.62 → 0.65" and "tree at `dfeea80`" read for "0.57 → 0.62"). Governing text: RFC 036, "Amendment 2026-11-18". Review of J9: `.git-exclude/reviewed/rfc-026-result-layout-review-2026-11-18.md`. Letters: `.git-exclude/upstream/snora/receive/0.65.0/`.
+
+**Work (one commit):** `snora = "0.65"` in the workspace `Cargo.toml`; `cargo update -p snora` only; the lock diff must list exactly the four `snora*` packages (0.62.0 → 0.65.0) and nothing else (the architect's trial says so; verify). Snapshots: the same 10 (5 screens × 2 themes, 1280 × 720, CPU renderer, hermetic fonts, same temporary test on `dfeea80` and on the upgraded tree, `cmp`; patch kept in the review-request folder, no golden images). Gates chained as always (audit **0 vulnerabilities, 12 allowed warnings**); CI waited for.
+
+**Also report (read, do not use):** the 0.62 → 0.65 migration guides' "Re-check if you acted on…" items against what we use (`AppLayout`, toasts, `icon_element_sized`, `Holds`); anything in `snora::{checkbox, toggler, radio_group, select, slider}` (`snora-widgets-0.65.0/src/form.rs`) the dev sees that matters for our Customize and Settings pages: sizes in ems, the 24 px target, the `direction` argument (`LayoutDirection::Ltr`), how `select` is opened and closed (`on_close_menus`), what the engine path draws for the mark. **Do not use any of the new API in this job.**
+
+Review request: `.git-exclude/review-request/rfc-036-snora-0-65/README.md` (report only its path). Acceptance: one line in `Cargo.toml`, four packages in the lock, 311 tests, 10 of 10 snapshots identical (or each difference described), CI green.

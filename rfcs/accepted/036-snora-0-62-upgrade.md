@@ -25,3 +25,9 @@ Using `snora::control` (RFC 027 steps), `focus_zone`, menus, `Digits` shortcuts 
 ## Risk
 
 Low: zero compile changes and a green suite on the trial; the unmeasured part is visual and is covered by requirement 3. Rollback is one line.
+
+## Amendment 2026-11-18: the target becomes 0.65 (second step, job J13c)
+
+snora 0.65.0 (released 2026-11-18; the team's letters are in `.git-exclude/upstream/snora/receive/0.65.0/`) adds **a keyboard-reachable checkbox, toggler, radio group, select and slider** (`snora::{checkbox, toggler, radio_group, select, slider}`, RFC-134), which is exactly what RFC 027's Customize and Settings steps were going to build by hand. J13a (0.57 → 0.62) is done; **J13c takes 0.62 → 0.65 in one line**, with the same proofs.
+
+Architect's trial (scratch copy of `main` at `dfeea80`, `snora = "0.65"` only): `cargo check --workspace --all-targets --all-features` compiles **with no code change**; the whole suite (311 tests) passes; 587 packages before and after, only the four `snora*` versions change; `cargo audit` 0 vulnerabilities, 12 allowed warnings (the baseline). The 0.63 and 0.64 breaking changes (`row_dir` returning `LogicalRow`; the removed F6 types; eight widget functions taking a required `direction`) do not touch the functions we use. Contrast, typography (`title`) and right-to-left corrections in the letters concern us only as improvements: we do not redefine `title`, and the application is left-to-right (`LayoutDirection::Ltr` wherever a snora form control is used).
