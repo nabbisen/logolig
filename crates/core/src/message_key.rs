@@ -68,6 +68,11 @@ pub enum MessageKey {
     SectionSvgBlurb,
     IncludeSvgLabel,
     VectorizeOnRasterLabel,
+    /// "Preset:" label of the trace-preset pick list that was nested under the SVG option.
+    #[deprecated(
+        since = "1.28.0",
+        note = "unused: the trace preset is the 'SVG conversion' group (`SectionSvgConversion` and the `VtracerPreset*` keys); removed at the next major version"
+    )]
     PresetLabel,
     SectionFiles,
     SectionFilesBlurb,
@@ -258,8 +263,16 @@ pub enum MessageKey {
     /// "SVG conversion mode" section heading.
     SectionSvgConversion,
     /// SVG conversion slider left label ("Simple").
+    #[deprecated(
+        since = "1.28.0",
+        note = "unused: the slider is gone, the 'SVG conversion' group uses the `VtracerPreset*` names; removed at the next major version"
+    )]
     SvgConversionSimple,
     /// SVG conversion slider right label ("Detailed").
+    #[deprecated(
+        since = "1.28.0",
+        note = "unused: the slider is gone, the 'SVG conversion' group uses the `VtracerPreset*` names; removed at the next major version"
+    )]
     SvgConversionDetailed,
     /// "Misc" section heading.
     SectionMisc,

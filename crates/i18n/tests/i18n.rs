@@ -413,3 +413,20 @@ fn dialog_unavailable_texts_match_the_specification() {
         "No save dialog is available on this system. Install a desktop portal with a file dialog (for example xdg-desktop-portal-gtk)."
     );
 }
+
+/// Keys deprecated in 1.28.0 (RFC 021) stay in the public `MessageKey` until the next major
+/// version, so a caller that still names one gets its text. The attribute is on this test only.
+#[test]
+#[allow(deprecated)]
+fn the_deprecated_keys_still_translate() {
+    for locale in [Locale::En, Locale::Ja] {
+        let t = Translator::for_locale(locale);
+        for key in [
+            MessageKey::PresetLabel,
+            MessageKey::SvgConversionSimple,
+            MessageKey::SvgConversionDetailed,
+        ] {
+            assert!(!t.t(key).is_empty(), "{locale:?} {key:?}");
+        }
+    }
+}

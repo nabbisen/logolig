@@ -170,3 +170,104 @@ fn the_disabled_surface_group_ignores_a_click() {
         ["PreviewContextSelected(SmartphoneIcon)"]
     );
 }
+
+// ---- the Customize page: SVG conversion and the resize algorithm ------------------------------
+
+/// The Customize page with every option on, tall enough to show everything.
+fn customize() -> AppState {
+    Combo {
+        case: Case::CustomizeAdvanced,
+        size: Size::new(720.0, 4000.0),
+        locale: Locale::En,
+        dark: false,
+    }
+    .state()
+}
+
+/// The keys of a group of the Customize page, found by its first option's label, whatever its
+/// place in the Tab order is.
+fn customize_press(label: &str, key: Named) -> Vec<String> {
+    let state = customize();
+    let size = Size::new(720.0, 4000.0);
+    let mut p = probe_of(&state, size);
+    let at = centre_of(&mut p, label);
+    let index = p
+        .focus_targets()
+        .iter()
+        .position(|t| t.bounds.contains(at))
+        .unwrap_or_else(|| panic!("{label:?} is in no focus target"));
+    p.focus_target(index);
+    let (_status, messages) = p.send(&[key_press(Key::Named(key))], Cursor::Unavailable);
+    debug(&messages)
+}
+
+fn customize_click(label: &str) -> Vec<String> {
+    let state = customize();
+    let mut p = probe_of(&state, Size::new(720.0, 4000.0));
+    let at = centre_of(&mut p, label);
+    let (_status, messages) = p.send(&click_events(at), Cursor::Available(at));
+    debug(&messages)
+}
+
+/// One group of three named presets edits `vtracer_preset`; the old slider and the pick list are
+/// gone. The names are the descriptive ones.
+#[test]
+fn the_svg_conversion_group_publishes_the_preset_messages() {
+    // Default (balanced) is selected.
+    assert_eq!(
+        customize_press("Sharp (logos, icons)", Named::ArrowDown),
+        ["VtracerPresetChanged(PhotoRich)"]
+    );
+    assert_eq!(
+        customize_press("Sharp (logos, icons)", Named::ArrowUp),
+        ["VtracerPresetChanged(Sharp)"]
+    );
+    assert_eq!(
+        customize_click("Sharp (logos, icons)"),
+        ["VtracerPresetChanged(Sharp)"]
+    );
+    assert_eq!(
+        customize_click("Photo-rich (gradients)"),
+        ["VtracerPresetChanged(PhotoRich)"]
+    );
+    assert!(
+        customize_click("Default (balanced)").is_empty(),
+        "the chosen option"
+    );
+    // The same three names appear once on the page: no second control for the same setting.
+    let state = customize();
+    let mut p = probe_of(&state, Size::new(720.0, 4000.0));
+    for name in [
+        "Sharp (logos, icons)",
+        "Default (balanced)",
+        "Photo-rich (gradients)",
+    ] {
+        let count = p.walk().iter().filter(|s| s.text == name).count();
+        assert_eq!(count, 1, "{name:?} is on the page {count} times");
+    }
+    assert!(
+        !p.walk()
+            .iter()
+            .any(|s| s.text == "Simple" || s.text == "Detailed"),
+        "the slider's labels are gone"
+    );
+}
+
+#[test]
+fn the_resize_algorithm_group_publishes_the_algorithm_messages() {
+    // Lanczos3 (sharp) is selected; the five in order.
+    assert_eq!(
+        customize_press("Lanczos3 (sharp)", Named::ArrowDown),
+        ["AlgorithmChanged(MitchellNetravali)"]
+    );
+    assert_eq!(
+        customize_press("Lanczos3 (sharp)", Named::ArrowUp),
+        ["AlgorithmChanged(Nearest)"],
+        "wraps to the last"
+    );
+    assert_eq!(customize_click("Bilinear"), ["AlgorithmChanged(Bilinear)"]);
+    assert!(
+        customize_click("Lanczos3 (sharp)").is_empty(),
+        "the chosen option"
+    );
+}

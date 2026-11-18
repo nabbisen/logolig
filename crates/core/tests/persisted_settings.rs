@@ -237,3 +237,42 @@ fn an_old_file_is_saved_again_without_its_overrides_entry() {
     assert_eq!(value["export_plan"]["png_sizes"], serde_json::json!([48]));
     assert_eq!(value["theme"], "Light");
 }
+
+// ---------------------------------------------------------------------------
+// RFC 021 (J10): one control for the SVG conversion setting, `vtracer_preset`
+// ---------------------------------------------------------------------------
+
+/// The slider and the nested pick list were two controls for this one field; now one group of
+/// three names edits it. The stored values do not change: each name loads from an old file and
+/// is written back as it was, and a file without the key gets the default.
+#[test]
+fn the_vtracer_preset_of_an_old_file_loads_and_round_trips() {
+    use logolig::VtracerPreset;
+    for (name, preset) in [
+        ("Sharp", VtracerPreset::Sharp),
+        ("Default", VtracerPreset::Default),
+        ("PhotoRich", VtracerPreset::PhotoRich),
+    ] {
+        let text =
+            format!(r#"{{"export_plan": {{"vtracer_preset": "{name}"}}, "theme": "Light"}}"#);
+        let loaded: PersistedSettings = serde_json::from_str(&text).expect("an old file loads");
+        assert_eq!(loaded.export_plan.vtracer_preset, preset, "{name}");
+
+        let written = serde_json::to_string(&loaded).expect("serialize");
+        assert_eq!(
+            json_value(&written)["export_plan"]["vtracer_preset"],
+            name,
+            "{name} is written back as it was"
+        );
+        let again: PersistedSettings = serde_json::from_str(&written).expect("reload");
+        assert_eq!(
+            again.export_plan.vtracer_preset, preset,
+            "{name} survives a second round"
+        );
+    }
+
+    let without: PersistedSettings =
+        serde_json::from_str(r#"{"export_plan": {"png_sizes": [32]}, "theme": "Light"}"#)
+            .expect("load");
+    assert_eq!(without.export_plan.vtracer_preset, VtracerPreset::Default);
+}

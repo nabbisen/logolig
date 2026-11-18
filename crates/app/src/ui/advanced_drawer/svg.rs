@@ -1,35 +1,37 @@
-//! The SVG section of the Customize page: vectorisation, resize algorithm and trace preset rows.
+//! The SVG section of the Customize page: the SVG output option with its vectorisation toggle,
+//! and the resize algorithm group.
 
-use iced::widget::{column, container, pick_list, row, text};
-use iced::{Alignment, Element, Padding};
+use iced::widget::{column, container, text};
+use iced::{Element, Padding};
 
-use logolig::{MessageKey, ResizeAlgorithm, VtracerPreset};
+use logolig::{MessageKey, ResizeAlgorithm};
 
 use crate::app::{AppState, Message};
-use crate::ui::choice::checkbox;
+use crate::ui::choice::{checkbox, radio_group};
+use crate::ui::colors;
 
-use super::choices::{
-    LocalizedAlgorithm, LocalizedPreset, algorithm_message_key, preset_message_key,
-};
+use super::choices::algorithm_message_key;
 
-/// SVG section: checkbox + indented sub-options.
+/// SVG section: checkbox + the indented vectorisation option.
+///
+/// The trace preset is not here any more: it is the "SVG conversion" group of the main section
+/// (RFC 021), the one control for that setting.
 pub(super) fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let main_toggle = checkbox(state.export_plan.include_svg)
         .label(t.t(MessageKey::IncludeSvgLabel))
         .on_toggle(Message::IncludeSvgToggled);
 
-    // When include_svg is off, no need to show sub-options
+    // When include_svg is off, no need to show the sub-option
     if !state.export_plan.include_svg {
         return main_toggle.into();
     }
 
-    // Sub-options: vectorise toggle + preset pick_list, indented to show hierarchy.
+    // Sub-option: the vectorise toggle, indented to show hierarchy.
     let nested = column![
         checkbox(state.export_plan.vectorize_on_raster)
             .label(t.t(MessageKey::VectorizeOnRasterLabel))
             .on_toggle(Message::VectorizeOnRasterToggled),
-        vtracer_preset_row(state),
     ]
     .spacing(6);
 
@@ -46,52 +48,21 @@ pub(super) fn svg_subsection<'a>(state: &'a AppState) -> Element<'a, Message> {
 // Layout helpers
 // ---------------------------------------------------------------------------
 
+/// The resize algorithm: its label above a group of the five algorithms (D2: the label is
+/// always above the group; the group is vertical).
 pub(super) fn algorithm_row<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
-    // i18n wrapper. Avoid implementing Display on ResizeAlgorithm directly
-    // (core must not depend on i18n); wrap it in the UI layer instead.
-    let options: Vec<LocalizedAlgorithm> = ResizeAlgorithm::all()
-        .iter()
-        .map(|a| LocalizedAlgorithm {
-            value: *a,
-            label: state.translator.t(algorithm_message_key(*a)),
-        })
-        .collect();
-    let selected = options
-        .iter()
-        .find(|opt| opt.value == state.export_plan.algorithm)
-        .cloned();
-    let picker = pick_list(options, selected, |opt: LocalizedAlgorithm| {
-        Message::AlgorithmChanged(opt.value)
-    })
-    .text_size(13);
-
-    row![text(t.t(MessageKey::AlgorithmLabel)).size(13), picker]
-        .spacing(10)
-        .align_y(Alignment::Center)
-        .into()
-}
-
-fn vtracer_preset_row<'a>(state: &'a AppState) -> Element<'a, Message> {
-    let t = &state.translator;
-    let options: Vec<LocalizedPreset> = VtracerPreset::all()
-        .iter()
-        .map(|p| LocalizedPreset {
-            value: *p,
-            label: state.translator.t(preset_message_key(*p)),
-        })
-        .collect();
-    let selected = options
-        .iter()
-        .find(|opt| opt.value == state.export_plan.vtracer_preset)
-        .cloned();
-    let picker = pick_list(options, selected, |opt: LocalizedPreset| {
-        Message::VtracerPresetChanged(opt.value)
-    })
-    .text_size(13);
-
-    row![text(t.t(MessageKey::PresetLabel)).size(13), picker]
-        .spacing(10)
-        .align_y(Alignment::Center)
-        .into()
+    column![
+        text(t.t(MessageKey::AlgorithmLabel))
+            .size(13)
+            .color(colors::muted_text(&crate::app::resolve_theme(state))),
+        radio_group(
+            ResizeAlgorithm::all().iter().copied(),
+            &state.export_plan.algorithm,
+            |algorithm| t.t(algorithm_message_key(*algorithm)),
+            Message::AlgorithmChanged,
+        ),
+    ]
+    .spacing(4)
+    .into()
 }

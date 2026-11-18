@@ -1,54 +1,10 @@
-//! The localised `pick_list` options (algorithm, trace preset) and their message keys.
+//! The message keys of the resize algorithms and the trace presets (the labels of the radio
+//! groups of the Customize page, RFC 021).
+//!
+//! The enums themselves must not know their translated names (core must not depend on i18n), so
+//! the UI layer maps each value to its `MessageKey`; the groups translate at view time.
 
 use logolig::{MessageKey, ResizeAlgorithm, VtracerPreset};
-
-// ---------------------------------------------------------------------------
-// i18n wrappers for pick_list (ResizeAlgorithm / VtracerPreset)
-// ---------------------------------------------------------------------------
-//
-// `pick_list` requires `Display` on options, but implementing it on
-// ResizeAlgorithm / VtracerPreset directly would leak i18n into core.
-// Instead: UI-layer wrappers that carry a translated label string.
-
-#[derive(Debug, Clone)]
-pub(super) struct LocalizedAlgorithm {
-    pub(super) value: ResizeAlgorithm,
-    pub(super) label: String,
-}
-
-impl PartialEq for LocalizedAlgorithm {
-    fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
-    }
-}
-
-impl Eq for LocalizedAlgorithm {}
-
-impl std::fmt::Display for LocalizedAlgorithm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.label)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub(super) struct LocalizedPreset {
-    pub(super) value: VtracerPreset,
-    pub(super) label: String,
-}
-
-impl PartialEq for LocalizedPreset {
-    fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
-    }
-}
-
-impl Eq for LocalizedPreset {}
-
-impl std::fmt::Display for LocalizedPreset {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.label)
-    }
-}
 
 // ---------------------------------------------------------------------------
 // enum → MessageKey map (UI layer only, to keep core independent of i18n)

@@ -118,10 +118,15 @@ fn every_checkbox_is_a_tab_stop() {
             "{label:?} is a text input?"
         );
     }
-    // The targets of the page: the 14 checkboxes and the 5 text inputs (the custom size and the
-    // four manifest fields). The slider and the pick lists are not targets yet (step 4).
+    // The targets of the page: the 14 checkboxes, the 2 radio groups (SVG conversion, resize
+    // algorithm) and the 5 text inputs (the custom size and the four manifest fields).
     let targets = p.focus_targets();
     assert_eq!(targets.iter().filter(|t| t.text_input).count(), 5);
+    assert_eq!(
+        targets.len(),
+        14 + 2 + 5,
+        "the page holds 21 Tab stops: {targets:?}"
+    );
 }
 
 /// A click, Enter and Space each publish exactly one message, the same for the three, and it is

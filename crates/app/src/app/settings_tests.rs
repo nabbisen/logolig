@@ -142,3 +142,32 @@ fn settings_leaf_theme_changes_only_the_theme() {
     assert_eq!(removed, strings(&["theme: System,"]));
     assert_eq!(added, strings(&["theme: Dark,"]));
 }
+
+#[test]
+fn settings_leaf_svg_conversion_changes_only_the_preset() {
+    // The one group of three names (RFC 021) edits `vtracer_preset` and nothing else.
+    let mut state = AppState::default();
+    let (removed, added) = leaves_changed_by(
+        &mut state,
+        Message::VtracerPresetChanged(logolig::VtracerPreset::PhotoRich),
+    );
+    assert_eq!(removed, strings(&["vtracer_preset: Default,"]));
+    assert_eq!(added, strings(&["vtracer_preset: PhotoRich,"]));
+    let (removed, added) = leaves_changed_by(
+        &mut state,
+        Message::VtracerPresetChanged(logolig::VtracerPreset::Sharp),
+    );
+    assert_eq!(removed, strings(&["vtracer_preset: PhotoRich,"]));
+    assert_eq!(added, strings(&["vtracer_preset: Sharp,"]));
+}
+
+#[test]
+fn settings_leaf_resize_algorithm_changes_only_the_algorithm() {
+    let mut state = AppState::default();
+    let (removed, added) = leaves_changed_by(
+        &mut state,
+        Message::AlgorithmChanged(logolig::ResizeAlgorithm::Nearest),
+    );
+    assert_eq!(removed, strings(&["algorithm: Lanczos3,"]));
+    assert_eq!(added, strings(&["algorithm: Nearest,"]));
+}

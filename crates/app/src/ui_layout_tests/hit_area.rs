@@ -77,15 +77,13 @@ fn every_interactive_area_is_at_least_24_by_24() {
 }
 
 /// Interactive areas smaller than 24 x 24 today. Cause: the custom-size field and its button are
-/// 23.5 px high, and the SVG slider is 16 px high (the slider goes with RFC 021's SVG conversion
-/// choice; the field and the button belong to RFC 034, job J22). The checkboxes are gone from
-/// this list: they are `snora::checkbox`es now (30.5 px rows). Each entry is a control by its
-/// label (the field and the slider have none) and the whole pixels of its smallest side, as the
-/// finding prints them; the job deletes entries as it fixes them (a stale entry fails the test),
-/// and the list must end empty. No new `(no label)` entry may be added. A loosened threshold
-/// would hide them; a named list does not.
+/// 23.5 px high (RFC 034, job J22). The checkboxes and the SVG slider are gone from this list:
+/// they are `snora` checkboxes and radio groups now (RFC 021). Each entry is a control by its
+/// label (the field has none) and the whole pixels of its smallest side, as the finding prints
+/// them; the job deletes entries as it fixes them (a stale entry fails the test), and the list
+/// must end empty. No new `(no label)` entry may be added. A loosened threshold would hide them;
+/// a named list does not.
 const KNOWN: &[(&str, &str)] = &[
-    ("(no label)", "15"),
     ("(no label)", "23"),
     ("+ Add custom size", "23"),
     ("+ カスタムサイズ追加", "23"),

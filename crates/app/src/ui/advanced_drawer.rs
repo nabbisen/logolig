@@ -26,8 +26,9 @@ use iced::{Alignment, Element, Length, Padding};
 use logolig::{MessageKey, VtracerPreset};
 
 use crate::app::{AppState, Message, resolve_theme};
-use crate::ui::choice::checkbox;
+use crate::ui::choice::{checkbox, radio_group};
 use crate::ui::colors;
+use choices::preset_message_key;
 use manifest::{subsection, web_manifest_body};
 use styles::{extras_header_style, reset_button_style, secondary_drawer_button_style};
 use svg::{algorithm_row, svg_subsection};
@@ -129,48 +130,24 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     sizes_col = sizes_col.push(custom_input);
 
     // ─────────────────────────────────────────────────────────────
-    // (2) SVG conversion mode: 3-position discrete slider
+    // (2) SVG conversion mode: one group of three named presets (RFC 021)
     // ─────────────────────────────────────────────────────────────
     //
-    // Maps vtracer presets (Sharp / Default / PhotoRich) to a Simple ↔
-    // Detailed intuitive axis.
-    // iced 0.14 slider is continuous; treat step as integer for discrete selection:
-    //   0 → Sharp (Simple)
-    //   1 → Default (Balanced)
-    //   2 → PhotoRich (Detailed)
-    //
-    // "Vectorise raster" toggle and "favicon.svg on/off" are hidden in
-    // Advanced settings (this section is only about "which mode").
-    // Vectorisation reuses the existing vectorize_on_raster value
-    // (default false).
-    let preset_idx: i32 = match state.export_plan.vtracer_preset {
-        VtracerPreset::Sharp => 0,
-        VtracerPreset::Default => 1,
-        VtracerPreset::PhotoRich => 2,
-    };
+    // The vtracer preset (Sharp / Default / PhotoRich) is the one setting behind this section. It
+    // was once a Simple-to-Detailed slider and, in Advanced, a pick list of the same three
+    // presets under other names; now there is one control, in the main section, by the
+    // descriptive names. The stored value is unchanged. The group is one Tab stop and the arrow
+    // keys choose.
     let svg_section = column![
         text(t.t(MessageKey::SectionSvgConversion))
             .size(17)
             .color(colors::section_label(&theme)),
-        // Labels below the slider (Simple / Detailed)
-        row![
-            text(t.t(MessageKey::SvgConversionSimple))
-                .size(11)
-                .color(colors::muted_text(&theme)),
-            iced::widget::Space::new().width(Length::Fill),
-            text(t.t(MessageKey::SvgConversionDetailed))
-                .size(11)
-                .color(colors::muted_text(&theme)),
-        ],
-        iced::widget::slider(0..=2, preset_idx, |v| {
-            let preset = match v {
-                0 => VtracerPreset::Sharp,
-                1 => VtracerPreset::Default,
-                _ => VtracerPreset::PhotoRich,
-            };
-            Message::VtracerPresetChanged(preset)
-        })
-        .step(1i32),
+        radio_group(
+            VtracerPreset::all(),
+            &state.export_plan.vtracer_preset,
+            |preset| t.t(preset_message_key(*preset)),
+            Message::VtracerPresetChanged,
+        ),
     ]
     .spacing(6);
 
