@@ -26,7 +26,7 @@ fn state(case: Case) -> AppState {
 }
 
 /// Presses Tab (or Shift+Tab) on `p` as the window does; returns the filter's answer.
-fn press_tab(p: &mut Probe<'_, Message>, modifiers: Modifiers) -> Option<Message> {
+pub(super) fn press_tab(p: &mut Probe<'_, Message>, modifiers: Modifiers) -> Option<Message> {
     let event = key_press_with(Key::Named(Named::Tab), modifiers);
     let (statuses, _published) = p.send(std::slice::from_ref(&event), Cursor::Unavailable);
     let message = runtime_event(event, *statuses.last().expect("a status"))?;
@@ -39,14 +39,14 @@ fn press_tab(p: &mut Probe<'_, Message>, modifiers: Modifiers) -> Option<Message
     }
 }
 
-fn tab(p: &mut Probe<'_, Message>) {
+pub(super) fn tab(p: &mut Probe<'_, Message>) {
     assert!(
         press_tab(p, Modifiers::empty()).is_some(),
         "Tab was not routed"
     );
 }
 
-fn shift_tab(p: &mut Probe<'_, Message>) {
+pub(super) fn shift_tab(p: &mut Probe<'_, Message>) {
     assert!(
         press_tab(p, Modifiers::SHIFT).is_some(),
         "Shift+Tab was not routed"
@@ -54,7 +54,7 @@ fn shift_tab(p: &mut Probe<'_, Message>) {
 }
 
 /// The Tab-order index of the focused target, if any.
-fn focused(p: &mut Probe<'_, Message>) -> Option<usize> {
+pub(super) fn focused(p: &mut Probe<'_, Message>) -> Option<usize> {
     p.focus_targets().iter().position(|t| t.focused)
 }
 

@@ -173,6 +173,35 @@ impl<'a, M> Probe<'a, M> {
         }
     }
 
+    /// Where the focused control is on the screen and which viewports show it, if a control has
+    /// the focus. The focus scan reports layout positions; each scroll area that holds the
+    /// control (its content contains the control's centre) moves it by its current offset.
+    pub(super) fn focused_view(&mut self) -> Option<FocusedView> {
+        let found = Arc::new(Mutex::new(ViewScan::default()));
+        self.ui.operate(
+            &self.renderer,
+            &mut ViewScanOp {
+                found: found.clone(),
+            },
+        );
+        let scan = std::mem::take(&mut *found.lock().expect("the view scan"));
+        let layout = scan.focused?;
+        let mut on_screen = layout;
+        let mut viewports = Vec::new();
+        for (bounds, content, translation) in &scan.scrollables {
+            if content.contains(layout.center()) {
+                on_screen.x -= translation.x;
+                on_screen.y -= translation.y;
+                viewports.push(*bounds);
+            }
+        }
+        Some(FocusedView {
+            on_screen,
+            viewports,
+            window: Rectangle::new(Point::ORIGIN, self.size),
+        })
+    }
+
     /// Delivers events as the window would: the statuses the tree answers and the messages its
     /// widgets published.
     pub(super) fn send(
@@ -545,6 +574,70 @@ pub(super) fn click_events(at: Point) -> Vec<Event> {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)),
         Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)),
     ]
+}
+
+/// Where the focused control is (see [`Probe::focused_view`]).
+#[derive(Debug, Clone)]
+pub(super) struct FocusedView {
+    pub(super) on_screen: Rectangle,
+    pub(super) viewports: Vec<Rectangle>,
+    pub(super) window: Rectangle,
+}
+
+impl FocusedView {
+    /// Is the control fully inside the window and inside every scroll area that holds it?
+    pub(super) fn fully_visible(&self) -> bool {
+        let inside = |r: &Rectangle, v: &Rectangle| {
+            r.x >= v.x - 0.5
+                && r.y >= v.y - 0.5
+                && r.x + r.width <= v.x + v.width + 0.5
+                && r.y + r.height <= v.y + v.height + 0.5
+        };
+        inside(&self.on_screen, &self.window)
+            && self.viewports.iter().all(|v| inside(&self.on_screen, v))
+    }
+}
+
+#[derive(Default)]
+struct ViewScan {
+    scrollables: Vec<(Rectangle, Rectangle, iced::Vector)>,
+    focused: Option<Rectangle>,
+}
+
+struct ViewScanOp {
+    found: Arc<Mutex<ViewScan>>,
+}
+
+impl widget::Operation for ViewScanOp {
+    fn traverse(&mut self, operate: &mut dyn FnMut(&mut dyn widget::Operation)) {
+        operate(self);
+    }
+
+    fn scrollable(
+        &mut self,
+        _id: Option<&widget::Id>,
+        bounds: Rectangle,
+        content_bounds: Rectangle,
+        translation: iced::Vector,
+        _state: &mut dyn widget::operation::Scrollable,
+    ) {
+        self.found.lock().expect("the view scan").scrollables.push((
+            bounds,
+            content_bounds,
+            translation,
+        ));
+    }
+
+    fn focusable(
+        &mut self,
+        _id: Option<&widget::Id>,
+        bounds: Rectangle,
+        state: &mut dyn widget::operation::Focusable,
+    ) {
+        if state.is_focused() {
+            self.found.lock().expect("the view scan").focused = Some(bounds);
+        }
+    }
 }
 
 /// One focus target of the tree (see [`Probe::focus_targets`]).
