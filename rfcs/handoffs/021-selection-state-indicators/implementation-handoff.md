@@ -43,3 +43,18 @@ Phase 0: the report above, nothing committed. Build: no glyph carries two meanin
 ## 4. Prohibited shortcuts
 
 No `design` feature, no new package; no change to messages or state; no keyboard code of our own for these controls (snora's is the one owner; `shortcuts.rs` unchanged); no threshold change, no `#[ignore]`, no new `KNOWN` entry; no `snora::select` or `snora::slider` (decided against for now, RFC 027 amendment); no new `#[allow]`; no tags, force-push or history rewriting.
+
+## Architect's decisions on phase 0 (2026-11-19): step 2, the build, may start
+
+Binding text: RFC 021, "Decisions after the phase 0 look study" (D1–D8). Review: `.git-exclude/reviewed/rfc-021-selection-cues-phase0-review-2026-11-19.md`. Reuse your prototype patch and the 30-line `ui/choice.rs` helper; the 16 px labels, the neutral mark and the vertical groups are accepted as shown. Commit order (one logical step each, gates chained, CI waited for each; the tree must be green at every push):
+
+1. **Test follow-ups first** (they would fail or go blind once checkboxes exist): focus the custom-size field by identity in `command_keys.rs` tests (and say how); add the open preview panel to the headless matrix (Result with `result_preview_open`, both contexts, so the pickers are in P1–P3); the stale-entry check for `hit_area.rs::KNOWN`. All green on today's tree before any UI change.
+2. **Settings page and preview pickers** → `radio_group` (D2), the helper, tests: messages equal today's; Tab reach; one Tab stop per group.
+3. **Checkboxes** → `snora::checkbox` (D3), `KNOWN` entries shrinking as they stop matching (delete them in the same commit; the stale-entry check enforces it).
+4. **Resize algorithm** → `radio_group` (label above); **SVG conversion** (D4): the three-preset `radio_group` replaces the slider in the main section, the nested pick list under "Output favicon.svg" is removed, the two now-unused keys deprecated as D4 says (show the compiler is clean with `-D warnings` and where the item-level `allow` sits), a test that the stored `vtracer_preset` round-trips and old settings files load.
+5. **Navigation cue and markers** (D7): accent bar plus bold label on the active item (desktop and mobile), `⏳` → lucide `Loader`, unused markers removed; a source test that no state cue is a text glyph.
+6. **Docs** (D7) and the real capture: one capture of the worst case (Customize with every option on and Advanced open, 360 wide is not obtainable in a real window: use the size the app opens at, English and the longest label set you can) plus the Settings page; analysed after; state the backend.
+
+**Report as well (do not fix):** for every Tab stop on Customize after step 3 (the page now holds 22 stops and scrolls), is the focused control **inside the scroll viewport** after the Tab? (Headless: send Tab repeatedly, read the focused target's `visible_bounds` against the scrollable's.) iced's scrollable does not scroll a focused child into view by itself; this is the next risk of the keyboard work (RFC 027 amendment of 2026-11-19) and I need the numbers.
+
+Review request for the build: `.git-exclude/review-request/rfc-021-selection-cues-build/README.md` (report only its path). Acceptance, prohibitions: as in §3 and §4 above, plus D1–D8.
