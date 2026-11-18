@@ -8,4 +8,6 @@ Governing RFC: [RFC 027](../../accepted/027-keyboard-focus-model.md). The handof
 
 - [`implementation-handoff-j14a-engine.md`](./implementation-handoff-j14a-engine.md) (J14a): Tab is routed to snora's `traverse`, the focused control stays in view, Customize is one scroll area; headless properties. The page steps (J14b) follow.
 
+- [`implementation-handoff-j14b-pages.md`](./implementation-handoff-j14b-pages.md) (J14b): every remaining control becomes a `snora::control`, in five reviewed steps (navigation, Home, Result, Customize, Settings and docs), with two real key runs at the end.
+
 Review requests and evidence produced by the implementer are working material and are not stored here.
