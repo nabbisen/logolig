@@ -4,7 +4,7 @@
 //! to this page. It replaces the v1.18.0 locale and theme popup overlays with
 //! a full-page layout — more readable, one click to reach.
 
-use iced::widget::{button, column, container, row, text};
+use iced::widget::{button, column, container, row, scrollable, text};
 use iced::{Alignment, Background, Border, Color, Element, Length, Padding, Theme};
 
 use logolig::{MessageKey, ThemeMode};
@@ -74,13 +74,19 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
 
     let shortcuts_section = shortcuts_section(state, &theme);
 
-    container(
-        column![language_section, theme_section, shortcuts_section]
-            .spacing(32)
-            .padding([24, 32])
-            .max_width(480),
+    // The page scrolls as one (RFC 026), like Customize: at a height or width that does not hold
+    // the content nothing is squeezed out; the content and its order do not change.
+    scrollable(
+        container(
+            column![language_section, theme_section, shortcuts_section]
+                .spacing(32)
+                .padding([24, 32])
+                .max_width(480),
+        )
+        .width(Length::Fill),
     )
     .width(Length::Fill)
+    .height(Length::Fill)
     .into()
 }
 

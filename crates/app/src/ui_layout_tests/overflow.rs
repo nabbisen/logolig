@@ -100,66 +100,11 @@ fn join(findings: &[Finding]) -> String {
         .join("\n")
 }
 
-/// Texts squeezed out today. Cause: the Settings page is not scrollable, so at a height that
-/// does not hold its content the last rows of the shortcut list (and, at narrow widths, the
-/// whole description column) are laid out with no height or width left. Belongs to RFC 026,
-/// job J9: each entry is one combination (screen, size, language; the theme does not matter) and
-/// the text; the job deletes entries as it fixes them, and the list must end empty.
-const KNOWN: &[(&str, &str)] = &[
-    (
-        "Settings 1024x600 en",
-        "Moving between buttons and fields with the Tab key is not available yet.",
-    ),
-    ("Settings 1024x600 en", "Show this list"),
-    (
-        "Settings 360x640 en",
-        "Moving between buttons and fields with the Tab key is not available yet.",
-    ),
-    ("Settings 360x640 en", "Show this list"),
-    ("Settings 640x480 en", "Choose a file"),
-    (
-        "Settings 640x480 en",
-        "Close the message, or go back to the start",
-    ),
-    ("Settings 640x480 en", "Download all (ZIP)"),
-    ("Settings 640x480 en", "Go to Home, Customize or Settings"),
-    ("Settings 640x480 en", "Keyboard shortcuts"),
-    (
-        "Settings 640x480 en",
-        "Moving between buttons and fields with the Tab key is not available yet.",
-    ),
-    ("Settings 640x480 en", "Show this list"),
-    ("Settings 767x480 en", "Choose a file"),
-    (
-        "Settings 767x480 en",
-        "Close the message, or go back to the start",
-    ),
-    ("Settings 767x480 en", "Download all (ZIP)"),
-    ("Settings 767x480 en", "Go to Home, Customize or Settings"),
-    ("Settings 767x480 en", "Keyboard shortcuts"),
-    (
-        "Settings 767x480 en",
-        "Moving between buttons and fields with the Tab key is not available yet.",
-    ),
-    ("Settings 767x480 en", "Show this list"),
-    ("Settings 768x480 en", "Choose a file"),
-    (
-        "Settings 768x480 en",
-        "Close the message, or go back to the start",
-    ),
-    ("Settings 768x480 en", "Download all (ZIP)"),
-    ("Settings 768x480 en", "Go to Home, Customize or Settings"),
-    (
-        "Settings 768x480 en",
-        "Moving between buttons and fields with the Tab key is not available yet.",
-    ),
-    ("Settings 768x480 en", "Show this list"),
-    (
-        "Settings 800x600 en",
-        "Moving between buttons and fields with the Tab key is not available yet.",
-    ),
-    ("Settings 800x600 en", "Show this list"),
-];
+/// Texts squeezed out and accepted for now. **Empty**: the 26 Settings entries are gone (RFC 026,
+/// job J9: the Settings page scrolls as one). An entry is one combination (screen, size, language;
+/// the theme does not matter) and the text; the test fails if an entry no longer matches a
+/// finding, and a new finding must be fixed, not listed.
+const KNOWN: &[(&str, &str)] = &[];
 
 fn entry_matches(entry: &(&str, &str), f: &Finding) -> bool {
     f.combo.starts_with(entry.0) && f.what.starts_with(&format!("{:?} ", entry.1))
