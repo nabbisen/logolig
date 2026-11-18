@@ -135,6 +135,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::ShortcutPressed(shortcut) => handle_shortcut(state, shortcut),
+        Message::TabPressed(modifiers) => crate::focus::on_tab(modifiers),
         Message::LocalePicked(opt) => settings::locale_picked(state, opt),
         Message::ThemePicked(theme) => {
             state.theme = theme;

@@ -159,6 +159,20 @@ impl<'a, M> Probe<'a, M> {
         )
     }
 
+    /// Runs what a `Task` asks of the widget tree, as the runtime does: every widget operation it
+    /// yields, in order (a task that yields none, or `Task::none()`, changes nothing).
+    pub(super) fn run_task<T: 'static>(&mut self, task: iced::Task<T>) {
+        use iced_test::futures::futures::StreamExt as _;
+        let Some(mut stream) = iced_test::runtime::task::into_stream(task) else {
+            return;
+        };
+        while let Some(action) = iced_test::futures::futures::executor::block_on(stream.next()) {
+            if let iced_test::runtime::Action::Widget(operation) = action {
+                self.run_chained(operation);
+            }
+        }
+    }
+
     /// Delivers events as the window would: the statuses the tree answers and the messages its
     /// widgets published.
     pub(super) fn send(
@@ -503,6 +517,14 @@ pub(super) fn probe_of(state: &AppState, size: Size) -> Probe<'_, Message> {
 
 /// A key press as the window delivers it, without text (arrows, Enter, Space, Tab).
 pub(super) fn key_press(key: iced::keyboard::Key) -> Event {
+    key_press_with(key, iced::keyboard::Modifiers::empty())
+}
+
+/// [`key_press`] with modifiers held.
+pub(super) fn key_press_with(
+    key: iced::keyboard::Key,
+    modifiers: iced::keyboard::Modifiers,
+) -> Event {
     Event::Keyboard(iced_test::core::keyboard::Event::KeyPressed {
         key: key.clone(),
         modified_key: key,
@@ -510,7 +532,7 @@ pub(super) fn key_press(key: iced::keyboard::Key) -> Event {
             iced_test::core::keyboard::key::Code::Escape,
         ),
         location: iced_test::core::keyboard::Location::Standard,
-        modifiers: iced::keyboard::Modifiers::empty(),
+        modifiers,
         repeat: false,
         text: None,
     })

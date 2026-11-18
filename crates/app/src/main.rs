@@ -1,5 +1,6 @@
 // Keep main.rs thin (§10). All app logic lives in `app::run`.
 mod app;
+mod focus;
 mod native_store;
 mod portal;
 mod result;

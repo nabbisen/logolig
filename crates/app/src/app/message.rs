@@ -85,6 +85,9 @@ pub enum Message {
     NavPageSelected(NavPage),
     /// RFC 019 phase 2: a global keyboard shortcut was pressed (see `crate::shortcuts`).
     ShortcutPressed(crate::shortcuts::Shortcut),
+    /// RFC 027: a Tab key press that nothing used (a focused text field passes it on). The
+    /// application moves the focus with snora's traversal; Ctrl, Alt and Cmd+Tab are not Tab.
+    TabPressed(iced::keyboard::Modifiers),
     /// Locale confirmed in the Settings page. None = follow OS locale.
     LocalePicked(Option<Locale>),
     /// Theme confirmed in the Settings page.

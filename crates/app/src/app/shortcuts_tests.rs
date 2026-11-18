@@ -198,3 +198,50 @@ fn page_shortcuts_and_help_set_the_nav_page_from_anywhere() {
     assert_eq!(converting.nav_page, NavPage::Customize);
     assert_eq!(converting.screen, Screen::Converting);
 }
+
+// ---- Tab (RFC 027, J14a) ---------------------------------------------------------------------
+
+/// The widget operations a task asks for.
+fn widget_operations(task: iced::Task<Message>) -> usize {
+    use iced_test::futures::futures::StreamExt as _;
+    let Some(mut stream) = iced_test::runtime::task::into_stream(task) else {
+        return 0;
+    };
+    let mut count = 0;
+    while let Some(action) = iced_test::futures::futures::executor::block_on(stream.next()) {
+        if matches!(action, iced_test::runtime::Action::Widget(_)) {
+            count += 1;
+        }
+    }
+    count
+}
+
+#[test]
+fn tab_pressed_moves_the_focus_and_changes_no_state() {
+    let mut state = AppState::default();
+    let before = format!("{:?}", snapshot_persisted(&state));
+    let task = update(
+        &mut state,
+        Message::TabPressed(iced::keyboard::Modifiers::empty()),
+    );
+    assert!(
+        widget_operations(task) >= 1,
+        "Tab asks the tree to move the focus"
+    );
+    let task = update(
+        &mut state,
+        Message::TabPressed(iced::keyboard::Modifiers::SHIFT),
+    );
+    assert!(widget_operations(task) >= 1, "so does Shift+Tab");
+    let task = update(
+        &mut state,
+        Message::TabPressed(iced::keyboard::Modifiers::CTRL),
+    );
+    assert_eq!(widget_operations(task), 0, "Ctrl+Tab is not Tab");
+    assert_eq!(
+        before,
+        format!("{:?}", snapshot_persisted(&state)),
+        "no setting changed"
+    );
+    assert_eq!(state.nav_page, NavPage::Home, "no page changed");
+}

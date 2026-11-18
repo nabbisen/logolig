@@ -103,6 +103,12 @@ fn subscription(state: &AppState) -> Subscription<Message> {
 /// tests drive the path the application uses).
 pub(crate) fn runtime_event(event: iced::Event, status: iced::event::Status) -> Option<Message> {
     match event {
+        // RFC 027: a Tab nothing used (a focused text field passes it on) moves the focus.
+        iced::Event::Keyboard(iced::keyboard::Event::KeyPressed {
+            key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Tab),
+            modifiers,
+            ..
+        }) if status == iced::event::Status::Ignored => Some(Message::TabPressed(modifiers)),
         // RFC 019 phase 2: global shortcuts. A key a widget used (text typed into a field,
         // its own editing combinations) is not a shortcut.
         iced::Event::Keyboard(iced::keyboard::Event::KeyPressed {
