@@ -6,9 +6,9 @@ use iced::{Element, Length};
 use logolig::{MessageKey, PreviewContext, ThemeMode};
 
 use crate::app::{AppState, Message, resolve_theme};
-use crate::ui::accessibility::marker;
 use crate::ui::choice::radio_group;
 use crate::ui::colors;
+use crate::ui::cues;
 
 // ---------------------------------------------------------------------------
 // "View as" and "Surface" (RFC 021): two single-choice groups, each a `snora::radio_group`
@@ -64,16 +64,9 @@ pub(super) fn surface_picker<'a>(
 pub(super) fn loading_placeholder<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     container(
-        column![
-            text(format!(
-                "{} {}",
-                marker::BUSY,
-                t.t(MessageKey::ImportingMessage)
-            ))
-            .size(16),
-        ]
-        .spacing(6)
-        .align_x(iced::alignment::Horizontal::Center),
+        column![cues::busy(t.t(MessageKey::ImportingMessage), 16.0)]
+            .spacing(6)
+            .align_x(iced::alignment::Horizontal::Center),
     )
     .padding(40)
     .center_x(Length::Fill)

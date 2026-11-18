@@ -6,8 +6,9 @@
 //! Replaces the v1.18.0 icon trio (settings / language / theme) that opened
 //! drawers and popup overlays.
 
-use iced::widget::{button, column, container, text};
-use iced::{Alignment, Background, Border, Color, Element, Length, Padding, Theme};
+use iced::font::Weight;
+use iced::widget::{button, column, container, row, text};
+use iced::{Alignment, Background, Border, Color, Element, Font, Length, Padding, Theme};
 
 use snora::Icon;
 use snora::lucide;
@@ -48,7 +49,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
     container(
         column![nav_home, nav_customize, nav_settings]
             .spacing(4)
-            .padding(Padding::default().top(12).bottom(12).left(6).right(6)),
+            .padding(Padding::default().top(12).bottom(12).left(6).right(0)),
     )
     .width(Length::Fixed(90.0))
     .height(Length::Fill)
@@ -58,8 +59,6 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
 
 /// Mobile bottom navigation bar. Passed to `AppLayout::footer(...)`.
 pub fn bottom_view(state: &AppState) -> Element<'_, Message> {
-    use iced::widget::row;
-
     let theme = resolve_theme(state);
     let t = &state.translator;
 
@@ -110,7 +109,10 @@ fn nav_item<'a>(
     };
 
     let icon_el = icon_element_sized::<Message>(icon, 22.0);
-    let label_el = text(label).size(11).color(icon_color);
+    let label_el = text(label)
+        .size(11)
+        .color(icon_color)
+        .font(label_font(active));
 
     // Wrap in a container to force horizontal centering within the button.
     // `.align_x` on the column alone is not sufficient when the button has
@@ -123,11 +125,16 @@ fn nav_item<'a>(
     .width(Length::Fill)
     .align_x(Alignment::Center);
 
-    button(inner)
+    let item = button(inner)
         .width(Length::Fill)
         .padding(Padding::default().top(10).bottom(10).left(4).right(4))
         .on_press(on_press)
-        .style(move |t: &Theme, s| nav_item_style(t, s, active))
+        .style(move |t: &Theme, s| nav_item_style(t, s, active));
+
+    // The bar on the edge facing the content (the page is to the right of the sidebar). It is
+    // always laid out, and only coloured when the item is active, so nothing moves.
+    row![item, bar(active, Length::Fixed(BAR), Length::Fill)]
+        .height(Length::Shrink)
         .into()
 }
 
@@ -149,7 +156,10 @@ fn bottom_nav_item<'a>(
     };
 
     let icon_el = icon_element_sized::<Message>(icon, 22.0);
-    let label_el = text(label).size(10).color(label_color);
+    let label_el = text(label)
+        .size(10)
+        .color(label_color)
+        .font(label_font(active));
 
     let inner = container(
         column![icon_el, label_el]
@@ -159,11 +169,42 @@ fn bottom_nav_item<'a>(
     .width(Length::Fill)
     .align_x(Alignment::Center);
 
-    button(inner)
+    let item = button(inner)
         .width(Length::Fill)
-        .padding(Padding::default().top(8).bottom(8))
+        .padding(Padding::default().top(6).bottom(8))
         .on_press(on_press)
-        .style(move |t: &Theme, s| nav_item_style(t, s, active))
+        .style(move |t: &Theme, s| nav_item_style(t, s, active));
+
+    // The bar on the edge facing the content (the page is above the bottom bar).
+    column![bar(active, Length::Fill, Length::Fixed(BAR)), item].into()
+}
+
+// ---------------------------------------------------------------------------
+// The active-page cue (RFC 021 Q1, D7): a filled item, a bold label and a thin accent bar on
+// the edge facing the content. Three cues, so the state is never colour alone.
+// ---------------------------------------------------------------------------
+
+/// Thickness of the accent bar, in pixels.
+const BAR: f32 = 3.0;
+
+/// The label's font: bold when the page is the active one.
+pub(crate) fn label_font(active: bool) -> Font {
+    Font {
+        weight: if active { Weight::Bold } else { Weight::Normal },
+        ..Font::DEFAULT
+    }
+}
+
+/// The accent bar of a nav item: the accent colour when active, nothing otherwise, the same
+/// size either way.
+fn bar<'a>(active: bool, width: Length, height: Length) -> Element<'a, Message> {
+    container(iced::widget::Space::new())
+        .width(width)
+        .height(height)
+        .style(move |theme: &Theme| container::Style {
+            background: active.then(|| Background::Color(colors::nav_accent(theme))),
+            ..Default::default()
+        })
         .into()
 }
 

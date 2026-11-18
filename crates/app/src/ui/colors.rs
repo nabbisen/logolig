@@ -19,6 +19,23 @@ use iced::{Color, Theme};
 // Text colours by semantic role
 // ---------------------------------------------------------------------------
 
+/// The accent of the active page's bar in the navigation (RFC 021 D1, D7).
+///
+/// The accent colour is for the primary action and the active page; it no longer marks a selected
+/// option (form controls are neutral). The bar sits flush against the page, so what matters is
+/// its contrast with the page: `primary.base` on Light (4.6:1) and the lighter `primary.strong`
+/// on Dark (3.7:1; `primary.base` would be 3.0:1 there). Against the sidebar's own surface it is
+/// 3.4:1 (Light) and 2.5:1 (Dark), which is why the bar is never the only cue: the item is also
+/// filled and its label is bold.
+pub fn nav_accent(theme: &Theme) -> Color {
+    let p = theme.extended_palette();
+    if p.is_dark {
+        p.primary.strong.color
+    } else {
+        p.primary.base.color
+    }
+}
+
 /// App name text colour.
 ///
 /// Slightly de-emphasised (the image is the hero); still readable.

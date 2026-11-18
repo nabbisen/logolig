@@ -13,22 +13,18 @@ use iced::{Element, Length};
 use logolig::MessageKey;
 
 use crate::app::{AppState, Message};
-use crate::ui::accessibility::marker;
+use crate::ui::cues;
 
 /// View for the Converting screen.
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
 
     // Central label area. iced 0.14 has no built-in circular progress widget;
-    // use a "BUSY marker + text" pattern for now.
-    // Per ABDD §12, convey "in progress" via a symbol (not colour alone).
+    // use a "busy icon + text" pattern for now (`ui/cues.rs`).
+    // Per ABDD §12, convey "in progress" via a shape (not colour alone), from the bundled icon
+    // font (RFC 021).
     //
-    let main_label = text(format!(
-        "{} {}",
-        marker::BUSY,
-        t.t(MessageKey::ImportingMessage)
-    ))
-    .size(22);
+    let main_label = cues::busy(t.t(MessageKey::ImportingMessage), 22.0);
 
     // Sub-message: show the source file name so the user knows what is being converted.
     // Defensively handle the case where the file name is not yet available:

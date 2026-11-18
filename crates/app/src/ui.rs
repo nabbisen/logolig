@@ -1,9 +1,9 @@
-pub mod accessibility;
 pub mod advanced_drawer;
 pub mod choice;
 pub mod colors;
 pub mod command_keys;
 pub mod converting;
+pub mod cues;
 pub mod customize_page;
 pub mod drop_zone;
 pub mod preview_panel;

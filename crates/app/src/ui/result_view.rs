@@ -34,6 +34,7 @@ use logolig::{MessageKey, Rgba8};
 use crate::app::{AppState, Message, resolve_theme};
 use crate::result::{ResultAssetItem, ResultAssetKind, ResultAssets};
 use crate::ui::colors;
+use crate::ui::cues;
 
 /// Entry point for the Result screen.
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
@@ -51,9 +52,10 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // 1. Headline: ✓ Conversion complete!
     let headline = container(
         row![
-            // Success marker. Per ABDD §12, convey success via the ✓ character
-            // (not colour alone). Large size makes it the focal element.
-            text("✓").size(28).color(colors::file_name(&theme)),
+            // Success marker. Per ABDD §12, convey success by a shape (not colour alone): the
+            // lucide check icon (RFC 021: a state cue is never a text glyph). The large size
+            // makes it the focal element.
+            cues::success(28.0),
             text(t.t(MessageKey::ResultSuccessHeadline))
                 .size(22)
                 .color(colors::page_title(&theme)),

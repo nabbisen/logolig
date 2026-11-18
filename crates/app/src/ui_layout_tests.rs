@@ -13,6 +13,7 @@
 //! | `ui_layout_tests/fonts.rs` | the font set (no machine fonts) and the guard that it covers every Japanese character |
 //! | `ui_layout_tests/checkboxes.rs` | the checkboxes: Tab stops, and a click, Enter and Space each publish the one message the iced checkbox published |
 //! | `ui_layout_tests/command_keys.rs` | key events into a focused text field: a command chord is a shortcut, never text |
+//! | `ui_layout_tests/nav_cue.rs` | the active page in the navigation (filled, bold, accent bar), and no text glyph as a state cue |
 //! | `ui_layout_tests/radio_groups.rs` | the single-choice groups: one Tab stop each, the keys and clicks publish the messages the buttons did |
 //! | `ui_layout_tests/ring.rs` | the focus ring, drawn: present, neutral, outside the control (so never merged with a selection mark), in both themes |
 //! | `ui_layout_tests/support.rs` | the probe (layout, widget bounds, hover hit-testing), the states and the matrix |
@@ -25,6 +26,7 @@ mod checkboxes;
 mod command_keys;
 mod fonts;
 mod hit_area;
+mod nav_cue;
 mod overflow;
 mod radio_groups;
 mod reachable;
