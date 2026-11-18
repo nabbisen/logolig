@@ -73,15 +73,13 @@ pub(super) fn unreachable_controls() -> Vec<Finding> {
     out
 }
 
-/// The entries that hold today, over the whole matrix: the navigation items and "Choose file…".
-/// "Back" and "Download all (ZIP)" on the Result screens are not asserted: they are below the
-/// fold at several sizes today (RFC 026 adds its entry with its fix).
+/// The main controls are reachable on the whole matrix: the navigation items, "Choose file…" on
+/// Home, and "Back" and "Download all (ZIP)" on every Result screen (7 and 16 cards, every size,
+/// both languages, both themes by the matrix's rules). Back and Download all are the fixed header
+/// and footer of the Result screen (RFC 026), so they never depend on the height of the window.
 #[test]
-fn the_navigation_and_choose_file_are_reachable_everywhere() {
-    let failing: Vec<_> = unreachable_controls()
-        .into_iter()
-        .filter(|f| f.what.starts_with("navigation") || f.what.starts_with("Choose file"))
-        .collect();
+fn the_main_controls_are_reachable_everywhere() {
+    let failing: Vec<_> = unreachable_controls();
     assert!(
         failing.is_empty(),
         "{} control(s) not reachable:\n{}",

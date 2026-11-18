@@ -1,21 +1,24 @@
 //! Result screen (v1.16.0; replaces ExportReady).
 //!
-//! ## Layout
+//! ## Layout (RFC 026)
+//!
+//! Three parts: a fixed header with "Back", a scrolling middle with everything the user may want
+//! to look at, and a fixed footer with "Download all". The two controls that matter are never
+//! behind a scroll, whatever the window height, the number of cards or the language.
 //!
 //! ```text
 //! ┌──────────────────────────────────────────────────────┐
-//! │ ✓  Conversion complete!                              │
-//! │ Generated assets                                     │
+//! │ [← Back]                                    (header) │
 //! ├──────────────────────────────────────────────────────┤
-//! │ │favicon.ico│ │icon-16.png│ │icon-32.png│  …         │
+//! │ ✓  Conversion complete!                              │
+//! │ Generated assets                         (the middle │
+//! │ │favicon.ico│ │icon-16.png│ │icon-32.png│  scrolls)  │
 //! │ │ [thumb]   │ │ [thumb]   │ │ [thumb]   │            │
 //! │ │ ICO 46 K  │ │ 16×16 .6K │ │ 32×32 1 K │            │
 //! │ │    [↓]    │ │    [↓]    │ │    [↓]    │            │
-//! ├──────────────────────────────────────────────────────┤
 //! │ ▶ Preview                                            │
-//! │                                                      │
-//! │             [↓ Download all]                         │
-//! │ [← Back]                                             │
+//! ├──────────────────────────────────────────────────────┤
+//! │             [↓ Download all]                (footer) │
 //! └──────────────────────────────────────────────────────┘
 //! ```
 
@@ -74,7 +77,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let download_one_label = t.t(MessageKey::ResultDownloadOne);
     let grid = build_grid(assets, columns, &theme, &download_one_label);
 
-    // 4. ZIP "Download all" button
+    // 4. ZIP "Download all" button: the fixed footer.
     let download_all = container(
         button(
             row![
@@ -120,9 +123,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         Space::new().height(Length::Shrink).into()
     };
 
-    // 7. Action row: Back button only (re-selecting drops a new file,
-    //    so explicit Re-select was removed in v1.16).
-    let action_row = row![
+    // 7. Header: the Back button only (re-selecting drops a new file, so explicit Re-select was
+    //    removed in v1.16). Fixed, like the footer.
+    let header = row![
         button(text(t.t(MessageKey::EditCancelButton)).size(13))
             .padding([8, 16])
             .on_press(Message::EditCancelled)
@@ -132,26 +135,32 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .spacing(8)
     .align_y(iced::Alignment::Center);
 
-    // Full layout. Wrapped in a scrollable because the asset list can be long.
-    //
-    // v1.22.0: "Download all" moved below the preview (RFC feedback —
-    // users review the preview before downloading).
-    let content = column![
+    // The middle is the one scroll area: everything the user may want to look at, in order
+    // (the asset list can be long). v1.22.0 put "Download all" after the preview; RFC 026 keeps
+    // it after everything else and makes it a fixed footer, so it is always in view.
+    let middle = column![
         headline,
         container(subheading).center_x(Length::Fill),
         grid,
         container(preview_toggle).center_x(Length::Fill),
         preview_panel,
-        download_all,
-        action_row,
     ]
     .spacing(12)
     .padding(Padding::default().left(8).right(8).top(4).bottom(8));
 
-    iced::widget::scrollable(content)
+    let middle = iced::widget::scrollable(middle)
         .width(Length::Fill)
-        .height(Length::Fill)
-        .into()
+        .height(Length::Fill);
+
+    column![
+        container(header).padding(Padding::default().left(8).right(8).top(8)),
+        middle,
+        download_all,
+    ]
+    .spacing(4)
+    .width(Length::Fill)
+    .height(Length::Fill)
+    .into()
 }
 
 /// Build an asset card grid with the given number of columns.
