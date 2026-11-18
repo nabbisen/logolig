@@ -98,3 +98,7 @@ Spike: `.git-exclude/review-request/rfc-027-focus-spike/` (reviewed in `.git-exc
 - **Delivery (D3 stands):** four reviewed page steps (Home, Result, Customize, Settings), each migrating that page's buttons and rows to `control`, adding the headless Tab-order/Enter-equals-click/completeness tests, and nothing is released unless the previous step is complete. The Customize step carries the slider and pick-list replacements. They run **after** J9 (RFC 026) and J10 (RFC 021), which settle layout and cues first.
 - **Tests to commit with each step (from the spike):** Tab order equals the expected list; Enter/Space produce exactly the message of the click for every control; completeness against the hover scan (RFC 035); a ring snapshot per theme at the headless level; one real key sequence per release (Tab, Enter, Esc, Ctrl+1 in the field), with the number of tool calls stated.
 - **Not solved, said openly:** screen readers (iced 0.14 exposes no accessibility tree).
+
+## Rule from J13b (architect, 2026-11-18): a command chord carries no text
+
+`ui/command_keys.rs::without_command_text` wraps the root of the view: **every widget below it sees a command chord (Ctrl, or Cmd on macOS, without Alt) with `text: None`.** Consequence for all present and future widgets: **read the key, never the text, to recognise a command chord**. Ctrl+Alt (AltGr) is not a command chord and keeps its text. The doc comment of the module is completed with this sentence in the next commit that touches the file (the first RFC 027 page step); it is not worth a CI round by itself.
