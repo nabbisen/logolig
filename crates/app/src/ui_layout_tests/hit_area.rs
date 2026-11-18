@@ -64,6 +64,16 @@ fn every_interactive_area_is_at_least_24_by_24() {
             .collect::<Vec<_>>()
             .join("\n")
     );
+    // An exception that no longer matches a finding is a fixed defect: delete the entry.
+    let stale: Vec<_> = KNOWN
+        .iter()
+        .filter(|e| !all.iter().any(|f| entry_matches(e, f)))
+        .collect();
+    assert!(
+        stale.is_empty(),
+        "{} exception(s) no longer needed, delete them: {stale:?}",
+        stale.len()
+    );
 }
 
 /// Interactive areas smaller than 24 x 24 today. Cause: every checkbox row is 16.5 px high, and

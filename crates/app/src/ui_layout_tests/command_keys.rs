@@ -14,7 +14,6 @@ use iced::Size;
 use iced::keyboard::{Key, Modifiers, key::Named};
 use iced::mouse::Cursor;
 use iced_test::core::event::Status;
-use iced_test::core::widget::operation::focusable;
 use iced_test::core::{Event, keyboard};
 
 use super::support::{Case, Combo, Kind, Probe, probe_of};
@@ -70,8 +69,8 @@ fn with_field() -> (AppState, Size) {
 
 fn focused_field<'a>(state: &'a AppState, size: Size) -> Probe<'a, Message> {
     let mut p = probe_of(state, size);
-    // The only focus target of this page with the default plan is the field.
-    p.run_chained(focusable::focus_next::<()>());
+    // The custom-size field, found by what it is (a text input), not by its place in the Tab order.
+    p.focus_text_input(0);
     for c in ['1', '2'] {
         let s = c.to_string();
         let _ = p.send(
@@ -288,9 +287,11 @@ fn every_text_input_of_every_page_state_ignores_a_command_chord() {
         inputs_seen += count;
         for k in 1..=count {
             let mut p = probe_of(&state, size);
-            for _ in 0..k {
-                p.run_chained(focusable::focus_next::<()>());
-            }
+            p.focus_text_input(k - 1);
+            assert!(
+                p.focus_targets().iter().any(|t| t.focused && t.text_input),
+                "{case:?}: input {k} of {count} is not the focused target"
+            );
             for (name, ev) in [
                 ("Ctrl+1 \"1\"", ch("1", Modifiers::CTRL, Some("1"))),
                 ("Ctrl+2 \"2\"", ch("2", Modifiers::CTRL, Some("2"))),
@@ -350,4 +351,33 @@ fn the_subscription_filter_answers_an_ignored_chord_once_and_a_captured_key_not_
     assert!(runtime_event(chord, Status::Captured).is_none());
     // A plain digit is not a shortcut at all.
     assert!(runtime_event(ch("1", Modifiers::empty(), Some("1")), Status::Ignored).is_none());
+}
+
+/// The helper finds a text input by what it is: with focusable controls in front of and between
+/// the inputs (snora's `control`, as the checkboxes and radio groups are), the k-th text input
+/// is still the one focused, and the Tab-order index it reports is not k.
+#[test]
+fn focus_text_input_finds_the_field_among_other_focus_targets() {
+    use iced::widget::{column, text, text_input};
+    let view: iced::Element<'_, ()> = column![
+        snora::control(text("a")).on_press(()),
+        text_input("first", ""),
+        snora::control(text("b")).on_press(()),
+        text_input("second", ""),
+    ]
+    .into();
+    let mut p = super::support::Probe::new(view, Size::new(400.0, 400.0));
+    let kinds: Vec<bool> = p.focus_targets().iter().map(|t| t.text_input).collect();
+    assert_eq!(
+        kinds,
+        [false, true, false, true],
+        "controls and inputs, in tree order"
+    );
+    p.focus_text_input(1);
+    let focused: Vec<bool> = p.focus_targets().iter().map(|t| t.focused).collect();
+    assert_eq!(
+        focused,
+        [false, false, false, true],
+        "the second input, index 3, not 1"
+    );
 }

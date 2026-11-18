@@ -84,6 +84,48 @@ impl<'a, M> Probe<'a, M> {
         }
     }
 
+    /// Every focus target of the tree in the order Tab visits them (tree order): where it is,
+    /// whether it is a text input, and whether it holds the focus now.
+    pub(super) fn focus_targets(&mut self) -> Vec<FocusTarget> {
+        let found = Arc::new(Mutex::new((Vec::new(), false)));
+        self.ui.operate(
+            &self.renderer,
+            &mut FocusScan {
+                found: found.clone(),
+            },
+        );
+        let (targets, _) = std::mem::take(&mut *found.lock().expect("the focus scan"));
+        targets
+    }
+
+    /// Focuses the target at `index` of [`Probe::focus_targets`] **by identity**, not by counting
+    /// Tab presses in the caller: nothing is focused first, so `index + 1` steps of `focus_next`
+    /// reach it, and the result is checked against a second scan.
+    pub(super) fn focus_target(&mut self, index: usize) {
+        for _ in 0..=index {
+            self.run_chained(widget::operation::focusable::focus_next::<()>());
+        }
+        let now: Vec<bool> = self.focus_targets().iter().map(|t| t.focused).collect();
+        assert_eq!(
+            now.iter().position(|f| *f),
+            Some(index),
+            "the focus is not on target {index}: {now:?}"
+        );
+    }
+
+    /// Focuses the `k`-th text input (0-based) of the tree, whatever precedes it in the Tab order.
+    pub(super) fn focus_text_input(&mut self, k: usize) {
+        let index = self
+            .focus_targets()
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| t.text_input)
+            .nth(k)
+            .map(|(i, _)| i)
+            .unwrap_or_else(|| panic!("there is no text input number {k}"));
+        self.focus_target(index);
+    }
+
     /// Delivers events as the window would: the statuses the tree answers and the messages its
     /// widgets published.
     pub(super) fn send(
@@ -406,6 +448,50 @@ pub(super) fn layout_matrix() -> Vec<Combo> {
 /// The interface of `state` laid out at `size`.
 pub(super) fn probe_of(state: &AppState, size: Size) -> Probe<'_, Message> {
     Probe::new(crate::shell::view(state), size)
+}
+
+/// One focus target of the tree (see [`Probe::focus_targets`]).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(super) struct FocusTarget {
+    pub(super) bounds: Rectangle,
+    pub(super) text_input: bool,
+    pub(super) focused: bool,
+}
+
+/// Collects the focus targets in tree order. `iced`'s text input announces itself as a text
+/// input first and as a focus target second, so a pending flag marks the next target.
+struct FocusScan {
+    found: Arc<Mutex<(Vec<FocusTarget>, bool)>>,
+}
+
+impl widget::Operation for FocusScan {
+    fn traverse(&mut self, operate: &mut dyn FnMut(&mut dyn widget::Operation)) {
+        operate(self);
+    }
+
+    fn text_input(
+        &mut self,
+        _id: Option<&widget::Id>,
+        _bounds: Rectangle,
+        _state: &mut dyn widget::operation::TextInput,
+    ) {
+        self.found.lock().expect("the focus scan").1 = true;
+    }
+
+    fn focusable(
+        &mut self,
+        _id: Option<&widget::Id>,
+        bounds: Rectangle,
+        state: &mut dyn widget::operation::Focusable,
+    ) {
+        let mut found = self.found.lock().expect("the focus scan");
+        let text_input = std::mem::take(&mut found.1);
+        found.0.push(FocusTarget {
+            bounds,
+            text_input,
+            focused: state.is_focused(),
+        });
+    }
 }
 
 /// A finding: one property failing at one place.
