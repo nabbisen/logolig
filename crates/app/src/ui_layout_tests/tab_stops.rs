@@ -22,27 +22,6 @@ use super::support::{Finding, label_in, layout_matrix, probe_of};
 /// triangles `▶ ▼` are text glyphs until J14b makes them chevrons. (The navigation items left
 /// the list in J14b step 1.)
 const NOT_MIGRATED: &[(&str, &str)] = &[
-    // Result: Back, the Save buttons and Download all, the preview toggle.
-    ("ResultDefault", "\u{e0b2}"),
-    ("ResultDefault", "← Back"),
-    ("ResultDefault", "← 戻る"),
-    ("ResultDefault", "▶ Preview"),
-    ("ResultDefault", "▶ プレビューを見る"),
-    ("ResultAllOptions", "\u{e0b2}"),
-    ("ResultAllOptions", "← Back"),
-    ("ResultAllOptions", "← 戻る"),
-    ("ResultAllOptions", "▶ Preview"),
-    ("ResultAllOptions", "▶ プレビューを見る"),
-    ("ResultPreview", "\u{e0b2}"),
-    ("ResultPreview", "← Back"),
-    ("ResultPreview", "← 戻る"),
-    ("ResultPreview", "▼ Preview"),
-    ("ResultPreview", "▼ プレビューを見る"),
-    ("ResultPreviewChecker", "\u{e0b2}"),
-    ("ResultPreviewChecker", "← Back"),
-    ("ResultPreviewChecker", "← 戻る"),
-    ("ResultPreviewChecker", "▼ Preview"),
-    ("ResultPreviewChecker", "▼ プレビューを見る"),
     // Customize: "Add custom size", the "Advanced settings" header, "Reset to defaults".
     ("CustomizeAdvanced", "+ Add custom size"),
     ("CustomizeAdvanced", "+ カスタムサイズ追加"),
@@ -122,7 +101,8 @@ fn every_interactive_area_is_a_tab_stop_and_every_stop_is_an_interactive_area() 
 
 /// Tab order: the **regions** in the order of the tree (the side bar on a desktop window, then the
 /// page, then the bottom bar on a phone), and within a region down the page and, within a row,
-/// left to right.
+/// left to right; within the page, a fixed header, the scroll area and a fixed footer in that
+/// order on the screen, and the stops inside one area by their place in its content.
 #[test]
 fn tab_order_goes_down_the_page_and_left_to_right_within_a_row() {
     let mut problems: Vec<Finding> = Vec::new();
@@ -146,7 +126,11 @@ fn tab_order_goes_down_the_page_and_left_to_right_within_a_row() {
             compared += 1;
             let (ra, rb) = (region(&p, i), region(&p, i + 1));
             let (a, b) = (pair[0].bounds, pair[1].bounds);
-            let ok = if ra == rb { in_order(a, b) } else { ra < rb };
+            let ok = if ra != rb {
+                ra < rb
+            } else {
+                pair_in_order(&pair[0], &pair[1])
+            };
             if !ok {
                 problems.push(Finding {
                     combo: combo.describe(),
@@ -169,6 +153,18 @@ fn tab_order_goes_down_the_page_and_left_to_right_within_a_row() {
         problems.len(),
         join(&problems)
     );
+}
+
+/// Does Tab from stop `a` to stop `b` of the same region go the right way? Two stops in the same
+/// scroll area: by their place in its content. Two in different zones (a fixed header, an area, a
+/// fixed footer): by where the zones are on the screen (an area's content overlaps whatever lies
+/// below it while it is unscrolled).
+fn pair_in_order(a: &super::support::FocusTarget, b: &super::support::FocusTarget) -> bool {
+    if a.area == b.area {
+        in_order(a.bounds, b.bounds)
+    } else {
+        in_order(a.area.unwrap_or(a.bounds), b.area.unwrap_or(b.bounds))
+    }
 }
 
 /// Does Tab from `a` to `b` go down the page, or right within a row (tops within 8 px)?
@@ -229,5 +225,39 @@ fn the_checks_can_fail() {
     assert!(
         !in_order(at(80.0, 0.0), at(0.0, 2.0)),
         "back left in a row is a jump"
+    );
+}
+
+/// A fixed header, a scroll area longer than its viewport and a fixed footer (the Result page):
+/// the stops are in order on the screen although the area's unscrolled content overlaps the
+/// footer; and the rule reports the footer coming before the header.
+#[test]
+fn a_fixed_header_an_area_and_a_fixed_footer_are_in_order() {
+    use iced::widget::{column, scrollable, text};
+    let rows =
+        column((0..30).map(|i| snora::control(text(format!("row {i}"))).on_press(()).into()))
+            .spacing(8);
+    let page: iced::Element<'_, ()> = column![
+        snora::control(text("header")).on_press(()),
+        scrollable(rows).height(200),
+        snora::control(text("footer")).on_press(()),
+    ]
+    .spacing(10)
+    .into();
+    let mut p = super::support::Probe::new(page, Size::new(300.0, 400.0));
+    let stops = p.focus_targets();
+    assert_eq!(stops.len(), 32);
+    assert!(stops[0].area.is_none() && stops[31].area.is_none() && stops[1].area.is_some());
+    // In unscrolled content space the last row lies below the footer: the naive rule fails.
+    assert!(
+        stops[30].bounds.y > stops[31].bounds.y,
+        "the overlap this test is about"
+    );
+    for pair in stops.windows(2) {
+        assert!(pair_in_order(&pair[0], &pair[1]), "{pair:?}");
+    }
+    assert!(
+        !pair_in_order(&stops[31], &stops[0]),
+        "footer then header is a jump"
     );
 }

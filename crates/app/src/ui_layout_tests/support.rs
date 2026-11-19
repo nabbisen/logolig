@@ -92,6 +92,8 @@ impl<'a, M> Probe<'a, M> {
             &self.renderer,
             &mut FocusScan {
                 found: found.clone(),
+                inside: Vec::new(),
+                entering: None,
             },
         );
         let (targets, _) = std::mem::take(&mut *found.lock().expect("the focus scan"));
@@ -676,17 +678,43 @@ pub(super) struct FocusTarget {
     pub(super) bounds: Rectangle,
     pub(super) text_input: bool,
     pub(super) focused: bool,
+    /// The viewport of the innermost scroll area that holds the control (by the tree), if any.
+    /// A control in an area has layout bounds in the area's unscrolled content space; a control
+    /// outside one (a fixed header or footer) is where it is on the screen.
+    pub(super) area: Option<Rectangle>,
 }
 
 /// Collects the focus targets in tree order. `iced`'s text input announces itself as a text
 /// input first and as a focus target second, so a pending flag marks the next target.
 struct FocusScan {
     found: Arc<Mutex<(Vec<FocusTarget>, bool)>>,
+    /// Viewports of the scroll areas around the control being visited, innermost last.
+    inside: Vec<Rectangle>,
+    /// The area whose children are about to be traversed.
+    entering: Option<Rectangle>,
 }
 
 impl widget::Operation for FocusScan {
     fn traverse(&mut self, operate: &mut dyn FnMut(&mut dyn widget::Operation)) {
+        let entered = self.entering.take();
+        if let Some(area) = entered {
+            self.inside.push(area);
+        }
         operate(self);
+        if entered.is_some() {
+            self.inside.pop();
+        }
+    }
+
+    fn scrollable(
+        &mut self,
+        _id: Option<&widget::Id>,
+        bounds: Rectangle,
+        _content_bounds: Rectangle,
+        _translation: iced::Vector,
+        _state: &mut dyn widget::operation::Scrollable,
+    ) {
+        self.entering = Some(bounds);
     }
 
     fn text_input(
@@ -710,6 +738,7 @@ impl widget::Operation for FocusScan {
             bounds,
             text_input,
             focused: state.is_focused(),
+            area: self.inside.last().copied(),
         });
     }
 }

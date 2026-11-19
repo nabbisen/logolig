@@ -14,6 +14,7 @@
 //! | `ui_layout_tests/checkboxes.rs` | the checkboxes: Tab stops, and a click, Enter and Space each publish the one message the iced checkbox published |
 //! | `ui_layout_tests/controls.rs` | the helper every migrated control is checked with: Tab stop, and Enter, Space and a click each publish the one message |
 //! | `ui_layout_tests/controls_home.rs` | the drop-zone card and "View results →" as `snora::control`s |
+//! | `ui_layout_tests/controls_result.rs` | the Result page's controls: Back, the Save buttons, the preview toggle, Download all |
 //! | `ui_layout_tests/controls_nav.rs` | the navigation items (side bar and bottom bar) as `snora::control`s |
 //! | `ui_layout_tests/command_keys.rs` | key events into a focused text field: a command chord is a shortcut, never text |
 //! | `ui_layout_tests/nav_cue.rs` | the active page in the navigation (filled, bold, accent bar), and no text glyph as a state cue |
@@ -34,6 +35,7 @@ mod command_keys;
 mod controls;
 mod controls_home;
 mod controls_nav;
+mod controls_result;
 mod focus_in_view;
 mod focus_keys;
 mod fonts;

@@ -140,7 +140,8 @@ fn the_active_label_asks_for_a_bold_face() {
     assert_eq!(crate::ui::sidebar::label_font(false).weight, Weight::Normal);
 }
 
-/// No state cue is a text glyph: a selection (`✓`, `▣`), busy (`⏳`) or a warning (`⚠`) is drawn
+/// No state cue is a text glyph: a selection (`✓`, `▣`), busy (`⏳`), a warning (`⚠`) or open/closed
+/// (`▶`, `▼`) is drawn
 /// from the icon font or by a widget, never from a character the machine's fonts may not have.
 #[test]
 fn no_state_cue_is_a_text_glyph() {
@@ -163,8 +164,12 @@ fn no_state_cue_is_a_text_glyph() {
                     if code.starts_with("//") {
                         continue; // a comment may name the glyphs it replaced
                     }
-                    for glyph in ["✓", "▣", "⏳", "⚠"] {
-                        if line.contains(glyph) {
+                    for glyph in ["✓", "▣", "⏳", "⚠", "▶", "▼"] {
+                        // The disclosure triangles are state cues too (open or closed); the
+                        // "Advanced settings" header keeps its until J14b step 4 makes it a chevron.
+                        let pending = (glyph == "▶" || glyph == "▼")
+                            && path.ends_with("ui/advanced_drawer.rs");
+                        if line.contains(glyph) && !pending {
                             offenders.push(format!("{}:{}: {glyph}", path.display(), number + 1));
                         }
                     }

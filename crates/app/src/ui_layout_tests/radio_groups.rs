@@ -11,6 +11,7 @@ use iced::keyboard::{Key, key::Named};
 use iced::mouse::Cursor;
 use logolig_i18n::Locale;
 
+use super::controls::{Region, stop_at};
 use super::support::{Case, Combo, Probe, click_events, key_press, probe_of};
 use crate::app::{AppState, Message};
 
@@ -30,19 +31,15 @@ fn debug(messages: &[Message]) -> Vec<String> {
     messages.iter().map(|m| format!("{m:?}")).collect()
 }
 
-/// Focuses the `index`-th stop **of the page** (the navigation items are not counted), presses
-/// `key`, and returns what the page published.
-fn press(state: &AppState, index: usize, key: Named) -> Vec<String> {
+/// Focuses the Tab stop that holds the text `label` (the group whose option it is), presses `key`,
+/// and returns what the page published. Groups are found by their labels: the page's other stops
+/// (the navigation, the buttons) come before and after them in the Tab order.
+fn press(state: &AppState, label: &str, key: Named) -> Vec<String> {
     let mut p = probe_of(state, SIZE);
-    let stops = p.focus_targets();
-    let global = stops
-        .iter()
-        .enumerate()
-        .filter(|(i, _)| !p.is_navigation_stop(*i, stops.len()))
-        .nth(index)
-        .map(|(i, _)| i)
-        .unwrap_or_else(|| panic!("no page stop number {index}"));
-    p.focus_target(global);
+    let at = centre_of(&mut p, label);
+    let stop =
+        stop_at(&mut p, at, Region::Page).unwrap_or_else(|| panic!("{label:?} is in no Tab stop"));
+    p.focus_target(stop);
     let (_status, messages) = p.send(&[key_press(Key::Named(key))], Cursor::Unavailable);
     debug(&messages)
 }
@@ -66,23 +63,45 @@ fn centre_of(p: &mut Probe<'_, Message>, label: &str) -> iced::Point {
 
 #[test]
 fn each_group_is_one_tab_stop() {
-    // The navigation items are stops too (RFC 027 J14b); the groups are the rest.
-    let page_stops = |case: Case| {
-        let state = state(case);
-        let mut p = probe_of(&state, SIZE);
-        let stops = p.focus_targets();
-        (0..stops.len())
-            .filter(|i| !p.is_navigation_stop(*i, stops.len()))
-            .count()
+    // The stop that holds a group's options: the same for all of them, a different one per group.
+    let stop_of = |state: &AppState, label: &str| {
+        let mut p = probe_of(state, SIZE);
+        let at = centre_of(&mut p, label);
+        stop_at(&mut p, at, Region::Page)
     };
-    assert_eq!(
-        page_stops(Case::Settings),
-        2,
-        "the language group and the theme group"
+    let one_stop = |state: &AppState, labels: &[&str]| -> usize {
+        let first =
+            stop_of(state, labels[0]).unwrap_or_else(|| panic!("{:?} is in no stop", labels[0]));
+        for label in labels {
+            assert_eq!(
+                stop_of(state, label),
+                Some(first),
+                "{label:?} is in the group's stop"
+            );
+        }
+        first
+    };
+    let settings = state(Case::Settings);
+    let language = one_stop(&settings, &["日本語", "English"]);
+    let theme = one_stop(&settings, &["Light", "Dark"]);
+    assert_ne!(language, theme, "two groups, two stops");
+
+    let preview = state(Case::ResultPreview);
+    let view_as = one_stop(
+        &preview,
+        &["Browser tab (16×16)", "Smartphone home", "Checker"],
     );
-    // Both preview groups are stops; with the checker the Surface group is disabled: no stop.
-    assert_eq!(page_stops(Case::ResultPreview), 2, "View as, Surface");
-    assert_eq!(page_stops(Case::ResultPreviewChecker), 1, "View as only");
+    let surface = one_stop(&preview, &["Light", "Dark"]);
+    assert_ne!(view_as, surface);
+
+    // With the checker the Surface group is disabled: no Tab stop.
+    let checker = state(Case::ResultPreviewChecker);
+    one_stop(&checker, &["Browser tab (16×16)", "Smartphone home"]);
+    assert_eq!(
+        stop_of(&checker, "Dark"),
+        None,
+        "the disabled group is no stop"
+    );
 }
 
 /// The keys and clicks of the Settings groups publish the messages the rows published.
@@ -91,12 +110,12 @@ fn settings_groups_publish_the_messages_the_rows_published() {
     let settings = state(Case::Settings); // English and Light selected
     // Language: Ja, En, System in this order; English is selected.
     assert_eq!(
-        press(&settings, 0, Named::ArrowDown),
+        press(&settings, "日本語", Named::ArrowDown),
         ["LocalePicked(None)"],
         "next: System"
     );
     assert_eq!(
-        press(&settings, 0, Named::ArrowUp),
+        press(&settings, "日本語", Named::ArrowUp),
         ["LocalePicked(Some(Ja))"],
         "previous: 日本語"
     );
@@ -104,9 +123,12 @@ fn settings_groups_publish_the_messages_the_rows_published() {
     // "System" is in both groups; the first one on the page is the language group's.
     assert_eq!(click(&settings, "System"), ["LocalePicked(None)"]);
     // Theme: Light, Dark, System; Light is selected.
-    assert_eq!(press(&settings, 1, Named::ArrowDown), ["ThemePicked(Dark)"]);
     assert_eq!(
-        press(&settings, 1, Named::ArrowUp),
+        press(&settings, "Light", Named::ArrowDown),
+        ["ThemePicked(Dark)"]
+    );
+    assert_eq!(
+        press(&settings, "Light", Named::ArrowUp),
         ["ThemePicked(System)"],
         "wraps to the last"
     );
@@ -121,11 +143,11 @@ fn settings_groups_publish_the_messages_the_rows_published() {
     );
     for key in [Named::Enter, Named::Space] {
         assert!(
-            press(&settings, 0, key).is_empty(),
+            press(&settings, "日本語", key).is_empty(),
             "{key:?} on the language group"
         );
         assert!(
-            press(&settings, 1, key).is_empty(),
+            press(&settings, "Light", key).is_empty(),
             "{key:?} on the theme group"
         );
     }
@@ -136,7 +158,7 @@ fn settings_groups_publish_the_messages_the_rows_published() {
 fn preview_groups_publish_the_messages_the_buttons_published() {
     let preview = state(Case::ResultPreview); // Browser tab and System selected
     assert_eq!(
-        press(&preview, 0, Named::ArrowDown),
+        press(&preview, "Browser tab (16×16)", Named::ArrowDown),
         ["PreviewContextSelected(SmartphoneIcon)"]
     );
     assert_eq!(
@@ -148,7 +170,7 @@ fn preview_groups_publish_the_messages_the_buttons_published() {
         ["PreviewContextSelected(TransparencyChecker)"]
     );
     assert_eq!(
-        press(&preview, 1, Named::ArrowDown),
+        press(&preview, "Dark", Named::ArrowDown),
         ["PreviewBackgroundSelected(Light)"]
     );
     assert_eq!(click(&preview, "Dark"), ["PreviewBackgroundSelected(Dark)"]);

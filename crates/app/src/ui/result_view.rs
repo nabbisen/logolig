@@ -22,7 +22,7 @@
 //! └──────────────────────────────────────────────────────┘
 //! ```
 
-use iced::widget::{Space, button, column, container, image, row, text};
+use iced::widget::{Space, column, container, image, row, text};
 use iced::{Background, Border, Color, Element, Length, Padding, Theme};
 
 use snora::Icon;
@@ -81,7 +81,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 
     // 4. ZIP "Download all" button: the fixed footer.
     let download_all = container(
-        button(
+        snora::control(
             row![
                 icon_element_sized::<Message>(&Icon::Lucide(lucide::Download), 16.0),
                 text(t.t(MessageKey::ResultDownloadAllButton)).size(15),
@@ -98,19 +98,23 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // 5. Preview collapsible section — optional, user-expanded
     // Shows as a toggle button; when expanded, embeds the preview_panel
     // with View-as / Surface picker.
-    let preview_toggle_label = format!(
-        "{} {}",
-        if state.result_preview_open {
-            "▼"
-        } else {
-            "▶"
-        },
-        t.t(MessageKey::ResultPreviewToggle)
-    );
-    let preview_toggle = button(text(preview_toggle_label).size(13))
-        .padding([6, 12])
-        .on_press(Message::ResultPreviewToggled)
-        .style(toggle_button_style);
+    // The state is a chevron from the icon font (RFC 021: no text glyph as a state cue).
+    let chevron = if state.result_preview_open {
+        lucide::ChevronDown
+    } else {
+        lucide::ChevronRight
+    };
+    let preview_toggle = snora::control(
+        row![
+            icon_element_sized::<Message>(&Icon::Lucide(chevron), 13.0),
+            text(t.t(MessageKey::ResultPreviewToggle)).size(13),
+        ]
+        .spacing(6)
+        .align_y(iced::Alignment::Center),
+    )
+    .padding([6, 12])
+    .on_press(Message::ResultPreviewToggled)
+    .style(toggle_button_style);
 
     // 6. Preview panel (expanded state only)
     let preview_panel: Element<'a, Message> = if state.result_preview_open {
@@ -128,7 +132,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // 7. Header: the Back button only (re-selecting drops a new file, so explicit Re-select was
     //    removed in v1.16). Fixed, like the footer.
     let header = row![
-        button(text(t.t(MessageKey::EditCancelButton)).size(13))
+        snora::control(text(t.t(MessageKey::EditCancelButton)).size(13))
             .padding([8, 16])
             .on_press(Message::EditCancelled)
             .style(secondary_button_style),
@@ -236,7 +240,7 @@ fn asset_card<'a>(
     .align_y(iced::Alignment::Center);
 
     // Download button uses icon + text so the action is visible without hover.
-    let dl_button = button(
+    let dl_button = snora::control(
         row![
             icon_element_sized::<Message>(&Icon::Lucide(lucide::Download), 16.0),
             text(download_one_label.to_string())
