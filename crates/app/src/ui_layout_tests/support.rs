@@ -48,6 +48,16 @@ pub(super) struct Probe<'a, M = Message> {
 
 impl<'a, M> Probe<'a, M> {
     pub(super) fn new(element: Element<'a, M>, size: Size) -> Self {
+        Self::with_cache(element, size, user_interface::Cache::default())
+    }
+
+    /// An interface that goes on from `cache`: the widget state (focus, scroll offsets) of an
+    /// earlier build of the same tree, as iced keeps it across a rebuilt view.
+    pub(super) fn with_cache(
+        element: Element<'a, M>,
+        size: Size,
+        cache: user_interface::Cache,
+    ) -> Self {
         // The font system first: it is process-global and must be the hermetic one before any
         // text is measured.
         super::fonts::ensure();
@@ -61,13 +71,13 @@ impl<'a, M> Probe<'a, M> {
             ),
         )
         .expect("a headless renderer");
-        let ui = UserInterface::build(
-            element,
-            size,
-            user_interface::Cache::default(),
-            &mut renderer,
-        );
+        let ui = UserInterface::build(element, size, cache, &mut renderer);
         Self { renderer, ui, size }
+    }
+
+    /// Ends the interface and keeps its widget state for the next build.
+    pub(super) fn into_cache(self) -> user_interface::Cache {
+        self.ui.into_cache()
     }
 
     /// Runs an operation on the tree the way the runtime does, following `Outcome::Chain`

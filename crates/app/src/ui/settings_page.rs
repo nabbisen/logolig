@@ -121,13 +121,6 @@ fn shortcuts_section<'a>(state: &'a AppState, theme: &Theme) -> Element<'a, Mess
             )
         });
 
-    let note = text(t.t(MessageKey::ShortcutsLimitNote))
-        .size(13)
-        .color(colors::muted_text(theme));
-
-    section(
-        t.t(MessageKey::ShortcutsSectionTitle),
-        column![list, note].spacing(12).into(),
-        theme,
-    )
+    // The note that Tab was not available is gone: it is (RFC 027, J14b).
+    section(t.t(MessageKey::ShortcutsSectionTitle), list.into(), theme)
 }

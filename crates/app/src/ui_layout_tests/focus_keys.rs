@@ -207,3 +207,36 @@ fn tab_leaves_a_focused_text_field_and_keeps_its_text() {
         "Shift+Tab comes back to the field"
     );
 }
+
+/// The Settings page no longer says that Tab is not available (RFC 027, J14b step 5): it is. The
+/// key stays in the public `MessageKey` (deprecated) and in both locale files, unused.
+#[test]
+fn the_settings_page_no_longer_says_tab_is_unavailable() {
+    for locale in [Locale::En, Locale::Ja] {
+        let state = Combo {
+            case: Case::Settings,
+            size: SIZE,
+            locale,
+            dark: false,
+        }
+        .state();
+        let texts: Vec<String> = probe_of(&state, SIZE)
+            .walk()
+            .iter()
+            .map(|s| s.text.clone())
+            .collect();
+        for gone in [
+            "Moving between buttons and fields with the Tab key is not available yet.",
+            "Tab キーでボタンや入力欄の間を移動する機能は、まだありません。",
+        ] {
+            assert!(
+                !texts.iter().any(|t| t == gone),
+                "{locale:?} still shows {gone:?}"
+            );
+        }
+        assert!(
+            texts.iter().any(|t| t.starts_with("Ctrl+")),
+            "the shortcut list is still there"
+        );
+    }
+}

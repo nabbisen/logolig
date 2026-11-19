@@ -263,8 +263,9 @@ impl Dictionary {
     /// Look up the translation template string for a `MessageKey`.
     /// Exhaustiveness is enforced by the match expression at compile time.
     ///
-    /// `#[allow(deprecated)]` is deliberate and sits here only: three keys are deprecated since
-    /// 1.28.0 (`PresetLabel`, `SvgConversionSimple`, `SvgConversionDetailed`; RFC 021) but stay in
+    /// `#[allow(deprecated)]` is deliberate and sits here only: four keys are deprecated since
+    /// 1.28.0 (`PresetLabel`, `SvgConversionSimple`, `SvgConversionDetailed`; RFC 021; and
+    /// `ShortcutsLimitNote`, RFC 027) but stay in
     /// the public `MessageKey` until the next major version (SemVer), and this match must still
     /// name every variant. No other code uses them.
     #[allow(deprecated)]

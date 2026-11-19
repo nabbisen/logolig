@@ -318,14 +318,13 @@ fn svg_toast_texts_match_the_specification() {
 // RFC 019 phase 2: the keyboard shortcut list on the Settings page
 // ---------------------------------------------------------------------------
 
-const SHORTCUT_KEYS: [MessageKey; 7] = [
+const SHORTCUT_KEYS: [MessageKey; 6] = [
     MessageKey::ShortcutsSectionTitle,
     MessageKey::ShortcutChooseFile,
     MessageKey::ShortcutDownloadAll,
     MessageKey::ShortcutEscape,
     MessageKey::ShortcutPages,
     MessageKey::ShortcutHelp,
-    MessageKey::ShortcutsLimitNote,
 ];
 
 #[test]
@@ -370,11 +369,6 @@ fn shortcut_texts_match_the_specification() {
             "ホーム・カスタマイズ・設定を開く",
         ),
         (MessageKey::ShortcutHelp, "Show this list", "この一覧を表示"),
-        (
-            MessageKey::ShortcutsLimitNote,
-            "Moving between buttons and fields with the Tab key is not available yet.",
-            "Tab キーでボタンや入力欄の間を移動する機能は、まだありません。",
-        ),
     ];
     for (key, en_text, ja_text) in expected {
         assert_eq!(en.t(key), en_text, "en {key:?}");
@@ -414,7 +408,7 @@ fn dialog_unavailable_texts_match_the_specification() {
     );
 }
 
-/// Keys deprecated in 1.28.0 (RFC 021) stay in the public `MessageKey` until the next major
+/// Keys deprecated in 1.28.0 (RFC 021, RFC 027) stay in the public `MessageKey` until the next major
 /// version, so a caller that still names one gets its text. The attribute is on this test only.
 #[test]
 #[allow(deprecated)]
@@ -425,6 +419,7 @@ fn the_deprecated_keys_still_translate() {
             MessageKey::PresetLabel,
             MessageKey::SvgConversionSimple,
             MessageKey::SvgConversionDetailed,
+            MessageKey::ShortcutsLimitNote,
         ] {
             assert!(!t.t(key).is_empty(), "{locale:?} {key:?}");
         }

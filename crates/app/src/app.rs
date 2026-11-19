@@ -174,6 +174,13 @@ mod shortcuts_tests;
 #[cfg(test)]
 pub(crate) mod test_support;
 
+/// `update`, for the headless session tests of the keyboard (they rebuild the view after each
+/// message, as iced does).
+#[cfg(test)]
+pub(crate) fn update_for_test(state: &mut AppState, message: Message) -> Task<Message> {
+    update(state, message)
+}
+
 #[cfg(test)]
 mod toast_hold_tests;
 

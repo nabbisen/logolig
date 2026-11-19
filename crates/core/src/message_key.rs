@@ -336,6 +336,10 @@ pub enum MessageKey {
     ShortcutPages,
     /// Action text for F1: show this list.
     ShortcutHelp,
-    /// Honest note: Tab traversal between buttons and fields is not available yet.
+    /// The note that Tab traversal between buttons and fields is not available yet.
+    #[deprecated(
+        since = "1.28.0",
+        note = "unused: Tab moves the focus through every control now (RFC 027); removed at the next major version"
+    )]
     ShortcutsLimitNote,
 }

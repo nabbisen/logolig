@@ -24,6 +24,7 @@
 //! | `ui_layout_tests/ring.rs` | the focus ring, drawn: present, neutral, outside the control (so never merged with a selection mark), in both themes |
 //! | `ui_layout_tests/support.rs` | the probe (layout, widget bounds, hover hit-testing), the states and the matrix |
 //! | `ui_layout_tests/overflow.rs` | P1: nothing lies beyond the right edge of the window |
+//! | `ui_layout_tests/focus_after.rs` | where the focus is after Back, a conversion, a page change, a toast's close, Esc in a field: never lost, never a trap |
 //! | `ui_layout_tests/focus_in_view.rs` | after every Tab and Shift+Tab the focused control is fully visible, on every page of the matrix |
 //! | `ui_layout_tests/focus_keys.rs` | Tab and Shift+Tab through the real key path: routed, in order, out of a text field, no wrap |
 //! | `ui_layout_tests/hit_area.rs` | P3: every interactive area is at least 24 × 24 px |
@@ -38,6 +39,7 @@ mod controls_customize;
 mod controls_home;
 mod controls_nav;
 mod controls_result;
+mod focus_after;
 mod focus_in_view;
 mod focus_keys;
 mod fonts;
