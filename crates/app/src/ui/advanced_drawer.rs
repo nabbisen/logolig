@@ -20,8 +20,12 @@ mod manifest;
 mod styles;
 mod svg;
 
-use iced::widget::{button, column, row, text, text_input};
+use iced::widget::{column, row, text, text_input};
 use iced::{Alignment, Element, Length, Padding};
+
+use snora::Icon;
+use snora::lucide;
+use snora::widget::icon_element_sized;
 
 use logolig::{MessageKey, VtracerPreset};
 
@@ -118,7 +122,7 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
             .size(12)
             .padding(4)
             .width(Length::Fixed(80.0)),
-        button(text(t.t(MessageKey::AddCustomSize)).size(12))
+        snora::control(text(t.t(MessageKey::AddCustomSize)).size(12))
             .padding([4, 10])
             .on_press(Message::PngSizeAddRequested)
             .style(secondary_drawer_button_style),
@@ -176,16 +180,15 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
     // - Monochrome (BT.709 greyscale)
     // - Resize algorithm
     // - Vectorise raster (vectorize_on_raster)
+    // The state is a chevron from the icon font (RFC 021: no text glyph as a state cue).
     let extras_chevron = if state.advanced_extras_open {
-        "▼"
+        lucide::ChevronDown
     } else {
-        "▶"
+        lucide::ChevronRight
     };
-    let extras_header = button(
+    let extras_header = snora::control(
         row![
-            text(extras_chevron)
-                .size(11)
-                .color(colors::group_heading(&theme)),
+            icon_element_sized::<Message>(&Icon::Lucide(extras_chevron), 12.0),
             text(t.t(MessageKey::AdvancedExtrasSection))
                 .size(13)
                 .color(colors::group_heading(&theme)),
@@ -267,7 +270,7 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
 pub fn footer<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     row![
-        button(
+        snora::control(
             row![
                 text("↻").size(13),
                 text(t.t(MessageKey::ResetButton)).size(13),

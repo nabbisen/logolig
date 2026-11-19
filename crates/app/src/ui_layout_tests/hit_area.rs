@@ -76,18 +76,15 @@ fn every_interactive_area_is_at_least_24_by_24() {
     );
 }
 
-/// Interactive areas smaller than 24 x 24 today. Cause: the custom-size field and its button are
-/// 23.5 px high (RFC 034, job J22). The checkboxes and the SVG slider are gone from this list:
+/// Interactive areas smaller than 24 x 24 today. Cause: the custom-size field is 23.5 px high
+/// (RFC 034, job J22); its "Add custom size" button grew to the 24 px minimum of `snora::control`
+/// when it became one (RFC 027 J14b). The checkboxes and the SVG slider are gone from this list:
 /// they are `snora` checkboxes and radio groups now (RFC 021). Each entry is a control by its
 /// label (the field has none) and the whole pixels of its smallest side, as the finding prints
 /// them; the job deletes entries as it fixes them (a stale entry fails the test), and the list
 /// must end empty. No new `(no label)` entry may be added. A loosened threshold would hide them;
 /// a named list does not.
-const KNOWN: &[(&str, &str)] = &[
-    ("(no label)", "23"),
-    ("+ Add custom size", "23"),
-    ("+ カスタムサイズ追加", "23"),
-];
+const KNOWN: &[(&str, &str)] = &[("(no label)", "23")];
 
 fn entry_matches(entry: &(&str, &str), f: &Finding) -> bool {
     f.what.starts_with(&format!("{:?} at ", entry.0))

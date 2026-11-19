@@ -165,11 +165,9 @@ fn no_state_cue_is_a_text_glyph() {
                         continue; // a comment may name the glyphs it replaced
                     }
                     for glyph in ["✓", "▣", "⏳", "⚠", "▶", "▼"] {
-                        // The disclosure triangles are state cues too (open or closed); the
-                        // "Advanced settings" header keeps its until J14b step 4 makes it a chevron.
-                        let pending = (glyph == "▶" || glyph == "▼")
-                            && path.ends_with("ui/advanced_drawer.rs");
-                        if line.contains(glyph) && !pending {
+                        // The disclosure triangles are state cues too (open or closed): chevrons
+                        // from the icon font since J14b.
+                        if line.contains(glyph) {
                             offenders.push(format!("{}:{}: {glyph}", path.display(), number + 1));
                         }
                     }

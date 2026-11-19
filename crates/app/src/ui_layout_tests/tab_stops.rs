@@ -5,41 +5,18 @@
 //!   layout puts navigation first; this checks that no page lets Tab jump around.
 //! * **Every stop is pointable.** Each stop lies in an interactive area of the RFC 035 hover scan:
 //!   a control the keyboard reaches must be one the pointer can use, or the model has an orphan.
-//! * **Every interactive area is a stop, except a named list.** The controls not yet migrated to
-//!   `snora::control` (RFC 027 J14b: one reviewed step per page) are listed below by page and
-//!   label; the job that migrates a control deletes its entry, a stale entry fails the test, and
-//!   the list must end empty.
-
-use std::collections::BTreeSet;
+//! * **Every interactive area is a stop.** No exceptions: the controls that were not yet
+//!   `snora::control`s were listed by name until RFC 027's J14b migrated the last (a stale entry
+//!   failed the test); the list is gone and the test asserts completeness.
 
 use iced::Size;
 
 use super::support::{Finding, label_in, layout_matrix, probe_of};
 
-/// Interactive areas that are not Tab stops yet: (page, label). A page of `"*"` is every page.
-/// The icon-only controls are named by their icon glyph (the lucide private-use code point), as the
-/// scan prints them: `e0b2` Download (the "Save" buttons of the cards and "Download all (ZIP)"). The disclosure
-/// triangles `▶ ▼` are text glyphs until J14b makes them chevrons. (The navigation items left
-/// the list in J14b step 1.)
-const NOT_MIGRATED: &[(&str, &str)] = &[
-    // Customize: "Add custom size", the "Advanced settings" header, "Reset to defaults".
-    ("CustomizeAdvanced", "+ Add custom size"),
-    ("CustomizeAdvanced", "+ カスタムサイズ追加"),
-    ("CustomizeAdvanced", "▼"),
-    ("CustomizeAdvanced", "↻"),
-];
-
-fn is_listed(page: &str, label: &str) -> bool {
-    NOT_MIGRATED
-        .iter()
-        .any(|(p, l)| (*p == "*" || *p == page) && *l == label)
-}
-
 #[test]
 fn every_interactive_area_is_a_tab_stop_and_every_stop_is_an_interactive_area() {
-    let mut unlisted: Vec<Finding> = Vec::new();
+    let mut missing: Vec<Finding> = Vec::new();
     let mut orphans: Vec<Finding> = Vec::new();
-    let mut seen_entries: BTreeSet<(String, String)> = BTreeSet::new();
     for combo in layout_matrix() {
         let state = combo.state();
         // Tall, so that nothing is below the viewport (as the hit-area scan does).
@@ -47,20 +24,14 @@ fn every_interactive_area_is_a_tab_stop_and_every_stop_is_an_interactive_area() 
         let seen = p.walk();
         let areas = p.interactive_areas(&seen);
         let stops = p.focus_targets();
-        let page = format!("{:?}", combo.case);
         for area in &areas {
             if stops.iter().any(|s| s.bounds.contains(area.center())) {
                 continue;
             }
-            let label = label_in(&seen, *area);
-            if is_listed(&page, &label) {
-                seen_entries.insert((page.clone(), label));
-            } else {
-                unlisted.push(Finding {
-                    combo: combo.describe(),
-                    what: format!("{label:?} is clickable and no Tab stop"),
-                });
-            }
+            missing.push(Finding {
+                combo: combo.describe(),
+                what: format!("{:?} is clickable and no Tab stop", label_in(&seen, *area)),
+            });
         }
         for stop in &stops {
             if !areas.iter().any(|a| a.contains(stop.bounds.center())) {
@@ -72,30 +43,16 @@ fn every_interactive_area_is_a_tab_stop_and_every_stop_is_an_interactive_area() 
         }
     }
     assert!(
-        unlisted.is_empty(),
+        missing.is_empty(),
         "{} control(s) outside the Tab order:\n{}",
-        unlisted.len(),
-        join(&unlisted)
+        missing.len(),
+        join(&missing)
     );
     assert!(
         orphans.is_empty(),
         "{} orphan stop(s):\n{}",
         orphans.len(),
         join(&orphans)
-    );
-    // A listed control that is a stop now, or no longer exists, is a stale entry: delete it.
-    let stale: Vec<_> = NOT_MIGRATED
-        .iter()
-        .filter(|(page, label)| {
-            !seen_entries
-                .iter()
-                .any(|(p, l)| (*page == "*" || page == p) && label == l)
-        })
-        .collect();
-    assert!(
-        stale.is_empty(),
-        "{} entry(ies) no longer needed, delete them: {stale:?}",
-        stale.len()
     );
 }
 

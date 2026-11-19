@@ -170,8 +170,8 @@ fn tab_visits_every_stop_of_the_widest_page_once() {
     let stops = p.focus_targets().len();
     assert_eq!(
         stops,
-        NAV + 21,
-        "3 navigation items, 14 checkboxes, 2 groups, 5 text inputs"
+        NAV + 24,
+        "3 navigation items, 14 checkboxes, 2 groups, 5 text inputs, 3 buttons"
     );
     let mut order = Vec::new();
     for _ in 0..stops {
