@@ -408,6 +408,9 @@ impl<'a, M> Probe<'a, M> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Case {
     Home,
+    /// Home after Back from a result: the drop zone and, below it, the history card with "View
+    /// results →" (RFC 027 J14b: it was in no case before).
+    HomeWithHistory,
     Converting,
     /// The result of the default plan: 7 cards.
     ResultDefault,
@@ -423,8 +426,9 @@ pub(super) enum Case {
     ResultPreviewChecker,
 }
 
-pub(super) const CASES: [Case; 8] = [
+pub(super) const CASES: [Case; 9] = [
     Case::Home,
+    Case::HomeWithHistory,
     Case::Converting,
     Case::ResultDefault,
     Case::ResultAllOptions,
@@ -493,6 +497,7 @@ impl Combo {
         };
         match self.case {
             Case::Home => {}
+            Case::HomeWithHistory => state.result_assets = Some(result_assets_of_cards(false)),
             Case::Converting => state.screen = Screen::Converting,
             Case::ResultDefault | Case::ResultAllOptions => {
                 state.screen = Screen::Result;

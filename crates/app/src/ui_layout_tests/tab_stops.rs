@@ -22,9 +22,6 @@ use super::support::{Finding, label_in, layout_matrix, probe_of};
 /// triangles `▶ ▼` are text glyphs until J14b makes them chevrons. (The navigation items left
 /// the list in J14b step 1.)
 const NOT_MIGRATED: &[(&str, &str)] = &[
-    // Home: the drop-zone card (it holds "Choose file…").
-    ("Home", "Drop PNG, SVG, WebP, or JPEG"),
-    ("Home", "PNG / SVG / WebP / JPEG をドロップ"),
     // Result: Back, the Save buttons and Download all, the preview toggle.
     ("ResultDefault", "\u{e0b2}"),
     ("ResultDefault", "← Back"),

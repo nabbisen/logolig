@@ -41,7 +41,9 @@ fn controls(combo: &Combo, state: &crate::app::AppState) -> Vec<(&'static str, S
         ("navigation: Settings", t.t(MessageKey::NavSettings)),
     ];
     match combo.case {
-        Case::Home => list.push(("Choose file", t.t(MessageKey::ChooseFileButton))),
+        Case::Home | Case::HomeWithHistory => {
+            list.push(("Choose file", t.t(MessageKey::ChooseFileButton)))
+        }
         Case::ResultDefault
         | Case::ResultAllOptions
         | Case::ResultPreview

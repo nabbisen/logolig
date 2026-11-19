@@ -19,7 +19,7 @@
 //! a small card below the drop zone lets them return to the last result
 //! without re-converting.
 
-use iced::widget::{button, column, container, row, space, text};
+use iced::widget::{column, container, row, space, text};
 use iced::{Background, Border, Element, Length, Padding, Theme};
 
 use snora::Icon;
@@ -75,7 +75,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         .center_y(Length::Fill)
         .style(move |theme: &Theme| drop_zone_card_style(theme, state.file_drag_hovering));
 
-    let drop_area = button(bordered)
+    let drop_area = snora::control(bordered)
         .padding(0)
         .width(Length::Fill)
         .height(Length::Fill)
@@ -173,7 +173,7 @@ fn history_section<'a>(state: &'a AppState, theme: &Theme) -> Element<'a, Messag
     let count_text = text(count_label).size(12).color(colors::muted_text(theme));
 
     // "View results →" button with the History lucide icon.
-    let view_btn = button(
+    let view_btn = snora::control(
         row![
             icon_element_sized::<Message>(&Icon::Lucide(lucide::History), 14.0),
             text(t.t(MessageKey::HistoryViewResultsButton)).size(13),
