@@ -124,8 +124,8 @@ fn every_checkbox_is_a_tab_stop() {
     assert_eq!(targets.iter().filter(|t| t.text_input).count(), 5);
     assert_eq!(
         targets.len(),
-        14 + 2 + 5,
-        "the page holds 21 Tab stops: {targets:?}"
+        3 + 14 + 2 + 5,
+        "the page holds 3 navigation items and 21 Tab stops: {targets:?}"
     );
 }
 

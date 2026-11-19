@@ -98,6 +98,18 @@ impl<'a, M> Probe<'a, M> {
         targets
     }
 
+    /// Is the stop number `index` of `total` one of the navigation items? By the order of the
+    /// tree: the side bar's three items come first on a desktop window (width from 768), the
+    /// bottom bar's three come last on a phone. (Position cannot say: an unscrolled page overlaps
+    /// the bottom bar's coordinates.)
+    pub(super) fn is_navigation_stop(&self, index: usize, total: usize) -> bool {
+        if self.size.width >= 768.0 {
+            index < NAV_ITEMS
+        } else {
+            index + NAV_ITEMS >= total
+        }
+    }
+
     /// Focuses the target at `index` of [`Probe::focus_targets`] **by identity**, not by counting
     /// Tab presses in the caller: nothing is focused first, so `index + 1` steps of `focus_next`
     /// reach it, and the result is checked against a second scan.
@@ -185,15 +197,14 @@ impl<'a, M> Probe<'a, M> {
             },
         );
         let scan = std::mem::take(&mut *found.lock().expect("the view scan"));
-        let layout = scan.focused?;
+        let (layout, holders) = scan.focused?;
         let mut on_screen = layout;
         let mut viewports = Vec::new();
-        for (bounds, content, translation) in &scan.scrollables {
-            if content.contains(layout.center()) {
-                on_screen.x -= translation.x;
-                on_screen.y -= translation.y;
-                viewports.push(*bounds);
-            }
+        for number in holders {
+            let (bounds, _content, translation) = scan.scrollables[number];
+            on_screen.x -= translation.x;
+            on_screen.y -= translation.y;
+            viewports.push(bounds);
         }
         Some(FocusedView {
             on_screen,
@@ -600,8 +611,12 @@ impl FocusedView {
 
 #[derive(Default)]
 struct ViewScan {
+    /// Every scroll area in traversal order: bounds, content bounds, translation.
     scrollables: Vec<(Rectangle, Rectangle, iced::Vector)>,
-    focused: Option<Rectangle>,
+    entering: Option<usize>,
+    inside: Vec<usize>,
+    /// The focused control and the scroll areas that hold it (by the tree, not by coordinates).
+    focused: Option<(Rectangle, Vec<usize>)>,
 }
 
 struct ViewScanOp {
@@ -610,7 +625,14 @@ struct ViewScanOp {
 
 impl widget::Operation for ViewScanOp {
     fn traverse(&mut self, operate: &mut dyn FnMut(&mut dyn widget::Operation)) {
+        let entered = self.found.lock().expect("the view scan").entering.take();
+        if let Some(area) = entered {
+            self.found.lock().expect("the view scan").inside.push(area);
+        }
         operate(self);
+        if entered.is_some() {
+            self.found.lock().expect("the view scan").inside.pop();
+        }
     }
 
     fn scrollable(
@@ -621,11 +643,9 @@ impl widget::Operation for ViewScanOp {
         translation: iced::Vector,
         _state: &mut dyn widget::operation::Scrollable,
     ) {
-        self.found.lock().expect("the view scan").scrollables.push((
-            bounds,
-            content_bounds,
-            translation,
-        ));
+        let mut scan = self.found.lock().expect("the view scan");
+        scan.entering = Some(scan.scrollables.len());
+        scan.scrollables.push((bounds, content_bounds, translation));
     }
 
     fn focusable(
@@ -635,10 +655,15 @@ impl widget::Operation for ViewScanOp {
         state: &mut dyn widget::operation::Focusable,
     ) {
         if state.is_focused() {
-            self.found.lock().expect("the view scan").focused = Some(bounds);
+            let mut scan = self.found.lock().expect("the view scan");
+            let inside = scan.inside.clone();
+            scan.focused = Some((bounds, inside));
         }
     }
 }
+
+/// The navigation has three items (Home, Customize, Settings).
+pub(super) const NAV_ITEMS: usize = 3;
 
 /// One focus target of the tree (see [`Probe::focus_targets`]).
 #[derive(Debug, Clone, Copy, PartialEq)]

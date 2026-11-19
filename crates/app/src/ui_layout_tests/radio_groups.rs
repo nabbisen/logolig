@@ -30,10 +30,19 @@ fn debug(messages: &[Message]) -> Vec<String> {
     messages.iter().map(|m| format!("{m:?}")).collect()
 }
 
-/// Focuses target `index`, presses `key`, and returns what the page published.
+/// Focuses the `index`-th stop **of the page** (the navigation items are not counted), presses
+/// `key`, and returns what the page published.
 fn press(state: &AppState, index: usize, key: Named) -> Vec<String> {
     let mut p = probe_of(state, SIZE);
-    p.focus_target(index);
+    let stops = p.focus_targets();
+    let global = stops
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| !p.is_navigation_stop(*i, stops.len()))
+        .nth(index)
+        .map(|(i, _)| i)
+        .unwrap_or_else(|| panic!("no page stop number {index}"));
+    p.focus_target(global);
     let (_status, messages) = p.send(&[key_press(Key::Named(key))], Cursor::Unavailable);
     debug(&messages)
 }
@@ -57,29 +66,23 @@ fn centre_of(p: &mut Probe<'_, Message>, label: &str) -> iced::Point {
 
 #[test]
 fn each_group_is_one_tab_stop() {
-    let settings = state(Case::Settings);
-    let targets = probe_of(&settings, SIZE).focus_targets();
+    // The navigation items are stops too (RFC 027 J14b); the groups are the rest.
+    let page_stops = |case: Case| {
+        let state = state(case);
+        let mut p = probe_of(&state, SIZE);
+        let stops = p.focus_targets();
+        (0..stops.len())
+            .filter(|i| !p.is_navigation_stop(*i, stops.len()))
+            .count()
+    };
     assert_eq!(
-        targets.len(),
+        page_stops(Case::Settings),
         2,
-        "Settings: the language group and the theme group: {targets:?}"
+        "the language group and the theme group"
     );
-    assert!(targets.iter().all(|t| !t.text_input));
-
-    // The result page has no other focus target yet; both preview groups are stops.
-    let preview = state(Case::ResultPreview);
-    assert_eq!(
-        probe_of(&preview, SIZE).focus_targets().len(),
-        2,
-        "View as, Surface"
-    );
-    // With the checker the Surface group is disabled: it is no Tab stop.
-    let checker = state(Case::ResultPreviewChecker);
-    assert_eq!(
-        probe_of(&checker, SIZE).focus_targets().len(),
-        1,
-        "View as only"
-    );
+    // Both preview groups are stops; with the checker the Surface group is disabled: no stop.
+    assert_eq!(page_stops(Case::ResultPreview), 2, "View as, Surface");
+    assert_eq!(page_stops(Case::ResultPreviewChecker), 1, "View as only");
 }
 
 /// The keys and clicks of the Settings groups publish the messages the rows published.

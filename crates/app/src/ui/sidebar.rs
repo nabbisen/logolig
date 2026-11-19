@@ -7,7 +7,7 @@
 //! drawers and popup overlays.
 
 use iced::font::Weight;
-use iced::widget::{button, column, container, row, text};
+use iced::widget::{column, container, row, text};
 use iced::{Alignment, Background, Border, Color, Element, Font, Length, Padding, Theme};
 
 use snora::Icon;
@@ -125,7 +125,7 @@ fn nav_item<'a>(
     .width(Length::Fill)
     .align_x(Alignment::Center);
 
-    let item = button(inner)
+    let item = snora::control(inner)
         .width(Length::Fill)
         .padding(Padding::default().top(10).bottom(10).left(4).right(4))
         .on_press(on_press)
@@ -169,7 +169,7 @@ fn bottom_nav_item<'a>(
     .width(Length::Fill)
     .align_x(Alignment::Center);
 
-    let item = button(inner)
+    let item = snora::control(inner)
         .width(Length::Fill)
         .padding(Padding::default().top(6).bottom(8))
         .on_press(on_press)

@@ -18,14 +18,10 @@ use super::support::{Finding, label_in, layout_matrix, probe_of};
 
 /// Interactive areas that are not Tab stops yet: (page, label). A page of `"*"` is every page.
 /// The icon-only controls are named by their icon glyph (the lucide private-use code point), as the
-/// scan prints them: `e0f5` Home, `e154` Customize, `e29a` Settings (the navigation items),
-/// `e0b2` Download (the "Save" buttons of the cards and "Download all (ZIP)"). The disclosure
-/// triangles `▶ ▼` are text glyphs until J14b makes them chevrons.
+/// scan prints them: `e0b2` Download (the "Save" buttons of the cards and "Download all (ZIP)"). The disclosure
+/// triangles `▶ ▼` are text glyphs until J14b makes them chevrons. (The navigation items left
+/// the list in J14b step 1.)
 const NOT_MIGRATED: &[(&str, &str)] = &[
-    // The navigation (desktop side bar and mobile bottom bar).
-    ("*", "\u{e0f5}"),
-    ("*", "\u{e154}"),
-    ("*", "\u{e29a}"),
     // Home: the drop-zone card (it holds "Choose file…").
     ("Home", "Drop PNG, SVG, WebP, or JPEG"),
     ("Home", "PNG / SVG / WebP / JPEG をドロップ"),
@@ -127,32 +123,44 @@ fn every_interactive_area_is_a_tab_stop_and_every_stop_is_an_interactive_area() 
     );
 }
 
+/// Tab order: the **regions** in the order of the tree (the side bar on a desktop window, then the
+/// page, then the bottom bar on a phone), and within a region down the page and, within a row,
+/// left to right.
 #[test]
 fn tab_order_goes_down_the_page_and_left_to_right_within_a_row() {
     let mut problems: Vec<Finding> = Vec::new();
     let mut compared = 0;
     for combo in layout_matrix() {
         let state = combo.state();
-        let stops = probe_of(&state, Size::new(combo.size.width, 4000.0)).focus_targets();
-        for pair in stops.windows(2) {
-            compared += 1;
-            let (a, b) = (pair[0].bounds, pair[1].bounds);
-            let same_row = (a.y - b.y).abs() < 8.0;
-            let in_order = if same_row {
-                b.x >= a.x - 0.5
+        let mut p = probe_of(&state, Size::new(combo.size.width, 4000.0));
+        let stops = p.focus_targets();
+        // 0 side bar, 1 page, 2 bottom bar (by the order of the tree: see `is_navigation_stop`).
+        let total = stops.len();
+        let region = |p: &super::support::Probe<'_, crate::app::Message>, i: usize| {
+            if !p.is_navigation_stop(i, total) {
+                1
+            } else if p.size.width >= 768.0 {
+                0
             } else {
-                b.y > a.y
-            };
-            if !in_order {
+                2
+            }
+        };
+        for (i, pair) in stops.windows(2).enumerate() {
+            compared += 1;
+            let (ra, rb) = (region(&p, i), region(&p, i + 1));
+            let (a, b) = (pair[0].bounds, pair[1].bounds);
+            let ok = if ra == rb { in_order(a, b) } else { ra < rb };
+            if !ok {
                 problems.push(Finding {
                     combo: combo.describe(),
                     what: format!(
-                        "Tab goes from ({:.0}, {:.0}) to ({:.0}, {:.0})",
+                        "Tab goes from ({:.0}, {:.0}) in region {ra} to ({:.0}, {:.0}) in region {rb}",
                         a.x, a.y, b.x, b.y
                     ),
                 });
             }
         }
+        let _ = &mut p;
     }
     assert!(
         compared > 100,

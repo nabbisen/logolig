@@ -109,19 +109,40 @@ fn only_a_plain_or_shift_tab_moves_the_focus() {
     }
 }
 
+/// The side bar's three items come first in the Tab order (the order of the tree); the page's
+/// stops follow.
+const NAV: usize = 3;
+
 /// Tab visits the stops in layout order and leaves the group at the end: the next Tab starts
 /// again (no wrap, snora's rule); Shift+Tab goes back.
 #[test]
 fn tab_walks_the_stops_in_order_and_does_not_wrap() {
     let settings = state(Case::Settings);
     let mut p = probe_of(&settings, SIZE);
+    assert_eq!(
+        p.focus_targets().len(),
+        NAV + 2,
+        "the side bar, the two groups"
+    );
     assert_eq!(focused(&mut p), None);
+    for i in 0..NAV {
+        tab(&mut p);
+        assert_eq!(focused(&mut p), Some(i), "navigation item {i}");
+    }
     tab(&mut p);
-    assert_eq!(focused(&mut p), Some(0), "the language group");
+    assert_eq!(focused(&mut p), Some(NAV), "the language group");
     tab(&mut p);
-    assert_eq!(focused(&mut p), Some(1), "the theme group");
+    assert_eq!(focused(&mut p), Some(NAV + 1), "the theme group");
     shift_tab(&mut p);
-    assert_eq!(focused(&mut p), Some(0), "Shift+Tab goes back");
+    assert_eq!(focused(&mut p), Some(NAV), "Shift+Tab goes back");
+    for _ in 0..NAV {
+        shift_tab(&mut p);
+    }
+    assert_eq!(
+        focused(&mut p),
+        Some(0),
+        "back to the first navigation item"
+    );
     shift_tab(&mut p);
     assert_eq!(
         focused(&mut p),
@@ -130,8 +151,9 @@ fn tab_walks_the_stops_in_order_and_does_not_wrap() {
     );
     tab(&mut p);
     assert_eq!(focused(&mut p), Some(0), "and the next Tab starts again");
-    tab(&mut p);
-    tab(&mut p);
+    for _ in 0..NAV + 2 {
+        tab(&mut p);
+    }
     assert_eq!(
         focused(&mut p),
         None,
@@ -146,7 +168,11 @@ fn tab_visits_every_stop_of_the_widest_page_once() {
     let customize = state(Case::CustomizeAdvanced);
     let mut p = probe_of(&customize, SIZE);
     let stops = p.focus_targets().len();
-    assert_eq!(stops, 21, "14 checkboxes, 2 groups, 5 text inputs");
+    assert_eq!(
+        stops,
+        NAV + 21,
+        "3 navigation items, 14 checkboxes, 2 groups, 5 text inputs"
+    );
     let mut order = Vec::new();
     for _ in 0..stops {
         tab(&mut p);

@@ -28,42 +28,78 @@ pub(crate) fn on_tab(modifiers: Modifiers) -> Task<Message> {
 /// Scrolls the control that holds the focus into view, if a scroll area holds it. iced's scrollable
 /// does not do this by itself, so a Tab into a control below the fold would show the reader
 /// nothing. Run after a focus move (`on_tab` chains it). Two passes of one operation, no timer and
-/// no guess: the first finds the focused control's bounds, the second asks each scroll area that
-/// holds it to scroll **by the least amount** that shows the control and a margin for its ring.
+/// no guess: the first finds the focused control and **which scroll areas it is inside** (by the
+/// tree: an area's callback comes right before the traversal of its children), the second asks
+/// each of those to scroll **by the least amount** that shows the control and a margin for its
+/// ring. Coordinates alone cannot say whether a control is inside an area: the layout of an
+/// unscrolled area overlaps whatever lies below it (a bottom bar, a footer).
 pub(crate) fn keep_in_view<T: Send + 'static>() -> Task<T> {
-    iced::advanced::widget::operate::<()>(FindFocused { found: None }).discard()
+    iced::advanced::widget::operate::<()>(FindFocused::default()).discard()
 }
 
 /// Room kept around the control: the focus ring sits 2 px outside it and is 2 px thick.
 const RING: f32 = 4.0;
 
-/// Pass 1: where is the focused control?
+/// Pass 1: where is the focused control, and which scroll areas (by their number in traversal
+/// order) hold it?
+#[derive(Default)]
 struct FindFocused {
-    found: Option<Rectangle>,
+    /// The number of scroll areas seen so far.
+    seen: usize,
+    /// The scroll area whose children are about to be traversed.
+    entering: Option<usize>,
+    /// The areas we are inside, outermost first.
+    inside: Vec<usize>,
+    found: Option<(Rectangle, Vec<usize>)>,
 }
 
 impl Operation<()> for FindFocused {
     fn traverse(&mut self, operate: &mut dyn FnMut(&mut dyn Operation<()>)) {
+        let entered = self.entering.take();
+        if let Some(area) = entered {
+            self.inside.push(area);
+        }
         operate(self);
+        if entered.is_some() {
+            self.inside.pop();
+        }
+    }
+
+    fn scrollable(
+        &mut self,
+        _id: Option<&Id>,
+        _bounds: Rectangle,
+        _content_bounds: Rectangle,
+        _translation: Vector,
+        _state: &mut dyn Scrollable,
+    ) {
+        self.entering = Some(self.seen);
+        self.seen += 1;
     }
 
     fn focusable(&mut self, _id: Option<&Id>, bounds: Rectangle, state: &mut dyn Focusable) {
         if state.is_focused() {
-            self.found = Some(bounds);
+            self.found = Some((bounds, self.inside.clone()));
         }
     }
 
     fn finish(&self) -> Outcome<()> {
-        match self.found {
-            Some(control) => Outcome::Chain(Box::new(ScrollInto { control })),
-            None => Outcome::None,
+        match &self.found {
+            Some((control, areas)) if !areas.is_empty() => Outcome::Chain(Box::new(ScrollInto {
+                control: *control,
+                areas: areas.clone(),
+                seen: 0,
+            })),
+            _ => Outcome::None,
         }
     }
 }
 
-/// Pass 2: every scroll area whose content holds the control moves just enough.
+/// Pass 2: each scroll area that holds the control moves just enough.
 struct ScrollInto {
     control: Rectangle,
+    areas: Vec<usize>,
+    seen: usize,
 }
 
 impl Operation<()> for ScrollInto {
@@ -79,7 +115,9 @@ impl Operation<()> for ScrollInto {
         translation: Vector,
         state: &mut dyn Scrollable,
     ) {
-        if !content_bounds.contains(self.control.center()) {
+        let number = self.seen;
+        self.seen += 1;
+        if !self.areas.contains(&number) {
             return;
         }
         // What the area shows now, in the layout's coordinates (the control's are not scrolled).
