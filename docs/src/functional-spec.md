@@ -250,8 +250,7 @@ System / Light / Dark cycle. Persisted across sessions.
 ### Keyboard shortcuts
 
 A list of the global keyboard shortcuts (keys and what they do, in the
-interface language) with a note that moving between buttons and fields with
-the Tab key is not available yet. F1 opens this page.
+interface language). F1 opens this page.
 
 ## 10. Notifications (toasts)
 
@@ -320,16 +319,18 @@ Not persisted: the Advanced accordion's expanded/collapsed state
   bold label and a thin accent bar toward the content; the chosen language,
   theme and other single choices are a filled dot in a ring; a checked option is
   a ticked box. The marks are drawn from the bundled icon font, not typed.
-- Keyboard: the main task has global shortcuts: Ctrl+O (choose a file), Ctrl+S
-  (download all), Esc (close the newest message, or go back), Ctrl+1/2/3 (Home,
-  Customize, Settings) and F1 (Settings, where the list is shown); Cmd replaces
-  Ctrl on macOS. A shortcut works only when the button it stands for is available.
-  Tab traversal, Enter/Space activation, a focus indicator and keyboard operation
-  of the Customize page are not available yet. See `ui-a11y.md` ("Keyboard
-  support (current)"), RFC 019 and RFC 027.
-- Accessibility labels are defined as constants in `ui::accessibility`
-  for future screen-reader support (iced 0.14 does not yet expose a full
-  a11y API).
+- Keyboard: every control can be reached and operated without the mouse. Tab and
+  Shift+Tab move the focus through the controls in the order of the screen (side
+  navigation, then the page; no wrap), a neutral ring shows the focused control and
+  the page scrolls to keep it in view; Enter and Space do what a click does; the
+  arrow keys choose within a group of choices. Global shortcuts: Ctrl+O (choose a
+  file, Home page), Ctrl+S (download all), Esc (close the newest message, or go
+  back; in a text field it leaves the field), Ctrl+1/2/3 (Home, Customize,
+  Settings) and F1 (Settings, where the list is shown); Cmd replaces Ctrl on macOS.
+  A shortcut works only when the button it stands for is available, and never
+  types into a text field. See `ui-a11y.md` ("Keyboard support"), RFC 019 and
+  RFC 027.
+- Screen readers are not supported: iced 0.14 exposes no accessibility tree.
 
 ## 15. Offline operation
 

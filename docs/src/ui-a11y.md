@@ -13,29 +13,64 @@ end-controls, sidebar side, toast anchor, custom rows authored with
 `snora::direction::row_dir`. We do not author "left" / "right"
 anywhere in the layout code.
 
-## Keyboard support (current)
+## Keyboard support
 
-**Goal.** Full keyboard parity: every operation reachable by mouse is also
-reachable by keyboard. This is **not met yet**. The main task (choose a file,
-download all, go back, switch pages) has a keyboard path through a small set of
-global shortcuts (RFC 019 phase 2). Moving between buttons and fields with Tab,
-and operating the Customize page, are still to come
-([RFC 019](../../rfcs/accepted/019-keyboard-accessibility.md),
+**Goal.** Full keyboard parity: everything the mouse can do, the keyboard can do. A
+keyboard-only user can choose a file, convert it, download one file or the ZIP, go
+back, change every setting and switch pages; the focus is always visible; nobody is
+trapped ([RFC 019](../../rfcs/accepted/019-keyboard-accessibility.md),
 [RFC 027](../../rfcs/accepted/027-keyboard-focus-model.md)).
 
-Everything below was verified by running a debug build of the development tree
-(after RFC 019 phase 2) on Linux under the niri compositor, with an English
-interface: through the X11 backend (XWayland) and on native Wayland. Windows and
-macOS have not been tested (on macOS the command key is Cmd instead of Ctrl; that
-is the intended mapping and is not verified). Non-Latin keyboard layouts
-(for example a Japanese one) are covered by unit tests of the key mapping only,
-not by a run on such a layout. The statements about Tab, Enter, Space and the focus
-indicator were verified in phase 1 on release 1.26.2; no focus code was changed for
-1.27.0 (the shortcuts are the only keyboard addition), and a Tab press on the start
-screen of the 1.27.0 release build still changed nothing on screen (Enter and Space
-were not re-run).
+**How it is checked.** Automated tests drive the real key path (the key event, the
+application's subscription, the widget operations that follow) on the real view, on
+every page and window size the layout tests use, in both languages. Real-window runs
+on Linux under the niri compositor, with an English interface, checked Tab,
+Shift+Tab, the ring and scrolling on the X11 backend (XWayland). Windows and macOS
+have not been tested (on macOS the command key is Cmd instead of Ctrl; that is the
+intended mapping and is not verified). Non-Latin keyboard layouts are covered by
+unit tests of the key mapping only, not by a run on such a layout.
 
-**Supported today: global shortcuts**
+**Moving: Tab and Shift+Tab**
+
+- Tab moves the focus to the next control, Shift+Tab to the previous one. Every
+  control is a stop: the navigation items, the drop-zone card and "View results →",
+  "Back", every card's "Save", the preview toggle and "Download all (ZIP)", every
+  checkbox, every group of choices (one stop for the whole group), every text field,
+  "+ Add custom size", the "Advanced settings" header, "Reset to defaults" and the
+  close control of a message.
+- The order is the order on the screen: the side navigation first (on a narrow
+  window the bottom navigation comes last), then the page from top to bottom and,
+  within a row, from left to right. A page's fixed top and bottom parts (the
+  "Back" row, "Download all", "Reset to defaults") come before and after what
+  scrolls.
+- **There is no wrap.** After the last stop the focus leaves (nothing is focused) and
+  the next Tab starts again at the first one; Shift+Tab at the first stop does the
+  same the other way round. The same happens after a control that had the focus goes
+  away (Back, a page change) or after Esc in a text field: nothing is focused and
+  the next Tab starts at the first stop.
+- The focused control is drawn with a **ring**: a 2 px outline in the text colour
+  (black on the light theme, white on the dark one), 2 px outside the control. It
+  is separate from the marks of selection, so a checked box is never confused with
+  a focused one.
+- **The focused control is always in view.** When it lies in a part that scrolls,
+  the page scrolls by the least amount that shows it, with room for its ring.
+- Ctrl, Alt or Cmd with Tab is not Tab and does nothing here.
+- A text field passes Tab on: the focus leaves the field and the field keeps its
+  text. Esc inside the field leaves it first.
+
+**Operating: Enter, Space, the arrow keys**
+
+- On a focused button, card or navigation item, **Enter or Space does exactly what a
+  click does**, once.
+- On a checkbox, Enter or Space toggles it.
+- On a group of choices (language, theme, "View as", "Surface", SVG conversion,
+  resize algorithm) the arrow keys move **and choose**: ↑ ↓ ← → change the choice at
+  once, wrapping at the ends. Enter and Space on the group change nothing, as a click
+  on the chosen option does not. A group that is disabled (the Surface group while
+  the transparency checker is shown) is not a stop and takes no key.
+- Choosing the language with the arrow keys therefore changes the language at once.
+
+**Global shortcuts**
 
 The list is also shown in the application, on the Settings page (press F1).
 
@@ -51,45 +86,38 @@ A shortcut works exactly when the button it stands for is available to the
 mouse. While a file is being converted, Ctrl+O and Ctrl+S do nothing. Keys
 held down (key repeat) do nothing. Letters and digits are matched by their
 position on the keyboard, so a non-Latin layout is meant to work too. Shift or
-Alt on top of Ctrl make a different combination that is not bound.
+Alt on top of Ctrl make a different combination that is not bound. Ctrl+O is a
+shortcut of the Home page only: on Customize and Settings there is no "Choose
+file…" control, so it does nothing there.
 
-- Text fields (custom PNG size, web manifest name, short name and colours)
-  accept typed text once they have been focused with a mouse click. Enter in
-  the custom-size field adds the size.
+**Text fields**
+
+- While a text field has focus, the shortcut keys still work and never type into
+  the field: Ctrl+1 / 2 / 3 and F1 change the page. The field keeps its own keys
+  (typing, Backspace, the arrows, Enter, Ctrl+C / X / V / A). Enter in the
+  custom-size field adds the size.
 - The operating system's file chooser and save dialogs can be operated with the
   keyboard once they are open.
 
-**Known behaviour with text fields and long conversions (observed)**
+**Known behaviour**
 
-- While a text field has focus, the shortcut keys still work and never type
-  into the field: Ctrl+1 / 2 / 3 and F1 change the page. Ctrl+O does nothing
-  there, because the text fields are on the Customize page and the file chooser
-  belongs to the Home page. The field keeps its own keys (typing, Backspace,
-  the arrows, Enter, Ctrl+C / X / V / A).
+- After Enter on a navigation item that changes the page, nothing is focused (the
+  page has a different number of controls) and the next Tab starts at the first
+  stop, so a keyboard user passes the three navigation items again to reach the page.
 - When a conversion takes a very long time (a 50-second test image), shortcuts
   pressed meanwhile were not acted on at once: Ctrl+O and Ctrl+S opened nothing,
   and Ctrl+2 took effect only after the conversion had finished. Typical logos
   convert in well under a second.
-
-**Not supported yet (RFC 019 / RFC 027)**
-
-- Tab and Shift+Tab move no focus: no button or control can be reached, including
-  text fields, and Tab does not move between text fields.
-- Enter and Space activate nothing: not the drop-zone card or "Choose file…",
-  the navigation items, the download buttons, "Back", the checkboxes, the
-  choice groups, or "Advanced settings".
-- The Customize page (size checkboxes, option checkboxes, the SVG conversion
-  and resize algorithm groups, text fields) can only be operated with the
-  mouse. Individual downloads ("Save" on a card) need the mouse.
-- The checkboxes and choice groups are controls the keyboard can reach (each one
-  Tab stop; Space or Enter toggles a checkbox, the arrow keys choose in a group),
-  but the application does not move focus with the Tab key yet, so nothing gives
-  them the focus.
-- Arrow and paging keys do not scroll.
-- There is no visible keyboard-focus indicator. The drop-zone card also shows no
-  hover feedback; the navigation items and the download buttons do.
+- Arrow and paging keys do not scroll a page (Tab does, by moving the focus).
+- The drop-zone card shows no hover feedback; the navigation items and the download
+  buttons do.
 - Window-close shortcuts are not handled by the application; they depend on the
   window manager.
+
+**Not covered**
+
+- Screen readers: iced 0.14 exposes no accessibility tree, so no screen reader reads
+  the interface.
 
 ## Status, not just color
 

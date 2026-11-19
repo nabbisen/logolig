@@ -95,6 +95,14 @@ Japanese, and system default; themes are light, dark, and system default.
 
 The generated `favicon-snippet.html` is paste-ready for your `<head>`.
 
+**Keyboard.** Everything can be done without the mouse. Tab and Shift+Tab move
+through the controls (the side navigation first, then the page; a ring shows the
+focused control and the page scrolls to keep it in view), Enter and Space press a
+button or toggle a checkbox, and the arrow keys choose within a group of choices.
+Shortcuts: Ctrl+O choose a file, Ctrl+S download all (ZIP), Esc close the message or
+go back, Ctrl+1 / 2 / 3 Home, Customize, Settings, F1 the list (Cmd replaces Ctrl
+on macOS). Screen readers are not supported yet.
+
 State is never conveyed by color alone (ABDD §12): the active page in the
 navigation has a filled item, a bold label and a thin accent bar toward the
 content; the chosen option of a choice (language, theme, View as, Surface, SVG
