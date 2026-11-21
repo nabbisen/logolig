@@ -20,6 +20,8 @@ anywhere.
 
 Built on [iced](https://iced.rs/) and [snora](https://github.com/nabbisen/snora).
 
+![The Result screen after converting a logo: a grid of generated assets (favicon.svg, favicon.ico, three PNG sizes, the Apple touch icon and the HTML snippet), each with a Save button; a Back button at the top left, the side navigation with Home selected, and a Download all (ZIP) button at the bottom.](docs/assets/screenshot-01.png)
+
 ## Why
 
 Existing online favicon generators have problems:
@@ -49,7 +51,7 @@ logolig
 `cargo install` places a `logolig` binary in `~/.cargo/bin/`. Make
 sure that directory is on your `$PATH`.
 
-### From crates.io (after publication)
+### From crates.io
 
 ```sh
 cargo install logolig-app
@@ -92,6 +94,12 @@ resize algorithm, raster vectorization, and Microsoft app logos.
 
 Use **Settings** for language and theme. Supported languages are English,
 Japanese, and system default; themes are light, dark, and system default.
+
+To make everything larger, use your operating system's display scaling. The
+application has no zoom setting of its own; it is drawn at the scale of your
+display. Checked on a native Wayland session (an output scale of 1.2 made the
+window 1.2 times larger); under X11 (including XWayland) the application was
+**not** scaled in the same check, and Windows and macOS were not checked.
 
 The generated `favicon-snippet.html` is paste-ready for your `<head>`.
 
@@ -149,9 +157,19 @@ See `docs/src/export-spec.md` for the rationale on what is **not** emitted (no
 
 Documentation lives under `docs/src/`:
 
-- `architecture.md` — module layout, state model, message flow
-- `ui-a11y.md` — Accessible-by-Default-and-by-Design (ABDD) commitments
+- `architecture.md` — module layout, state model, message flow, release history
+- `functional-spec.md` — what the application does, screen by screen
+- `ui-a11y.md` — Accessible-by-Default-and-by-Design (ABDD) commitments, keyboard support
 - `export-spec.md` — output artifacts and HTML snippet shape
+
+Release notes are in `docs/release-notes/`. The plan and order of work is in
+[`ROADMAP.md`](ROADMAP.md).
+
+### Maintainers
+
+Design decisions are recorded as RFCs under [`rfcs/`](rfcs/); how an RFC moves from
+`proposed/` through `accepted/` to `done/` (or `archive/`) is the lifecycle policy in
+[`rfcs/README.md`](rfcs/README.md).
 
 ## Settings persistence
 
@@ -186,7 +204,7 @@ continue regardless. Halo detection and pre-multiplied-alpha analysis
 are intentionally not included — their thresholds risk false positives
 on legitimate anti-aliasing.
 
-Toggle **Show transparency checker** in the preview panel to swap the
+Choose **Checker** under **View as** in the preview panel to swap the
 browser-tab / smartphone framing for a checker-pattern view: light
 and dark grey 12px tiles with the icon overlaid at native size, so
 transparent regions are visually unambiguous.
@@ -341,7 +359,9 @@ on the CPU, without a window, a GPU or a display (`iced_test`), and checks prope
 in every combination of window size, screen, language and theme: nothing lies beyond the right
 edge, no text is squeezed to nothing, every interactive area is at least 24 x 24 px, and the
 main controls are fully visible. These tests are in `crates/app/src/ui_layout_tests/`, run with the
-rest of `cargo test` and in CI (about 20 seconds); the probe names the CPU renderer explicitly.
+rest of `cargo test` and in CI (about half a minute); the probe names the CPU renderer explicitly.
+They also check the keyboard model: Tab visits every control in the order of the screen, the focused
+control is always fully visible, and no control can be reached by the pointer but not by Tab.
 **The real window** is for what needs eyes or a real desktop portal, a few captures at a time.
 
 A headless property that fails today is not committed red: its known failures are a named list in
