@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 018: documentation synchronisation (job J15)
 
-Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; English only; relative paths with `cd`). Governing RFC: [RFC 018](../../accepted/018-documentation-synchronisation.md), **"Closing plan (2026-11-21)"** and the decisions D1/D2. Review of J14c: `.git-exclude/reviewed/rfc-027-j14c-review-2026-11-21.md`. **Documentation only: no code, no `Cargo` change.** (If you find a defect in code while reading, report it; do not fix it here.)
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; English only; relative paths with `cd`). Governing RFC: [RFC 018](../../done/018-documentation-synchronisation.md), **"Closing plan (2026-11-21)"** and the decisions D1/D2. Review of J14c: `.git-exclude/reviewed/rfc-027-j14c-review-2026-11-21.md`. **Documentation only: no code, no `Cargo` change.** (If you find a defect in code while reading, report it; do not fix it here.)
 
 Owner philosophy: users must not be confused or misled; documentation is the test-design source of truth, so it must say what the program **does**, verified, not what was once intended.
 

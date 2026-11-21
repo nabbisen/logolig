@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 036: upgrade snora 0.57 → 0.62 (job J13a)
 
-Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*` — read the **Test Optimization Rules** again; relative paths with `cd`; English only). Governing RFC: [RFC 036](../../accepted/036-snora-0-62-upgrade.md). Review of the spike: `.git-exclude/reviewed/rfc-027-focus-spike-review-2026-11-15.md`.
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*` — read the **Test Optimization Rules** again; relative paths with `cd`; English only). Governing RFC: [RFC 036](../../done/036-snora-0-62-upgrade.md). Review of the spike: `.git-exclude/reviewed/rfc-027-focus-spike-review-2026-11-15.md`.
 
 **Workflow:** `main`; `git pull --ff-only`; `git log origin/main..` before the push; gates chained (`cargo fmt --check && cargo clippy --workspace --all-targets --all-features --locked -- -D warnings && cargo test --workspace --all-features --locked && cargo +1.90 check --workspace --all-targets --all-features --locked && cargo audit && cargo doc --workspace --no-deps --locked`; four existing doc warnings; audit 0 / 11); CI waited for; no tags, force-push or history rewriting.
 

@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (Rust 2024, 2018+ module style without `mod.rs`, tests separated from implementation, English only, `unsafe` forbidden; relative paths with `cd`).
 
-Governing RFC: [RFC 017](../../accepted/017-source-structure-conformance.md) (Design item 2 and the amended decision). Review of part 1: `.git-exclude/reviewed/rfc-017-part-1-review-2026-11-11.md`. On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 017](../../done/017-source-structure-conformance.md) (Design item 2 and the amended decision). Review of part 1: `.git-exclude/reviewed/rfc-017-part-1-review-2026-11-11.md`. On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; no change a user could notice. **Behaviour-preserving: a pure move plus mechanical extraction.**
 

@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 027: a command key must never type into a text field (job J13b)
 
-Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; read the GUI Evidence and Test Optimization Rules again; relative paths with `cd`). Governing RFC: [RFC 027](../../accepted/027-keyboard-focus-model.md), section "Decision after the phase 0 spike" (key ownership). Evidence: the spike's Q4 (`.git-exclude/review-request/rfc-027-focus-spike/`, `Q4-headless-output.txt`, `q4-real-*`). **Starts after J13a is reviewed.**
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; read the GUI Evidence and Test Optimization Rules again; relative paths with `cd`). Governing RFC: [RFC 027](../../done/027-keyboard-focus-model.md), section "Decision after the phase 0 spike" (key ownership). Evidence: the spike's Q4 (`.git-exclude/review-request/rfc-027-focus-spike/`, `Q4-headless-output.txt`, `q4-real-*`). **Starts after J13a is reviewed.**
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused. **Defect (reproduced on the real stack, X11):** with the custom-size field focused, **Ctrl+1 types a "1"** into it and does not go Home. iced's `text_input` inserts the event's `text` whatever modifier is held (only Ctrl+C/X/V/A are special), and the field then captures the event, so our subscription (which sees only uncaptured events) never gets the shortcut.
 

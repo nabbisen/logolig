@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (**read the updated `project-instructions-gui-common.md`, in particular "GUI Evidence and Automation Rules" and "Test Optimization Rules"**; Rust 2024, 2018+ module style without `mod.rs`, tests separated from implementation, English only, `unsafe` forbidden; relative paths with `cd`).
 
-Governing RFC: [RFC 035](../../accepted/035-headless-ui-test-level.md). On any conflict, stop and send a clarification request. Previous job: J11 (RFC 011), reviewed first.
+Governing RFC: [RFC 035](../../done/035-headless-ui-test-level.md). On any conflict, stop and send a clarification request. Previous job: J11 (RFC 011), reviewed first.
 
 Owner philosophy: clean, safe and secure, robust design. **No product behaviour changes in this job.** Production code changes only if the spike shows `widget::Id`s are needed, and then only those, listed.
 

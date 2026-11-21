@@ -1,6 +1,6 @@
 # RFC 033 — Adopt the new application logo (documentation, Linux package, Microsoft Store)
 
-**Status.** Accepted (owner request 2026-11-10; the owner delegated making the transparent master to the architect and will write the provenance statement himself/herself, see "Inputs")
+**Status.** Implemented (1.28.0). Earlier: Accepted (owner request 2026-11-10; the owner delegated making the transparent master to the architect and will write the provenance statement himself/herself, see "Inputs")
 **Priority.** P2 (visible identity of the first releases; no behaviour change)
 **Tracks.** Owner request 2026-11-10: use the renewed logo "for documentation and publishment including Microsoft Store". Files: `.git-exclude/tmp/app-logo-261110/` (`logolig-app-logo-base.png` and a favicon bundle made with Logolig).
 **Touches.** `packaging/icons/`, `packaging/linux/icons/hicolor/`, `packaging/windows/Assets/`, `packaging/README.md`, `.github/workflows/packaging.yml` (the expected file list), `README.md`, `docs/assets/`. **No** code under `crates/`.

@@ -1,6 +1,6 @@
 # Handoffs for RFC 032
 
-Governing RFC: [RFC 032](../../accepted/032-snora-0-57-upgrade.md). The handoffs are execution documents; the RFC remains the authority for design and for lifecycle status. If a handoff conflicts with its RFC, the RFC wins and the handoff is corrected (RFC 000).
+Governing RFC: [RFC 032](../../done/032-snora-0-57-upgrade.md). The handoffs are execution documents; the RFC remains the authority for design and for lifecycle status. If a handoff conflicts with its RFC, the RFC wins and the handoff is corrected (RFC 000).
 
 Implementation handoff (job J7d, first job of release 1.28.0):
 

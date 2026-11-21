@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (Rust 2024, 2018+ module style without `mod.rs`, English only, tests separated from implementation, `unsafe` forbidden; relative paths with `cd`; GUI evidence rules in `.git-exclude/rules/project-instructions-gui-common.md`, "GUI Evidence and Automation Rules").
 
-Governing RFC: [RFC 019](../../accepted/019-keyboard-accessibility.md), section "Phase 1 results" and "Phase 2 design (binding)" (added with this handoff). On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 019](../../done/019-keyboard-accessibility.md), section "Phase 1 results" and "Phase 2 design (binding)" (added with this handoff). On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused or misled. The owner kept the "accessible" tagline and asked for better keyboard UI/UX: this job is the first real step; the Tab/focus model is RFC 027 (not here).
 

@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (read the **Test Optimization Rules** again; relative paths with `cd`; English only).
 
-Governing RFC: [RFC 035](../../accepted/035-headless-ui-test-level.md). Review of the previous step: `.git-exclude/reviewed/rfc-035-headless-ui-test-followup-review-2026-11-12.md`. On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 035](../../done/035-headless-ui-test-level.md). Review of the previous step: `.git-exclude/reviewed/rfc-035-headless-ui-test-followup-review-2026-11-12.md`. On any conflict, stop and send a clarification request.
 
 **`main` is red on CI** (the `test` job: `no_text_is_squeezed_out`, 48 findings, Japanese only; and +3 minutes). Fixing that is the priority; J12 waits. Owner philosophy: clean, safe and secure, robust design. A test that gives different answers on different machines is not a test.
 

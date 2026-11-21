@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/`.
 
-Governing RFC: [RFC 019](../../accepted/019-keyboard-accessibility.md) (Accepted, phased). This handoff covers **Phase 1: steps 1 and 2** (verify at run time, then make the documentation exact). Its section "Decisions and phasing" is binding. Steps 3–4 (shortcuts, focus states) are **not** part of this task. On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 019](../../done/019-keyboard-accessibility.md) (Accepted, phased). This handoff covers **Phase 1: steps 1 and 2** (verify at run time, then make the documentation exact). Its section "Decisions and phasing" is binding. Steps 3–4 (shortcuts, focus states) are **not** part of this task. On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused or misled. A documentation promise that the software does not keep misleads exactly the users who depend on it.
 

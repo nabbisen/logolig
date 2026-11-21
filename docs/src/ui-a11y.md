@@ -18,8 +18,8 @@ anywhere in the layout code.
 **Goal.** Full keyboard parity: everything the mouse can do, the keyboard can do. A
 keyboard-only user can choose a file, convert it, download one file or the ZIP, go
 back, change every setting and switch pages; the focus is always visible; nobody is
-trapped ([RFC 019](../../rfcs/accepted/019-keyboard-accessibility.md),
-[RFC 027](../../rfcs/accepted/027-keyboard-focus-model.md)).
+trapped ([RFC 019](../../rfcs/done/019-keyboard-accessibility.md),
+[RFC 027](../../rfcs/done/027-keyboard-focus-model.md)).
 
 **How it is checked.** Automated tests drive the real key path (the key event, the
 application's subscription, the widget operations that follow) on the real view, on

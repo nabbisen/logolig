@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (read the **GUI Evidence and Automation Rules** and **Test Optimization Rules** again; relative paths with `cd`; English only).
 
-Governing RFC: [RFC 031](../../accepted/031-silent-file-dialog-failure.md), including its **amendment of 2026-11-12**. Previous reviews: `.git-exclude/reviewed/rfc-011-job-identity-review-2026-11-13.md` and the JH review (`.git-exclude/reviewed/rfc-035-headless-ui-test-review-2026-11-12.md`). **Start only after JH is pushed and its CI is green.** On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 031](../../done/031-silent-file-dialog-failure.md), including its **amendment of 2026-11-12**. Previous reviews: `.git-exclude/reviewed/rfc-011-job-identity-review-2026-11-13.md` and the JH review (`.git-exclude/reviewed/rfc-035-headless-ui-test-review-2026-11-12.md`). **Start only after JH is pushed and its CI is green.** On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused. **This job changes no product code and makes no commit of code.** It produces evidence and a recommendation; the architect decides, then a second handoff (implementation) follows. (Adding a spike script under `.git-exclude/review-request/` is not a commit.)
 

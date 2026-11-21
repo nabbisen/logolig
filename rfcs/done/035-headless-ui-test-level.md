@@ -1,6 +1,6 @@
 # RFC 035 — A headless UI test level (layout, size, language and theme matrix without a window)
 
-**Status.** Accepted (architect's decision, 2026-11-12, implementing the owner's "Test Optimization Rules" of the same date in `.git-exclude/rules/project-instructions-gui-common.md`; the owner may veto before the job starts)
+**Status.** Implemented (1.28.0). Earlier: Accepted (architect's decision, 2026-11-12, implementing the owner's "Test Optimization Rules" of the same date in `.git-exclude/rules/project-instructions-gui-common.md`; the owner may veto before the job starts)
 **Priority.** P1 for the test process (it unblocks RFC 026 and RFC 021 and shortens every later UI job); no product behaviour changes.
 **Tracks.** Level 2 of the owner's test levels ("headless UI") does not exist in this project: layout, clipping, hit-area and size/language/theme combinations are checked only with real windows, one capture at a time.
 **Touches.** `Cargo.toml` and `crates/app/Cargo.toml` (one dev-dependency), new test files in `crates/app/src/` (`*_tests.rs` style), `Cargo.lock`, `docs/` (a short testing note), CI (no new job expected). No production code, except possibly a few `widget::Id`s if the spike shows text selectors are not enough.

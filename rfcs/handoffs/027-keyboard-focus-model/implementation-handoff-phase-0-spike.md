@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (read the **GUI Evidence and Automation Rules** and **Test Optimization Rules** again; Rust 2024, English only, `unsafe` forbidden; relative paths with `cd`).
 
-Governing RFC: [RFC 027](../../accepted/027-keyboard-focus-model.md), including the **update of 2026-11-09** (D1 is reopened: Option A, app-owned model, against Option D, snora's engine, and a hybrid). Previous review: `.git-exclude/reviewed/rfc-031-notice-no-stack-review-2026-11-15.md`. On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 027](../../done/027-keyboard-focus-model.md), including the **update of 2026-11-09** (D1 is reopened: Option A, app-owned model, against Option D, snora's engine, and a hybrid). Previous review: `.git-exclude/reviewed/rfc-031-notice-no-stack-review-2026-11-15.md`. On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused. **The owner's priority for this release is that a keyboard-only user can do everything**; this spike decides how, so the evidence must be honest, including "it does not work".
 

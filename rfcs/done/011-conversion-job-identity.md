@@ -1,6 +1,6 @@
 # RFC 011 — Conversion job identity and concurrent-input policy
 
-**Status.** Accepted (owner authorization 2026-11-09, release 1.28.0)
+**Status.** Implemented (1.28.0). Earlier: Accepted (owner authorization 2026-11-09, release 1.28.0)
 **Priority.** P2 (race with low probability and confusing effect; cheap to fix)
 **Tracks.** Defect: results of an older conversion can overwrite a newer one.
 **Touches.** `crates/app/src/app.rs` (`AppState`, `Message`, `update`), `crates/app/src/task_queue.rs`, app tests.

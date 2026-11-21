@@ -25,13 +25,26 @@ recommendation; the owner authorizes the plan.
 | [000](./done/000-rfc-lifecycle-policy.md) | RFC lifecycle policy | policy in effect |
 | [005](./done/005-microsoft-app-logos.md) | Microsoft app logos | 1.26.0 |
 | [006](./done/006-drop-zone-drag-drop-repair.md) | Drop-zone drag-and-drop repair | 1.26.1 |
+| [008](./done/008-rfc-portfolio-migration.md) | RFC portfolio migration to the RFC 000 layout | 1.28.0 |
 | [009](./done/009-result-artifact-identity-and-zip-integrity.md) | Result artifact identity and ZIP integrity | 1.27.0 |
 | [010](./done/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | 1.27.0 |
+| [011](./done/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | 1.28.0 |
+| [017](./done/017-source-structure-conformance.md) | Source structure conformance (tests, file size, dead code) | 1.28.0 |
+| [018](./done/018-documentation-synchronisation.md) | Documentation synchronisation (J15 done; row 9 waits for RFC 014) | 1.28.0 |
+| [019](./done/019-keyboard-accessibility.md) | Keyboard accessibility (phases 1 and 2 done; the focus model is RFC 027) | 1.28.0 |
+| [021](./done/021-selection-state-indicators.md) | Selection-state indicators | 1.28.0 |
 | [024](./done/024-dependency-and-toolchain-baseline.md) | Dependency and toolchain baseline (MSRV, `cargo audit`) | 1.27.0 |
 | [025](./done/025-window-application-id.md) | Window application ID and desktop integration | 1.27.0 |
+| [026](./done/026-result-screen-layout-small-windows.md) | Result screen layout at small window heights | 1.28.0 |
+| [027](./done/027-keyboard-focus-model.md) | Keyboard focus model (implemented for 1.28.0: snora controls, Tab, ring) | 1.28.0 |
 | [028](./done/028-snora-upgrade-0-53.md) | Upgrade snora 0.25.2 → 0.53.0 | 1.27.0 |
 | [029](./done/029-toast-lifetime-by-content.md) | Toast lifetime proportional to its content | 1.27.0 |
 | [030](./done/030-bound-vectorization-cost-and-keep-ui-responsive.md) | Bound the cost of vectorization and keep the UI responsive during conversion | 1.27.0 |
+| [031](./done/031-silent-file-dialog-failure.md) | A file dialog that cannot open must not fail silently | 1.28.0 |
+| [032](./done/032-snora-0-57-upgrade.md) | Upgrade snora from 0.53 to 0.57 | 1.28.0 |
+| [033](./done/033-new-application-logo.md) | Adopt the new application logo (docs, Linux package, Microsoft Store) | 1.28.0 |
+| [035](./done/035-headless-ui-test-level.md) | A headless UI test level (layout, size, language and theme matrix without a window) | 1.28.0 |
+| [036](./done/036-snora-0-62-upgrade.md) | Upgrade snora 0.57 → 0.65 (steps 0.62 and 0.65; the keyboard `control` and form controls) | 1.28.0 |
 
 ### Accepted (`accepted/`)
 
@@ -39,20 +52,7 @@ recommendation; the owner authorizes the plan.
 | --- | --- | --- |
 | [020](./accepted/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging (phased) | P1 |
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
-| [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phases 1 and 2 done; the focus model is RFC 027) | P1 |
-| [027](./accepted/027-keyboard-focus-model.md) | Keyboard focus model (implemented for 1.28.0: snora controls, Tab, ring) | P1 |
-| [008](./accepted/008-rfc-portfolio-migration.md) | RFC portfolio migration to the RFC 000 layout | P2 (script outstanding) |
-| [032](./accepted/032-snora-0-57-upgrade.md) | Upgrade snora from 0.53 to 0.57 | P1 |
-| [017](./accepted/017-source-structure-conformance.md) | Source structure conformance (tests, file size, dead code) | P2 |
-| [026](./accepted/026-result-screen-layout-small-windows.md) | Result screen layout at small window heights | P2 |
-| [021](./accepted/021-selection-state-indicators.md) | Selection-state indicators | P2 |
-| [011](./accepted/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | P2 |
-| [031](./accepted/031-silent-file-dialog-failure.md) | A file dialog that cannot open must not fail silently | P2 |
-| [033](./accepted/033-new-application-logo.md) | Adopt the new application logo (docs, Linux package, Microsoft Store) | P2 |
 | [034](./accepted/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | P2 |
-| [035](./accepted/035-headless-ui-test-level.md) | A headless UI test level (layout, size, language and theme matrix without a window) | P1 |
-| [036](./accepted/036-snora-0-62-upgrade.md) | Upgrade snora 0.57 → 0.65 (steps 0.62 and 0.65; the keyboard `control` and form controls) | P1 |
-| [018](./accepted/018-documentation-synchronisation.md) | Documentation synchronisation (J15 done; row 9 waits for RFC 014) | P2 |
 
 ### Proposed (`proposed/`)
 

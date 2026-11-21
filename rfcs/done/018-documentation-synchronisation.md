@@ -1,6 +1,6 @@
 # RFC 018 — Documentation synchronisation with v1.26.2
 
-**Status.** Accepted (architect, 2026-11-21, for release 1.28.0 as job J15; the decisions D1 and D2 of 2026-10-21 stand; the state of each row at 2026-11-21 is in "Closing plan")
+**Status.** Implemented (1.28.0; table row 9 stays open until RFC 014). Earlier: Accepted (architect, 2026-11-21, for release 1.28.0 as job J15; the decisions D1 and D2 of 2026-10-21 stand; the state of each row at 2026-11-21 is in "Closing plan")
 **Priority.** P2 (docs are the test-design source of truth per project rules)
 **Tracks.** Drift between README/`docs/src/` and the implementation.
 **Touches.** `README.md`, `docs/src/architecture.md`, `functional-spec.md`, `export-spec.md`, `ui-a11y.md`, `rfcs/README.md`.

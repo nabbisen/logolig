@@ -1,6 +1,6 @@
 # RFC 008 — Migrate the RFC portfolio to the RFC 000 layout
 
-**Status.** Accepted (migration executed 2026-10-21; `scripts/check-rfcs.sh` outstanding)
+**Status.** Implemented (1.28.0; the migration was executed 2026-10-21 and `scripts/check-rfcs.sh` guards it since J16). Earlier: Accepted (migration executed 2026-10-21; `scripts/check-rfcs.sh` outstanding)
 **Priority.** P2 (governance; the owner prioritised AUR publication, RFC 020, first on 2026-10-21)
 **Tracks.** Governance. Implements the adoption step of [RFC 000](../done/000-rfc-lifecycle-policy.md).
 **Touches.** `rfcs/` layout, `rfcs/README.md`, Status fields of RFC 001–007, inbound links in `docs/src/architecture.md`.

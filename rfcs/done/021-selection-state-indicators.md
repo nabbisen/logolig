@@ -1,6 +1,6 @@
 # RFC 021 — Selection-state indicators
 
-**Status.** Accepted (owner authorization 2026-11-09, release 1.28.0)
+**Status.** Implemented (1.28.0). Earlier: Accepted (owner authorization 2026-11-09, release 1.28.0)
 **Priority.** P2
 **Tracks.** UI/UX: one glyph is used for different meanings, and the documented glyph is not the implemented one. Raised by RFC 018 D1.
 **Touches.** `crates/app/src/ui/accessibility.rs` (`marker`), `ui/preview_panel.rs`, `ui/settings_page.rs`, `ui/sidebar.rs`, `ui/result_view.rs`, `docs/src/ui-a11y.md`, tests.

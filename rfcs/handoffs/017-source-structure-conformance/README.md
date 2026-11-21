@@ -1,6 +1,6 @@
 # Handoffs for RFC 017
 
-Governing RFC: [RFC 017](../../accepted/017-source-structure-conformance.md). The handoffs are execution documents; the RFC remains the authority for design and for lifecycle status. If a handoff conflicts with its RFC, the RFC wins and the handoff is corrected (RFC 000).
+Governing RFC: [RFC 017](../../done/017-source-structure-conformance.md). The handoffs are execution documents; the RFC remains the authority for design and for lifecycle status. If a handoff conflicts with its RFC, the RFC wins and the handoff is corrected (RFC 000).
 
 RFC 017 is delivered in three jobs, each reviewed before the next is issued:
 

@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/` (English only; relative paths with `cd`).
 
-Governing RFC: [RFC 033](../../accepted/033-new-application-logo.md) (Accepted, owner request 2026-11-10). The RFC defines what and why; this handoff defines how and how to prove it. On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 033](../../done/033-new-application-logo.md) (Accepted, owner request 2026-11-10). The RFC defines what and why; this handoff defines how and how to prove it. On any conflict, stop and send a clarification request.
 
 **Workflow (owner decision 2026-10-21): no topic branches, no concurrent jobs.** You are the only job running. Work on `main`: `git pull --ff-only` first, small commits, gates chained with `&&`, never a red push, no tags. **Position in the schedule:** job J7f in `ROADMAP.md`, after J7e (the lock hygiene) is reviewed. This job changes no code under `crates/`.
 

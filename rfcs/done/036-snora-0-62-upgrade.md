@@ -1,6 +1,6 @@
 # RFC 036 — Upgrade snora 0.57 → 0.62 (the keyboard `control`)
 
-**Status.** Accepted (architect, 2026-11-15; announced to the owner; release 1.28.0). Dependency upgrades are the architect's remit (as RFC 028, 032); the owner may veto.
+**Status.** Implemented (1.28.0). Earlier: Accepted (architect, 2026-11-15; announced to the owner; release 1.28.0). Dependency upgrades are the architect's remit (as RFC 028, 032); the owner may veto.
 **Priority.** P1 (prerequisite of the keyboard work, RFC 027).
 **Tracks.** The RFC 027 phase 0 spike (J13) found that snora ≥ 0.59 exports `snora::control(content)`: the behaviour of iced's `button` with our own styles unchanged, plus a focus target in layout order, Enter/Space, a high-contrast offset ring, a ≥ 24 px target and an `id`. That makes iced's own focus the single focus owner and removes the need for an application-owned focus engine.
 **Touches.** `Cargo.toml` (one version), `Cargo.lock`, release notes. No code change expected.

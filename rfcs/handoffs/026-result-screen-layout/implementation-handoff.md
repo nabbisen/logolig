@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 026: Back and Download always reachable; the Settings page scrolls (job J9)
 
-Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; read the **GUI Evidence and Automation Rules** and **Test Optimization Rules** again; Rust 2024, 2018+ module style, tests in separate files, English only; relative paths with `cd`). Governing RFC: [RFC 026](../../accepted/026-result-screen-layout-small-windows.md), **sections "Amendment 2026-11-12" and "Decisions" (D1–D6 are binding)**. Findings source: `.git-exclude/review-request/rfc-035-headless-ui-test/README.md` §5 and `evidence/findings-today.txt`. **Starts after J13b is reviewed.**
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; read the **GUI Evidence and Automation Rules** and **Test Optimization Rules** again; Rust 2024, 2018+ module style, tests in separate files, English only; relative paths with `cd`). Governing RFC: [RFC 026](../../done/026-result-screen-layout-small-windows.md), **sections "Amendment 2026-11-12" and "Decisions" (D1–D6 are binding)**. Findings source: `.git-exclude/review-request/rfc-035-headless-ui-test/README.md` §5 and `evidence/findings-today.txt`. **Starts after J13b is reviewed.**
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused; less is more. **Layout only: no message, state, text, icon or style changes.**
 

@@ -1,6 +1,6 @@
 # RFC 017 — Source structure conformance (tests, file size, dead code)
 
-**Status.** Accepted (owner authorization 2026-11-09, release 1.28.0)
+**Status.** Implemented (1.28.0). Earlier: Accepted (owner authorization 2026-11-09, release 1.28.0)
 **Priority.** P2 (enabler: should land before RFC 011, 012, 016 touch `app.rs`)
 **Tracks.** Technical debt against `project-instructions-rust.md` and the development instructions.
 **Touches.** `crates/app/src/app.rs` and its UI modules, `crates/core/src/services/flatten.rs`, `crates/app/src/task_queue.rs`, `crates/app/tests/app_state.rs`, `crates/core/tests/exporter.rs`, working-tree hygiene.

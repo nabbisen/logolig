@@ -1,6 +1,6 @@
 # RFC 027 — Keyboard focus model
 
-**Status.** Accepted, phased (owner delegation, 2026-10-21): phase 0 is an evidence-only spike; the design below is frozen only after its results are reviewed
+**Status.** Implemented (1.28.0). Earlier: Accepted, phased (owner delegation, 2026-10-21): phase 0 is an evidence-only spike; the design below is frozen only after its results are reviewed
 **Priority.** P1 (owner priority, 2026-10-21: "enhance keyboard UI/UX")
 **Tracks.** Option B of RFC 019: Tab traversal, activation and visible focus for every interactive control.
 **Touches.** `crates/app` (state, keyboard subscription, all `ui/*` views and styles), `docs/src/ui-a11y.md`, tests, a manual test checklist. Builds on RFC 019 phase 2 (global shortcuts) and interacts with RFC 021 (selection indicators) and RFC 026 (result layout).

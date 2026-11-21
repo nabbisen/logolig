@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 021: selection-state indicators on snora's form controls (job J10; phase 0 look study, then the build)
 
-Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; read the **GUI Evidence and Automation Rules** and **Test Optimization Rules** again; Rust 2024, 2018+ module style, tests in separate files, English only; relative paths with `cd`). Governing texts: [RFC 021](../../accepted/021-selection-state-indicators.md) (**principles, Q1 decision, the amendments of 2026-11-15 and 2026-11-18**) and [RFC 027](../../accepted/027-keyboard-focus-model.md) (amendment 2026-11-18). **Starts after J13c (snora 0.65) is reviewed.** Reviews to read: `.git-exclude/reviewed/rfc-027-focus-spike-review-2026-11-15.md`, `…rfc-026-result-layout-review-2026-11-18.md`.
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; read the **GUI Evidence and Automation Rules** and **Test Optimization Rules** again; Rust 2024, 2018+ module style, tests in separate files, English only; relative paths with `cd`). Governing texts: [RFC 021](../../done/021-selection-state-indicators.md) (**principles, Q1 decision, the amendments of 2026-11-15 and 2026-11-18**) and [RFC 027](../../done/027-keyboard-focus-model.md) (amendment 2026-11-18). **Starts after J13c (snora 0.65) is reviewed.** Reviews to read: `.git-exclude/reviewed/rfc-027-focus-spike-review-2026-11-15.md`, `…rfc-026-result-layout-review-2026-11-18.md`.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused; less is more.
 
