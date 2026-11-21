@@ -86,20 +86,51 @@
 
 **Decisions (owner, 2026-11-09):** (1) scope and order authorized, including J7d (RFC 032) as the first job; changes are announced before they are made; (2) RFC 021 Q1 decided: accent bar plus bold label for the active nav item; (3) RFC 032 D1 decided: toasts wait while the pointer rests on them. RFC 017, 021, 026, 011, 031 and 032 were moved to `accepted/` the same day.
 
-## 4. Release 1.29.0: distribution reach and robustness (proposed; scope to be confirmed when 1.28.0 ships)
+## 4. Release 1.29.0: readable and robust (scope proposed by the architect 2026-11-22; **not yet authorized by the owner**)
 
-| Job | RFC | Size | Notes |
+**Theme.** What every user meets first: a readable interface (RFC 034, the owner's question of 2026-11-12), and the correctness and safety items that are small, independent of the UI and already designed. **Distribution reach moves to 1.30.0** (below). 1.28.0 took 13 days and about 35 reviewed steps; this scope is about **15 jobs**, planned at two to three weeks.
+
+### In scope, in this order
+
+| Job | Work | Size | Why now / notes |
 |---|---|---|---|
-| J17 | RFC 023: Flatpak (upstream files, MetaInfo, validation CI; the owner writes the manifest and submits to Flathub) | M–L | Owner prefers the ordinary Flathub route; AI-policy decision pending |
-| J18 | RFC 015 phase 2b: text rendering with generic-family repair and substitution advisory | M | Includes the Flatpak font set |
-| J19 | RFC 012, 014: manifest validation, input limits | M | Robustness and safety (RFC 011 moved to 1.28.0) |
-| J20 | RFC 013, 016, 022: system theme, i18n hygiene, vtracer preset check; `vtracer` dependency-hygiene spike (RFC 024), **and `chrono` (unmaintained, RUSTSEC-2026-0543; one use, ZIP timestamps): measure the replacement options** | M | Polish and correctness |
-| J21 | RFC 034 step 1: contrast (all text 7:1 in Light and Dark, solid secondary text, darker primary button, 3:1 for control borders; a contrast test over every colour pair) | M | J14 | Pure functions plus palette constants; owner decision D3 (no fourth theme) |
-| J22 | RFC 034 step 2: type scale module, target sizes (≥ 44 / ≥ 32 px), SVG quality slider → three labelled choices | L | J21 | Headless properties P1/P3 raised and their exception lists emptied; source test: no numeric `.size(...)` |
-| J23 | RFC 034 step 3: plain-language Customize labels (en, ja) | M | J22 | Technical names stay as a secondary line; no change to what options do |
-| J24 | RFC 034 step 4: "Interface size" setting (Normal / Large / Extra large) via `scale_factor`, persisted, always reachable | S | J23 | Headless matrix at every step; invalid stored value loads as Normal |
+| K1 | RFC 014: ingest policy and limits. Content decides (extension is a hint; an informational notice when they differ); limits 64 MiB file, 100 MP, 16 384 px, SVG 8 MiB; **error texts show the file name, not the full path** (addendum of 2026-10-24) | M | The only safety hardening open; independent of UI. **Owner decisions** (below). Adds `AppError` variants (see SemVer) |
+| K2 | RFC 012: web manifest validation (the validation exists and is never called); accept `#RGB` shorthand and normalise | S | A defect with a designed fix. Owner Q1 |
+| K3 | RFC 013: "System" theme follows the OS. **Spike first** (does winit report the theme on Wayland and X11 here? `iced::system::theme()` / `theme_changes()` exist in iced 0.14); fallback Light as today; Settings shows "System (currently Dark)" | S–M | Today "System" always renders Light, which a user reads as a bug. Before J21 so contrast is tested on the real System→Dark path |
+| J21 | RFC 034 step 1: contrast, all text 7:1 in Light and Dark, solid secondary text, darker primary button, 3:1 control borders; a pure-function contrast test over every colour pair | M | D3 (no fourth theme) |
+| J22 | RFC 034 step 2: type scale module (body 16, secondary 14, caption 13), target sizes (≥ 44 primary, ≥ 32 others), the custom-size field (last `hit_area.rs::KNOWN` entry), a headless property that the Result screen's scrolling middle keeps ≥ 200 px at every size; source test: no numeric `.size(...)` | L (two steps: the module, then the pages) | The slider part is already done (RFC 021 D4). Touches every view; the layout matrix is the guard |
+| J23 | RFC 034 step 3: plain-language Customize labels (en, ja); technical names on a secondary line | M | **Japanese texts: owner review wanted** (below) |
+| J24 | RFC 034 step 4: "Interface size" (Normal / Large / Extra large, 100/125/150 %) via `scale_factor`, persisted, always reachable, invalid value loads as Normal; matrix at every step; the mobile breakpoint is evaluated in scaled pixels | S | D4: everything of RFC 034 ships together |
+| K4 | RFC 016 (narrowed): the hardcoded English (error title, "N files", dialog title and filters, preview captions) moves to the dictionary, plus a guard test; **the 41 unused keys are NOT removed** (public `MessageKey`: SemVer, my own rule): they are listed in one test fixture "unused until 2.0" so the guard passes | S | After J23, so new strings are counted once |
+| H1 | Spike (evidence only): `chrono` replacement options for the ZIP timestamp (RUSTSEC-2026-0543: unmaintained, one use), `vtracer` dependency hygiene (RFC 024) | S | Audit baseline 12 → ideally 11 |
+| H2 | RFC 022 spike (evidence only): does vtracer "Sharp" do what its name says? No behaviour change without evidence | S | Raised by RFC 018 D2; the UI now names the preset "Sharp (logos, icons)" |
+| R2 | Release 1.29.0 candidate, as R1: notes, package build, **the release-commit real-window pass** (keyboard sequence, Interface size 100/150 % at the opening size, System theme if the spike allows), RFC moves, security note, then the owner decides the tag | M | |
 
-The architect may split or reorder these as evidence arrives and will say so before acting. RFC 001–003 are withdrawn and RFC 004 is deferred (RFC 008 D4, decided 2026-10-21); RFC 027's phase 0 spike (J13) is the first step of the focus model, in 1.28.0.
+**Release gates specific to this scope.** The contrast test and the headless matrix pass at every Interface-size step in Light and Dark and both languages; the real pass shows the worst case (150 %, longest labels) plus a baseline; no new `#[allow]` beyond the SemVer pattern; the 12 audit warnings do not grow.
+
+**If time is short, cut in this order (last first):** H2, H1, K4, K2 (small, can ride 1.29.1), then J24. Never cut K1 or J21–J23 alone: RFC 034 ships whole (D4) or moves whole.
+
+### Not in 1.29.0 (moved to 1.30.0, "distribution reach")
+
+| Item | Why later |
+|---|---|
+| RFC 023 Flatpak (upstream files, MetaInfo, validation CI; the owner writes the manifest and submits) | Needs the **final UI** (the README screenshot is retaken once; MetaInfo uses it), the owner's time and the AI-policy decision, and the AUR publication first |
+| RFC 015 phase 2b: SVG text rendering with a font set | Platform-dependent fonts; shares its font policy with Flatpak; "SVG text is not drawn" stays a documented limitation |
+| RFC 020 phases 3–4 (`logolig-bin`, `release.yml`, attestation) | Wait for the owner's `aur` environment and CI-only key |
+| RFC 004 zh-CN | Needs a native reviewer |
+| RFC 007 Wayland drag-hover feedback | P3 |
+| snora requests (expose `on_focus_change` on `snora::Control`; a text-size setter; a horizontal radio group) | Drafts in `.git-exclude/upstream/snora/send/draft/`, unsent until the owner sends them |
+
+### Next major version (2.0) list, kept so that nothing is forgotten
+
+Remove the items deprecated in 1.28.0 (`MessageKey::{PresetLabel, SvgConversionSimple, SvgConversionDetailed, ShortcutsLimitNote}`, `ThemeMode::next`, `ExportPlan::overrides`/`SizeOverride`, `PreviewContext::label`) and the 41 unused `MessageKey` variants; make `MessageKey` and `AppError` `#[non_exhaustive]` (each minor release that adds a variant is a source-compatibility note until then; K1 adds `AppError` variants); the owner decides when.
+
+### Owner decisions needed to authorize this scope
+
+1. The split: **1.29.0 = readable and robust; 1.30.0 = distribution reach** (recommended), or keep Flatpak in 1.29.0 (not recommended: it would force a second screenshot and put the owner's manifest and AI-policy work on the critical path).
+2. **RFC 014:** content decides (recommended) and the limits 64 MiB / 100 MP / 16 384 px / SVG 8 MiB (or other numbers).
+3. **RFC 012 Q1:** accept `#RGB` shorthand (recommended: yes). **RFC 013 Q1:** fallback Light when the OS cannot say (recommended: yes).
+4. **Japanese review:** J23 writes many new Japanese labels; can the owner read them (a list file, a few minutes per batch)? If not, the notes say again that they have not had a native review.
 
 ## 4a. Distribution track
 

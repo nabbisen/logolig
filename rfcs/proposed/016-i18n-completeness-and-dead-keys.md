@@ -45,3 +45,8 @@ No alphabetic literal reaches the UI outside the allow-list; zero unreferenced k
 ## Risk
 
 Low. Mechanical. Coordinate with RFC 004 (zh-CN), which multiplies the translation burden by the number of keys; fewer keys is cheaper to translate.
+
+## Amendment (architect, 2026-11-22): SemVer narrows the dead-key cleanup
+
+`MessageKey` is a public, exhaustive enum of the published `logolig` crate. **Removing the 41 unused variants removes public items, which is not allowed in 1.x** (a major-version decision for the owner). Scope for 1.29.0: move the **hardcoded English** into the dictionary and add the **guard test**; keep the unused variants and list them in one test fixture (`UNUSED_UNTIL_2_0`) so that the guard can tell a new unused key from a known one; the removal is on the 2.0 list in `ROADMAP.md`. Sequence it after the plain-language labels (RFC 034 step 3) so new strings are counted once.
+

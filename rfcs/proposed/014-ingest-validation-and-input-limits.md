@@ -57,3 +57,8 @@ Low. Limits may reject unusually large but legitimate logos; the owner chooses t
 ## Addendum (architect, 2026-10-24, from the RFC 028 review)
 
 The error toast for an unsupported file shows the **full path** ("Unsupported file format: /home/<user>/.../notes.png"): it wraps over five lines and exposes the directory and user name. Decide in this RFC's work that user-facing errors for a file show the **file name only** (the full path stays in logs and in the `AppError` fields). The translation templates `error_unsupported_file` and `error_io` (`{path}`) keep the placeholder; the caller passes the file name.
+
+## Amendment (architect, 2026-11-22): public error enum
+
+The new `InputTooLarge` and `ImageTooLarge` variants are added to the public `AppError` of the published `logolig` crate, which is not `#[non_exhaustive]`: as with `MessageKey` in 1.27.0 and 1.28.0, this is a source-compatibility note for downstream exhaustive matches, stated in the release notes; `#[non_exhaustive]` is on the 2.0 list (`ROADMAP.md`). Scoped for 1.29.0 (job K1) pending the owner's decisions on D1 and D2.
+
