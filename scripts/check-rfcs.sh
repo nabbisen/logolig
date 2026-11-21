@@ -15,7 +15,7 @@ LOG=$(mktemp); trap 'rm -f "$LOG"' EXIT
 # Every failure is printed and logged (a file, not a variable: the link loop runs in pipelines/subshells).
 bad() { echo "$1: $2" | tee -a "$LOG"; }
 # Handoff folders that are not tied to one RFC number.
-ALLOWED_HANDOFFS="release-1.27.0"
+ALLOWED_HANDOFFS="release-1.27.0 release-1.28.0"
 
 # The word an RFC's Status must start with, by folder.
 expected_status() { case "$1" in proposed) echo Proposed ;; accepted) echo Accepted ;; done) echo Implemented ;; archive) echo "Withdrawn Superseded" ;; esac; }
