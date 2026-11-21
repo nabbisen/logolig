@@ -1,8 +1,8 @@
 # Logolig Functional Specification
 
 > This document describes **what logolig can do and how it behaves** in the
-> current development tree (release 1.28.0 in preparation; the last release is
-> 1.27.0), as observable behaviour rather than implementation detail.
+> current tree (release 1.28.0; the previous release is 1.27.0), as observable
+> behaviour rather than implementation detail.
 > It is intended as input for UX review and external design decisions.
 >
 > The document separates **functional specification** (what it does) from
@@ -393,7 +393,7 @@ No network communication. All processing runs on the local CPU.
 | v1.26.1 | Drop zone | Drag-and-drop repaired; the whole card is the click target; hover feedback |
 | v1.26.2 | Stability | Release-gate and documentation stabilisation |
 | v1.27.0 | First public release | Non-square logos shown in full; keyboard shortcuts; ZIP written all-or-nothing; safer SVG sources; toast time follows the text; faster large conversions |
-| v1.28.0 (in preparation) | Keyboard and interface correctness | Every control reachable and operable by keyboard (Tab order, focus ring, always in view); radio groups, checkboxes and an accent bar as selection cues; "Back" and "Download all" always in view; a result always belongs to the file chosen; one notice when no file dialog exists |
+| v1.28.0 | Keyboard and interface correctness | Every control reachable and operable by keyboard (Tab order, focus ring, always in view); radio groups, checkboxes and an accent bar as selection cues; "Back" and "Download all" always in view; a result always belongs to the file chosen; one notice when no file dialog exists |
 
 ## 17. Design review axes
 
