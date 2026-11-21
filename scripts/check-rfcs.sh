@@ -3,7 +3,8 @@
 # Usage: scripts/check-rfcs.sh [REPOSITORY_ROOT]   (default: the repository this script is in; run from anywhere)
 # Exit 0 only when every check passes; each failure is printed as "file: what is wrong"; the last line is the count.
 #   1 Status matches the folder   2 filename NNN-slug.md   3 no number in two folders   4 index both ways
-#   5 handoff directories match an RFC number, and have no state subfolders   6 relative links resolve
+#   5 handoff directories match an RFC number (or are a release folder, `release-[0-9]*`, which is not tied to one RFC),
+#     and have no state subfolders   6 relative links resolve
 # Links (check 6): Markdown `](target)` and HTML src="..." / href="..." in rfcs/, docs/src/, README.md, ROADMAP.md.
 # A leading `/` means the repository root (RFC 033); otherwise the target is relative to the file. URLs (any scheme:),
 # mailto: and anchor-only targets are skipped; a trailing #anchor is ignored (anchors are NOT checked); fenced code
@@ -14,8 +15,6 @@ RFCS="$ROOT/rfcs"
 LOG=$(mktemp); trap 'rm -f "$LOG"' EXIT
 # Every failure is printed and logged (a file, not a variable: the link loop runs in pipelines/subshells).
 bad() { echo "$1: $2" | tee -a "$LOG"; }
-# Handoff folders that are not tied to one RFC number.
-ALLOWED_HANDOFFS="release-1.27.0 release-1.28.0"
 
 # The word an RFC's Status must start with, by folder.
 expected_status() { case "$1" in proposed) echo Proposed ;; accepted) echo Accepted ;; done) echo Implemented ;; archive) echo "Withdrawn Superseded" ;; esac; }
@@ -60,7 +59,7 @@ check_handoffs() {
     if [[ $name =~ ^[0-9]{3}- ]]; then
       find "$RFCS"/{proposed,accepted,done,archive} -name "$n-*.md" 2>/dev/null | grep -q . || bad "rfcs/handoffs/$name" "no RFC $n in any folder"
     else
-      case " $ALLOWED_HANDOFFS " in *" $name "*) ;; *) bad "rfcs/handoffs/$name" "not NNN-slug and not in the allow-list" ;; esac
+      case $name in release-[0-9]*) ;; *) bad "rfcs/handoffs/$name" "neither NNN-slug nor a release folder (release-[0-9]*)" ;; esac
     fi
     for state in proposed accepted done archive; do [ -d "$dir$state" ] && bad "rfcs/handoffs/$name" "has a state subfolder $state/ (state lives on the RFC)"; done
   done

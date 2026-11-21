@@ -49,10 +49,11 @@ t=$(fresh); cp "$t/rfcs/accepted/002-a.md" "$t/rfcs/accepted/005-new.md"; fail "
 t=$(fresh); echo '[x](./accepted/009-gone.md)' >> "$t/rfcs/README.md"; fail "4 fail: an index link to a missing file" "$t" "does not exist"
 t=$(fresh); echo '[x](./accepted/003-d.md)' >> "$t/rfcs/README.md"; fail "4 fail: an index link naming the wrong folder" "$t" "names the wrong folder; the file is in done/003-d.md"
 # 5 handoffs
-t=$(fresh); pass "5 pass: a numbered handoff and the allow-listed folder" "$t"
+t=$(fresh); pass "5 pass: a numbered handoff and a release folder" "$t"
 t=$(fresh); mkdir "$t/rfcs/handoffs/099-orphan"; fail "5 fail: an orphan handoff directory" "$t" "099-orphan: no RFC 099 in any folder"
 t=$(fresh); mkdir "$t/rfcs/handoffs/002-a/done"; fail "5 fail: a handoff with a done/ subfolder" "$t" "has a state subfolder done/"
-t=$(fresh); mkdir "$t/rfcs/handoffs/stray"; fail "5 fail: a non-numbered folder outside the allow-list" "$t" "not NNN-slug and not in the allow-list"
+t=$(fresh); mkdir "$t/rfcs/handoffs/release-1.29.0"; pass "5 pass: any release-<version> folder, with no edit to the script" "$t"
+t=$(fresh); mkdir "$t/rfcs/handoffs/random-folder"; fail "5 fail: a non-numbered folder that is not a release folder" "$t" "random-folder: neither NNN-slug nor a release folder"
 # 6 relative links
 t=$(fresh); pass "6 pass: relative, /-rooted, anchor, URL, mailto, #-only targets" "$t"
 t=$(fresh); echo '[x](nope.md)' >> "$t/docs/src/a.md"; fail "6 fail: a broken relative link" "$t" "docs/src/a.md: the link target 'nope.md' does not exist"
