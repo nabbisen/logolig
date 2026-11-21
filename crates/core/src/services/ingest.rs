@@ -23,7 +23,7 @@
 //! ## Limits
 //!
 //! [`MAX_INPUT_BYTES`] for any file, [`MAX_SVG_BYTES`] for an SVG, [`MAX_SIDE`] per side and
-//! [`MAX_PIXELS`] in total for a raster (checked from the declared dimensions, so no pixel buffer
+//! [`MAX_PIXELS`] (50 megapixels) in total for a raster (checked from the declared dimensions, so no pixel buffer
 //! is allocated for an image that is over). Only **regular files** are read: a directory, a FIFO
 //! or a device is rejected before anything is read. Errors carry the file **name**, never the
 //! directory.
@@ -41,9 +41,10 @@ pub const MAX_INPUT_BYTES: u64 = 64 * 1024 * 1024;
 pub const MAX_SVG_BYTES: u64 = 8 * 1024 * 1024;
 /// The largest width or height of a raster image: 16 384 px.
 pub const MAX_SIDE: u32 = 16_384;
-/// The largest pixel count of a raster image: 64 megapixels (a 4-byte-per-pixel decode is then
-/// 256 MB before the application's own copies).
-pub const MAX_PIXELS: u64 = 64_000_000;
+/// The largest pixel count of a raster image: 50 megapixels. Measured (RFC 014 D2): the release
+/// binary converting an 8 000 x 8 000 image (64 MP) peaked at 1.68 GiB resident, over the 1.5 GiB
+/// ceiling; at this limit the peak is under it (see the K1 review request for both numbers).
+pub const MAX_PIXELS: u64 = 50_000_000;
 
 /// The name a user sees for `path`: the file name, never the directory.
 fn name_of(path: &Path) -> String {

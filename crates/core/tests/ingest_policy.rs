@@ -3,7 +3,7 @@
 //! * Content decides the format; the extension is a hint that is compared, never a gate. A **known**
 //!   extension that contradicts the content gives a `FormatNote`; an unknown or missing extension
 //!   with recognised content gives none.
-//! * The limits (file 64 MiB, SVG 8 MiB, side 16 384, pixels 64 MP) are checked from the header
+//! * The limits (file 64 MiB, SVG 8 MiB, side 16 384, pixels 50 MP) are checked from the header
 //!   before any decode, with hand-built byte arrays (no large allocation here).
 //! * A path that is not a regular file is rejected before anything is read.
 //! * Errors carry the file name only, never the directory.
@@ -150,7 +150,7 @@ fn the_limits_are_the_decided_numbers() {
     assert_eq!(MAX_INPUT_BYTES, 64 * 1024 * 1024);
     assert_eq!(MAX_SVG_BYTES, 8 * 1024 * 1024);
     assert_eq!(MAX_SIDE, 16_384);
-    assert_eq!(MAX_PIXELS, 64_000_000);
+    assert_eq!(MAX_PIXELS, 50_000_000);
 }
 
 #[test]
@@ -166,15 +166,21 @@ fn one_side_over_the_limit_is_rejected_even_when_the_pixel_count_is_small() {
 }
 
 #[test]
-fn seventy_two_megapixels_are_rejected_and_sixty_four_are_accepted_at_the_boundary() {
-    // 9 000 x 8 000 = 72 MP: over. 8 000 x 8 000 = 64 MP: exactly at the limit, accepted. Only the
-    // header exists in these byte arrays: nothing here allocates an image.
-    let err = ingest_bytes("a.png", png_header(9_000, 8_000)).expect_err("72 MP");
-    assert!(matches!(err, AppError::ImageTooLarge { .. }), "{err:?}");
-    let asset = ingest_bytes("a.png", png_header(8_000, 8_000)).expect("64 MP");
-    assert_eq!(asset.intrinsic_size, Some((8_000, 8_000)));
-    let err = ingest_bytes("a.png", png_header(8_000, 8_001)).expect_err("one row over");
-    assert!(matches!(err, AppError::ImageTooLarge { .. }), "{err:?}");
+fn the_pixel_limit_rejects_just_over_and_accepts_just_under_from_the_header_alone() {
+    // 8 000 x 8 000 = 64 MP and 9 000 x 8 000 = 72 MP: over. 7 071 x 7 071 = 49 999 041: under the
+    // 50 MP limit, accepted. 7 072 x 7 071 = 50 006 112: one column over, rejected. Only the header
+    // exists in these byte arrays: nothing here allocates an image.
+    for (w, h) in [(8_000, 8_000), (9_000, 8_000), (7_072, 7_071)] {
+        let err = ingest_bytes("a.png", png_header(w, h)).expect_err("over the pixel limit");
+        assert!(
+            matches!(err, AppError::ImageTooLarge { .. }),
+            "{w}x{h}: {err:?}"
+        );
+    }
+    let asset = ingest_bytes("a.png", png_header(7_071, 7_071)).expect("49.99 MP");
+    assert_eq!(asset.intrinsic_size, Some((7_071, 7_071)));
+    // A wide but thin image is under the pixel limit and under the side limit: accepted.
+    ingest_bytes("a.png", png_header(MAX_SIDE, 3_000)).expect("16 384 x 3 000 = 49.2 MP");
 }
 
 #[test]
