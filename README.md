@@ -76,6 +76,10 @@ The app uses a three-item side navigation: **Home**, **Customize**, and
    - JPEG inputs work, but the format cannot store transparency, so
      Logolig shows an educational toast suggesting a PNG with the
      background cut out for favicons that adapt to light and dark tabs.
+   - Logolig goes by what a file contains, not by its name: a JPEG named
+     `logo.png` is used as a JPEG, and a notice says so. Files up to
+     64 MiB (SVG: 8 MiB), 50 megapixels and 16 384 pixels on a side are
+     read; a larger one is not loaded, and a message says what to do.
 2. Logolig converts immediately after ingest and then shows the **Result**
    screen. Each generated asset appears as a card with a thumbnail or
    document placeholder, dimensions where applicable, file size, and an

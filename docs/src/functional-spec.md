@@ -48,8 +48,23 @@ answers, restart the application.
 
 ### Validation
 
-- Magic bytes and file extension must agree (prevents extension spoofing).
-- Unrecognised formats produce an `UnsupportedFile` error.
+**The content decides, the extension is a hint.** The format is recognised by its magic bytes (above), whatever the file is called, and decoding is chosen by that format, never by the name.
+
+- A file whose name has a **known** extension (`.png`, `.svg`, `.webp`, `.jpg`, `.jpeg`) that contradicts its content (for example a JPEG named `logo.png`) is accepted as what it is, and **one** notice says so (see the notice table in §10). An unknown or missing extension with recognised content (`logo`, `logo.dat`) is accepted without any notice.
+- Content that is not one of the four formats is rejected with "not a supported image" and the next step (choose a PNG, SVG, WebP or JPEG file), whatever the extension says: a text file named `logo.png` is rejected, a PNG named `notes.txt` is accepted.
+- Only **regular files** are read. A folder, a named pipe or a device is rejected before anything is read (reading one could block or never end). A link to a regular file is followed.
+
+### Input limits
+
+Checked before the image is decoded, from the file's length and from the dimensions its header declares, so no pixel buffer is allocated for an image that is over a limit:
+
+| Limit | Value |
+|---|---|
+| File size | 64 MiB (SVG: 8 MiB) |
+| Width or height of a raster image | 16 384 px |
+| Pixels of a raster image | 50 megapixels |
+
+An image over a limit is not loaded; one message states the limit and the next step (use a smaller file, or reduce the size of the image) in English or Japanese. An image whose header cannot be read is decoded with the same limits as a ceiling, so a damaged file cannot make the application allocate without bound. Error messages about a file name the **file only**, never its folder.
 
 ## 3. Output (generated artifacts)
 
@@ -287,6 +302,7 @@ Every toast has a close button (`×`).
 |---|---|
 | Download complete | "Saved N files to `<path>`" |
 | Transparency warning (PNG/SVG/WebP) | Advisory when the source is fully opaque |
+| **File name does not match the content** | "The file name does not match its content": the content is *X* but the name suggests *Y*; Logolig goes by the content. Shown once per loaded file, only when a **known** extension contradicts the content. For a JPEG the same toast also holds the JPEG explanation (below), so a mislabelled JPEG is explained once. |
 | **JPEG educational warning** | "JPEG cannot store transparency. Consider converting to PNG." |
 | **Non-square source advisory** | "Your logo is not square" / the logo is shown in full with empty space around it, so the icon may look small. Shown once per loaded image when the sides differ by more than 2 % (any source kind). |
 | **SVG parts not shown** | "Some parts of your SVG are not shown": one toast per loaded SVG when it refers to image files on the computer (not read, for safety) and/or contains text (not drawn yet); the body holds the applicable sentences, images first. Nothing is shown for an SVG without either. |
