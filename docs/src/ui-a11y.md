@@ -23,12 +23,33 @@ trapped ([RFC 019](../../rfcs/accepted/019-keyboard-accessibility.md),
 
 **How it is checked.** Automated tests drive the real key path (the key event, the
 application's subscription, the widget operations that follow) on the real view, on
-every page and window size the layout tests use, in both languages. Real-window runs
-on Linux under the niri compositor, with an English interface, checked Tab,
-Shift+Tab, the ring and scrolling on the X11 backend (XWayland). Windows and macOS
-have not been tested (on macOS the command key is Cmd instead of Ctrl; that is the
-intended mapping and is not verified). Non-Latin keyboard layouts are covered by
-unit tests of the key mapping only, not by a run on such a layout.
+every page and window size the layout tests use, in both languages.
+
+Real-window runs, on Linux under the niri compositor, with an English interface and
+the light theme:
+
+- *X11 backend (XWayland), keys and pointer by `xdotool`:* Tab and Shift+Tab walk the
+  stops of the Customize page one by one, the ring moves with every press, and the
+  page scrolls to keep a stop below the fold in view.
+- *Native Wayland, keys only by `wtype` (no pointer):* Tab 1 to 4 put a ring on each
+  stop in turn, the fourth on the drop-zone card; **Enter on the focused drop-zone
+  card opens exactly one file chooser**, and Esc closes it and leaves the application
+  on the start screen; Ctrl+2 goes to Customize; Tab four times reaches the first
+  checkbox and **Space ticks it**; Shift+Tab moves the ring back; Ctrl+3 goes to
+  Settings.
+
+**Not run in a real window for this release candidate:** the arrow keys on the Settings
+groups (the language and theme change at once), and in the X11 text-field steps: Tab
+out of a field keeps its text, Ctrl+1 in a focused field goes Home and types nothing,
+Esc in a field leaves it. These are covered by the automated tests on the real key
+path, and are repeated in a real window on the release commit. One thing that run
+found has been fixed since: the ring of a focused active navigation item had covered
+its accent bar; the bar now starts clear of the ring, which is checked by a pixel test,
+not by a new real-window run.
+
+Windows and macOS have not been tested (on macOS the command key is Cmd instead of
+Ctrl; that is the intended mapping and is not verified). Non-Latin keyboard layouts are
+covered by unit tests of the key mapping only, not by a run on such a layout.
 
 **Moving: Tab and Shift+Tab**
 
