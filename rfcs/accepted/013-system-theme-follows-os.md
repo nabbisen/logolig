@@ -1,6 +1,6 @@
 # RFC 013 — "System" theme follows the operating system
 
-**Status.** Proposed
+**Status.** Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
 **Priority.** P2
 **Tracks.** Defect: `ThemeMode::System` always renders the Light theme.
 **Touches.** `crates/app/src/app.rs` (`resolve_theme`, `subscription`, `AppState`), preview Surface "System", docs.
@@ -42,3 +42,10 @@ On at least one platform where iced reports a mode, switching the OS theme chang
 ## Risk
 
 Low. Additive; fallback preserves current behaviour.
+
+## Decisions 2026-11-22 (architect; the owner's philosophy)
+
+- **Q1 decided: fall back to Light** when the system cannot report a theme (no behaviour change on those systems).
+- **Honesty about the fallback:** Settings shows "System (currently Dark)" or "System (currently Light)" when the system reported it, and **"System (not reported; using Light)"** when it did not, so a user is never led to believe their system is light when the program merely does not know (text, not only colour).
+- **Spike first, evidence only:** on this machine (niri, native Wayland and XWayland) record what `iced::system::theme()` returns and whether `theme_changes()` fires when the desktop setting is switched (a private `dconf`/portal setting is not touched on the owner's real session: use the isolated session only for reading; if switching the real setting is the only way to test, ask the owner in words). The result decides the handoff; "documented, not detected on this platform" is an allowed outcome for a platform where the API stays silent.
+- A **live change** while the application runs repaints the theme (no restart); the preview's "System" surface uses the same resolved value (one function).

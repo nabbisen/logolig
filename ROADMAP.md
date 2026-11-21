@@ -86,7 +86,7 @@
 
 **Decisions (owner, 2026-11-09):** (1) scope and order authorized, including J7d (RFC 032) as the first job; changes are announced before they are made; (2) RFC 021 Q1 decided: accent bar plus bold label for the active nav item; (3) RFC 032 D1 decided: toasts wait while the pointer rests on them. RFC 017, 021, 026, 011, 031 and 032 were moved to `accepted/` the same day.
 
-## 4. Release 1.29.0: readable and robust (scope proposed by the architect 2026-11-22; **not yet authorized by the owner**)
+## 4. Release 1.29.0: readable and robust (scope **authorized 2026-11-22**: the owner delegated the four decisions to the architect under the fundamental philosophy; decided below; the owner can overrule)
 
 **Theme.** What every user meets first: a readable interface (RFC 034, the owner's question of 2026-11-12), and the correctness and safety items that are small, independent of the UI and already designed. **Distribution reach moves to 1.30.0** (below). 1.28.0 took 13 days and about 35 reviewed steps; this scope is about **15 jobs**, planned at two to three weeks.
 
@@ -94,7 +94,7 @@
 
 | Job | Work | Size | Why now / notes |
 |---|---|---|---|
-| K1 | RFC 014: ingest policy and limits. Content decides (extension is a hint; an informational notice when they differ); limits 64 MiB file, 100 MP, 16 384 px, SVG 8 MiB; **error texts show the file name, not the full path** (addendum of 2026-10-24) | M | The only safety hardening open; independent of UI. **Owner decisions** (below). Adds `AppError` variants (see SemVer) |
+| K1 | RFC 014: ingest policy and limits. Content decides (extension is a hint; an informational notice when they differ); limits 64 MiB file, 100 MP, 16 384 px, SVG 8 MiB; **error texts show the file name, not the full path** (addendum of 2026-10-24) | M | The only safety hardening open; independent of UI. **Owner decisions** (below). Adds `AppError` variants (see SemVer) | **Handoff issued 2026-11-22** (`rfcs/handoffs/014-ingest-validation-and-input-limits/`)
 | K2 | RFC 012: web manifest validation (the validation exists and is never called); accept `#RGB` shorthand and normalise | S | A defect with a designed fix. Owner Q1 |
 | K3 | RFC 013: "System" theme follows the OS. **Spike first** (does winit report the theme on Wayland and X11 here? `iced::system::theme()` / `theme_changes()` exist in iced 0.14); fallback Light as today; Settings shows "System (currently Dark)" | S–M | Today "System" always renders Light, which a user reads as a bug. Before J21 so contrast is tested on the real System→Dark path |
 | J21 | RFC 034 step 1: contrast, all text 7:1 in Light and Dark, solid secondary text, darker primary button, 3:1 control borders; a pure-function contrast test over every colour pair | M | D3 (no fourth theme) |
@@ -125,12 +125,12 @@
 
 Remove the items deprecated in 1.28.0 (`MessageKey::{PresetLabel, SvgConversionSimple, SvgConversionDetailed, ShortcutsLimitNote}`, `ThemeMode::next`, `ExportPlan::overrides`/`SizeOverride`, `PreviewContext::label`) and the 41 unused `MessageKey` variants; make `MessageKey` and `AppError` `#[non_exhaustive]` (each minor release that adds a variant is a source-compatibility note until then; K1 adds `AppError` variants); the owner decides when.
 
-### Owner decisions needed to authorize this scope
+### Decisions (architect, under the owner's delegation, 2026-11-22; recorded in the RFCs)
 
-1. The split: **1.29.0 = readable and robust; 1.30.0 = distribution reach** (recommended), or keep Flatpak in 1.29.0 (not recommended: it would force a second screenshot and put the owner's manifest and AI-policy work on the critical path).
-2. **RFC 014:** content decides (recommended) and the limits 64 MiB / 100 MP / 16 384 px / SVG 8 MiB (or other numbers).
-3. **RFC 012 Q1:** accept `#RGB` shorthand (recommended: yes). **RFC 013 Q1:** fallback Light when the OS cannot say (recommended: yes).
-4. **Japanese review:** J23 writes many new Japanese labels; can the owner read them (a list file, a few minutes per batch)? If not, the notes say again that they have not had a native review.
+1. **Split: decided.** 1.29.0 = readable and robust; 1.30.0 = distribution reach.
+2. **RFC 014: decided, with changes after review.** Content decides, one combined notice with the JPEG advisory; **64 MP, not 100** (memory: the job measures peak RSS at the limit and lowers the number if it exceeds 1.5 GiB); 64 MiB file, 8 MiB SVG, 16 384 px side; **regular files only** (a FIFO would block the job, a device would never end); **file name only** in errors.
+3. **RFC 012: `#RGB` accepted and canonicalised, the field shows what is written; inline errors use an icon, not the `⚠` glyph** (a text glyph would break the RFC 021 rule). **RFC 013: fall back to Light, and say so** ("System (not reported; using Light)"); spike first.
+4. **Japanese review: owner reads a list if able, not blocking** (the notes say so either way). **RFC 034 J24:** unknown stored values load as Normal; unknown fields stay ignored (downgrade-safe).
 
 ## 4a. Distribution track
 

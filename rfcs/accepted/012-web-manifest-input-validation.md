@@ -1,6 +1,6 @@
 # RFC 012 — Web manifest input validation
 
-**Status.** Proposed
+**Status.** Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
 **Priority.** P2
 **Tracks.** Defect: manifest colour/name validation exists but is never invoked.
 **Touches.** `crates/core/src/domain/web_manifest.rs`, `services/exporter.rs`, `crates/app` (Customize page, `app.rs` handlers), `crates/i18n` (reuse of dormant keys), docs.
@@ -52,3 +52,10 @@ No invalid colour or empty name can reach `manifest.webmanifest` through the UI 
 ## Risk
 
 Low-medium: touches input handling in the largest file; sequence after RFC 017.
+
+## Decisions 2026-11-22 (architect; the owner's philosophy)
+
+- **Q1 decided: yes, `#RGB` is accepted** and **canonicalised to `#RRGGBB` (upper case)** when the value is committed; once accepted, the field shows the canonical form, so **what the user sees is what is written** to the manifest (no silent difference). Core keeps `#RRGGBB` as the only stored form.
+- **Inline feedback uses an icon, not the `⚠` glyph** of the design section above: the application bans text-glyph state cues (RFC 021 D7; a source test enforces it). Use the lucide warning icon beside a plain-language message under the field; never colour alone. The message names what is wrong and what is accepted ("Use a colour like #1A2B3C or #1AB").
+- Invalid text is **never saved**: the previous valid value stays in `settings.json` (the edit buffer holds the raw text), which also fixes half-typed values being persisted on every keystroke.
+- The retired toast keys `ToastInvalidColorTitle`/`Body` stay in the public `MessageKey` (SemVer, RFC 016 amendment: no removal in 1.x); the inline messages use new keys.

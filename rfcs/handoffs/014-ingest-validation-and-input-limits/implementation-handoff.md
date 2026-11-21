@@ -1,0 +1,51 @@
+# Developer Handoff — RFC 014: ingest policy and input limits (job K1, release 1.29.0)
+
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; GUI Evidence and Test Optimization rules; Rust 2024, 2018+ module style, tests in separate files, English only, `unsafe` forbidden; relative paths with `cd`, never absolute). Governing text: [RFC 014](../../accepted/014-ingest-validation-and-input-limits.md), **"Decisions 2026-11-22" D1–D5 are binding** (and the addendum of 2026-10-24). Context: `ROADMAP.md` §4 (scope of 1.29.0), the SemVer rule (a public item is never removed in 1.x; adding `AppError` variants is a source-compatibility note, accepted as for `MessageKey`).
+
+Owner philosophy: clean, safe and secure, robust design; users must not be confused. **This is the safety hardening of the release: read untrusted input with care.**
+
+**Workflow:** `main`; `git pull --ff-only`; `git log origin/main..` before every push; one commit per step; gates chained (`cargo fmt --check && cargo clippy --workspace --all-targets --all-features --locked -- -D warnings && cargo test --workspace --all-features --locked && cargo +1.90 check --workspace --all-targets --all-features --locked && cargo audit && cargo doc --workspace --no-deps --locked`; four existing doc warnings; audit 0 vulnerabilities / 12 allowed); CI waited for each; no tags, force-push or history rewriting; delete large scratch files when done (`/tmp` is shared; synthetic big images are scratch).
+
+## 0. Evidence plan (cheapest level first)
+
+| Question | Level | Evidence |
+|---|---|---|
+| Does content decide the format, whatever the extension (known, unknown, missing, contradicting)? | logic (core, `ingest_bytes`) | pure tests |
+| Are the limits enforced from the header before decoding (size, SVG size, side, pixels), including crafted headers declaring huge dimensions and truncated headers? | logic (core) | pure tests with hand-built byte arrays; no large allocation in the test |
+| Are non-regular files rejected before any read (directory, FIFO, `/dev/zero`)? | logic with temp files | tests using a temp directory and `mkfifo` (skip with a message where `mkfifo` is unavailable) |
+| Exactly one notice for a mislabelled file; combined with the JPEG advisory; none for an unknown extension | logic (`update()` tests) | hand-built messages |
+| User-facing errors show the file name only; texts state the limit and the next step; en/ja key parity | logic | tests incl. the i18n parity test |
+| Memory at the limit | recorded state, **one measured run** | peak resident memory of the release binary converting a synthetic image at the limit (see §3) |
+| Does the real application show the notice and the limit message? | real UI, **one** short native-Wayland run at the end | `scripts/gui-session.sh` (replay-tested helpers), three fixtures (below) |
+
+## 1. Work (commits as you see fit; tests first, shown failing before)
+
+1. **Core: policy** (`crates/core/src/services/ingest.rs`, `domain`): `detect_kind` takes the extension kind as a hint it **compares** (today it discards it: `let _ = hint; None`). Content decides; a **known** extension that contradicts the content yields a `FormatNote { named: SourceKind, detected: SourceKind }` carried with the asset (a field on `SourceAsset` or a returned pair: choose the smaller public-API change, say which and why; `SourceAsset` is public: prefer a new field with a documented default or a separate return, and report SemVer impact); an unknown or missing extension with recognised content gives **no** note. Fix the module doc table and the comment "unknown extensions are rejected" to what the code does.
+2. **Core: limits** (D2): constants in one place (`pub const` or a small `InputLimits` with `Default`; if public, say so): file 64 MiB, SVG 8 MiB, side 16 384, pixels **64 × 1 000 000** (to be confirmed by §3). Check the file size from `metadata().len()` **before reading** and again on the bytes read; check the dimensions from the header (`intrinsic_size`) **before decoding**; when a header cannot be parsed, any decode path is run with `image` limits (`image::Limits`) so it cannot allocate unboundedly. `ingest()` and `ingest_bytes()` share the checks (one function, not two copies). Regular files only (D3): `symlink_metadata`/`metadata().is_file()` before the read.
+3. **Core: errors:** new `AppError::InputTooLarge { path, limit }` and `ImageTooLarge { path, pixels }` (names per the RFC), their `MessageKey`s, English and Japanese texts per D5 (state the limit in plain units; the next step; no path, no jargon). `UnsupportedFile` for non-regular files. **File name only** (D4): the caller of the `AppError` constructors passes `path.file_name()`; the full path stays in the log and in no user text. Check every place that formats an error for the user (`push_error_toast`, `fail`) and show where the file name is applied.
+4. **App: the notice:** the single informational toast for a known contradicting extension, **merged with the JPEG advisory** when the detected format is JPEG (one toast, one text; see D1); a new `MessageKey` pair for the notice, en/ja; the toast machinery's existing dedupe and lifetime rules apply; a test that a mislabelled JPEG yields exactly one toast and a mislabelled PNG exactly one, an unknown extension none.
+5. **Docs:** `docs/src/functional-spec.md` §2 (what is accepted: content decides; the limits; regular files; the notice), the README's supported-input sentence if it states the old rule; `ui-a11y.md` only if a statement changed.
+
+## 2. Tests (list, each shown failing before where it can fail)
+
+Mislabelled (png-named JPEG, jpg-named PNG, svg-named PNG), unknown extension with PNG bytes (accepted, no note), no extension, `.txt` with text content (rejected), empty file, truncated headers for each format, a PNG header declaring 70 000 × 70 000 (rejected by the side limit), 9 000 × 8 000 (72 MP: rejected by pixels), 8 000 × 8 000 (64 MP: accepted at the boundary, **header only: do not allocate the image in the test**), a file one byte over 64 MiB (create sparse or test the size check on `metadata` through a function that takes the length), SVG over 8 MiB, a directory, a FIFO, a symlink to a regular file (accepted). The error-text tests assert **no `/` and no directory name** in the user text. Update-level tests for the notice counts. i18n key-parity test passes.
+
+## 3. The memory measurement (evidence, one run; do not skip)
+
+Build a synthetic RGBA PNG at exactly the pixel limit (64 MP: 8 000 × 8 000, a gradient so it does not compress to nothing; scratch folder), run the **release binary** through the isolated session script (`scripts/gui-session.sh`; never start the binary without it; the program has no command-line arguments) with `/usr/bin/time -v` on the process (or sample `VmHWM` from `/proc/<pid>/status` at the end of conversion; one reading, **no sampling loop**), choose the file in the chooser, wait for the Result screen, record the **peak resident memory**. **If it exceeds 1.5 GiB, lower the pixel limit and re-measure once, and report both numbers; the architect confirms the final number.** Also record the time to the Result screen. Delete the synthetic file afterwards.
+
+## 4. The one real run (native Wayland, `wtype`, after the code is pushed and CI is green)
+
+Replay test first (`scripts/gui-verify-test.sh`: ALL REPLAY CASES BEHAVE). Fixtures made in scratch with a recorded checksum: (a) a JPEG named `.png`; (b) a PNG named `.png` over the pixel limit (header only needs to declare it: build a minimal valid-header file); (c) a PNG with no extension. Steps, a second-signal check after each: Ctrl+O, choose (a) → Result screen and **exactly one toast** with the mislabel text; dismiss; Ctrl+O choose (b) → **one error toast with the limit message, no path in it**, the app stays on the start screen; Ctrl+O choose (c) → Result screen, **no toast about the name**. Isolated XDG dirs, unlocked session, one instance by pid, focus checked before every key, owner's real `settings.json` mtime before and after. One run; a repeat needs the architect's words.
+
+## 5. Required evidence (review request: `.git-exclude/review-request/rfc-014-ingest/README.md`; report only its path)
+
+§0 table filled in with the failing-before lists; the SemVer impact (public items added; none removed); the memory numbers (§3); the real-run log and analysis; where the file name is applied; test-list diff (named additions, none removed); gates and CI per commit.
+
+## 6. Acceptance criteria
+
+Content decides; one combined notice; the limits enforced from headers before decoding; non-regular files rejected before reading; no path in user-facing errors; en/ja texts with the limit and the next step; peak memory at the limit measured and under 1.5 GiB (or the limit lowered and confirmed); docs match; no public item removed; gates and CI green at every commit; the real run passes.
+
+## 7. Prohibited shortcuts
+
+No timer or sampling loop; no unbounded decode path left; no full-path text in any user-facing message; no removal or rename of a public item; no `#[allow]` beyond the existing SemVer pattern; no change to the supported formats; no network; no tags, force-push or history rewriting.

@@ -1,6 +1,6 @@
 # RFC 014 — Ingest validation policy and input limits
 
-**Status.** Proposed
+**Status.** Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
 **Priority.** P2 (policy clarification plus hardening)
 **Tracks.** Spec/implementation mismatch (extension vs magic bytes) and missing resource limits.
 **Touches.** `crates/core/src/services/ingest.rs`, `domain/source_asset.rs`, `error.rs`, i18n keys, `docs/src/functional-spec.md`, README.
@@ -62,3 +62,11 @@ The error toast for an unsupported file shows the **full path** ("Unsupported fi
 
 The new `InputTooLarge` and `ImageTooLarge` variants are added to the public `AppError` of the published `logolig` crate, which is not `#[non_exhaustive]`: as with `MessageKey` in 1.27.0 and 1.28.0, this is a source-compatibility note for downstream exhaustive matches, stated in the release notes; `#[non_exhaustive]` is on the 2.0 list (`ROADMAP.md`). Scoped for 1.29.0 (job K1) pending the owner's decisions on D1 and D2.
 
+## Decisions 2026-11-22 (architect; the owner's philosophy: clean, safe and secure, robust; users must not be confused)
+
+- **D1 Option A: content decides.** The extension is a hint, never a gate; decoding is chosen by content. **One** informational notice when a **known** extension contradicts the detected format ("This file is a JPEG although its name ends in .png"); an unknown or missing extension with recognised content is accepted silently. The notice and the existing JPEG "no transparency" advisory are **one** message, not two toasts, so a mislabelled JPEG is explained once.
+- **D2 Limits, with a measurement gate.** File size **64 MiB**; SVG **8 MiB**; maximum side **16 384 px**; **pixel count 64 megapixels** (not 100: a 4-byte-per-pixel decode of 100 MP is 400 MB before the application's copies for preview and conversion). The job **measures** the peak resident memory of converting a synthetic image at the limit (`/usr/bin/time -v` or equivalent, release binary) and reports it; **if the peak exceeds 1.5 GiB the pixel limit is lowered until it does not**, and the architect confirms the number. The limits are checked from the header (`intrinsic_size`) **before** decoding, and the file size from `metadata().len()` before reading and again after.
+- **D3 Regular files only.** A path that is not a regular file (a directory, a FIFO, a device such as `/dev/zero`) is rejected before reading with the "unsupported file" message: reading a FIFO would block the job for ever and a device would read without end. (Symlinks to regular files are followed.)
+- **D4 File name only in user-facing errors** (addendum of 2026-10-24): the caller passes `file_name()`; the full path stays in logs and in the `AppError` fields. The translation templates keep `{path}`.
+- **D5 Texts** state the limit and the next step in plain words, in English and Japanese ("This image is larger than 64 megapixels. Reduce its size and try again."), no jargon, no path. The new keys follow the key-parity test.
+- **Tests, by level:** limits and policy as pure `ingest_bytes` tests (core, including crafted headers declaring huge dimensions, a truncated header, a mislabelled extension, an unknown extension); the non-regular-file case with a temp directory and a FIFO (`mkfifo`) in a test; the update-level test that exactly one notice results; the peak-memory measurement as recorded evidence (not a CI test).

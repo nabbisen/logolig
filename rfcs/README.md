@@ -53,19 +53,19 @@ recommendation; the owner authorizes the plan.
 | [020](./accepted/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging (phased) | P1 |
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
 | [034](./accepted/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | P2 |
+| [012](./accepted/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
+| [013](./accepted/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |
+| [014](./accepted/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
+| [016](./accepted/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
+| [022](./accepted/022-vtracer-sharp-preset-verification.md) | Verify the vtracer "Sharp" preset | P3 |
 
 ### Proposed (`proposed/`)
 
 | # | Title | Priority |
 | --- | --- | --- |
-| [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
-| [013](./proposed/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |
-| [014](./proposed/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
 | [023](./proposed/023-flatpak-publication.md) | Flatpak publication (Flathub) | P2 |
 | [004](./proposed/004-locale-zh-cn.md) | Simplified Chinese locale (deferred) | P3 |
 | [007](./proposed/007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | P3 |
-| [016](./proposed/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
-| [022](./proposed/022-vtracer-sharp-preset-verification.md) | Verify the vtracer "Sharp" preset | P3 |
 
 ### Archive (`archive/`)
 

@@ -1,6 +1,6 @@
 # RFC 022 — Verify the vtracer "Sharp" preset
 
-**Status.** Proposed
+**Status.** Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
 **Priority.** P3 (spike first; no behaviour change until evidence exists)
 **Tracks.** Possible mismatch between a preset's name and its effect. Raised by RFC 018 D2.
 **Touches.** `crates/core/src/services/vectorize.rs`, `domain/vtracer_preset.rs`, Customize page labels, docs.
@@ -31,3 +31,7 @@ A short evidence section exists; the preset's name, comment, parameter and docum
 ## Risk
 
 None for the spike. Any later change affects only users who explicitly chose that preset.
+
+## Decisions 2026-11-22 (architect)
+
+Spike only (evidence), scheduled as job H2 after the readable-interface work; no behaviour change and no relabelling without evidence. Since RFC 021 the UI names the preset "Sharp (logos, icons)": the name is a promise to the user, so the spike's conclusion decides whether the name, the parameters or neither change (a name change is a user-text change in both languages and needs the owner's confirmation of the wording).
