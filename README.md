@@ -1,8 +1,8 @@
 # Logolig
 
-<p align="center"><img src="docs/assets/logolig-logo.png" alt="Logolig logo" width="128" height="128"></p>
+<p align="center"><img src="/docs/assets/logolig-logo.png" alt="Logolig logo" width="128" height="128"></p>
 
-[![License](https://img.shields.io/github/license/nabbisen/logolig)](LICENSE)
+[![License](https://img.shields.io/github/license/nabbisen/logolig)](/LICENSE)
 [![CI](https://github.com/nabbisen/logolig/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nabbisen/logolig/actions/workflows/ci.yml)
 [![Documentation](https://docs.rs/logolig/badge.svg?version=latest)](https://docs.rs/logolig)
 [![Documentation](https://docs.rs/logolig-app/badge.svg?version=latest)](https://docs.rs/logolig-app)
@@ -22,7 +22,7 @@ anywhere.
 
 Built on [iced](https://iced.rs/) and [snora](https://github.com/nabbisen/snora).
 
-![The Result screen after converting a logo: a grid of generated assets (favicon.svg, favicon.ico, three PNG sizes, the Apple touch icon and the HTML snippet), each with a Save button; a Back button at the top left, the side navigation with Home selected, and a Download all (ZIP) button at the bottom.](docs/assets/screenshot-01.png)
+![The Result screen after converting a logo: a grid of generated assets (favicon.svg, favicon.ico, three PNG sizes, the Apple touch icon and the HTML snippet), each with a Save button; a Back button at the top left, the side navigation with Home selected, and a Download all (ZIP) button at the bottom.](/docs/assets/screenshot-01.png)
 
 ## Why
 
@@ -165,13 +165,13 @@ Documentation lives under `docs/src/`:
 - `export-spec.md` — output artifacts and HTML snippet shape
 
 Release notes are in `docs/release-notes/`. The plan and order of work is in
-[`ROADMAP.md`](ROADMAP.md).
+[`ROADMAP.md`](/ROADMAP.md).
 
 ### Maintainers
 
-Design decisions are recorded as RFCs under [`rfcs/`](rfcs/); how an RFC moves from
+Design decisions are recorded as RFCs under [`rfcs/`](/rfcs/); how an RFC moves from
 `proposed/` through `accepted/` to `done/` (or `archive/`) is the lifecycle policy in
-[`rfcs/README.md`](rfcs/README.md).
+[`rfcs/README.md`](/rfcs/README.md).
 
 ## Settings persistence
 
@@ -395,6 +395,6 @@ implementation backed by `localStorage` while reusing the same
 
 ## License
 
-Licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).
+Licensed under the Apache License, Version 2.0. See [`LICENSE`](/LICENSE).
 
 Copyright 2026 nabbisen
