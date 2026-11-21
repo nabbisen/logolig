@@ -130,6 +130,104 @@ fn the_bar_is_thin_and_flush_with_the_content() {
     );
 }
 
+/// Both cues whole at once (RFC 027/021, J14c): when the **active** item has the keyboard focus,
+/// its accent bar is intact (3 px across the item's whole length, every pixel the accent) and its
+/// ring is complete on all four sides. The ring is drawn 2 px outside the item with a 2 px stroke,
+/// so the bar must start 4 px beyond the item's edge, or the ring covers it.
+#[test]
+fn a_focused_active_item_keeps_its_whole_bar_and_a_whole_ring() {
+    let pages = [NavPage::Home, NavPage::Customize, NavPage::Settings];
+    for (size, bottom) in [
+        (Size::new(1280.0, 720.0), false),
+        (Size::new(360.0, 640.0), true),
+    ] {
+        for dark in [false, true] {
+            let th = theme(dark);
+            let accent = colors::nav_accent(&th);
+            let accent = [accent.r * 255.0, accent.g * 255.0, accent.b * 255.0];
+            let layout = if bottom { "bottom bar" } else { "sidebar" };
+            let theme_name = if dark { "Dark" } else { "Light" };
+            for (n, active) in pages.into_iter().enumerate() {
+                let state = state_on(active, size, dark);
+                // The navigation items are the first three stops on a desktop window and the
+                // last three on a phone (the order of the tree).
+                let mut p = probe_of(&state, size);
+                let total = p.focus_targets().len();
+                let stop = if bottom { total - 3 + n } else { n };
+                let item = p.focus_targets()[stop].bounds;
+                let before = p.rgba(&th, SCALE);
+                let mut p = probe_of(&state, size);
+                p.focus_target(stop);
+                let after = p.rgba(&th, SCALE);
+                let who = format!("{layout}, {theme_name}, active {active:?}");
+
+                // The bar: along the item's whole length, on the edge facing the content.
+                let (mut covered, mut total_px) = (0, 0);
+                // One step in from each end: the item's fractional edges end inside a pixel.
+                let steps = ((if bottom { item.width } else { item.height }) * SCALE) as usize - 1;
+                for k in 1..steps {
+                    let along = k as f32 / SCALE + 0.25;
+                    for t in 0..(BAR * SCALE) as usize {
+                        let across = t as f32 / SCALE + 0.25;
+                        let (x, y) = if bottom {
+                            (item.x + along, size.height - BOTTOM_BAR_HEIGHT + across)
+                        } else {
+                            (SIDEBAR_WIDTH - BAR + across, item.y + along)
+                        };
+                        total_px += 1;
+                        if distance(pixel(&after, size, x, y), accent) >= 6.0 {
+                            covered += 1;
+                        }
+                    }
+                }
+                assert!(
+                    total_px > 100,
+                    "{who}: the bar was measured over {total_px} px only"
+                );
+                assert_eq!(
+                    covered, 0,
+                    "{who}: {covered} of {total_px} bar pixels are not the accent (the ring covers the bar?)"
+                );
+
+                // The ring: pixels that differ between the unfocused and the focused render, on
+                // all four sides of the item, outside it.
+                let width_px = (size.width * SCALE) as usize;
+                let mut sides = [0usize; 4]; // left, right, top, bottom
+                for (i, (a, b)) in before
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(after.as_chunks::<4>().0.iter())
+                    .enumerate()
+                {
+                    if a[..3] == b[..3] {
+                        continue;
+                    }
+                    let (x, y) = ((i % width_px) as f32 / SCALE, (i / width_px) as f32 / SCALE);
+                    if x < item.x {
+                        sides[0] += 1
+                    }
+                    if x > item.x + item.width {
+                        sides[1] += 1
+                    }
+                    if y < item.y {
+                        sides[2] += 1
+                    }
+                    if y > item.y + item.height {
+                        sides[3] += 1
+                    }
+                }
+                for (side, count) in ["left", "right", "top", "bottom"].into_iter().zip(sides) {
+                    assert!(
+                        count > 20,
+                        "{who}: the ring has no {side} side ({count} px)"
+                    );
+                }
+            }
+        }
+    }
+}
+
 /// The label of the active item is bold, the others are not. (The hermetic test fonts have no bold
 /// face, so the width of the text cannot show it here: the font the label asks for is checked, and
 /// the real window's capture shows the result.)

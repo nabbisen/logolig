@@ -84,7 +84,15 @@ pub fn bottom_view(state: &AppState) -> Element<'_, Message> {
         &theme,
     );
 
+    // RING_GAP at both ends and below: the ring of the first and the last item (and the bottom of
+    // every item, which fills the bar) is 4 px outside it and would be cut by the window edge.
     container(row![nav_home, nav_customize, nav_settings].spacing(0))
+        .padding(
+            Padding::default()
+                .left(RING_GAP)
+                .right(RING_GAP)
+                .bottom(RING_GAP),
+        )
         .width(Length::Fill)
         .height(Length::Fixed(64.0))
         .style(move |t: &Theme| sidebar_style(t))
@@ -133,7 +141,10 @@ fn nav_item<'a>(
 
     // The bar on the edge facing the content (the page is to the right of the sidebar). It is
     // always laid out, and only coloured when the item is active, so nothing moves.
+    // RING_GAP between them: the focus ring (2 px stroke, 2 px outside the item) must fit between
+    // the item and the bar, or it covers the bar.
     row![item, bar(active, Length::Fixed(BAR), Length::Fill)]
+        .spacing(RING_GAP)
         .height(Length::Shrink)
         .into()
 }
@@ -176,7 +187,9 @@ fn bottom_nav_item<'a>(
         .style(move |t: &Theme, s| nav_item_style(t, s, active));
 
     // The bar on the edge facing the content (the page is above the bottom bar).
-    column![bar(active, Length::Fill, Length::Fixed(BAR)), item].into()
+    column![bar(active, Length::Fill, Length::Fixed(BAR)), item]
+        .spacing(RING_GAP)
+        .into()
 }
 
 // ---------------------------------------------------------------------------
@@ -186,6 +199,9 @@ fn bottom_nav_item<'a>(
 
 /// Thickness of the accent bar, in pixels.
 const BAR: f32 = 3.0;
+
+/// Room between an item and the bar: the ring's offset (2 px) plus its stroke (2 px).
+const RING_GAP: f32 = 4.0;
 
 /// The label's font: bold when the page is the active one.
 pub(crate) fn label_font(active: bool) -> Font {
