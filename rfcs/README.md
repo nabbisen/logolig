@@ -39,8 +39,8 @@ recommendation; the owner authorizes the plan.
 | --- | --- | --- |
 | [020](./accepted/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging (phased) | P1 |
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
-| [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phase 1 done; phase 2 shortcuts next) | P1 |
-| [027](./accepted/027-keyboard-focus-model.md) | Keyboard focus model (phased: spike first) | P1 |
+| [019](./accepted/019-keyboard-accessibility.md) | Keyboard accessibility (phases 1 and 2 done; the focus model is RFC 027) | P1 |
+| [027](./accepted/027-keyboard-focus-model.md) | Keyboard focus model (implemented for 1.28.0: snora controls, Tab, ring) | P1 |
 | [008](./accepted/008-rfc-portfolio-migration.md) | RFC portfolio migration to the RFC 000 layout | P2 (script outstanding) |
 | [032](./accepted/032-snora-0-57-upgrade.md) | Upgrade snora from 0.53 to 0.57 | P1 |
 | [017](./accepted/017-source-structure-conformance.md) | Source structure conformance (tests, file size, dead code) | P2 |
@@ -51,8 +51,8 @@ recommendation; the owner authorizes the plan.
 | [033](./accepted/033-new-application-logo.md) | Adopt the new application logo (docs, Linux package, Microsoft Store) | P2 |
 | [034](./accepted/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | P2 |
 | [035](./accepted/035-headless-ui-test-level.md) | A headless UI test level (layout, size, language and theme matrix without a window) | P1 |
-| [036](./accepted/036-snora-0-62-upgrade.md) | Upgrade snora 0.57 → 0.62 (the keyboard `control`) | P1 |
-| [018](./accepted/018-documentation-synchronisation.md) | Documentation synchronisation (closing plan 2026-11-21) | P2 |
+| [036](./accepted/036-snora-0-62-upgrade.md) | Upgrade snora 0.57 → 0.65 (steps 0.62 and 0.65; the keyboard `control` and form controls) | P1 |
+| [018](./accepted/018-documentation-synchronisation.md) | Documentation synchronisation (J15 done; row 9 waits for RFC 014) | P2 |
 
 ### Proposed (`proposed/`)
 

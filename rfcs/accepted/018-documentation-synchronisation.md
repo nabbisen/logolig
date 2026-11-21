@@ -58,3 +58,7 @@ State of each row, from the finished work: **1** closed by RFC 021 (radio groups
 
 Added by the 1.28.0 work: **A** the new application logo in README (RFC 033, only when its job runs); **B** one paragraph for older readers: how to enlarge the application with the operating system's display scaling (RFC 034 D4); **C** the Settings page and the shortcut list texts as shipped; **D** a "Maintainers" pointer to `rfcs/README.md` (design item 4); **E** a CI link check for relative Markdown links is **not** in this job (RFC 020 owns CI); say in the review request whether J16's script can check links cheaply.
 
+## Result of J15 (architect, 2026-11-21)
+
+Closed by J15 (reviewed `.git-exclude/reviewed/rfc-018-docs-sync-review-2026-11-21.md`): rows 1–8, 10, 11 (text; the crates are published, `cargo search` shows `logolig`, `logolig-i18n`, `logolig-app` at 1.27.0), 12 (no sweep, 60 citations counted), 13, 14 (README screenshot; to be retaken once with the new logo as the input picture, in the logo job), 15; additions B (display scaling, verified on native Wayland only) and D (Maintainers). **Row 9 stays open until RFC 014.** The "Snora Design System adoption" item of the old `architecture.md` options table is **not planned**: the spike of RFC 027 measured the `design` feature (two new packages, a changed look) and decided against it; it is not a roadmap item. This RFC moves to `done/` with the 1.28.0 release, with row 9 linked to RFC 014.
+
