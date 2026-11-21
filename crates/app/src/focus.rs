@@ -37,6 +37,55 @@ pub(crate) fn keep_in_view<T: Send + 'static>() -> Task<T> {
     iced::advanced::widget::operate::<()>(FindFocused::default()).discard()
 }
 
+/// A control that opens and closes a section below it (RFC 027, job J14d): the "Advanced settings"
+/// header and the Result screen's preview toggle.
+///
+/// Pressing one **adds or removes Tab stops**, and snora's rule for that case is "nothing is
+/// focused" (`Inert`, "After a removal": it is written for controls that go away, and does not
+/// describe one that adds stops after itself). A keyboard user who opened a section would land
+/// at the top of the page. So the `update` arm that opens or closes the section asks for the focus
+/// back on the control, by its fixed `Id`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Disclosure {
+    AdvancedHeader,
+    PreviewToggle,
+}
+
+impl Disclosure {
+    /// The control's `widget::Id`. Fixed, because every `view` builds the control again and an id
+    /// made at build time would never be the same twice.
+    fn id(self) -> Id {
+        Id::new(match self {
+            Self::AdvancedHeader => "disclosure-advanced-header",
+            Self::PreviewToggle => "disclosure-preview-toggle",
+        })
+    }
+}
+
+/// `control`, given the fixed id that `keep_focus` looks for.
+pub(crate) fn disclosure<'a>(
+    control: snora::Control<'a, Message>,
+    which: Disclosure,
+) -> snora::Control<'a, Message> {
+    control.id(which.id())
+}
+
+/// The task a disclosure control's press returns: focus the control again.
+///
+/// It is deterministic and needs no timer. After a message, the runtime builds the new interface
+/// and then runs the task's widget operation (`iced_winit`, `run_instance`: `update`, then
+/// `build_user_interfaces`, then `run_action`), and `Inert::operate` settles its pending press (it
+/// takes the focus off, because the number of stops changed) **before** the operation looks at
+/// anything: the operation focuses the control after that, and nothing takes it away. Both Enter
+/// and Space and both opening and closing go through the same message, so one task serves them.
+///
+/// A click goes through the same message, and so it also leaves the control focused (a ring
+/// after a click, which snora's own controls avoid by default): the message cannot tell the two
+/// apart, and snora's public `Control` does not report focus changes.
+pub(crate) fn keep_focus(which: Disclosure) -> Task<Message> {
+    iced::widget::operation::focus(which.id())
+}
+
 /// Room kept around the control: the focus ring sits 2 px outside it and is 2 px thick.
 const RING: f32 = 4.0;
 

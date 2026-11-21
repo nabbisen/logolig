@@ -114,7 +114,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // v1.16.0: toggle the collapsible preview panel on the Result screen
         Message::ResultPreviewToggled => {
             state.result_preview_open = !state.result_preview_open;
-            Task::none()
+            crate::focus::keep_focus(crate::focus::Disclosure::PreviewToggle)
         }
 
         // v1.17.0: window resize → update window_size
@@ -125,7 +125,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // v1.17.0: toggle the Advanced extras collapsible
         Message::AdvancedExtrasToggled => {
             state.advanced_extras_open = !state.advanced_extras_open;
-            Task::none()
+            crate::focus::keep_focus(crate::focus::Disclosure::AdvancedHeader)
         }
         // v1.17.0: PNG preset size checkbox toggled
         Message::PngPresetSizeAdded(size) => settings::png_preset_size_added(state, size),

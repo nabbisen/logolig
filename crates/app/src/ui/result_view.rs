@@ -104,13 +104,16 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     } else {
         lucide::ChevronRight
     };
-    let preview_toggle = snora::control(
-        row![
-            icon_element_sized::<Message>(&Icon::Lucide(chevron), 13.0),
-            text(t.t(MessageKey::ResultPreviewToggle)).size(13),
-        ]
-        .spacing(6)
-        .align_y(iced::Alignment::Center),
+    let preview_toggle = crate::focus::disclosure(
+        snora::control(
+            row![
+                icon_element_sized::<Message>(&Icon::Lucide(chevron), 13.0),
+                text(t.t(MessageKey::ResultPreviewToggle)).size(13),
+            ]
+            .spacing(6)
+            .align_y(iced::Alignment::Center),
+        ),
+        crate::focus::Disclosure::PreviewToggle,
     )
     .padding([6, 12])
     .on_press(Message::ResultPreviewToggled)

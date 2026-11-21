@@ -68,6 +68,10 @@ impl Session {
         self.press(Named::Tab, Modifiers::empty());
     }
 
+    pub(super) fn press_shift_tab(&mut self) {
+        self.press(Named::Tab, Modifiers::SHIFT);
+    }
+
     /// The Tab-order index of the focused stop, and how many stops the page has.
     pub(super) fn focus(&mut self) -> (Option<usize>, usize) {
         self.with(|p| {

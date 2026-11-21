@@ -186,15 +186,18 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
     } else {
         lucide::ChevronRight
     };
-    let extras_header = snora::control(
-        row![
-            icon_element_sized::<Message>(&Icon::Lucide(extras_chevron), 12.0),
-            text(t.t(MessageKey::AdvancedExtrasSection))
-                .size(13)
-                .color(colors::group_heading(&theme)),
-        ]
-        .spacing(8)
-        .align_y(Alignment::Center),
+    let extras_header = crate::focus::disclosure(
+        snora::control(
+            row![
+                icon_element_sized::<Message>(&Icon::Lucide(extras_chevron), 12.0),
+                text(t.t(MessageKey::AdvancedExtrasSection))
+                    .size(13)
+                    .color(colors::group_heading(&theme)),
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        ),
+        crate::focus::Disclosure::AdvancedHeader,
     )
     .padding(Padding::default().top(8).bottom(8))
     .width(Length::Fill)
