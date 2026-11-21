@@ -226,6 +226,9 @@ pub enum MessageKey {
     ToastFormatMismatchTitle,
     /// Notice body (`{detected}`, `{named}`): the content decides and the file is used as `{detected}`.
     ToastFormatMismatchBody,
+    /// The JPEG sentence that follows the notice when the detected format is JPEG (RFC 014): the
+    /// advisory's news without its opening sentence, so a mislabelled JPEG is one short toast.
+    ToastFormatMismatchJpegTail,
     /// Toast title for a non-square source (RFC 010): the logo is shown in full with padding.
     ToastNonSquareInputTitle,
     /// Toast body for a non-square source. Suggests a square version of the logo.

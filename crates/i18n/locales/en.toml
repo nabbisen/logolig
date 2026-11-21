@@ -162,9 +162,11 @@ tooltip_close = "Close the app"
 toast_jpeg_input_title = "JPEG cannot have transparency"
 toast_jpeg_input_body = "Logolig will use this image, but JPEG cannot store a transparent background. For a favicon that adapts to dark and light browser tabs, export your logo to PNG with the background cut out, then load that here."
 # RFC 014: the name suggests another format than the content. The content decides; one notice,
-# and for a JPEG it is followed by the JPEG advisory above in the same toast.
+# and for a JPEG it is followed, in the same toast, by the tail sentence (the advisory above
+# without its opening sentence).
 toast_format_mismatch_title = "The file name does not match its content"
-toast_format_mismatch_body = "The content is {detected}, but the name suggests {named}. Logolig goes by the content and uses it as {detected}."
+toast_format_mismatch_body = "The content is {detected} (the name says {named}), and Logolig uses it as {detected}."
+toast_format_mismatch_jpeg_tail = "JPEG cannot store a transparent background; for a favicon that adapts to dark and light browser tabs, export your logo as PNG with the background cut out, then load that here."
 toast_non_square_input_title = "Your logo is not square"
 toast_non_square_input_body = "It is shown in full, with empty space around it, so the icon may look small. A square version of your logo gives a larger icon."
 toast_svg_parts_title = "Some parts of your SVG are not shown"

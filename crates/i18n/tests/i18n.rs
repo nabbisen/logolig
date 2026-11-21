@@ -222,6 +222,7 @@ fn japanese_every_key_has_non_empty_translation() {
         MessageKey::ToastSvgTextBody,
         MessageKey::ToastFormatMismatchTitle,
         MessageKey::ToastFormatMismatchBody,
+        MessageKey::ToastFormatMismatchJpegTail,
         MessageKey::ErrorUnsupportedFile,
         MessageKey::ErrorIo,
         MessageKey::ErrorInputTooLarge,

@@ -52,8 +52,15 @@ fn a_jpeg_named_png_gets_exactly_one_toast_that_holds_the_notice_and_the_advisor
     assert!(
         toast
             .message
-            .contains(&state.translator.t(MessageKey::ToastJpegInputBody)),
-        "the JPEG advisory's sentence is in it: {}",
+            .contains(&state.translator.t(MessageKey::ToastFormatMismatchJpegTail)),
+        "the JPEG advisory's news is in it: {}",
+        toast.message
+    );
+    // The shortened body (RFC 014 review): one paragraph, without the advisory's opening sentence.
+    assert!(!toast.message.contains('\n'), "{}", toast.message);
+    assert!(
+        !toast.message.contains("will use this image"),
+        "the redundant opening sentence is gone: {}",
         toast.message
     );
     assert!(state.source_format_note.is_some());
@@ -78,7 +85,7 @@ fn a_png_named_jpg_gets_exactly_one_toast_without_the_jpeg_sentence() {
     assert!(
         !notices[0]
             .message
-            .contains(&state.translator.t(MessageKey::ToastJpegInputBody))
+            .contains(&state.translator.t(MessageKey::ToastFormatMismatchJpegTail))
     );
 }
 
