@@ -32,6 +32,16 @@ pub enum AppError {
     #[error("I/O error on {path}: {cause}")]
     Io { path: String, cause: String },
 
+    /// The file is larger than the input limit (RFC 014): `limit` is the limit that applied, in
+    /// bytes (`MAX_INPUT_BYTES`, or `MAX_SVG_BYTES` for an SVG). `path` is the file **name**.
+    #[error("input too large: {path} (limit {limit} bytes)")]
+    InputTooLarge { path: String, limit: u64 },
+
+    /// The image is larger than the size limits (RFC 014): `pixels` is the declared pixel count,
+    /// or 0 when the header said none and a decoder limit stopped it. `path` is the file **name**.
+    #[error("image too large: {path} ({pixels} pixels declared)")]
+    ImageTooLarge { path: String, pixels: u64 },
+
     /// Raster image decode failure.
     #[error("image decode failed: {detail}")]
     Decode { detail: String },
@@ -61,6 +71,8 @@ impl AppError {
         match self {
             Self::UnsupportedFile { .. } => MessageKey::ErrorUnsupportedFile,
             Self::Io { .. } => MessageKey::ErrorIo,
+            Self::InputTooLarge { .. } => MessageKey::ErrorInputTooLarge,
+            Self::ImageTooLarge { .. } => MessageKey::ErrorImageTooLarge,
             Self::Decode { .. } => MessageKey::ErrorDecode,
             Self::Rasterize { .. } => MessageKey::ErrorRasterize,
             Self::Resize { .. } => MessageKey::ErrorResize,
@@ -79,6 +91,20 @@ impl AppError {
             Self::Io { path, cause } => {
                 vec![("path", path.clone()), ("cause", cause.clone())]
             }
+            // The limits are named in the user's text from the constants, so text and code cannot
+            // drift apart: MiB for a file, megapixels and pixels per side for an image.
+            Self::InputTooLarge { path, limit } => vec![
+                ("path", path.clone()),
+                ("limit", (limit / (1024 * 1024)).to_string()),
+            ],
+            Self::ImageTooLarge { path, .. } => vec![
+                ("path", path.clone()),
+                (
+                    "limit",
+                    (crate::services::ingest::MAX_PIXELS / 1_000_000).to_string(),
+                ),
+                ("side", crate::services::ingest::MAX_SIDE.to_string()),
+            ],
             Self::Decode { detail } => vec![("detail", detail.clone())],
             Self::Rasterize { detail } => vec![("detail", detail.clone())],
             Self::Resize { detail } => vec![("detail", detail.clone())],
@@ -102,6 +128,20 @@ impl AppError {
         Self::Io {
             path: path.into(),
             cause: cause.into(),
+        }
+    }
+
+    pub fn input_too_large(path: impl Into<String>, limit: u64) -> Self {
+        Self::InputTooLarge {
+            path: path.into(),
+            limit,
+        }
+    }
+
+    pub fn image_too_large(path: impl Into<String>, pixels: u64) -> Self {
+        Self::ImageTooLarge {
+            path: path.into(),
+            pixels,
         }
     }
 

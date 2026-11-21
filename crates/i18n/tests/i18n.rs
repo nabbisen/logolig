@@ -74,6 +74,8 @@ fn translate_error_handles_all_variants() {
     let cases = [
         AppError::unsupported_file("foo.bin"),
         AppError::io("/x", "denied"),
+        AppError::input_too_large("big.png", 64 * 1024 * 1024),
+        AppError::image_too_large("huge.png", 5_000_000_000),
         AppError::decode("bad PNG"),
         AppError::rasterize("bad SVG"),
         AppError::resize("zero size"),
@@ -218,8 +220,12 @@ fn japanese_every_key_has_non_empty_translation() {
         MessageKey::ToastSvgPartsTitle,
         MessageKey::ToastSvgImagesBody,
         MessageKey::ToastSvgTextBody,
+        MessageKey::ToastFormatMismatchTitle,
+        MessageKey::ToastFormatMismatchBody,
         MessageKey::ErrorUnsupportedFile,
         MessageKey::ErrorIo,
+        MessageKey::ErrorInputTooLarge,
+        MessageKey::ErrorImageTooLarge,
         MessageKey::ErrorDecode,
         MessageKey::ErrorRasterize,
         MessageKey::ErrorResize,
@@ -423,5 +429,78 @@ fn the_deprecated_keys_still_translate() {
         ] {
             assert!(!t.t(key).is_empty(), "{locale:?} {key:?}");
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// RFC 014: input limits and the format notice
+// ---------------------------------------------------------------------------
+
+/// The user texts of the new errors state the limit and the next step, show the file name only (the
+/// error carries the name, never a directory), and leave no placeholder, in both languages.
+#[test]
+fn input_limit_errors_state_the_limit_and_the_next_step_in_both_languages() {
+    use logolig::services::ingest::{MAX_INPUT_BYTES, MAX_PIXELS, MAX_SIDE, MAX_SVG_BYTES};
+    for locale in [Locale::En, Locale::Ja] {
+        let t = Translator::for_locale(locale);
+        let file = t.translate_error(&AppError::input_too_large("big.png", MAX_INPUT_BYTES));
+        assert!(file.contains("big.png"), "{locale:?}: {file}");
+        assert!(
+            file.contains("64"),
+            "{locale:?}: the file limit in MiB: {file}"
+        );
+        let svg = t.translate_error(&AppError::input_too_large("big.svg", MAX_SVG_BYTES));
+        assert!(
+            svg.contains('8') && !svg.contains("64"),
+            "{locale:?}: {svg}"
+        );
+        let image = t.translate_error(&AppError::image_too_large("huge.png", 4_900_000_000));
+        assert!(image.contains("huge.png"), "{locale:?}: {image}");
+        assert!(
+            image.contains(&(MAX_PIXELS / 1_000_000).to_string()),
+            "{locale:?}: the pixel limit: {image}"
+        );
+        assert!(
+            image.contains(&MAX_SIDE.to_string()),
+            "{locale:?}: the side limit: {image}"
+        );
+        for text in [&file, &svg, &image] {
+            assert!(!text.contains('/'), "{locale:?}: no path in {text}");
+            assert!(
+                !text.contains('{') && !text.contains('}'),
+                "{locale:?}: a placeholder is left in {text}"
+            );
+        }
+    }
+    // The next step, in words: English names it.
+    let t = Translator::for_locale(Locale::En);
+    assert!(
+        t.translate_error(&AppError::image_too_large("a.png", 1))
+            .contains("Reduce the size")
+    );
+    assert!(
+        t.translate_error(&AppError::input_too_large("a.png", MAX_INPUT_BYTES))
+            .contains("smaller file")
+    );
+    assert!(
+        t.translate_error(&AppError::unsupported_file("a.bin"))
+            .contains("PNG, SVG, WebP or JPEG")
+    );
+}
+
+#[test]
+fn the_format_notice_names_both_formats_in_both_languages() {
+    for locale in [Locale::En, Locale::Ja] {
+        let t = Translator::for_locale(locale);
+        assert!(!t.t(MessageKey::ToastFormatMismatchTitle).is_empty());
+        let body = t.t_args(
+            MessageKey::ToastFormatMismatchBody,
+            &[("detected", "JPEG"), ("named", "PNG")],
+        );
+        assert!(
+            body.contains("JPEG") && body.contains("PNG"),
+            "{locale:?}: {body}"
+        );
+        assert!(!body.contains('{'), "{locale:?}: {body}");
     }
 }

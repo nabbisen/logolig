@@ -102,8 +102,10 @@ toast_png_size_out_of_range_body = "PNG sizes must be between {min} and {max} px
 toast_ico_size_out_of_range_body = "ICO sizes must be between {min} and {max} px (ICO format limit)."
 
 # --- Errors (AppError) ---
-error_unsupported_file = "Unsupported file format: {path}"
+error_unsupported_file = "{path} is not a supported image. Choose a PNG, SVG, WebP or JPEG file."
 error_io = "I/O error on {path}: {cause}"
+error_input_too_large = "{path} is larger than {limit} MiB, which is more than Logolig reads. Choose a smaller file and try again."
+error_image_too_large = "{path} is too large. Logolig accepts images of up to {limit} megapixels and {side} pixels on one side. Reduce the size of the image and try again."
 error_decode = "Image decode failed: {detail}"
 error_rasterize = "SVG rasterize failed: {detail}"
 error_resize = "Resize failed: {detail}"
@@ -159,6 +161,10 @@ tooltip_close = "Close the app"
 # This message is honest about the format limit and recommends PNG instead.
 toast_jpeg_input_title = "JPEG cannot have transparency"
 toast_jpeg_input_body = "Logolig will use this image, but JPEG cannot store a transparent background. For a favicon that adapts to dark and light browser tabs, export your logo to PNG with the background cut out, then load that here."
+# RFC 014: the name suggests another format than the content. The content decides; one notice,
+# and for a JPEG it is followed by the JPEG advisory above in the same toast.
+toast_format_mismatch_title = "The file name does not match its content"
+toast_format_mismatch_body = "The content is {detected}, but the name suggests {named}. Logolig goes by the content and uses it as {detected}."
 toast_non_square_input_title = "Your logo is not square"
 toast_non_square_input_body = "It is shown in full, with empty space around it, so the icon may look small. A square version of your logo gives a larger icon."
 toast_svg_parts_title = "Some parts of your SVG are not shown"

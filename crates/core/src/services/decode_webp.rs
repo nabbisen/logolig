@@ -25,8 +25,7 @@ pub fn decode(asset: &SourceAsset) -> Result<Rgba8, AppError> {
         )));
     }
 
-    let img = image::load_from_memory(&asset.raw)
-        .map_err(|e| AppError::decode(format!("WebP decode: {e}")))?;
+    let img = crate::services::limited_decode::load(asset, "WebP")?;
 
     let rgba = img.to_rgba8();
     let (w, h) = rgba.dimensions();

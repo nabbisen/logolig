@@ -54,6 +54,29 @@ pub struct SourceAsset {
     pub intrinsic_size: Option<(u32, u32)>,
 }
 
+/// The file name suggests another format than the content has (RFC 014, D1).
+///
+/// The content decides which decoder runs; the extension is only a hint. A note exists only when
+/// the extension is a **known** one (`.png`, `.svg`, `.webp`, `.jpg`, `.jpeg`) and the content is a
+/// different known format. An unknown or missing extension never gives a note.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FormatNote {
+    /// The format the file name suggests.
+    pub named: SourceKind,
+    /// The format the content has (the one that is used).
+    pub detected: SourceKind,
+}
+
+/// What ingest returns when the caller also wants the policy's note: the asset, and a
+/// [`FormatNote`] if the name contradicts the content. (`ingest` and `ingest_bytes` return the
+/// asset alone, as before: adding a field to the public [`SourceAsset`] would have broken
+/// downstream code that builds one by struct literal.)
+#[derive(Debug, Clone)]
+pub struct Ingested {
+    pub asset: SourceAsset,
+    pub note: Option<FormatNote>,
+}
+
 impl SourceAsset {
     pub fn display_name(&self) -> String {
         self.path

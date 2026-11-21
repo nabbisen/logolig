@@ -1,7 +1,15 @@
-//! Source-image ingestion.
+//! Source-image ingestion (RFC 014).
 //!
-//! Accepts raw file bytes, detects the format by magic signature (not by
-//! file extension), and returns a `SourceAsset`.
+//! Accepts a file (or raw bytes), decides the format **by its content** (magic signature), checks
+//! the input limits **from the header, before any decode**, and returns a `SourceAsset`.
+//!
+//! ## Policy
+//!
+//! The file extension is a hint, never a gate. Decoding is chosen by content. When a **known**
+//! extension contradicts the detected format, [`ingest_noted`] / [`ingest_bytes_noted`] also return
+//! a [`FormatNote`] so the application can say so once; an unknown or missing extension with
+//! recognised content is accepted without a note. Content that is not a recognised format is
+//! rejected whatever the extension says.
 //!
 //! ## Format detection
 //!
@@ -12,75 +20,143 @@
 //! | `FF D8 FF`                | JPEG   |
 //! | `52 49 46 46 … 57 45 42 50` | WebP (RIFF container) |
 //!
-//! Files without a recognised magic signature are rejected regardless of
-//! their file extension (prevents extension spoofing).
+//! ## Limits
+//!
+//! [`MAX_INPUT_BYTES`] for any file, [`MAX_SVG_BYTES`] for an SVG, [`MAX_SIDE`] per side and
+//! [`MAX_PIXELS`] in total for a raster (checked from the declared dimensions, so no pixel buffer
+//! is allocated for an image that is over). Only **regular files** are read: a directory, a FIFO
+//! or a device is rejected before anything is read. Errors carry the file **name**, never the
+//! directory.
 
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::domain::{SourceAsset, SourceKind};
+use crate::domain::{FormatNote, Ingested, SourceAsset, SourceKind};
 use crate::error::AppError;
+
+/// The largest file Logolig reads: 64 MiB.
+pub const MAX_INPUT_BYTES: u64 = 64 * 1024 * 1024;
+/// The largest SVG Logolig reads: 8 MiB (an SVG is text that a parser must walk).
+pub const MAX_SVG_BYTES: u64 = 8 * 1024 * 1024;
+/// The largest width or height of a raster image: 16 384 px.
+pub const MAX_SIDE: u32 = 16_384;
+/// The largest pixel count of a raster image: 64 megapixels (a 4-byte-per-pixel decode is then
+/// 256 MB before the application's own copies).
+pub const MAX_PIXELS: u64 = 64_000_000;
+
+/// The name a user sees for `path`: the file name, never the directory.
+fn name_of(path: &Path) -> String {
+    path.file_name()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "<unnamed>".into())
+}
 
 /// Load a file and return a `SourceAsset`.
 ///
 /// Intended to be called via `iced::Task::perform` so the UI thread
-/// is not blocked (§2.4).
+/// is not blocked (§2.4). The checks and the policy are those of [`ingest_noted`].
 pub async fn ingest(path: PathBuf) -> Result<SourceAsset, AppError> {
-    // 1. Narrow down by file extension (unknown extensions are rejected)
+    ingest_noted(path).await.map(|ingested| ingested.asset)
+}
+
+/// Like [`ingest`], and also returns the [`FormatNote`] when the extension contradicts the content.
+pub async fn ingest_noted(path: PathBuf) -> Result<Ingested, AppError> {
+    // The read is blocking I/O on a worker thread (what `tokio::fs::read` does, with the checks
+    // that it does not make).
+    let read_path = path.clone();
+    let raw = tokio::task::spawn_blocking(move || read_regular_file(&read_path))
+        .await
+        .map_err(|e| AppError::io(name_of(&path), format!("the read did not finish: {e}")))??;
+    analyse(path, raw)
+}
+
+/// Synchronous version for tests (inject hand-crafted bytes directly).
+/// Not used in the production I/O path (always go through the async version).
+pub fn ingest_bytes(path: impl AsRef<Path>, bytes: Vec<u8>) -> Result<SourceAsset, AppError> {
+    ingest_bytes_noted(path, bytes).map(|ingested| ingested.asset)
+}
+
+/// Like [`ingest_bytes`], and also returns the [`FormatNote`].
+pub fn ingest_bytes_noted(path: impl AsRef<Path>, bytes: Vec<u8>) -> Result<Ingested, AppError> {
+    analyse(path.as_ref().to_path_buf(), bytes)
+}
+
+/// Reads a regular file, at most [`MAX_INPUT_BYTES`]: the size is checked from the metadata
+/// **before** reading, the file type before anything is opened (a FIFO would block the open, a
+/// device would read without end), and the read itself stops one byte past the limit.
+fn read_regular_file(path: &Path) -> Result<Vec<u8>, AppError> {
+    let name = || name_of(path);
+    // `metadata` follows a symlink: a link to a regular file is accepted, a link to a directory
+    // is not.
+    let meta = std::fs::metadata(path).map_err(|e| AppError::io(name(), e.to_string()))?;
+    if !meta.is_file() {
+        return Err(AppError::unsupported_file(name()));
+    }
+    if meta.len() > MAX_INPUT_BYTES {
+        return Err(AppError::input_too_large(name(), MAX_INPUT_BYTES));
+    }
+    let file = std::fs::File::open(path).map_err(|e| AppError::io(name(), e.to_string()))?;
+    // The path may have been replaced between the two calls: ask the opened file again.
+    let meta = file
+        .metadata()
+        .map_err(|e| AppError::io(name(), e.to_string()))?;
+    if !meta.is_file() {
+        return Err(AppError::unsupported_file(name()));
+    }
+    let mut raw = Vec::with_capacity(meta.len().min(MAX_INPUT_BYTES) as usize);
+    file.take(MAX_INPUT_BYTES + 1)
+        .read_to_end(&mut raw)
+        .map_err(|e| AppError::io(name(), e.to_string()))?;
+    Ok(raw)
+}
+
+/// The one place the policy and the limits live: size, format by content, header dimensions.
+fn analyse(path: PathBuf, raw: Vec<u8>) -> Result<Ingested, AppError> {
+    let name = name_of(&path);
+    // 1. The size of the bytes (the second check; the first was the file's length).
+    if raw.len() as u64 > MAX_INPUT_BYTES {
+        return Err(AppError::input_too_large(name, MAX_INPUT_BYTES));
+    }
+    // 2. The extension is a hint that is compared, never a gate.
     let ext_kind = path
         .extension()
         .and_then(|e| e.to_str())
         .and_then(SourceKind::from_extension);
-
-    // 2. Read the file asynchronously
-    let raw = tokio::fs::read(&path)
-        .await
-        .map_err(|e| AppError::io(path.display().to_string(), e.to_string()))?;
-
-    // 3. Confirm format with magic bytes; reject on mismatch (UnsupportedFile)
-    let kind = detect_kind(&raw, ext_kind)
-        .ok_or_else(|| AppError::unsupported_file(path.display().to_string()))?;
-
-    // 4. Extract intrinsic dimensions
+    // 3. The content decides.
+    let kind = detect_kind(&raw).ok_or_else(|| AppError::unsupported_file(name.clone()))?;
+    if kind == SourceKind::Svg && raw.len() as u64 > MAX_SVG_BYTES {
+        return Err(AppError::input_too_large(name, MAX_SVG_BYTES));
+    }
+    // 4. The declared dimensions, from the header, before any decode.
     let intrinsic_size = match kind {
         SourceKind::Png => parse_png_size(&raw),
         SourceKind::Svg => parse_svg_size(&raw),
         SourceKind::Webp => parse_webp_size(&raw),
         SourceKind::Jpeg => parse_jpeg_size(&raw),
     };
-
-    Ok(SourceAsset {
-        path,
-        kind,
-        raw: Arc::<[u8]>::from(raw),
-        intrinsic_size,
-    })
-}
-
-/// Synchronous version for tests (inject hand-crafted bytes directly).
-/// Not used in the production I/O path (always go through the async version).
-pub fn ingest_bytes(path: impl AsRef<Path>, bytes: Vec<u8>) -> Result<SourceAsset, AppError> {
-    let path = path.as_ref().to_path_buf();
-    let ext_kind = path
-        .extension()
-        .and_then(|e| e.to_str())
-        .and_then(SourceKind::from_extension);
-
-    let kind = detect_kind(&bytes, ext_kind)
-        .ok_or_else(|| AppError::unsupported_file(path.display().to_string()))?;
-
-    let intrinsic_size = match kind {
-        SourceKind::Png => parse_png_size(&bytes),
-        SourceKind::Svg => parse_svg_size(&bytes),
-        SourceKind::Webp => parse_webp_size(&bytes),
-        SourceKind::Jpeg => parse_jpeg_size(&bytes),
-    };
-
-    Ok(SourceAsset {
-        path,
-        kind,
-        raw: Arc::<[u8]>::from(bytes),
-        intrinsic_size,
+    if kind != SourceKind::Svg
+        && let Some((w, h)) = intrinsic_size
+    {
+        let pixels = u64::from(w) * u64::from(h);
+        if w > MAX_SIDE || h > MAX_SIDE || pixels > MAX_PIXELS {
+            return Err(AppError::image_too_large(name, pixels));
+        }
+    }
+    let note = ext_kind
+        .filter(|named| *named != kind)
+        .map(|named| FormatNote {
+            named,
+            detected: kind,
+        });
+    Ok(Ingested {
+        asset: SourceAsset {
+            path,
+            kind,
+            raw: Arc::<[u8]>::from(raw),
+            intrinsic_size,
+        },
+        note,
     })
 }
 
@@ -103,7 +179,7 @@ fn looks_like_webp(bytes: &[u8]) -> bool {
     bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP"
 }
 
-fn detect_kind(bytes: &[u8], hint: Option<SourceKind>) -> Option<SourceKind> {
+fn detect_kind(bytes: &[u8]) -> Option<SourceKind> {
     if bytes.starts_with(PNG_MAGIC) {
         return Some(SourceKind::Png);
     }
@@ -116,9 +192,7 @@ fn detect_kind(bytes: &[u8], hint: Option<SourceKind>) -> Option<SourceKind> {
     if looks_like_svg(bytes) {
         return Some(SourceKind::Svg);
     }
-    // Files without a recognised magic signature are rejected regardless of extension.
-    // For example: a file claiming to be ".png" via its extension is rejected.
-    let _ = hint;
+    // No recognised signature: rejected, whatever the extension says.
     None
 }
 

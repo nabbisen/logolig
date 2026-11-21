@@ -38,6 +38,10 @@ usvg                    = { workspace = true }
 # Each integration test is declared explicitly (complements autotests = false).
 # `fixtures.rs` is intentionally excluded here.
 [[test]]
+name = "ingest_policy"
+path = "tests/ingest_policy.rs"
+
+[[test]]
 name = "export_plan"
 path = "tests/export_plan.rs"
 

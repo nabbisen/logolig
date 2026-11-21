@@ -22,9 +22,9 @@ pub fn decode(asset: &SourceAsset) -> Result<Rgba8, AppError> {
         )));
     }
 
-    // image::load_from_memory detects format by magic bytes, not extension — safe.
-    let img = image::load_from_memory(&asset.raw)
-        .map_err(|e| AppError::decode(format!("PNG decode: {e}")))?;
+    // The format is guessed from the bytes, never from the extension, and the decoder runs with
+    // limits (RFC 014).
+    let img = crate::services::limited_decode::load(asset, "PNG")?;
 
     let rgba = img.to_rgba8();
     let (w, h) = rgba.dimensions();

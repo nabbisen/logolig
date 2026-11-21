@@ -20,7 +20,7 @@ pub use persisted_settings::PersistedSettings;
 pub use preview_profile::{PreviewContext, PreviewProfile};
 pub use raster::Rgba8;
 pub use resize_algorithm::ResizeAlgorithm;
-pub use source_asset::{SourceAsset, SourceKind};
+pub use source_asset::{FormatNote, Ingested, SourceAsset, SourceKind};
 pub use theme_mode::ThemeMode;
 pub use vtracer_preset::VtracerPreset;
 pub use web_manifest::WebManifestSettings;

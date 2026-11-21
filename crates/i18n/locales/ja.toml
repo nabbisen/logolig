@@ -104,8 +104,10 @@ toast_png_size_out_of_range_body = "PNG サイズは {min}〜{max} px の範囲�
 toast_ico_size_out_of_range_body = "ICO サイズは {min}〜{max} px の範囲で指定してください (ICO 形式の上限)。"
 
 # --- エラー (AppError) ---
-error_unsupported_file = "対応していないファイル形式: {path}"
+error_unsupported_file = "{path} は対応していない形式です。 PNG、 SVG、 WebP、 JPEG のいずれかのファイルを選んでください。"
 error_io = "{path} の入出力エラー: {cause}"
+error_input_too_large = "{path} は {limit} MiB を超えているため読み込めません。 より小さいファイルを選んで、 もう一度お試しください。"
+error_image_too_large = "{path} は大きすぎます。 読み込めるのは {limit} メガピクセル以下で、 かつ 1 辺が {side} ピクセル以下の画像です。 画像を縮小して、 もう一度お試しください。"
 error_decode = "画像のデコードに失敗: {detail}"
 error_rasterize = "SVG のラスタライズに失敗: {detail}"
 error_resize = "リサイズに失敗: {detail}"
@@ -161,6 +163,9 @@ tooltip_close = "アプリを閉じる"
 # を勧める。
 toast_jpeg_input_title = "JPEG は透過を表現できません"
 toast_jpeg_input_body = "この画像も使えますが、 JPEG 形式は透過背景を保存できません。 ダーク・ライト両方のブラウザタブに馴染む favicon にするには、 ロゴを背景切り抜きの PNG として書き出してから読み込んでください。"
+# RFC 014: ファイル名が示す形式と中身が違う場合の通知 (中身が優先)。 JPEG のときは上の JPEG の説明が同じトーストに続く。
+toast_format_mismatch_title = "ファイル名と中身が一致しません"
+toast_format_mismatch_body = "中身は {detected} ですが、 ファイル名は {named} を示しています。 Logolig は中身に従い、 {detected} として扱います。"
 toast_non_square_input_title = "ロゴが正方形ではありません"
 toast_non_square_input_body = "ロゴ全体を表示するため、アイコンの周りに余白が付きます。正方形のロゴ画像を用意すると、アイコンを大きく表示できます。"
 toast_svg_parts_title = "SVG の一部が表示されません"

@@ -118,6 +118,8 @@ pub(crate) struct Dictionary {
     // Errors
     pub error_unsupported_file: String,
     pub error_io: String,
+    pub error_input_too_large: String,
+    pub error_image_too_large: String,
     pub error_decode: String,
     pub error_rasterize: String,
     pub error_resize: String,
@@ -174,6 +176,8 @@ pub(crate) struct Dictionary {
     pub toast_dialog_unavailable_title: String,
     pub toast_dialog_unavailable_chooser_body: String,
     pub toast_dialog_unavailable_save_body: String,
+    pub toast_format_mismatch_title: String,
+    pub toast_format_mismatch_body: String,
     pub toast_svg_parts_title: String,
     pub toast_svg_images_body: String,
     pub toast_svg_text_body: String,
@@ -353,6 +357,8 @@ impl Dictionary {
 
             MessageKey::ErrorUnsupportedFile => &self.error_unsupported_file,
             MessageKey::ErrorIo => &self.error_io,
+            MessageKey::ErrorInputTooLarge => &self.error_input_too_large,
+            MessageKey::ErrorImageTooLarge => &self.error_image_too_large,
             MessageKey::ErrorDecode => &self.error_decode,
             MessageKey::ErrorRasterize => &self.error_rasterize,
             MessageKey::ErrorResize => &self.error_resize,
@@ -415,6 +421,8 @@ impl Dictionary {
                 &self.toast_dialog_unavailable_chooser_body
             }
             MessageKey::ToastDialogUnavailableSaveBody => &self.toast_dialog_unavailable_save_body,
+            MessageKey::ToastFormatMismatchTitle => &self.toast_format_mismatch_title,
+            MessageKey::ToastFormatMismatchBody => &self.toast_format_mismatch_body,
             MessageKey::ToastSvgPartsTitle => &self.toast_svg_parts_title,
             MessageKey::ToastSvgImagesBody => &self.toast_svg_images_body,
             MessageKey::ToastSvgTextBody => &self.toast_svg_text_body,

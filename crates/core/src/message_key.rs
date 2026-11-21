@@ -135,6 +135,10 @@ pub enum MessageKey {
     // --- Errors (AppError key mapping) ---
     ErrorUnsupportedFile,
     ErrorIo,
+    /// The file is larger than the input limit (RFC 014); states the limit and the next step.
+    ErrorInputTooLarge,
+    /// The image is larger than the size limits (RFC 014); states the limits and the next step.
+    ErrorImageTooLarge,
     ErrorDecode,
     ErrorRasterize,
     ErrorResize,
@@ -218,6 +222,10 @@ pub enum MessageKey {
     ToastDialogUnavailableChooserBody,
     /// Toast body when a Save dialog cannot appear: names a portal backend.
     ToastDialogUnavailableSaveBody,
+    /// Notice title: the file's name suggests another format than its content (RFC 014).
+    ToastFormatMismatchTitle,
+    /// Notice body (`{detected}`, `{named}`): the content decides and the file is used as `{detected}`.
+    ToastFormatMismatchBody,
     /// Toast title for a non-square source (RFC 010): the logo is shown in full with padding.
     ToastNonSquareInputTitle,
     /// Toast body for a non-square source. Suggests a square version of the logo.

@@ -50,6 +50,7 @@ pub mod flatten;
 pub mod html_snippet;
 pub mod ico_writer;
 pub mod ingest;
+mod limited_decode;
 pub mod manifest_writer;
 pub mod monochrome;
 pub mod preview;
