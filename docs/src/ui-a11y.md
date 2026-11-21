@@ -38,14 +38,24 @@ the light theme:
   checkbox and **Space ticks it**; Shift+Tab moves the ring back; Ctrl+3 goes to
   Settings.
 
-**Not run in a real window for this release candidate:** the arrow keys on the Settings
-groups (the language and theme change at once), and in the X11 text-field steps: Tab
-out of a field keeps its text, Ctrl+1 in a focused field goes Home and types nothing,
-Esc in a field leaves it. These are covered by the automated tests on the real key
-path, and are repeated in a real window on the release commit. One thing that run
-found has been fixed since: the ring of a focused active navigation item had covered
-its accent bar; the bar now starts clear of the ring, which is checked by a pixel test,
-not by a new real-window run.
+Run again on the release candidate, in real windows as above:
+
+- *Native Wayland:* the sequence above again, and in addition the focused active navigation
+  item keeps its whole accent bar and a whole ring; on the Settings page the arrow keys on
+  the theme group change the theme at once (↓ makes the page dark, ↑ back); a PNG chosen in
+  the file chooser by keyboard shows the Result screen; Ctrl+S pressed twice opens exactly
+  one save window.
+- *X11 backend (XWayland), keys and pointer:* Tab out of the custom-size field keeps its
+  text and puts the ring on the next stop; Ctrl+1 in the focused field goes Home and
+  types nothing (and Ctrl+2 back shows the field unchanged); Esc in the field leaves it,
+  and Tab then starts at the first stop.
+- *Native Wayland, the disclosure controls:* Tab to the "Advanced settings" header and
+  Space opens the section, Space closes it, and the ring stays on the header each time;
+  after opening, the next Tab goes on from the header (not back to the start). On the Result
+  screen the ring stays on the preview toggle through Space (open) and Space (close); Tab
+  after it is checked by the automated tests only.
+
+Not run in a real window: the Japanese interface (the automated layout tests cover it).
 
 Windows and macOS have not been tested (on macOS the command key is Cmd instead of
 Ctrl; that is the intended mapping and is not verified). Non-Latin keyboard layouts are
@@ -90,6 +100,10 @@ covered by unit tests of the key mapping only, not by a run on such a layout.
   on the chosen option does not. A group that is disabled (the Surface group while
   the transparency checker is shown) is not a stop and takes no key.
 - Choosing the language with the arrow keys therefore changes the language at once.
+- On the "Advanced settings" header (Customize) and the preview toggle (Result screen), Enter
+  or Space opens or closes the section below it and **the focus stays on the control**, so the
+  ring does not disappear and Tab goes on from there: into the section that just opened, or
+  to the control after it when the section closed.
 
 **Global shortcuts**
 
@@ -122,6 +136,9 @@ file…" control, so it does nothing there.
 
 **Known behaviour**
 
+- A mouse click on the "Advanced settings" header or the preview toggle leaves the focus ring
+  on that control, as Space does (the application cannot tell the two presses apart); the ring
+  goes at the next click elsewhere or at the next Tab.
 - After Enter on a navigation item that changes the page, nothing is focused (the
   page has a different number of controls) and the next Tab starts at the first
   stop, so a keyboard user passes the three navigation items again to reach the page.
