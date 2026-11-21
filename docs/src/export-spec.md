@@ -1,7 +1,10 @@
 # Export Specification
 
-Defines the artifacts Logolig writes to disk and the HTML
-snippet it generates. Implements §7 of the build spec.
+Defines the artifacts Logolig generates and the HTML snippet it
+writes with them. The application generates everything **in memory** and
+saves bytes only when the user picks a target (one file, or the ZIP bundle
+below); the same artifact set can also be written to a directory through the
+library's disk export (see "Failure modes").
 
 ## Default artifact set
 
@@ -161,7 +164,7 @@ The following are **not** emitted by default:
 
 ## ZIP bundle ("Download all")
 
-The ZIP bundle contains the same relative layout as the disk export, including
+The ZIP bundle contains the same relative layout as the library's disk export, including
 the `mono/` subdirectory when monochrome output is enabled (for example
 `favicon-32.png` **and** `mono/favicon-32.png`). Artifact paths are unique,
 compared case-insensitively, because extracting an archive onto a
@@ -176,12 +179,20 @@ dialog still proposes the base name (`favicon-32.png`), also for files under
 
 ## Failure modes
 
-Output failures surface as `AppError::Export(_)` from `logolig`
-and become persistent error toasts in the UI (§ui-a11y "Errors as
-toasts"). The export step is **transactional at the file level**:
-either every requested artifact is written, or none is. The
-implementation uses a hidden staging directory
-(`.logolig-<pid>-<nanos>.tmp`) inside the chosen output directory,
-writes every artifact there, and finalizes by atomic rename. A
-`StagingGuard` (RAII) deletes the staging on any failure path,
-including panics.
+Output failures surface as `AppError::Export(_)` from `logolig` and become
+persistent error toasts in the UI (§ui-a11y "Errors as toasts").
+
+**In the application (the primary path).** Generation happens in memory
+(`services::exporter::run_in_memory`): either every requested artifact is
+produced or the conversion fails and nothing is offered for saving. Saving is
+all-or-nothing as well: the ZIP is built in memory and written in one step, and
+a single file is written from its bytes, so a failed save never leaves a partial
+file (see "ZIP bundle").
+
+**In the library (the disk export).** `services::exporter::run` writes the same
+artifacts into a directory and is **transactional at the file level**: either
+every requested artifact is written, or none is. It uses a hidden staging
+directory (`.logolig-<pid>-<nanos>.tmp`) inside the chosen output directory,
+writes every artifact there, and finalizes by atomic rename. A `StagingGuard`
+(RAII) deletes the staging on any failure path, including panics. The
+application does not call it; the library's integration tests do.
