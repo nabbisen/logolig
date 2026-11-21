@@ -1,5 +1,7 @@
 # Logolig
 
+<p align="center"><img src="docs/assets/logolig-logo.png" alt="Logolig logo" width="128" height="128"></p>
+
 [![License](https://img.shields.io/github/license/nabbisen/logolig)](LICENSE)
 [![CI](https://github.com/nabbisen/logolig/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nabbisen/logolig/actions/workflows/ci.yml)
 [![Documentation](https://docs.rs/logolig/badge.svg?version=latest)](https://docs.rs/logolig)

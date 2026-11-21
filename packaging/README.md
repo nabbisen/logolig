@@ -6,8 +6,8 @@ What is here and how it is used. Publication to the AUR is **an owner action** (
 |---|---|
 | `aur/logolig/PKGBUILD.in` | Template of the AUR source package `logolig` (builds the GUI binary from the tagged source) |
 | `linux/io.github.nabbisen.Logolig.desktop` | Desktop entry; the file name is the application ID the window reports |
-| `linux/icons/hicolor/` | Application icons installed under `/usr/share/icons/hicolor` (PNG 48, 64, 128, 256 and the SVG) |
-| `icons/logolig.svg` | Master artwork; every icon is generated from it (see `icons/README.md`) |
+| `linux/icons/hicolor/` | Application icons installed under `/usr/share/icons/hicolor` (PNG 32, 48, 64, 128, 256 and 512) |
+| `icons/logolig.png` | Master artwork; every icon is generated from it (see `icons/README.md`) |
 | `windows/` | Microsoft Store manifest and assets (manual, unrelated to the AUR) |
 | `../scripts/render-aur.sh` | Fills the template and writes `PKGBUILD` and `.SRCINFO` |
 
