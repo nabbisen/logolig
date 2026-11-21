@@ -53,6 +53,7 @@ recommendation; the owner authorizes the plan.
 | [020](./accepted/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging (phased) | P1 |
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
 | [034](./accepted/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | P2 |
+| [037](./accepted/037-microsoft-store-packaging-automation.md) | Microsoft Store packaging: a guarded version, a Windows build in CI, optional submission | P1 |
 | [012](./accepted/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
 | [013](./accepted/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |
 | [014](./accepted/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |

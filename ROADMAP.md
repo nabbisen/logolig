@@ -94,6 +94,7 @@
 
 | Job | Work | Size | Why now / notes |
 |---|---|---|---|
+| M1 | RFC 037 phase A: the Store manifest version derived from the workspace version and guarded in CI (script, test, one step in `fmt`) | S | **First job of 1.29.0** (before K1): the manifest stayed at 1.26.2.0 through two releases. Handoff issued 2026-11-22; the architect already set the manifest to 1.28.0.0 (code identical to the tag) |
 | K1 | RFC 014: ingest policy and limits. Content decides (extension is a hint; an informational notice when they differ); limits 64 MiB file, 100 MP, 16 384 px, SVG 8 MiB; **error texts show the file name, not the full path** (addendum of 2026-10-24) | M | The only safety hardening open; independent of UI. **Owner decisions** (below). Adds `AppError` variants (see SemVer) | **Handoff issued 2026-11-22** (`rfcs/handoffs/014-ingest-validation-and-input-limits/`)
 | K2 | RFC 012: web manifest validation (the validation exists and is never called); accept `#RGB` shorthand and normalise | S | A defect with a designed fix. Owner Q1 |
 | K3 | RFC 013: "System" theme follows the OS. **Spike first** (does winit report the theme on Wayland and X11 here? `iced::system::theme()` / `theme_changes()` exist in iced 0.14); fallback Light as today; Settings shows "System (currently Dark)" | S–M | Today "System" always renders Light, which a user reads as a bug. Before J21 so contrast is tested on the real System→Dark path |
@@ -114,6 +115,7 @@
 
 | Item | Why later |
 |---|---|
+| RFC 037 phase B: a Windows build and an unsigned MSIX artifact in CI (the project's first Windows build and test evidence; spike first) | Unknown Windows build state; belongs with distribution. Phase C (submission from CI) is the owner's decision: Azure credentials as secrets, the same boundary as the AUR key |
 | RFC 023 Flatpak (upstream files, MetaInfo, validation CI; the owner writes the manifest and submits) | Needs the **final UI** (the README screenshot is retaken once; MetaInfo uses it), the owner's time and the AI-policy decision, and the AUR publication first |
 | RFC 015 phase 2b: SVG text rendering with a font set | Platform-dependent fonts; shares its font policy with Flatpak; "SVG text is not drawn" stays a documented limitation |
 | RFC 020 phases 3–4 (`logolig-bin`, `release.yml`, attestation) | Wait for the owner's `aur` environment and CI-only key |
@@ -147,6 +149,7 @@ Remove the items deprecated in 1.28.0 (`MessageKey::{PresetLabel, SvgConversionS
 2. Security review note by the architect (new data flows, external integrations, dependency changes); threat model updated if a data flow is new.
 3. Documentation (README, `docs/src`) matches behaviour; RFC statuses and the index are current; implemented RFCs are moved to `done/` with the release.
 3a. **Expensive real-window passes run once on the release commit** (J14b's two key runs are the keyboard part; "Tab out of a focused text field keeps its text" and "Ctrl+1 in the field goes Home" are in them) (owner's test-optimization rule), and in between only when the code they exercise changed: the real file chooser (open once, cancel, reopen), the settings round-trip through the real window, one visual pass of Home, Result, Customize and Settings in Light and Dark, and the package install check. Everything that can be checked headlessly runs in CI on every commit.
+3b. **Microsoft Store manifest version is current** (`scripts/appx-version.sh check`, enforced in CI from RFC 037 phase A; the tile images change only when the logo changes; the Store listing images are separate uploads in Partner Center).
 4. Evidence kept: review requests, gate logs, CI run URLs, known limitations.
 5. Release notes and a draft GitHub Release; **the owner publishes**.
 6. Post-release: record deviations from plan and lessons; update this file.
