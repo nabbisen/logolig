@@ -1,7 +1,8 @@
 # Logolig Functional Specification
 
-> This document describes **what logolig can do and how it behaves** at
-> v1.27.0, as observable behaviour rather than implementation detail.
+> This document describes **what logolig can do and how it behaves** in the
+> current development tree (release 1.28.0 in preparation; the last release is
+> 1.27.0), as observable behaviour rather than implementation detail.
 > It is intended as input for UX review and external design decisions.
 >
 > The document separates **functional specification** (what it does) from
@@ -74,30 +75,43 @@ enabled, Logolig generates four PNG files at the output root: `StoreLogo.png`
 and `Wide310x150Logo.png` (310×150). The wide logo uses contain-fit rendering
 on a transparent canvas so the source logo is not cropped or stretched.
 
-### Atomic disk export
+### Export paths
 
-The primary GUI flow generates artifacts in memory. The legacy disk-export
-API still provides all-or-nothing writes: no partial output is left on
-failure. The implementation writes to a staging directory, then renames
-atomically into the output directory.
+The application generates every artifact **in memory** and writes bytes only after the
+user picks a save target (one file or the ZIP). The ZIP is built in memory and written in
+one step, so a failed save leaves no half-written archive.
+
+The library `logolig` also offers a disk export (`services::exporter::run`) that writes into
+a directory with all-or-nothing semantics: it writes to a staging directory, then renames
+atomically into the output directory, and removes the staging directory on failure. The
+application does not use it; the integration tests of the library crate do.
 
 ### Size customisation
 
-PNG size lists are editable in the UI (16–1024 px). ICO frames are fixed at
-16/32/48 px and are not user-editable. PNG customisations are persisted across
-sessions.
+PNG size lists are editable in the UI (16–1024 px): six preset sizes are checkboxes, a size
+typed into the custom-size field becomes a checked entry that can be unchecked again. PNG
+customisations are persisted across sessions.
+
+ICO frames are **16, 32 and 48 px and cannot be changed in the UI**. (The persisted plan
+does carry an `ico_sizes` field (its add method accepts 16–256 px), which the application does
+not expose and the exporter honours, so only an edited settings file can change it.)
 
 ### vtracer presets (SVG generation from raster)
 
-- **Sharp** (default): crisp contours for logos and icons
-- **Default**: balanced
-- **PhotoRich**: smooth curves for photo-like or gradient sources
+Three presets, named in the interface as follows:
+
+- **Default (balanced)**: the default.
+- **Sharp (logos, icons)**: an opt-in preset intended for logos and icons.
+- **Photo-rich (gradients)**: smooth curves for photo-like or gradient sources.
+
+One group of these three choices, in the Customize page's "SVG conversion" section, is the only
+control for this setting.
 
 ### Resize algorithm
 
-- **Lanczos3** (default): highest quality
-- **Bilinear**: faster
-- **Nearest**: pixel art
+Five algorithms, named in the interface as follows: **Lanczos3 (sharp)** (the default, highest
+quality), **Mitchell-Netravali**, **Catmull-Rom**, **Bilinear** (faster) and **Nearest (pixel
+art)** (no interpolation).
 
 ## 4. UI structure
 
@@ -182,10 +196,12 @@ After conversion, assets are shown in a grid (3 columns desktop /
   a colour file and its monochrome twin are never visually identical.
 - Raster thumbnail (image assets) or document icon placeholder
 - Dimensions (image assets only) and human-readable file size
-- Per-card download button (↓)
+- Per-card "Save" button (with the download icon)
 
-Below the grid: a "▶ Preview" collapsible section and a
-"↓ Download all (ZIP)" button.
+The screen has three parts: a fixed header with "← Back", a middle that scrolls (the
+headline, the cards and the preview section), and a fixed footer with "Download all (ZIP)", so
+that both buttons are in view at every window size. The preview section is a collapsible toggle
+("Preview", with a chevron that shows open or closed) below the grid.
 
 ### Preview panel
 
@@ -201,9 +217,9 @@ A Surface picker (System / Light / Dark) controls the preview background.
 The Surface picker is disabled in Checker mode (background has no effect
 on the checkerboard).
 
-Each picker is a radio group: the chosen option is a filled dot in a ring, the
-group is one Tab stop in the focus order and ↑ ↓ ← → choose (colour-blind safe
-per ABDD §12). The Surface group is dimmed as a whole in Checker mode.
+Each picker is a vertical group of radio options under its label: the chosen option is a
+filled dot in a ring, the group is one Tab stop in the focus order and ↑ ↓ ← → choose
+(colour-blind safe per ABDD §12). The Surface group is dimmed as a whole in Checker mode.
 
 ## 8. Customize page
 
@@ -220,37 +236,42 @@ icons)", "Default (balanced)" and "Photo-rich (gradients)", mapping to the
 vtracer presets Sharp / Default / PhotoRich. The same group is the only control
 for this setting (there is no separate preset list under the SVG option).
 
-**Misc** — "Keep transparency (alpha)" toggle. When off, raster outputs
+**Other** — "Keep transparency (alpha)" checkbox. When off, raster outputs
 are composited against white (Porter-Duff over) before writing.
 
 **Advanced** (collapsible) — infrequently-changed settings:
-- Include SVG output / vectorise raster sources
+- Include SVG output / vectorise raster sources (two checkboxes; the vectorisation one only while SVG output is on)
 - Apple touch icon (180×180 PNG)
 - HTML snippet file
 - Web manifest (off by default; name, short name, theme colour, background colour)
 - Monochrome output set
-- Resize algorithm
+- Resize algorithm (the five-option group)
 
-**Footer** — ↻ Reset button restores all settings to defaults.
+**Footer** — "Reset to defaults" (↻) restores all settings to defaults. It sits below the scrolling part, so it is always in view.
 
 ## 9. Settings page
 
 Language and theme selection, reachable via the Settings nav item.
 
+The page scrolls as one when the window is short.
+
 ### Language
 
-Supported locales: **English** / **Japanese**. The OS locale is detected
-at startup (BCP-47 and POSIX `ja_JP.UTF-8` forms both supported). The
-selection is persisted.
+A group of three choices: **日本語**, **English** and **System** (follow the operating
+system's language). The OS locale is detected at startup (BCP-47 and POSIX `ja_JP.UTF-8`
+forms both supported). Choosing applies at once and is persisted.
 
 ### Theme
 
-System / Light / Dark cycle. Persisted across sessions.
+A group of three choices: **Light**, **Dark** and **System**. Choosing applies at once and is
+persisted across sessions.
 
 ### Keyboard shortcuts
 
-A list of the global keyboard shortcuts (keys and what they do, in the
-interface language). F1 opens this page.
+A list of the global keyboard shortcuts (keys and what they do, in the interface language):
+Ctrl+O "Choose a file", Ctrl+S "Download all (ZIP)", Esc "Close the message, or go back to the
+start", Ctrl+1 / 2 / 3 "Go to Home, Customize or Settings", F1 "Show this list" (Cmd replaces
+Ctrl on macOS). F1 opens this page.
 
 ## 10. Notifications (toasts)
 
@@ -269,6 +290,7 @@ Every toast has a close button (`×`).
 | **JPEG educational warning** | "JPEG cannot store transparency. Consider converting to PNG." |
 | **Non-square source advisory** | "Your logo is not square" / the logo is shown in full with empty space around it, so the icon may look small. Shown once per loaded image when the sides differ by more than 2 % (any source kind). |
 | **SVG parts not shown** | "Some parts of your SVG are not shown": one toast per loaded SVG when it refers to image files on the computer (not read, for safety) and/or contains text (not drawn yet); the body holds the applicable sentences, images first. Nothing is shown for an SVG without either. |
+| **No file dialog available** | "No file dialog available" with a body that says to drag a file onto the window or to install a desktop portal with a file dialog (a similar body for the Save dialogs). Shown when the application has positive evidence that no dialog can appear; **persistent** (stays until dismissed); **shown once**: while it is on screen, asking again does not add another. |
 | Error | Decode failure, write failure, etc. |
 
 ### JPEG vs. generic transparency warning
@@ -306,7 +328,7 @@ Stored as JSON in the OS standard config directory.
 
 - Locale selection
 - Theme selection
-- Full export plan (checkboxes, PNG sizes, fixed ICO defaults, vtracer preset, resize
+- Full export plan (checkboxes, PNG sizes, ICO frame sizes (default 16/32/48), vtracer preset, resize
   algorithm, web manifest fields, monochrome toggle, keep-transparency
   toggle)
 
@@ -328,8 +350,7 @@ Not persisted: the Advanced accordion's expanded/collapsed state
   back; in a text field it leaves the field), Ctrl+1/2/3 (Home, Customize,
   Settings) and F1 (Settings, where the list is shown); Cmd replaces Ctrl on macOS.
   A shortcut works only when the button it stands for is available, and never
-  types into a text field. See `ui-a11y.md` ("Keyboard support"), RFC 019 and
-  RFC 027.
+  types into a text field. See `ui-a11y.md` ("Keyboard support").
 - Screen readers are not supported: iced 0.14 exposes no accessibility tree.
 
 ## 15. Offline operation
@@ -364,7 +385,15 @@ No network communication. All processing runs on the local CPU.
 | v1.19.0 | Dead code removal + `run_in_memory` API | Direct in-memory export API in logolig (core) |
 | v1.20.0 | Mobile layout | Sidebar ↔ bottom nav, responsive grid |
 | v1.21.0 | Keep-transparency toggle | Flatten service, full test coverage |
-| **v1.22.0** | **Side-nav redesign** | **Three-page nav: Home / Customize / Settings** |
+| v1.22.0 | Side-nav redesign | Three-page nav: Home / Customize / Settings |
+| v1.23.0 | snora 0.18 | Dependency update, English translation completed, smoke tests |
+| v1.24.0 | History | Lucide download icons; the last result is kept and reachable from the start screen ("View results →") |
+| v1.25.0 | snora 0.25 | Dependency update |
+| v1.26.0 | Microsoft app logos | Opt-in `StoreLogo`, `Square44x44Logo`, `Square150x150Logo`, `Wide310x150Logo` |
+| v1.26.1 | Drop zone | Drag-and-drop repaired; the whole card is the click target; hover feedback |
+| v1.26.2 | Stability | Release-gate and documentation stabilisation |
+| v1.27.0 | First public release | Non-square logos shown in full; keyboard shortcuts; ZIP written all-or-nothing; safer SVG sources; toast time follows the text; faster large conversions |
+| v1.28.0 (in preparation) | Keyboard and interface correctness | Every control reachable and operable by keyboard (Tab order, focus ring, always in view); radio groups, checkboxes and an accent bar as selection cues; "Back" and "Download all" always in view; a result always belongs to the file chosen; one notice when no file dialog exists |
 
 ## 17. Design review axes
 
