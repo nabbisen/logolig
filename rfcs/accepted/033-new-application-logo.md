@@ -55,3 +55,8 @@ All derived files exist with the stated sizes and an alpha channel whose corners
 | Gradient detail is lost at 32–48 px | The architect reviews each size at actual size; sizes below 32 are not shipped |
 | Old design stays visible somewhere (scalable SVG, Store tile) | The old SVG is deleted; acceptance greps for it |
 | Owner wants a vector later | Allowed: the `scalable` icon returns without redesign |
+
+## Result of J7f (architect, 2026-11-21)
+
+Done (`39f6ce6`, `b7ce93e`, `400be5f`; review `.git-exclude/reviewed/rfc-033-new-application-logo-review-2026-11-21.md`). One decision of record: **every repository-relative path in `README.md` is root-relative** (`/docs/assets/…`, `/LICENSE`, `/ROADMAP.md`, `/rfcs/…`), because the README is the front page of three published workspace crates and crates.io resolves a relative path against the crate directory (`crates/core`), not the repository root; a leading `/` resolves from the repository root on crates.io (per its source) and on GitHub (verified on the rendered page). `docs/src/*.md` (mdBook) stays relative. **To check after publication:** the published 1.28.0 page of each crate on crates.io shows the logo and the screenshot (the architect does it).
+
