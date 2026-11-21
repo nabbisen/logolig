@@ -12,4 +12,6 @@ Governing RFC: [RFC 027](../../accepted/027-keyboard-focus-model.md). The handof
 
 - [`implementation-handoff-j14c-ring-and-bar.md`](./implementation-handoff-j14c-ring-and-bar.md) (J14c): a focused active navigation item must not hide its accent bar; the shared real-run verification (replay on saved captures); the docs say what was actually run.
 
+- [`implementation-handoff-j14d-disclosure-focus.md`](./implementation-handoff-j14d-disclosure-focus.md) (J14d): the focus stays on a disclosure control (Advanced header, Preview toggle) after it opens or closes; time-boxed investigation first; fallback is a stated limitation.
+
 Review requests and evidence produced by the implementer are working material and are not stored here.
