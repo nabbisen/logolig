@@ -52,6 +52,7 @@ recommendation; the owner authorizes the plan.
 | [034](./accepted/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | P2 |
 | [035](./accepted/035-headless-ui-test-level.md) | A headless UI test level (layout, size, language and theme matrix without a window) | P1 |
 | [036](./accepted/036-snora-0-62-upgrade.md) | Upgrade snora 0.57 → 0.62 (the keyboard `control`) | P1 |
+| [018](./accepted/018-documentation-synchronisation.md) | Documentation synchronisation (closing plan 2026-11-21) | P2 |
 
 ### Proposed (`proposed/`)
 
@@ -60,7 +61,6 @@ recommendation; the owner authorizes the plan.
 | [012](./proposed/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
 | [013](./proposed/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |
 | [014](./proposed/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
-| [018](./proposed/018-documentation-synchronisation.md) | Documentation synchronisation | P2 |
 | [023](./proposed/023-flatpak-publication.md) | Flatpak publication (Flathub) | P2 |
 | [004](./proposed/004-locale-zh-cn.md) | Simplified Chinese locale (deferred) | P3 |
 | [007](./proposed/007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | P3 |

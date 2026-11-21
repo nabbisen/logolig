@@ -1,6 +1,6 @@
 # RFC 018 — Documentation synchronisation with v1.26.2
 
-**Status.** Proposed
+**Status.** Accepted (architect, 2026-11-21, for release 1.28.0 as job J15; the decisions D1 and D2 of 2026-10-21 stand; the state of each row at 2026-11-21 is in "Closing plan")
 **Priority.** P2 (docs are the test-design source of truth per project rules)
 **Tracks.** Drift between README/`docs/src/` and the implementation.
 **Touches.** `README.md`, `docs/src/architecture.md`, `functional-spec.md`, `export-spec.md`, `ui-a11y.md`, `rfcs/README.md`.
@@ -51,3 +51,10 @@ A reviewer can follow `docs/src/` and the README on a clean checkout and observe
 ## Risk
 
 Low (documentation).
+
+## Closing plan (architect, 2026-11-21, after the 1.28.0 work)
+
+State of each row, from the finished work: **1** closed by RFC 021 (radio groups, checkboxes, lucide icons; the `▣` mentions were removed in J10): the job only **verifies** no `▣` or `marker::READY` text remains in README, `docs/src/*` and the development instructions; **2** docs only (default = balanced `Default`, Sharp opt-in; the UI now names the three presets, RFC 021 D4: "Sharp (logos, icons)", "Default (balanced)", "Photo-rich (gradients)"); **3, 4, 5, 6, 7, 10, 15** docs only (as listed; row 6 and 7 add every release up to 1.28.0; row 15 also states RFC 029 toast lifetime and RFC 032 pointer-hold); **8** closed by RFC 027 (J14b wrote the keyboard section): **verify** only; **9** stays open until RFC 014 (1.29.0), linked; **11** unchanged (the three crates are published since 1.27.0: the `docs.rs` badge text must now be true: check the badges resolve); **12** replace remaining `§` citations in source comments by doc/RFC references only where the comment is touched anyway (no sweep); **13** closed; **14** screenshot: retake **once**, on the finished 1.28.0 UI (see the handoff), reference it from the README.
+
+Added by the 1.28.0 work: **A** the new application logo in README (RFC 033, only when its job runs); **B** one paragraph for older readers: how to enlarge the application with the operating system's display scaling (RFC 034 D4); **C** the Settings page and the shortcut list texts as shipped; **D** a "Maintainers" pointer to `rfcs/README.md` (design item 4); **E** a CI link check for relative Markdown links is **not** in this job (RFC 020 owns CI); say in the review request whether J16's script can check links cheaply.
+
