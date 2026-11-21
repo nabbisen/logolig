@@ -6,10 +6,11 @@ use std::path::PathBuf;
 use iced::Task;
 
 use logolig::{
-    AppError, PreviewCache, PreviewProfile, SourceAsset,
+    AppError, PreviewCache, PreviewProfile,
     services::transparency_audit::audit as audit_transparency,
 };
 
+use super::super::toast::push_format_mismatch_notice;
 use super::super::toast::{
     is_non_square, push_dialog_unavailable_toast, push_error_toast, push_jpeg_input_warning,
     push_non_square_warning, push_svg_parts_warning, push_transparency_warning,
@@ -45,12 +46,13 @@ pub(super) fn dialog_unavailable(state: &mut AppState, kind: DialogKind) -> Task
 pub(super) fn ingest_completed(
     state: &mut AppState,
     job: u64,
-    asset: SourceAsset,
+    ingested: logolig::Ingested,
 ) -> Task<Message> {
     // RFC 011: only the newest job may change anything; a stale result is dropped first.
     if job != state.job_id {
         return Task::none();
     }
+    let logolig::Ingested { asset, note } = ingested;
     // RFC 010: decide before `asset` is moved into the state.
     let non_square = is_non_square(asset.intrinsic_size);
     // RFC 015 phase 2a: only SVG sources are analysed for parts that are not shown.
@@ -76,6 +78,12 @@ pub(super) fn ingest_completed(
     // - stale warnings carrying over on re-load
     // - duplicate warning toasts for the same image
     state.transparency = None;
+    // RFC 014: the name contradicts the content: one notice (for a JPEG it carries the JPEG
+    // advisory too, so `preview_built` does not push a second one).
+    state.source_format_note = note;
+    if let Some(note) = note {
+        push_format_mismatch_notice(state, note);
+    }
     // RFC 010: one advisory per loaded image when the logo will be padded.
     if non_square {
         push_non_square_warning(state);
@@ -160,7 +168,10 @@ pub(super) fn preview_built(state: &mut AppState, job: u64, cache: PreviewCache)
                     .map(|a| a.kind == logolig::SourceKind::Jpeg)
                     .unwrap_or(false);
                 if is_jpeg {
-                    push_jpeg_input_warning(state);
+                    // RFC 014: a mislabelled JPEG was explained once, with this advisory in it.
+                    if state.source_format_note.is_none() {
+                        push_jpeg_input_warning(state);
+                    }
                 } else {
                     push_transparency_warning(state, report);
                 }
@@ -192,6 +203,7 @@ pub(super) fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message>
     state.job_id += 1;
     state.file_drag_hovering = false;
     state.source_path = Some(path.clone());
+    state.source_format_note = None;
     state.screen = Screen::Converting;
     // Discard stale preview cache and asset bundle; they will be rebuilt
     // when the new ingest completes.

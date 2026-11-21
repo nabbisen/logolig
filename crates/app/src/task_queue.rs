@@ -22,9 +22,10 @@ use crate::result::{ResultAssetItem, ResultAssetKind, ResultAssets};
 /// Completion is delivered as `Message::IngestCompleted(job, Result<_,_>)`; `job` is the id of
 /// the job that started it (RFC 011).
 pub fn ingest_task(path: PathBuf, job: u64) -> Task<Message> {
-    Task::perform(logolig::services::ingest::ingest(path), move |result| {
-        Message::IngestCompleted(job, result)
-    })
+    Task::perform(
+        logolig::services::ingest::ingest_noted(path),
+        move |result| Message::IngestCompleted(job, result),
+    )
 }
 
 /// Opens an rfd native file picker; the chosen path is sent as
@@ -346,7 +347,14 @@ pub fn write_one_task(path: PathBuf, bytes: Vec<u8>) -> Task<Message> {
         async move {
             std::fs::write(&path, &bytes)
                 .map(|_| path.clone())
-                .map_err(|e| AppError::export(format!("failed to write {}: {}", path.display(), e)))
+                .map_err(|e| {
+                    // RFC 014 (D4): the user's text names the file, not the directory.
+                    let name = path.file_name().map_or_else(
+                        || "<unnamed>".to_string(),
+                        |n| n.to_string_lossy().into_owned(),
+                    );
+                    AppError::export(format!("failed to write {name}: {e}"))
+                })
         },
         Message::DownloadOneCompleted,
     )

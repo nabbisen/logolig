@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use logolig::{AppError, PreviewCache, PreviewContext, ResizeAlgorithm, SourceAsset, ThemeMode};
+use logolig::{AppError, PreviewCache, PreviewContext, ResizeAlgorithm, ThemeMode};
 use logolig_i18n::Locale;
 
 use super::NavPage;
@@ -40,7 +40,7 @@ pub enum Message {
 
     // Loading
     /// The file read of job `u64` finished (RFC 011: the id travels with every result).
-    IngestCompleted(u64, Result<SourceAsset, AppError>),
+    IngestCompleted(u64, Result<logolig::Ingested, AppError>),
 
     // Preview
     /// The preview of job `u64` is ready.

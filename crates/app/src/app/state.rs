@@ -45,6 +45,9 @@ pub struct AppState {
     pub screen: Screen,
     pub theme: ThemeMode,
     pub source_path: Option<PathBuf>,
+    /// Set when the name of the loaded file contradicts its content (RFC 014): the one notice has
+    /// been shown, and for a JPEG it already contained the JPEG advisory.
+    pub source_format_note: Option<logolig::FormatNote>,
     pub source_asset: Option<SourceAsset>,
     pub preview: Option<PreviewProfile>,
     /// Resized raster cache for context preview rendering (§5.2).
@@ -244,6 +247,7 @@ impl Default for AppState {
             screen: Screen::default(),
             theme: ThemeMode::default(),
             source_path: None,
+            source_format_note: None,
             source_asset: None,
             preview: None,
             preview_cache: None,

@@ -180,6 +180,26 @@ pub(super) fn push_svg_parts_warning(state: &mut AppState, report: logolig::SvgR
     push_warning_toast(state, &title, &sentences.join("\n"));
 }
 
+/// RFC 014 (D1): the one notice for a file whose name suggests another format than its content.
+/// The content decides, and the notice says so. When the detected format is JPEG the notice **is**
+/// the JPEG advisory too (one toast, the advisory's sentence on its own line), so a mislabelled
+/// JPEG is explained once and `preview_built` does not push the advisory again.
+pub(super) fn push_format_mismatch_notice(state: &mut AppState, note: logolig::FormatNote) {
+    let title = state.translator.t(MessageKey::ToastFormatMismatchTitle);
+    let mut body = state.translator.t_args(
+        MessageKey::ToastFormatMismatchBody,
+        &[
+            ("detected", note.detected.label()),
+            ("named", note.named.label()),
+        ],
+    );
+    if note.detected == logolig::SourceKind::Jpeg {
+        body.push('\n');
+        body.push_str(&state.translator.t(MessageKey::ToastJpegInputBody));
+    }
+    push_warning_toast(state, &title, &body);
+}
+
 /// v1.11.0: educational warning for JPEG input.
 ///
 /// JPEG cannot carry alpha, so the v1.7 transparency audit always returns

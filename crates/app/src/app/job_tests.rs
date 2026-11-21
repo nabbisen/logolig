@@ -4,7 +4,7 @@
 //! newest job may change state or raise a toast. Messages are built by hand, so no task runs.
 
 use super::test_support::{
-    SVG_BOTH, dummy_source_asset, ingest_ok, opaque_preview_cache, svg_asset,
+    SVG_BOTH, dummy_source_asset, ingest_ok, opaque_preview_cache, plain, svg_asset,
 };
 use super::*;
 
@@ -105,7 +105,7 @@ fn a_stale_conversion_after_a_new_drop_changes_nothing() {
     let _ = update(&mut state, Message::FileDropped(PathBuf::from("a.png")));
     let _ = update(
         &mut state,
-        Message::IngestCompleted(1, Ok(dummy_source_asset())),
+        Message::IngestCompleted(1, Ok(plain(dummy_source_asset()))),
     );
     let _ = update(&mut state, Message::FileDropped(PathBuf::from("b.png")));
     assert_eq!(state.job_id, 2);
@@ -223,7 +223,7 @@ fn ingest_ok_svg(state: &mut AppState) {
     let job = state.job_id;
     let _ = update(
         state,
-        Message::IngestCompleted(job, Ok(svg_asset("logo.svg"))),
+        Message::IngestCompleted(job, Ok(plain(svg_asset("logo.svg")))),
     );
 }
 

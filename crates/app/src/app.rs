@@ -157,6 +157,9 @@ fn view(state: &AppState) -> Element<'_, Message> {
 // `state.store` is `None` (the default), so these tests never touch disk.
 
 #[cfg(test)]
+mod format_note_tests;
+
+#[cfg(test)]
 mod input_tests;
 
 #[cfg(test)]

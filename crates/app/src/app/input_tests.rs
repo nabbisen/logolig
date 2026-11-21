@@ -4,7 +4,7 @@ use super::*;
 
 use super::test_support::{
     SVG_BOTH, SVG_IMAGE, SVG_PLAIN, SVG_TEXT, analyzed, dummy_result_assets, dummy_source_asset,
-    ingest_ok, state_with_svg_source, svg_asset,
+    ingest_ok, plain, state_with_svg_source, svg_asset,
 };
 
 #[test]
@@ -153,13 +153,13 @@ fn analysis_is_started_only_for_svg_sources() {
     let mut png = AppState::default();
     let task = update(
         &mut png,
-        Message::IngestCompleted(0, Ok(dummy_source_asset())),
+        Message::IngestCompleted(0, Ok(plain(dummy_source_asset()))),
     );
     assert_eq!(task.units(), 2, "PNG source: no analysis");
     let mut svg = AppState::default();
     let task = update(
         &mut svg,
-        Message::IngestCompleted(0, Ok(svg_asset("logo.svg"))),
+        Message::IngestCompleted(0, Ok(plain(svg_asset("logo.svg")))),
     );
     assert_eq!(task.units(), 3, "SVG source: analysis started");
 }

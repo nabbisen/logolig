@@ -14,6 +14,23 @@ pub(super) fn dummy_source_asset() -> SourceAsset {
     }
 }
 
+/// An ingest result without a format note (the common case).
+pub(super) fn plain(asset: SourceAsset) -> logolig::Ingested {
+    logolig::Ingested { asset, note: None }
+}
+
+/// An ingest result whose file name contradicts its content (RFC 014).
+pub(super) fn noted(
+    asset: SourceAsset,
+    named: logolig::SourceKind,
+    detected: logolig::SourceKind,
+) -> logolig::Ingested {
+    logolig::Ingested {
+        asset,
+        note: Some(logolig::FormatNote { named, detected }),
+    }
+}
+
 pub(super) fn dummy_result_assets() -> ResultAssets {
     ResultAssets {
         items: vec![ResultAssetItem {
@@ -34,7 +51,7 @@ pub(super) fn ingest_ok(state: &mut AppState, size: Option<(u32, u32)>) {
     };
     // The result of the current job (RFC 011).
     let job = state.job_id;
-    let _ = update(state, Message::IngestCompleted(job, Ok(asset)));
+    let _ = update(state, Message::IngestCompleted(job, Ok(plain(asset))));
 }
 
 pub(super) const SVG_TEXT: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><text x="2" y="30" font-size="20">Hi</text></svg>"#;

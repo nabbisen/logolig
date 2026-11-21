@@ -72,7 +72,9 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // Resets transient UI state (nav page, extras open, etc.).
         Message::EditCancelled => nav::edit_cancelled(state),
         Message::ShowLastResultRequested => nav::show_last_result_requested(state),
-        Message::IngestCompleted(job, Ok(asset)) => input::ingest_completed(state, job, asset),
+        Message::IngestCompleted(job, Ok(ingested)) => {
+            input::ingest_completed(state, job, ingested)
+        }
         Message::SvgAnalyzed(job, path, report) => input::svg_analyzed(state, job, path, report),
         Message::IngestCompleted(job, Err(err)) => input::ingest_failed(state, job, err),
 
