@@ -10,4 +10,6 @@ Governing RFC: [RFC 027](../../accepted/027-keyboard-focus-model.md). The handof
 
 - [`implementation-handoff-j14b-pages.md`](./implementation-handoff-j14b-pages.md) (J14b): every remaining control becomes a `snora::control`, in five reviewed steps (navigation, Home, Result, Customize, Settings and docs), with two real key runs at the end.
 
+- [`implementation-handoff-j14c-ring-and-bar.md`](./implementation-handoff-j14c-ring-and-bar.md) (J14c): a focused active navigation item must not hide its accent bar; the shared real-run verification (replay on saved captures); the docs say what was actually run.
+
 Review requests and evidence produced by the implementer are working material and are not stored here.
