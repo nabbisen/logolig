@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream MetaInfo of Logolig (RFC 023, job F1). The Flatpak manifest and the Flathub submission are the
+     owner's and are not in this repository. The newest <release> must equal the workspace version:
+     scripts/metainfo-version.sh check (a step of the fmt job) enforces it. -->
+<component type="desktop-application">
+  <id>io.github.nabbisen.Logolig</id>
+
+  <name>Logolig</name>
+  <summary>Favicons and logos from one image</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+
+  <developer id="io.github.nabbisen">
+    <name>nabbisen</name>
+  </developer>
+
+  <description>
+    <p>
+      Logolig turns one logo image into the files a website needs. Choose a PNG, SVG, WebP or JPEG
+      file and it makes a favicon set: favicon.ico, PNG icons of several sizes, an Apple touch icon,
+      an SVG and a snippet of HTML to paste into your page.
+    </p>
+    <p>
+      It can also write a web manifest, a monochrome set and small logo files for the Microsoft
+      Store. Every size and option can be changed, and the result can be saved file by file or as
+      one ZIP archive.
+    </p>
+    <p>
+      Everything happens on your computer: no image is uploaded anywhere. Logolig can be used with
+      the keyboard alone, and its interface is in English and Japanese.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">io.github.nabbisen.Logolig.desktop</launchable>
+
+  <url type="homepage">https://github.com/nabbisen/logolig</url>
+  <url type="bugtracker">https://github.com/nabbisen/logolig/issues</url>
+  <url type="vcs-browser">https://github.com/nabbisen/logolig</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>The generated assets of a converted logo, each with a Save button</caption>
+      <image type="source">https://raw.githubusercontent.com/nabbisen/logolig/1.28.0/docs/assets/screenshot-01.png</image>
+    </screenshot>
+  </screenshots>
+
+  <content_rating type="oars-1.1" />
+
+  <categories>
+    <category>Graphics</category>
+  </categories>
+
+  <keywords>
+    <keyword>favicon</keyword>
+    <keyword>icon</keyword>
+    <keyword>logo</keyword>
+    <keyword>ico</keyword>
+    <keyword>webmanifest</keyword>
+  </keywords>
+
+  <provides>
+    <binary>logolig</binary>
+  </provides>
+
+  <releases>
+    <release version="1.28.0" date="2026-11-21">
+      <url type="details">https://github.com/nabbisen/logolig/blob/1.28.0/docs/release-notes/1.28.0.md</url>
+      <description>
+        <p>Everything can now be done from the keyboard, and the controls are clearer.</p>
+        <ul>
+          <li>Tab and Shift+Tab reach every control, with a visible focus ring; Enter and Space act like a click and the arrow keys choose within a group</li>
+          <li>Shortcuts such as Ctrl+1 no longer type into a text field</li>
+          <li>A new application icon, checkboxes with a tick and a bar beside the active page</li>
+          <li>On the result screen, Back stays at the top and Download all stays at the bottom, and the Settings page scrolls in a small window</li>
+          <li>A newer file always wins over an older conversion still running, and a missing file dialog is reported once</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+</component>

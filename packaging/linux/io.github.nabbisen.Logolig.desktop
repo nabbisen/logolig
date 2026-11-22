@@ -7,3 +7,7 @@ Exec=logolig
 Icon=io.github.nabbisen.Logolig
 Terminal=false
 Categories=Graphics;
+Keywords=favicon;icon;logo;ico;webmanifest;
+Keywords[ja]=ファビコン;アイコン;ロゴ;
+# The window's Wayland app_id and X11 WM_CLASS (crates/app/src/window.rs, RFC 025): the same as the file name.
+StartupWMClass=io.github.nabbisen.Logolig
