@@ -1,0 +1,28 @@
+# Developer Handoff — RFC 013 job K3, phase 0: does the application learn the system theme? (spike, evidence only)
+
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; GUI Evidence and Test Optimization rules; **relative paths with `cd`, or none**). Governing text: [RFC 013](../../accepted/013-system-theme-follows-os.md), "Decisions 2026-11-22" (spike first; fall back to Light; say so in Settings). Review of K1b: `.git-exclude/reviewed/rfc-011-k1b-review-2026-11-23.md`. **This job changes no product code and commits no code** (patches and scripts under `.git-exclude/review-request/` are not commits). **Workflow:** `main`; `git pull --ff-only`; `git log origin/main..` before any push (there should be none).
+
+**Hard boundary: never change the owner's real desktop settings** (no `gsettings set`, no `dconf write`, no portal calls that write, nothing on the owner's real session bus except reading names). Everything below uses a **private D-Bus session bus** with a **stub settings service**, as the J12 spike did for the file chooser (`.git-exclude/review-request/rfc-031-dialog-spike/evidence/private-bus.sh` and `portal-stub-never-answers.py` are the models; copy what you need into your own review-request folder).
+
+## 0. Evidence plan
+
+| Question | Level | How |
+|---|---|---|
+| Q1 How does iced 0.14 on Linux learn the theme: which crate, which D-Bus interface, which values map to `Mode::{None, Light, Dark}`, when does it call, what does `theme_changes()` subscribe to? | source reading | `iced_winit-0.14.0/src/lib.rs` (around lines 183, 524–530, 647–671, 1068) and `mundy-0.2.3` (the `color-scheme` feature: the portal `org.freedesktop.portal.Settings`, namespace `org.freedesktop.appearance`, key `color-scheme`: read the code, do not assume). Quote file and line |
+| Q2 With **no** settings service on the bus, what does the application get? | real UI, one private-bus run | expected `Mode::None` → the app stays Light (the fallback) |
+| Q3 With a stub that answers `color-scheme` = dark (1) / light (2) / no preference (0), does `iced::system::theme()` return the matching mode? | real UI, one run per value (or one run with the stub switched by signal, see Q4) | a **throw-away patch** (kept as a patch file, reverted) that logs the mode at start-up and on each `theme_changes()` event (a `println!`/log line in the app's update, read from the process's stdout/stderr file; the app has no CLI arguments) |
+| Q4 When the stub **emits `SettingChanged`** (dark → light and back) while the app runs, does `theme_changes()` fire, and how long does it take? | real UI | the stub emits the signal on a command (a file touch or a second stub script); one bounded wait; no sampling loop; the app's own log lines carry the time |
+| Q5 Does the same hold on **X11** (XWayland) and on **native Wayland**? | real UI | `env -u WAYLAND_DISPLAY` for X11; state the backend of each observation |
+| Q6 What happens without the stub when the **real** portal exists on the owner's bus? | recorded state, **read-only** | `busctl --user` introspection/`call` of `org.freedesktop.portal.Settings` `ReadOne org.freedesktop.appearance color-scheme` on the owner's bus is a **read**: allowed once, report the value and which backend answered; never write |
+| Q7 Does the preview's "System" surface use the same function? | source reading | `resolve_theme` and the preview picker code paths: list every caller |
+| Q8 Windows and macOS: what do `winit`/iced document for `theme()` there (no run possible)? | source reading | quote; state "not run" |
+
+Real-run rules: `scripts/gui-session.sh` (replay-tested helpers; `scripts/gui-verify-test.sh` first), isolated `XDG_CONFIG_HOME`/`XDG_STATE_HOME` with a pinned `settings.json` whose theme is **System** and locale `en`, `DBUS_SESSION_BUS_ADDRESS` set only for the launched app, unlocked session, one instance by pid, a second-signal check (the page's luminance from a capture analysed afterwards, dark ≈ 36 and light ≈ 204 as in the release pass) rather than eyes, first anomaly stops, the owner's real `settings.json` mtime before and after, delete scratch files. **One run per scenario; a repeat needs my words.** Syntax-check scripts with `bash -n` only (never pipe a script through `head`: it runs).
+
+## 1. Deliverable
+
+`.git-exclude/review-request/rfc-013-system-theme-spike/README.md` (report only its path): each question answered with evidence; a table "what the application sees" for: no service, stub dark, stub light, stub no-preference, live change, X11 vs Wayland; the exact D-Bus interface and values; whether `theme_changes()` is reliable; the real portal's answer on the owner's bus (read-only); the patch that logged the mode (as a file, not applied). Then a **recommendation**: (a) implement RFC 013's design as written (the system value from `iced::system::theme()` and `theme_changes()`, fallback Light, "System (currently Dark)" / "System (not reported; using Light)"), or (b) a different mechanism, or (c) documented-only on platforms where it is silent, with reasons, and the list of tests you would write (pure `resolve_theme` over `Mode × ThemeMode`; the message handler; the Settings text in both languages and both themes; a headless test that a theme change repaints). Do not implement.
+
+## 2. Acceptance, prohibited
+
+All questions answered or stated "cannot be done here" with the reason; nothing committed; the owner's real settings and bus untouched (reads only); the real configuration's mtime unchanged. Prohibited: any write to the owner's session or settings; a repeat of a real run without my words; sampling loops; changing product code in the tree (patches only, reverted); absolute `cd`; tags, force-push or history rewriting.
