@@ -1,0 +1,18 @@
+# Developer Handoff — RFC 011/014 job K1b: a file that cannot be loaded leaves everything as it was
+
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; GUI Evidence and Test Optimization rules; **relative paths with `cd`, or none**). Governing texts: [RFC 011](../../done/011-conversion-job-identity.md) (latest intent wins; the stale guards stay) and [RFC 014](../../accepted/014-ingest-validation-and-input-limits.md). Found by your K1 real run: a rejected file (too large, not an image, unreadable) **discards the previous result and its "View results →" card**, because `start_ingest` clears the previous result before the new file has been read. A user who drops a wrong file loses the last conversion. **Starts after F0 and F1.** **Workflow:** `main`; `git pull --ff-only`; `git log origin/main..` before every push; gates chained as always (audit 0 / 12); CI waited for each; no tags, force-push or history rewriting.
+
+## Decision
+
+**Nothing the user has is discarded until the new file has loaded successfully.** At `start_ingest` the previous applied state (result assets, source asset and path, preview cache, history card, the screen that was showing) is kept aside; **on a successful ingest** the application replaces it as it does today; **on a failure of the current job** (an ingest error; a later conversion error keeps its existing `fail` behaviour) the kept state is restored and the error toast shows as it does now. Stale results of superseded jobs are dropped exactly as RFC 011 says (the id guards are untouched). Race, stated: if a second file is started while the first is still loading, "kept aside" is the applied state at that moment (what was on screen before the first file); a failure of the second restores that; the first file's result is dropped as stale (accepted, documented: the user's newest intent failed and the older one was already superseded).
+
+## Work (tests first, shown failing before)
+
+1. Design the smallest change: prefer **not clearing** at `start_ingest` the fields that are only replaced at `ingest_completed(Ok)` (which already resets them), plus restoring `source_path`/`screen` on failure; keep a small private struct only if that is not enough. Say which and why. No change to message payloads or the job-id rules.
+2. Tests (`update()` level, hand-built messages): after a successful conversion a rejected file (`IngestCompleted(job, Err)`) leaves `result_assets`, the "Last conversion" history card, `source_path` and the Result/Home screen as before, and shows one error toast; the next accepted file replaces them; a rejected file with **no** previous result returns to the start screen as today; the race above; the stale-guard tests of RFC 011 pass unchanged (names kept); a rejected file during a running conversion of the same session behaves as documented.
+3. Docs: one sentence in `docs/src/functional-spec.md` where RFC 011's rule is described ("a file that cannot be loaded leaves the previous result in place").
+4. **No real-window run** (the logic tests cover it; a real run needs my words). State the evidence level in the review request.
+
+## Evidence, acceptance, prohibited
+
+Review request `.git-exclude/review-request/rfc-011-k1b/README.md` (report only its path): failing-before list, the design choice, test-list diff (named additions, none removed; existing tests adapted only if their message construction needs it), gates and CI. Acceptance: a rejected file changes nothing but the toast; all RFC 011 tests pass; no public API change. Prohibited: changing `fail()` beyond restoring the kept state for the current job's ingest failure, job-id changes, real-window runs, new `#[allow]`, tags, force-push or history rewriting.

@@ -59,12 +59,11 @@ recommendation; the owner authorizes the plan.
 | [014](./accepted/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
 | [016](./accepted/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
 | [022](./accepted/022-vtracer-sharp-preset-verification.md) | Verify the vtracer "Sharp" preset | P3 |
-
+| [023](./accepted/023-flatpak-publication.md) | Flatpak publication (Flathub) | P1 |
 ### Proposed (`proposed/`)
 
 | # | Title | Priority |
 | --- | --- | --- |
-| [023](./proposed/023-flatpak-publication.md) | Flatpak publication (Flathub) | P2 |
 | [004](./proposed/004-locale-zh-cn.md) | Simplified Chinese locale (deferred) | P3 |
 | [007](./proposed/007-wayland-drag-hover-feedback.md) | Wayland drag-hover feedback follow-up | P3 |
 

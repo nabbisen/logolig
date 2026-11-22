@@ -1,7 +1,7 @@
 # RFC 023 — Flatpak publication (Flathub)
 
-**Status.** Proposed
-**Priority.** P2 (after the first AUR release; shares prerequisites with RFC 020)
+**Status.** Accepted (2026-11-22: the owner dropped AUR and chose Flathub as the Linux distribution channel; the upstream files ship with release 1.29.0; the owner writes the manifest and submits)
+**Priority.** P1 (the only Linux distribution channel; RFC 020's AUR phases are withdrawn)
 **Tracks.** Distribution to a broader range of Linux users.
 **Touches.** `packaging/linux/` (desktop file, AppStream metainfo, icon), `packaging/flatpak/` (owner-authored manifest, see "AI policy"), `.github/workflows/` (validation job), window application id (RFC 025), docs.
 
@@ -84,3 +84,15 @@ The Flatpak builds offline from the manifest, validates cleanly, runs with the p
 | Renderer does not start in the sandbox | Medium | Phase 1 evidence before any submission; document fallback |
 | SVG text differs inside the sandbox | Medium | RFC 015 phase 2b evidence includes the Flatpak font set |
 | Review latency and maintenance burden | Low-Medium | One maintainer; keep permissions minimal; automate validation |
+
+## Decisions 2026-11-22 (the owner: "I dropped AUR support idea. Alternatively, we will publish on Flathub."; architect's plan)
+
+- **D1 decided by the owner:** Flathub is the distribution channel. **D6 is void** (it waited for an AUR release that will not happen). RFC 020's AUR phases are withdrawn; the AUR files are removed (job F0).
+- **Release target: 1.29.0.** The Flathub submission refers to a release tag, and the upstream files (MetaInfo, desktop file, icons, validation) must be **in that tag**; 1.28.0 does not contain a MetaInfo file. So the first Flathub version is **1.29.0**. The architect schedules the upstream work (F0, F1) **early in 1.29.0**, so that the owner can write the manifest and build locally in parallel with the rest of the release.
+- **The screenshots for MetaInfo are taken once, on the final 1.29.0 UI** (during the release candidate, R2), with stable public URLs; the first F1 commit uses the current README screenshot as a placeholder that validates, to be replaced in R2.
+- **D3 stands, with the boundary made explicit:** the **manifest and the submission are the owner's, written without AI assistance** (Flathub's policy). The dev team and the architect do **not** write, draft or test-build a Flathub manifest. They deliver the **upstream files** (disclosed as AI-produced in the owner's submission), fix **application defects** that the owner's local sandbox builds reveal, and provide **validation CI**.
+- **What the owner needs locally** (the architect's list; none is installed on the development machine): `flatpak`, `flatpak-builder`, the Freedesktop runtime and SDK Flathub currently requires, the Rust SDK extension of that runtime (the project needs Rust 1.90: confirm the extension's version), and Flathub's `flatpak-builder-lint`. `appstreamcli` and `desktop-file-validate` are available to the dev team for the upstream files. The owner reads Flathub's "Requirements" and "Submission" pages directly before submitting (RFC text above is a summary of 2026-10-21).
+- **Sandbox facts only the owner's local build can give** (to be reported to the architect; application defects found are fixed by a dev job): does the window open (wgpu with `--device=dri`, and the renderer fallback), the file chooser and the save dialog work through the portal, settings persist under `~/.var/app/io.github.nabbisen.Logolig/`, the interface text renders (fonts in the sandbox: the Freedesktop runtime provides a font set; SVG text stays undrawn: documented limitation, RFC 015 phase 2b), no network is attempted.
+- **The logo's terms:** `packaging/icons/README.md` states them (not under the Apache License; unmodified redistribution as part of Logolig and its packages is permitted). A Flathub reviewer may ask about them; the answer is that statement. **Risk to settle with the reviewers:** that the icon's terms are acceptable for the main remote.
+- **Release process (from 1.29.0):** each release adds a `<release>` entry to MetaInfo; a guard script (F1) fails CI when the newest entry differs from the workspace version, the same pattern as the Store manifest guard (RFC 037): a manual list that must follow every release is checked by a machine.
+

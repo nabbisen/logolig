@@ -161,3 +161,8 @@ The vehicle is a **minor release (recommended 1.27.0)**, not a patch: it changes
 ## Dependencies
 
 Phase 1 starts independently. The RFC-lint job is added when RFC 008 lands. RFC 017 is not a prerequisite.
+
+## Amendment 2026-11-22: the owner dropped AUR (architect)
+
+The owner decided not to publish to the AUR and to use Flathub instead (RFC 023). Consequences: **phases 3 and 4 are withdrawn** (`logolig-bin`, `release.yml`, attestation, the `aur` environment and its CI-only key: D4 is void; nothing is set up). **Phase 1 (CI gates) stays and is done.** The **phase 2 AUR source package** (`packaging/aur/`, `scripts/render-aur.sh`, the `Packaging` workflow) is **removed** by job F0 because unmaintained distribution code rots; the shared upstream files (`packaging/linux/`: desktop file and icons) stay, they serve the Flatpak. After F0 this RFC moves to `done/` as `Implemented` (phase 1; phase 2 removed; phases 3–4 withdrawn), keeping the record.
+
