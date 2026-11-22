@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 020/023 job F0: remove the AUR packaging (the owner dropped AUR)
 
-Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; English only; **relative paths with `cd`, or none; never an absolute `cd`**). Governing texts: [RFC 020](../../accepted/020-ci-and-aur-packaging.md) "Amendment 2026-11-22" and [RFC 023](../../accepted/023-flatpak-publication.md) "Decisions 2026-11-22". Review of K1: `.git-exclude/reviewed/rfc-014-ingest-final-review-2026-11-22.md`. **Workflow:** `main`; `git pull --ff-only`; `git log origin/main..` before every push; one commit; gates of a non-code commit (`cargo fmt --check`, `cargo doc --workspace --no-deps --locked`, `bash scripts/check-rfcs.sh`) plus CI waited for; no tags, force-push or history rewriting.
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; English only; **relative paths with `cd`, or none; never an absolute `cd`**). Governing texts: [RFC 020](../../done/020-ci-and-aur-packaging.md) "Amendment 2026-11-22" and [RFC 023](../../accepted/023-flatpak-publication.md) "Decisions 2026-11-22". Review of K1: `.git-exclude/reviewed/rfc-014-ingest-final-review-2026-11-22.md`. **Workflow:** `main`; `git pull --ff-only`; `git log origin/main..` before every push; one commit; gates of a non-code commit (`cargo fmt --check`, `cargo doc --workspace --no-deps --locked`, `bash scripts/check-rfcs.sh`) plus CI waited for; no tags, force-push or history rewriting.
 
 ## Why
 

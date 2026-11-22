@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/`.
 
-Governing RFC: [RFC 020](../../accepted/020-ci-and-aur-packaging.md) (Accepted, phased). This handoff covers **Phase 1 only**. The RFC defines what and why; this document defines how to implement and prove it. On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 020](../../done/020-ci-and-aur-packaging.md) (Accepted, phased). This handoff covers **Phase 1 only**. The RFC defines what and why; this document defines how to implement and prove it. On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; users and maintainers must not be confused. For CI this means: least privilege, no unpinned third-party code, honest failures, no silent skips.
 

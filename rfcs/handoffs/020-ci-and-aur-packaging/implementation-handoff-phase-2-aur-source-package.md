@@ -2,7 +2,7 @@
 
 Role: you are the mid-capability implementation and testing agent. Follow `.git-exclude/roles/ai-multi-agent-software-development-organization-and-workflow.md`, `.git-exclude/roles/mid-capability-model-operating-instructions.md` and `.git-exclude/rules/`.
 
-Governing RFC: [RFC 020](../../accepted/020-ci-and-aur-packaging.md) (Accepted, phased). This handoff covers **Phase 2, source package `logolig` only**. The RFC defines what and why; this document defines how and how to prove it. On any conflict, stop and send a clarification request.
+Governing RFC: [RFC 020](../../done/020-ci-and-aur-packaging.md) (Accepted, phased). This handoff covers **Phase 2, source package `logolig` only**. The RFC defines what and why; this document defines how and how to prove it. On any conflict, stop and send a clarification request.
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused. For a package that means: it builds from verifiable source, installs exactly what it says, works out of the box, and nothing is published without a human.
 

@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 020 first release: verify the AUR package from the real tag archive (job J7a)
 
-Same roles, rules and workflow as the earlier handoffs (`.git-exclude/roles/`, `.git-exclude/rules/`; GUI rules in `.git-exclude/rules/project-instructions-gui-common.md`). Directly on `main`, `git pull --ff-only` first. **You do not push to the AUR, do not write into `.git-exclude/tmp/aur-repositories/`, do not install the package (`pacman -U` is prohibited), do not tag or edit releases, and do not edit `rfcs/` or `ROADMAP.md`.** Governing text: [RFC 020](../../accepted/020-ci-and-aur-packaging.md) phase 3 (first publication is a manual owner action) and `packaging/README.md`.
+Same roles, rules and workflow as the earlier handoffs (`.git-exclude/roles/`, `.git-exclude/rules/`; GUI rules in `.git-exclude/rules/project-instructions-gui-common.md`). Directly on `main`, `git pull --ff-only` first. **You do not push to the AUR, do not write into `.git-exclude/tmp/aur-repositories/`, do not install the package (`pacman -U` is prohibited), do not tag or edit releases, and do not edit `rfcs/` or `ROADMAP.md`.** Governing text: [RFC 020](../../done/020-ci-and-aur-packaging.md) phase 3 (first publication is a manual owner action) and `packaging/README.md`.
 
 ## Context
 

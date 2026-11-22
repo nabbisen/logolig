@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 008 remainder: `scripts/check-rfcs.sh` and its wiring (job J16)
 
-Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; relative paths with `cd`; English only). Governing texts: [RFC 008](../../done/008-rfc-portfolio-migration.md) (step 5), [RFC 000](../../done/000-rfc-lifecycle-policy.md) "Optional CI invariants", [RFC 020](../../accepted/020-ci-and-aur-packaging.md) (CI job names are a contract). Review of J7f: `.git-exclude/reviewed/rfc-033-new-application-logo-review-2026-11-21.md`. **Shell only (plus one workflow step): no Rust, no `Cargo` change.**
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; relative paths with `cd`; English only). Governing texts: [RFC 008](../../done/008-rfc-portfolio-migration.md) (step 5), [RFC 000](../../done/000-rfc-lifecycle-policy.md) "Optional CI invariants", [RFC 020](../../done/020-ci-and-aur-packaging.md) (CI job names are a contract). Review of J7f: `.git-exclude/reviewed/rfc-033-new-application-logo-review-2026-11-21.md`. **Shell only (plus one workflow step): no Rust, no `Cargo` change.**
 
 Owner philosophy: clean, safe and robust; a check that cannot fail is not a check; "none of them need sophisticated parsing: `grep`, `find` and basic shell suffice" (RFC 000), so keep it small and readable.
 

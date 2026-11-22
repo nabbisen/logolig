@@ -1,6 +1,6 @@
 # RFC 020 — GitHub Actions CI and AUR packaging (`logolig`, `logolig-bin`)
 
-**Status.** Accepted (phased; phase 2's icon step waits for the owner's artwork; phase 4 waits for the D4 set-up, 2026-10-21)
+**Status.** Implemented (phase 1, CI gates, 1.27.0; the phase 2 AUR source package was removed by job F0 on 2026-11-22 and phases 3–4 are withdrawn: the owner dropped AUR and publishes on Flathub, RFC 023). Earlier: Accepted (phased; phase 2's icon step waits for the owner's artwork; phase 4 waits for the D4 set-up, 2026-10-21)
 **Priority.** P1 (owner priority, 2026-10-21: AUR publication first)
 **Handoffs.** [rfcs/handoffs/020-ci-and-aur-packaging/](../handoffs/020-ci-and-aur-packaging/README.md)
 **Tracks.** Release engineering: automated quality gates, release artifacts, and AUR publication.

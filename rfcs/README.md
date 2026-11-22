@@ -32,6 +32,7 @@ recommendation; the owner authorizes the plan.
 | [017](./done/017-source-structure-conformance.md) | Source structure conformance (tests, file size, dead code) | 1.28.0 |
 | [018](./done/018-documentation-synchronisation.md) | Documentation synchronisation (J15 done; row 9 waits for RFC 014) | 1.28.0 |
 | [019](./done/019-keyboard-accessibility.md) | Keyboard accessibility (phases 1 and 2 done; the focus model is RFC 027) | 1.28.0 |
+| [020](./done/020-ci-and-aur-packaging.md) | CI gates (AUR packaging dropped, phases 2–4 removed/withdrawn) | 1.27.0 (phase 1) |
 | [021](./done/021-selection-state-indicators.md) | Selection-state indicators | 1.28.0 |
 | [024](./done/024-dependency-and-toolchain-baseline.md) | Dependency and toolchain baseline (MSRV, `cargo audit`) | 1.27.0 |
 | [025](./done/025-window-application-id.md) | Window application ID and desktop integration | 1.27.0 |
@@ -50,7 +51,6 @@ recommendation; the owner authorizes the plan.
 
 | # | Title | Priority |
 | --- | --- | --- |
-| [020](./accepted/020-ci-and-aur-packaging.md) | GitHub Actions CI and AUR packaging (phased) | P1 |
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
 | [034](./accepted/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | P2 |
 | [037](./accepted/037-microsoft-store-packaging-automation.md) | Microsoft Store packaging: a guarded version, a Windows build in CI, optional submission | P1 |
