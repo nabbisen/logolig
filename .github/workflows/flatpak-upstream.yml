@@ -1,0 +1,43 @@
+name: Flatpak upstream files
+
+# Validation of the files Flathub reads from this repository (RFC 023, job F1): the AppStream MetaInfo and the desktop
+# entry. It does NOT build a Flatpak: the manifest and the submission are the owner's. It reads no secret and pushes
+# nothing; its only network use is apt, and `--no-net` keeps appstreamcli from fetching the screenshot URL (that URL is
+# checked by hand when the screenshot changes).
+
+on:
+  pull_request:
+    paths:
+      - 'packaging/linux/**'
+      - '.github/workflows/flatpak-upstream.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'packaging/linux/**'
+      - '.github/workflows/flatpak-upstream.yml'
+  workflow_dispatch:
+
+# Least privilege: the job only reads the repository.
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the validators
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends appstream desktop-file-utils
+          appstreamcli --version
+          desktop-file-validate --help | head -1
+      - name: MetaInfo (appstreamcli, strict: errors and warnings fail)
+        run: appstreamcli validate --no-net --strict packaging/linux/io.github.nabbisen.Logolig.metainfo.xml
+      - name: MetaInfo (pedantic report, does not fail the job)
+        run: appstreamcli validate --no-net --pedantic packaging/linux/io.github.nabbisen.Logolig.metainfo.xml || true
+      - name: Desktop entry (desktop-file-validate)
+        run: desktop-file-validate packaging/linux/io.github.nabbisen.Logolig.desktop
