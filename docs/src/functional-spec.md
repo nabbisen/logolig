@@ -161,7 +161,7 @@ dropped.
 
 Choosing or dropping a new file while one is still being converted replaces it: the
 newest file wins, and anything the earlier file produces afterwards (its result or
-its error) is discarded without a message. Only one file chooser can be open at a
+its error) is discarded without a message. **A file that cannot be loaded (too large, not an image, unreadable) leaves the previous result in place:** the application shows the error and returns to the screen it was on, with the last result and its "View results →" card unchanged; the previous result is replaced only when the new file has loaded. (If a conversion was still running when the file was rejected, that conversion is the earlier file's and is discarded; the application shows the start screen.) Only one file chooser can be open at a
 time; asking for a second one (the button or Ctrl+O) does nothing until the first is
 closed. A file dropped while the chooser is open is accepted; the file chosen later
 then replaces it.

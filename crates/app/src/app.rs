@@ -26,7 +26,7 @@ mod toast;
 mod update;
 
 pub use message::{DialogKind, Message};
-pub use state::{AppState, NavPage, Screen};
+pub use state::{AppState, IngestReturn, NavPage, Screen};
 pub(crate) use state::{is_mobile, resolve_theme};
 
 use iced::{Element, Subscription, Theme};
@@ -164,6 +164,9 @@ mod input_tests;
 
 #[cfg(test)]
 mod job_tests;
+
+#[cfg(test)]
+mod rejected_file_tests;
 
 #[cfg(test)]
 mod result_tests;

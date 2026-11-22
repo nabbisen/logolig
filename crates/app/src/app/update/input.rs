@@ -60,6 +60,10 @@ pub(super) fn ingest_completed(
     // Arc the asset so it can be moved into the async preview task.
     // SourceAsset is Clone (Arc<[u8]>-backed) so this is cheap.
     let arc = std::sync::Arc::new(asset.clone());
+    // The new file has loaded: what a rejection would have restored is no longer wanted, and the old
+    // result and preview section go (they were kept until now).
+    state.ingest_return = None;
+    state.result_preview_open = false;
     state.source_asset = Some(asset);
     state.preview = Some(PreviewProfile::default());
     state.preview_cache = None;
@@ -109,7 +113,24 @@ pub(super) fn ingest_failed(state: &mut AppState, job: u64, err: AppError) -> Ta
     if job != state.job_id {
         return Task::none();
     }
-    fail(state, err)
+    // RFC 011 / RFC 014 (K1b): the newest file could not be loaded: what was there comes back (the
+    // result, the card and the source were never cleared). The screen that was showing returns; if that
+    // was `Converting` (a conversion of the previous file was running, and it is superseded and will be
+    // dropped as stale) there is nothing to return to, and the ordinary rule of `fail` applies.
+    match state.ingest_return.take() {
+        Some(kept) => {
+            state.source_path = kept.source_path;
+            state.result_preview_open = kept.result_preview_open;
+            if kept.screen == Screen::Converting {
+                fail(state, err)
+            } else {
+                state.screen = kept.screen;
+                push_error_toast(state, err);
+                Task::none()
+            }
+        }
+        None => fail(state, err),
+    }
 }
 
 /// Handler for `Message::SvgAnalyzed`.
@@ -202,13 +223,19 @@ pub(super) fn start_ingest(state: &mut AppState, path: PathBuf) -> Task<Message>
     // RFC 011: a new file is a new job; the results of every earlier job are stale from here on.
     state.job_id += 1;
     state.file_drag_hovering = false;
+    // RFC 011 / RFC 014 (K1b): nothing the user has is discarded until the new file has loaded. What a
+    // rejected file must give back is kept aside, and **kept** (not overwritten) while a second file
+    // is started before the first has loaded: it is what was on screen before the first. The result,
+    // the source and the preview stay where they are; `ingest_completed` replaces them on success.
+    if state.ingest_return.is_none() {
+        state.ingest_return = Some(super::super::IngestReturn {
+            screen: state.screen,
+            source_path: state.source_path.clone(),
+            result_preview_open: state.result_preview_open,
+        });
+    }
     state.source_path = Some(path.clone());
     state.source_format_note = None;
     state.screen = Screen::Converting;
-    // Discard stale preview cache and asset bundle; they will be rebuilt
-    // when the new ingest completes.
-    state.preview_cache = None;
-    state.result_assets = None;
-    state.result_preview_open = false;
     crate::task_queue::ingest_task(path, state.job_id)
 }

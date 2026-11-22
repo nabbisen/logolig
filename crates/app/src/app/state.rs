@@ -39,6 +39,17 @@ pub enum Screen {
     Result,
 }
 
+/// The part of the state a rejected file restores (see `AppState::ingest_return`).
+#[derive(Debug, Clone)]
+pub struct IngestReturn {
+    /// The screen that was showing when the file was started.
+    pub screen: Screen,
+    /// The path of the file that was loaded then.
+    pub source_path: Option<PathBuf>,
+    /// Whether the preview section of the Result screen was open.
+    pub result_preview_open: bool,
+}
+
 /// Application-wide state (§4.1).
 #[derive(Debug)]
 pub struct AppState {
@@ -48,6 +59,11 @@ pub struct AppState {
     /// Set when the name of the loaded file contradicts its content (RFC 014): the one notice has
     /// been shown, and for a JPEG it already contained the JPEG advisory.
     pub source_format_note: Option<logolig::FormatNote>,
+    /// What a file that cannot be loaded must give back (RFC 011 / RFC 014, K1b): set when a file is
+    /// started and **kept while another is started before it has loaded**, so it always holds what was
+    /// on screen before the first of them; cleared when a file has loaded. The result, the source and
+    /// the preview are not in it: they are not cleared until the new file has loaded.
+    pub ingest_return: Option<IngestReturn>,
     pub source_asset: Option<SourceAsset>,
     pub preview: Option<PreviewProfile>,
     /// Resized raster cache for context preview rendering (§5.2).
@@ -248,6 +264,7 @@ impl Default for AppState {
             theme: ThemeMode::default(),
             source_path: None,
             source_format_note: None,
+            ingest_return: None,
             source_asset: None,
             preview: None,
             preview_cache: None,
