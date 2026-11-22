@@ -17,10 +17,10 @@ logolig/
 ├── Cargo.toml                       # [workspace] manifest (members: crates/app, crates/core, crates/i18n)
 ├── README.md, ROADMAP.md, LICENSE
 ├── docs/                            # src/ (this book), assets/ (screenshot), release-notes/
-├── packaging/                       # aur/, linux/, windows/, icons/ (see packaging/README.md)
+├── packaging/                       # linux/, windows/, icons/ (see packaging/README.md)
 ├── rfcs/                            # RFCs by lifecycle folder, handoffs/ (see rfcs/README.md)
 ├── scripts/                         # gui-session.sh, gui-verify*.{sh,py} (real-window runs),
-│                                    # make-test-font.sh, render-aur.sh
+│                                    # check-rfcs*.sh, appx-version*.sh, make-test-font.sh
 └── crates/
     ├── core/                        # package `logolig`: pure logic, no GUI deps
     │   ├── src/
