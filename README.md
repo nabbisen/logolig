@@ -99,7 +99,10 @@ section for Apple touch icon, HTML snippet, web manifest, monochrome output,
 resize algorithm, raster vectorization, and Microsoft app logos.
 
 Use **Settings** for language and theme. Supported languages are English,
-Japanese, and system default; themes are light, dark, and system default.
+Japanese, and system default; themes are light, dark, and system. **System** follows
+your operating system's light or dark setting while Logolig runs (on Linux through the
+desktop portal; where nothing reports a theme it uses light, and Settings says so).
+Windows and macOS have not been tested.
 
 To make everything larger, use your operating system's display scaling. The
 application has no zoom setting of its own; it is drawn at the scale of your

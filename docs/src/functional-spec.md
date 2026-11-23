@@ -228,7 +228,7 @@ The collapsible preview offers three modes:
 | **Phone home** | 120×120 icon inside a simulated home screen |
 | **Checker** | Icon over a checkerboard (for inspecting transparency) |
 
-A Surface picker (System / Light / Dark) controls the preview background.
+A Surface picker (System / Light / Dark) controls the preview background; System follows the operating system as the Theme setting does (see Settings, Theme).
 The Surface picker is disabled in Checker mode (background has no effect
 on the checkerboard).
 
@@ -280,6 +280,18 @@ forms both supported). Choosing applies at once and is persisted.
 
 A group of three choices: **Light**, **Dark** and **System**. Choosing applies at once and is
 persisted across sessions.
+
+**System follows the operating system, where it reports a theme.** The application asks at start
+and follows changes while it runs: when the system changes between light and dark, the page repaints
+within a moment. On Linux the theme comes from the desktop portal (`org.freedesktop.portal.Settings`,
+`org.freedesktop.appearance` `color-scheme`: dark, light or no preference). Where nothing reports a
+theme (no portal, or a system with no preference) the page is **Light**. The System row says which
+case applies, in words: "System (currently Dark)", "System (currently Light)" or "System (not
+reported; using Light)" (the last one covers "no portal" and "no preference" alike: the program cannot
+tell them apart). Light and Dark ignore the system. Only the choice (System, Light or Dark) is saved;
+what the system reported is not. The Surface picker's **System** surface in the preview follows the
+same value. **Windows and macOS were not exercised:** the same code path is expected to work there (the
+windowing library reports the theme on both) but it has not been run.
 
 ### Keyboard shortcuts
 
