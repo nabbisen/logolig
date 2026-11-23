@@ -91,6 +91,59 @@ impl WebManifestSettings {
         bytes[1..].iter().all(|c| c.is_ascii_hexdigit())
     }
 
+    /// The one colour rule of the application (RFC 012): `#RRGGBB` or the shorthand `#RGB`, any letter
+    /// case, surrounding white space ignored. Returns the canonical form, `#RRGGBB` in upper case
+    /// (`#1ab` becomes `#11AABB`), or `None` for anything else (no `#`, another length, a character
+    /// that is not a hex digit, white space inside, a CSS function or a colour name). The stored form
+    /// stays `#RRGGBB`; the shorthand is only ever accepted on input.
+    pub fn normalize_color(s: &str) -> Option<String> {
+        let digits = s.trim().strip_prefix('#')?;
+        if !digits.chars().all(|c| c.is_ascii_hexdigit()) {
+            return None;
+        }
+        let expanded: String = match digits.len() {
+            3 => digits.chars().flat_map(|c| [c, c]).collect(),
+            6 => digits.to_string(),
+            _ => return None,
+        };
+        Some(format!("#{}", expanded.to_ascii_uppercase()))
+    }
+
+    /// A name the manifest can carry: the text trimmed, which must not be empty. Returns the trimmed
+    /// text, or `None` for an empty or white-space-only name.
+    pub fn normalize_text(s: &str) -> Option<String> {
+        let trimmed = s.trim();
+        (!trimmed.is_empty()).then(|| trimmed.to_string())
+    }
+
+    /// The settings as they may be used (RFC 012, the loader's defence): each valid value is kept in
+    /// its canonical form (names trimmed, colours `#RRGGBB` upper case), each invalid one is replaced
+    /// by its default. The flag says whether any value had to be **replaced** (canonicalising a valid
+    /// value is not a replacement).
+    pub fn sanitized(&self) -> (Self, bool) {
+        let defaults = Self::default();
+        let mut replaced = false;
+        let mut pick = |value: Option<String>, default: String| {
+            value.unwrap_or_else(|| {
+                replaced = true;
+                default
+            })
+        };
+        let clean = Self {
+            name: pick(Self::normalize_text(&self.name), defaults.name),
+            short_name: pick(Self::normalize_text(&self.short_name), defaults.short_name),
+            theme_color: pick(
+                Self::normalize_color(&self.theme_color),
+                defaults.theme_color,
+            ),
+            background_color: pick(
+                Self::normalize_color(&self.background_color),
+                defaults.background_color,
+            ),
+        };
+        (clean, replaced)
+    }
+
     /// Validate that `name` and `short_name` are both non-empty.
     /// Some browsers reject PWA install with empty names; checked before export.
     pub fn has_required_text(&self) -> bool {

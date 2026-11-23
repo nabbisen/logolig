@@ -76,6 +76,7 @@ fn translate_error_handles_all_variants() {
         AppError::io("/x", "denied"),
         AppError::input_too_large("big.png", 64 * 1024 * 1024),
         AppError::image_too_large("huge.png", 5_000_000_000),
+        AppError::manifest_invalid("theme_color"),
         AppError::decode("bad PNG"),
         AppError::rasterize("bad SVG"),
         AppError::resize("zero size"),
@@ -223,6 +224,11 @@ fn japanese_every_key_has_non_empty_translation() {
         MessageKey::ToastFormatMismatchTitle,
         MessageKey::ToastFormatMismatchBody,
         MessageKey::ToastFormatMismatchJpegTail,
+        MessageKey::WebManifestColorError,
+        MessageKey::WebManifestNameError,
+        MessageKey::ToastManifestResetTitle,
+        MessageKey::ToastManifestResetBody,
+        MessageKey::ErrorManifestInvalid,
         MessageKey::ThemeSystemCurrently,
         MessageKey::ThemeSystemNotReported,
         MessageKey::ErrorUnsupportedFile,
@@ -506,5 +512,34 @@ fn the_format_notice_names_both_formats_in_both_languages() {
             "{locale:?}: {body}"
         );
         assert!(!body.contains('{'), "{locale:?}: {body}");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// RFC 012: web manifest input messages
+// ---------------------------------------------------------------------------
+
+#[test]
+fn the_manifest_messages_say_what_is_accepted_in_both_languages() {
+    let en = Translator::for_locale(Locale::En);
+    assert_eq!(
+        en.t(MessageKey::WebManifestColorError),
+        "Use a color like #1A2B3C or #1AB"
+    );
+    assert_eq!(en.t(MessageKey::WebManifestNameError), "Enter a name");
+    let ja = Translator::for_locale(Locale::Ja);
+    assert!(ja.t(MessageKey::WebManifestColorError).contains("#1A2B3C"));
+    assert!(ja.t(MessageKey::WebManifestColorError).contains("#1AB"));
+    for locale in [Locale::En, Locale::Ja] {
+        let t = Translator::for_locale(locale);
+        let err = t.translate_error(&AppError::manifest_invalid("theme_color"));
+        assert!(err.contains("theme_color"), "{locale:?}: {err}");
+        assert!(!err.contains('{'), "{locale:?}: {err}");
+        for key in [
+            MessageKey::ToastManifestResetTitle,
+            MessageKey::ToastManifestResetBody,
+        ] {
+            assert!(!t.t(key).is_empty(), "{locale:?} {key:?}");
+        }
     }
 }

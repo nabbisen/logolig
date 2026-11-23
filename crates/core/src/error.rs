@@ -58,6 +58,13 @@ pub enum AppError {
     #[error("export failed: {detail}")]
     Export { detail: String },
 
+    /// The web manifest settings hold a value the manifest cannot carry (RFC 012): an empty name, or
+    /// a colour that is not `#RRGGBB`. Reachable only through a hand-edited settings file, since the
+    /// application commits only valid values. `field` is the manifest's own field name
+    /// (`name`, `short_name`, `theme_color`, `background_color`).
+    #[error("web manifest settings are invalid: {field}")]
+    ManifestInvalid { field: &'static str },
+
     /// Unimplemented feature (placeholder for incremental development).
     #[error("not implemented: {feature}")]
     NotImplemented { feature: &'static str },
@@ -77,6 +84,7 @@ impl AppError {
             Self::Rasterize { .. } => MessageKey::ErrorRasterize,
             Self::Resize { .. } => MessageKey::ErrorResize,
             Self::Export { .. } => MessageKey::ErrorExport,
+            Self::ManifestInvalid { .. } => MessageKey::ErrorManifestInvalid,
             Self::NotImplemented { .. } => MessageKey::ErrorNotImplemented,
         }
     }
@@ -109,6 +117,7 @@ impl AppError {
             Self::Rasterize { detail } => vec![("detail", detail.clone())],
             Self::Resize { detail } => vec![("detail", detail.clone())],
             Self::Export { detail } => vec![("detail", detail.clone())],
+            Self::ManifestInvalid { field } => vec![("field", field.to_string())],
             Self::NotImplemented { feature } => vec![("feature", feature.to_string())],
         }
     }
@@ -167,6 +176,10 @@ impl AppError {
         Self::Export {
             detail: detail.into(),
         }
+    }
+
+    pub fn manifest_invalid(field: &'static str) -> Self {
+        Self::ManifestInvalid { field }
     }
 
     pub fn not_implemented(feature: &'static str) -> Self {

@@ -111,6 +111,7 @@ error_image_too_large = "{path} は大きすぎます。 読み込めるのは {
 error_decode = "画像のデコードに失敗: {detail}"
 error_rasterize = "SVG のラスタライズに失敗: {detail}"
 error_resize = "リサイズに失敗: {detail}"
+error_manifest_invalid = "Web マニフェストの設定が正しくありません (「{field}」 の値)。 カスタマイズ画面で直して、 もう一度お試しください。"
 error_export = "出力に失敗: {detail}"
 error_not_implemented = "未実装: {feature}"
 
@@ -167,6 +168,11 @@ toast_jpeg_input_body = "この画像も使えますが、 JPEG 形式は透過�
 toast_format_mismatch_title = "ファイル名と中身が一致しません"
 toast_format_mismatch_body = "中身は {detected} です (ファイル名は {named} を示しています)。 Logolig は {detected} として扱います。"
 toast_format_mismatch_jpeg_tail = "JPEG 形式は透過背景を保存できません。 ダーク・ライト両方のブラウザタブに馴染む favicon にするには、 ロゴを背景切り抜きの PNG として書き出してから読み込んでください。"
+# RFC 012: Web マニフェストの入力欄の下に出す説明と、 設定ファイルに不正な値があったときの通知。
+web_manifest_color_error = "#1A2B3C や #1AB のような色を指定してください"
+web_manifest_name_error = "名前を入力してください"
+toast_manifest_reset_title = "Web マニフェストの設定を初期化しました"
+toast_manifest_reset_body = "設定ファイルの Web マニフェストの値に正しくないものがあったため、 既定値に戻しました。"
 toast_non_square_input_title = "ロゴが正方形ではありません"
 toast_non_square_input_body = "ロゴ全体を表示するため、アイコンの周りに余白が付きます。正方形のロゴ画像を用意すると、アイコンを大きく表示できます。"
 toast_svg_parts_title = "SVG の一部が表示されません"

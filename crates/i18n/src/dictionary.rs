@@ -124,6 +124,7 @@ pub(crate) struct Dictionary {
     pub error_rasterize: String,
     pub error_resize: String,
     pub error_export: String,
+    pub error_manifest_invalid: String,
     pub error_not_implemented: String,
 
     // Transparency checker (v1.7.0)
@@ -179,6 +180,10 @@ pub(crate) struct Dictionary {
     pub toast_format_mismatch_title: String,
     pub toast_format_mismatch_body: String,
     pub toast_format_mismatch_jpeg_tail: String,
+    pub web_manifest_color_error: String,
+    pub web_manifest_name_error: String,
+    pub toast_manifest_reset_title: String,
+    pub toast_manifest_reset_body: String,
     pub toast_svg_parts_title: String,
     pub toast_svg_images_body: String,
     pub toast_svg_text_body: String,
@@ -366,6 +371,7 @@ impl Dictionary {
             MessageKey::ErrorRasterize => &self.error_rasterize,
             MessageKey::ErrorResize => &self.error_resize,
             MessageKey::ErrorExport => &self.error_export,
+            MessageKey::ErrorManifestInvalid => &self.error_manifest_invalid,
             MessageKey::ErrorNotImplemented => &self.error_not_implemented,
 
             // v1.7.0
@@ -427,6 +433,10 @@ impl Dictionary {
             MessageKey::ToastFormatMismatchTitle => &self.toast_format_mismatch_title,
             MessageKey::ToastFormatMismatchBody => &self.toast_format_mismatch_body,
             MessageKey::ToastFormatMismatchJpegTail => &self.toast_format_mismatch_jpeg_tail,
+            MessageKey::WebManifestColorError => &self.web_manifest_color_error,
+            MessageKey::WebManifestNameError => &self.web_manifest_name_error,
+            MessageKey::ToastManifestResetTitle => &self.toast_manifest_reset_title,
+            MessageKey::ToastManifestResetBody => &self.toast_manifest_reset_body,
             MessageKey::ToastSvgPartsTitle => &self.toast_svg_parts_title,
             MessageKey::ToastSvgImagesBody => &self.toast_svg_images_body,
             MessageKey::ToastSvgTextBody => &self.toast_svg_text_body,

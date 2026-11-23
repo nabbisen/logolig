@@ -157,6 +157,9 @@ pub fn run_in_memory(
 
     // v1.8.0: Web manifest output.
     if let Some(manifest_settings) = plan.web_manifest.as_ref() {
+        // RFC 012: defence in depth. The application commits only valid values, so this is reached
+        // only through a hand-edited settings file; nothing invalid reaches the manifest.
+        validate_manifest_settings(manifest_settings)?;
         let manifest_json =
             manifest_writer::build_manifest_json(manifest_settings, &plan.png_sizes);
         push_artifact(
@@ -475,4 +478,24 @@ impl Drop for StagingGuard {
             let _ = std::fs::remove_dir_all(&path);
         }
     }
+}
+
+/// RFC 012: a manifest with an empty name or a colour that is not `#RRGGBB` is refused with a typed
+/// error naming the field. The checks are the strict ones of the settings type: valid values are
+/// written exactly as before.
+fn validate_manifest_settings(m: &crate::domain::WebManifestSettings) -> Result<(), AppError> {
+    use crate::domain::WebManifestSettings as W;
+    if m.name.trim().is_empty() {
+        return Err(AppError::manifest_invalid("name"));
+    }
+    if m.short_name.trim().is_empty() {
+        return Err(AppError::manifest_invalid("short_name"));
+    }
+    if !W::is_valid_color(&m.theme_color) {
+        return Err(AppError::manifest_invalid("theme_color"));
+    }
+    if !W::is_valid_color(&m.background_color) {
+        return Err(AppError::manifest_invalid("background_color"));
+    }
+    Ok(())
 }

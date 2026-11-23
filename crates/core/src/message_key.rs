@@ -143,6 +143,8 @@ pub enum MessageKey {
     ErrorRasterize,
     ErrorResize,
     ErrorExport,
+    /// The web manifest settings are invalid (RFC 012); `{field}` names the manifest field.
+    ErrorManifestInvalid,
     ErrorNotImplemented,
 
     // --- Transparency checker (v1.7.0) ---
@@ -229,6 +231,14 @@ pub enum MessageKey {
     /// The JPEG sentence that follows the notice when the detected format is JPEG (RFC 014): the
     /// advisory's news without its opening sentence, so a mislabelled JPEG is one short toast.
     ToastFormatMismatchJpegTail,
+    /// Inline message under a web manifest colour field that holds an invalid value (RFC 012).
+    WebManifestColorError,
+    /// Inline message under a web manifest name field that is empty (RFC 012).
+    WebManifestNameError,
+    /// Warning title: invalid web manifest values in the settings file were reset to the defaults.
+    ToastManifestResetTitle,
+    /// Warning body of the same notice.
+    ToastManifestResetBody,
     /// Toast title for a non-square source (RFC 010): the logo is shown in full with padding.
     ToastNonSquareInputTitle,
     /// Toast body for a non-square source. Suggests a square version of the logo.
