@@ -167,9 +167,10 @@ vision or color-blindness do not lose information. Each cue has one meaning:
   bar, the top edge of the bottom bar).
 - Chosen option of a single choice (language, theme, View as, Surface, SVG
   conversion, resize algorithm): a **filled dot in a ring** (a radio group).
-- Checked option: a **box with a tick** (a checkbox). Both marks are black on
-  the light theme and white on the dark theme: the accent color is not used for
-  selection.
+- Checked option: a **box with a tick** (a checkbox). The marks are drawn by the
+  interface engine in the accent blue on the light theme (5.2:1 and 4.5:1 against
+  the page, measured) and in white on the dark theme (13.8:1); the outlines of
+  unchecked boxes and unselected options are the text colour (10:1 or more).
 - Busy: the **Loader** icon before the message.
 - Success: the **Check** icon on the Result headline.
 
@@ -177,6 +178,80 @@ The marks are icons and drawn shapes from the bundled icon font, never text
 characters, so they do not depend on the fonts installed. They live in
 `crate::ui::choice` (choices, checkboxes) and `crate::ui::cues` (busy, success).
 Errors appear as toasts (next section); there is no text marker for them.
+
+## Contrast
+
+The rule (RFC 034): in **Light and Dark**, every text reaches **7:1** (WCAG AAA) against the
+surface it is drawn on, secondary text included; icons and the borders and marks of controls
+reach **3:1** (WCAG 1.4.11). This is a measurement of the 1.29.0 interface, not a promise about
+any other release; it was made on the headless renderer (CPU, bundled fonts), not in a real
+window, and says nothing about Windows or macOS beyond that the colours are the same.
+
+- **One place defines the two themes** (`ui/theme.rs`): iced's Light and Dark with the accent
+  moved (Light: `#3C47B8`, white text 7.5:1; Dark: `#8A93F7`, black text 7.6:1), the success,
+  warning and danger colours moved so that toast text reads at 7:1, and **every tier's text
+  lifted to 7:1 against its own fill**. Secondary text is a **solid** colour derived against
+  the page and the card it sits on (it used to be the body colour at 60 % alpha, 5.0 to 5.7:1);
+  on the dark theme the card leaves little room, so there it is close to the body text and
+  the hierarchy is carried by size and weight.
+- **Borders and marks** of buttons and text fields are derived to 3:1 against the page and a
+  card (they were 1.2 to 1.8:1). The placeholder of a text field is secondary text (7:1).
+- **Exempt, and why:** the edges of cards and containers that only frame other content (the
+  controls inside carry their own borders); the preview's mock-up colours (an illustration of
+  a browser tab and a phone home screen, not interface text; they are measured as drawn and
+  pass); a disabled control; the focus ring (drawn by the interface engine at 4.58:1 or more
+  against what is behind it, checked in the ring tests).
+- **How it is checked:** `ui_layout_tests/contrast.rs` finds every text piece of every screen
+  in both themes in the CPU-rendered picture and measures its ink against its ground (1,100
+  pieces, toasts of all three intents included); `ui_layout_tests/contrast_inventory.rs`
+  checks the colours the helpers and the themes give, including the states a resting screen
+  does not show (hover, pressed, the drop-zone hover tint), and fails if a colour helper is
+  not in the list. The table is what the inventory measures (ratio before → after, 1.28.0 →
+  this release):
+
+| Pair (drawn on) | need | Light before → after | Dark before → after |
+|---|---|---|---|
+| body text on the page | 7:1 | 21.00 → **21.00** | 11.00 → **11.00** |
+| body text on a card | 7:1 | 15.58 → **15.58** | 7.45 → **7.45** |
+| secondary text on the page | 7:1 | 5.74 → **9.64** | 5.00 → **10.54** |
+| secondary text on a card | 7:1 | 5.22 → **7.15** | 3.83 → **7.14** |
+| app name on the page | 7:1 | 21.00 → **21.00** | 11.00 → **11.00** |
+| section label on a card | 7:1 | 15.58 → **15.58** | 7.45 → **7.45** |
+| file name on the page | 7:1 | 21.00 → **21.00** | 11.00 → **11.00** |
+| page title on the page | 7:1 | 21.00 → **21.00** | 11.00 → **11.00** |
+| group heading on the page | 7:1 | 21.00 → **21.00** | 11.00 → **11.00** |
+| drop-zone headline on the card | 7:1 | 15.58 → **15.58** | 7.45 → **7.45** |
+| drop-zone headline on the hover tint | 7:1 | 11.14 → **18.81** | 5.01 → **7.44** |
+| drop-zone secondary text on the hover tint | 7:1 | 4.60 → **8.64** | 2.84 → **7.13** |
+| drop-zone secondary text on the card | 7:1 | 5.22 → **7.15** | 3.83 → **7.14** |
+| inactive navigation label on the sidebar | 7:1 | 5.22 → **8.51** | 3.83 → **8.79** |
+| inactive navigation label on the hover fill | 7:1 | 4.93 → **7.25** | 3.30 → **7.10** |
+| active navigation label on its fill | 7:1 | 13.28 → **13.28** | 6.02 → **7.11** |
+| text on the hover fill of an auxiliary button | 7:1 | 13.28 → **13.28** | 6.02 → **7.11** |
+| placeholder of a text field | 7:1 | 2.94 → **9.64** | 4.01 → **10.54** |
+| text on the primary button, rest | 7:1 | 4.43 → **7.54** | 4.43 → **7.60** |
+| text on the primary button, hovered | 7:1 | 3.58 → **8.17** | 3.58 → **9.21** |
+| text on the primary button, pressed | 7:1 | 4.43 → **8.91** | 4.43 → **10.81** |
+| tier background.base: its text on its fill (toasts, default widgets) | 7:1 | 21.00 → **21.00** | 11.00 → **11.00** |
+| tier background.weak: its text on its fill (toasts, default widgets) | 7:1 | 15.58 → **15.58** | 7.45 → **7.45** |
+| tier background.strong: its text on its fill (toasts, default widgets) | 7:1 | 13.28 → **13.28** | 6.02 → **7.11** |
+| tier primary.base: its text on its fill (toasts, default widgets) | 7:1 | 4.43 → **7.21** | 4.43 → **7.11** |
+| tier success.base: its text on its fill (toasts, default widgets) | 7:1 | 6.61 → **7.10** | 6.91 → **7.30** |
+| tier warning.base: its text on its fill (toasts, default widgets) | 7:1 | 6.05 → **7.15** | 8.12 → **8.12** |
+| tier danger.base: its text on its fill (toasts, default widgets) | 7:1 | 4.83 → **7.10** | 4.83 → **7.16** |
+| border of a button or text field, against the page | 3:1 | 1.58 → **4.21** | 1.83 → **4.61** |
+| border of a button or text field, against a card | 3:1 | 1.17 → **3.13** | 1.24 → **3.12** |
+| border of the reset button, against the page | 3:1 | 1.93 → **7.16** | 2.04 → **4.60** |
+| border of the reset button, against a card | 3:1 | 1.43 → **5.31** | 1.38 → **3.11** |
+| the active page's bar, against the page | 3:1 | 4.61 → **7.54** | 3.70 → **4.99** |
+| the active page's bar, against the sidebar | 3:1 | 3.42 → **5.59** | 2.51 → **3.38** |
+| the primary button's fill, rest, against the page | 3:1 | 4.61 → **7.54** | 2.99 → **4.99** |
+| the primary button's fill, hovered, against the page | 3:1 | 4.61 → **8.17** | 2.99 → **6.05** |
+| the primary button's fill, pressed, against the page | 3:1 | 4.61 → **8.91** | 2.99 → **7.10** |
+| the drop-zone accent border against the page | 3:1 | 3.73 → **7.54** | 3.70 → **4.99** |
+
+Captions (11 to 13 px text, such as the sizes on a result card and the lines under a field) carry
+nothing that is not also said by a larger label next to them; they are secondary text at 7:1 too.
 
 ## Labels, not glyphs
 
