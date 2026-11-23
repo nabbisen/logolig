@@ -31,6 +31,7 @@
 //! | `ui_layout_tests/focus_in_view.rs` | after every Tab and Shift+Tab the focused control is fully visible, on every page of the matrix |
 //! | `ui_layout_tests/focus_keys.rs` | Tab and Shift+Tab through the real key path: routed, in order, out of a text field, no wrap |
 //! | `ui_layout_tests/manifest_input.rs` | the web manifest form: an icon and a sentence under an invalid field (both languages), no error on an untouched field, the field is still a Tab stop and keeps its focus when the error appears, Enter submits |
+//! | `ui_layout_tests/marks.rs` | the selection marks are the accent in both themes, the same colour as the primary fill, drawn and held at snora's 3:1 against the page and the row tints (J21b) |
 //! | `ui_layout_tests/hit_area.rs` | P3: every interactive area is at least 24 × 24 px |
 //! | `ui_layout_tests/tab_stops.rs` | the Tab stops: in layout order, each one an interactive area, and every interactive area one of them except a named list (J14b empties it) |
 //! | `ui_layout_tests/system_theme.rs` | "System" follows the operating system: a report repaints the page, the Settings text in the three states (both languages), the preview's System surface follows the report |
@@ -53,6 +54,7 @@ mod focus_keys;
 mod fonts;
 mod hit_area;
 mod manifest_input;
+mod marks;
 mod nav_cue;
 mod overflow;
 mod radio_groups;

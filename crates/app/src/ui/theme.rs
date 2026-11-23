@@ -21,11 +21,14 @@ pub const PRIMARY_LIGHT: Color = Color::from_rgb(
     0x47 as f32 / 255.0,
     0xB8 as f32 / 255.0,
 );
-/// The accent, Dark: lightened so that **black** text reads at 7:1+ and the fill stands out from the page.
+/// The accent, Dark: lightened so that **black** text reads at 8.6:1 and the fill stands out from the page.
+/// J21b: `#8A93F7` (J21) became `#979FF8`, the nearest colour of the same hue that **also** holds snora's 3:1
+/// against the pressed-row tint (`background.strong`: 2.75:1 before, 3.12:1 now), because the selection marks
+/// are drawn in this same colour (see `generate`): one accent, one blue, in both themes.
 pub const PRIMARY_DARK: Color = Color::from_rgb(
-    0x8A as f32 / 255.0,
-    0x93 as f32 / 255.0,
-    0xF7 as f32 / 255.0,
+    0x97 as f32 / 255.0,
+    0x9F as f32 / 255.0,
+    0xF8 as f32 / 255.0,
 );
 
 /// Success, `#12664F` darkened (white on it was 6.9:1) until white text reads at 7:1+.
@@ -76,6 +79,12 @@ pub fn dark() -> Theme {
 /// iced's extended palette with every tier's text lifted to 7:1 against its own fill.
 fn generate(palette: Palette) -> Extended {
     let mut e = Extended::generate(palette);
+    // J21b (RFC 021 amendment of 2026-11-24): the selection marks are the accent, the same colour as the
+    // primary fill. snora draws a checked box and a selected radio in `primary.strong`, held at 3:1 (floor
+    // 3.05) against the page and the hovered and pressed row tints, and falls back to black or white when
+    // it does not hold. So `primary.strong` is the primary itself, and the two primaries above are chosen
+    // to hold (Light 7.5 / 5.6 / 4.8:1, Dark 5.7 / 3.8 / 3.1:1; the test in `marks.rs` pins it).
+    e.primary.strong.color = e.primary.base.color;
     let b = &mut e.background;
     for pair in [
         &mut b.base,

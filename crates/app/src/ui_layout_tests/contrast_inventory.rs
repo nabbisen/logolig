@@ -31,6 +31,17 @@ struct Row {
     need: f32,
 }
 
+/// The colour snora draws a checked box and a selected radio in (RFC 021 amendment 2026-11-24, J21b):
+/// the theme's `primary.strong`, which `ui/theme.rs` makes the primary fill itself.
+fn selection_mark(theme: &Theme) -> Color {
+    theme.extended_palette().primary.strong.color
+}
+
+/// The tick drawn on the selection mark.
+fn mark_tick(theme: &Theme) -> Color {
+    theme.extended_palette().primary.strong.text
+}
+
 fn alpha_over(fg: Color, alpha: f32, bg: Color) -> Color {
     Color::from_rgb(
         fg.r * alpha + bg.r * (1.0 - alpha),
@@ -224,6 +235,20 @@ fn rows(dark: bool) -> Vec<Row> {
         );
     }
 
+    // The tick on the selection mark (J21b). Before: black on white (Light) / white on black (Dark)... the
+    // pole snora fell back to, with the opposite pole for the tick.
+    let (old_mark, old_tick) = if op.is_dark {
+        (Color::WHITE, Color::BLACK)
+    } else {
+        (Color::BLACK, Color::WHITE)
+    };
+    text(
+        "theme::generate (primary.strong.text)",
+        "the tick on the selection mark",
+        Some((old_tick, old_mark)),
+        (mark_tick(&new), selection_mark(&new)),
+    );
+
     // --- non-text: borders and marks -----------------------------------------------------------
     let mut non_text = |source, what, before, after| {
         v.push(Row {
@@ -263,6 +288,27 @@ fn rows(dark: bool) -> Vec<Row> {
     } else {
         op.primary.base.color
     };
+    let (hover_row, press_row) = (card, strong);
+    for (what, behind_old, behind_new) in [
+        ("the selection mark, against the page", opage, page),
+        (
+            "the selection mark, against the hovered row",
+            ocard,
+            hover_row,
+        ),
+        (
+            "the selection mark, against the pressed row",
+            ostrong,
+            press_row,
+        ),
+    ] {
+        non_text(
+            "theme::generate (primary.strong)",
+            what,
+            Some((old_mark, behind_old)),
+            (selection_mark(&new), behind_new),
+        );
+    }
     non_text(
         "colors::nav_accent",
         "the active page's bar, against the page",

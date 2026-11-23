@@ -117,7 +117,10 @@ fn the_bar_is_thin_and_flush_with_the_content() {
     let mut p = probe_of(&state, size);
     let rgba = p.rgba(&th, SCALE);
     let y = label_centre(&mut p, "Customize").y;
-    let columns: Vec<f32> = (0..(size.width as usize))
+    // Only the strip beside the bar is scanned (RFC 021 amendment 2026-11-24, J21b): the selection marks
+    // are the accent too, so the colour legitimately appears further into the page. The content starts
+    // 52 px from the bar (Customize's padding): 20 px past the sidebar is well inside that margin.
+    let columns: Vec<f32> = (0..(SIDEBAR_WIDTH as usize + 20))
         .map(|x| x as f32 + 0.25)
         .filter(|x| distance(pixel(&rgba, size, *x, y), accent) < 6.0)
         .collect();
