@@ -7,7 +7,7 @@
 //! and the label are as they were), stay within a few pixels of it, and be a neutral grey (no
 //! accent hue), on both themes.
 
-use iced::{Size, Theme};
+use iced::Size;
 
 use super::support::{Case, Combo, Probe, probe_of};
 use crate::app::Message;
@@ -42,7 +42,11 @@ fn ring_of(case: Case, dark: bool, target: usize) -> (Vec<(f32, f32, [u8; 3])>, 
         dark,
     }
     .state();
-    let theme = if dark { Theme::Dark } else { Theme::Light };
+    let theme = if dark {
+        crate::ui::theme::dark()
+    } else {
+        crate::ui::theme::light()
+    };
     let width_px = (SIZE.width * SCALE) as usize;
 
     let mut plain = probe_of(&state, SIZE);

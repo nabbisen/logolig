@@ -31,7 +31,11 @@ fn state_on(page: NavPage, size: Size, dark: bool) -> AppState {
 }
 
 fn theme(dark: bool) -> Theme {
-    if dark { Theme::Dark } else { Theme::Light }
+    if dark {
+        crate::ui::theme::dark()
+    } else {
+        crate::ui::theme::light()
+    }
 }
 
 fn pixel(rgba: &[u8], size: Size, x: f32, y: f32) -> [f32; 3] {

@@ -56,11 +56,11 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             .color(colors::drop_zone_headline(&theme)),
         text(t.t(MessageKey::DropZoneSecondary))
             .size(13)
-            .color(colors::muted_text(&theme)),
+            .color(card_text(&theme)),
         choose_chip,
         text(t.t(MessageKey::DropZoneAcceptedFormats))
             .size(12)
-            .color(colors::muted_text(&theme)),
+            .color(card_text(&theme)),
     ]
     .spacing(14)
     .align_x(iced::alignment::Horizontal::Center);
@@ -101,11 +101,21 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .into()
 }
 
+/// Secondary text inside the drop-zone card: 7:1 on the card and on its hover tint.
+fn card_text(theme: &Theme) -> iced::Color {
+    colors::muted_on(
+        theme,
+        &[colors::surface_card(theme), colors::hover_tint(theme)],
+    )
+}
+
 fn drop_zone_card_style(theme: &Theme, hovered: bool) -> iced::widget::container::Style {
     let palette = theme.extended_palette();
-    let accent = palette.primary.strong.color;
+    // RFC 034 J21: the accent is the theme's primary (7:1 with the fill's own text); the hover tint
+    // is a faint accent over the page that keeps body and secondary text at 7:1.
+    let accent = palette.primary.base.color;
     let background = if hovered {
-        palette.primary.weak.color
+        colors::hover_tint(theme)
     } else {
         palette.background.weak.color
     };
@@ -115,7 +125,7 @@ fn drop_zone_card_style(theme: &Theme, hovered: bool) -> iced::widget::container
             color: if hovered {
                 accent
             } else {
-                palette.background.strong.color
+                colors::control_border(theme)
             },
             width: if hovered { 2.5 } else { 2.0 },
             radius: 12.0.into(),
@@ -125,12 +135,13 @@ fn drop_zone_card_style(theme: &Theme, hovered: bool) -> iced::widget::container
 }
 
 fn drop_zone_choose_chip_style(theme: &Theme) -> iced::widget::container::Style {
-    let palette = theme.extended_palette();
+    // The same accent as the primary button, at rest (RFC 034 J21).
+    let fill = colors::primary_fill(theme, colors::PrimaryState::Rest);
     iced::widget::container::Style {
-        background: Some(Background::Color(palette.primary.strong.color)),
-        text_color: Some(palette.primary.strong.text),
+        background: Some(Background::Color(fill)),
+        text_color: Some(colors::on_primary(theme, fill)),
         border: Border {
-            color: palette.primary.strong.color,
+            color: fill,
             width: 1.0,
             radius: 8.0.into(),
         },
@@ -224,11 +235,17 @@ fn history_button_style(
         }
         _ => Some(Background::Color(palette.background.base.color)),
     };
+    // J21: the text is derived for the fill it sits on in this state.
+    let fill = if matches!(status, iced::widget::button::Status::Hovered) {
+        palette.background.strong.color
+    } else {
+        palette.background.base.color
+    };
     iced::widget::button::Style {
         background: bg,
-        text_color: palette.background.base.text,
+        text_color: colors::text_on(theme, fill),
         border: Border {
-            color: palette.background.strong.color,
+            color: colors::control_border(theme),
             width: 1.0,
             radius: 6.0.into(),
         },

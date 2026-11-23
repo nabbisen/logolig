@@ -131,6 +131,7 @@ fn labeled_input<'a>(
             .on_input(on_change)
             .on_submit(on_submit)
             .size(13)
+            .style(crate::ui::styles::input_style)
             .width(Length::Fixed(INPUT_WIDTH)),
     ]
     .spacing(ROW_SPACING)

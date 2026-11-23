@@ -5,7 +5,7 @@
 //! "no preference or nothing answered" (the program cannot tell which), and `System` then resolves to
 //! Light. The setting itself stays `System` in `settings.json`: the resolved mode lives only in the state.
 
-use iced::Theme;
+use crate::ui::theme;
 use iced::theme::Mode;
 
 use super::*;
@@ -25,9 +25,9 @@ fn resolve_theme_over_every_system_mode_and_every_setting() {
     for mode in MODES {
         // System follows the mode; None means Light.
         let expected = if mode == Mode::Dark {
-            Theme::Dark
+            theme::dark()
         } else {
-            Theme::Light
+            theme::light()
         };
         assert_eq!(
             resolve_theme(&state_with(ThemeMode::System, mode)),
@@ -37,12 +37,12 @@ fn resolve_theme_over_every_system_mode_and_every_setting() {
         // Light and Dark ignore the system.
         assert_eq!(
             resolve_theme(&state_with(ThemeMode::Light, mode)),
-            Theme::Light,
+            theme::light(),
             "Light with {mode:?}"
         );
         assert_eq!(
             resolve_theme(&state_with(ThemeMode::Dark, mode)),
-            Theme::Dark,
+            theme::dark(),
             "Dark with {mode:?}"
         );
     }
@@ -73,7 +73,7 @@ fn report(state: &mut AppState, modes: &[Mode]) {
 fn the_default_is_not_reported_and_resolves_to_light() {
     let state = AppState::default();
     assert_eq!(state.system_theme, Mode::None);
-    assert_eq!(resolve_theme(&state), Theme::Light);
+    assert_eq!(resolve_theme(&state), theme::light());
 }
 
 #[test]
@@ -83,18 +83,22 @@ fn a_leading_none_then_dark_ends_dark() {
     let mut state = AppState::default();
     report(&mut state, &[Mode::None, Mode::Dark, Mode::Dark]);
     assert_eq!(state.system_theme, Mode::Dark);
-    assert_eq!(resolve_theme(&state), Theme::Dark);
+    assert_eq!(resolve_theme(&state), theme::dark());
 }
 
 #[test]
 fn dark_then_none_ends_light_and_a_live_change_follows() {
     let mut state = AppState::default();
     report(&mut state, &[Mode::Dark]);
-    assert_eq!(resolve_theme(&state), Theme::Dark);
+    assert_eq!(resolve_theme(&state), theme::dark());
     report(&mut state, &[Mode::None]); // the service went away or has no preference
-    assert_eq!(resolve_theme(&state), Theme::Light);
+    assert_eq!(resolve_theme(&state), theme::light());
     report(&mut state, &[Mode::Light, Mode::Dark, Mode::Light]);
-    assert_eq!(resolve_theme(&state), Theme::Light, "the last report wins");
+    assert_eq!(
+        resolve_theme(&state),
+        theme::light(),
+        "the last report wins"
+    );
 }
 
 #[test]
@@ -124,13 +128,13 @@ fn picking_a_theme_is_independent_of_the_report() {
     let _ = update(&mut state, Message::ThemePicked(ThemeMode::Light));
     assert_eq!(
         resolve_theme(&state),
-        Theme::Light,
+        theme::light(),
         "an explicit Light wins"
     );
     let _ = update(&mut state, Message::ThemePicked(ThemeMode::System));
     assert_eq!(
         resolve_theme(&state),
-        Theme::Dark,
+        theme::dark(),
         "System follows the report again"
     );
 }

@@ -110,11 +110,7 @@ fn nav_item<'a>(
     on_press: Message,
     theme: &Theme,
 ) -> Element<'a, Message> {
-    let icon_color = if active {
-        colors::page_title(theme)
-    } else {
-        colors::muted_text(theme)
-    };
+    let icon_color = colors::nav_label(theme, active);
 
     let icon_el = icon_element_sized::<Message>(icon, 22.0);
     let label_el = text(label)
@@ -160,11 +156,7 @@ fn bottom_nav_item<'a>(
     on_press: Message,
     theme: &Theme,
 ) -> Element<'a, Message> {
-    let label_color = if active {
-        colors::page_title(theme)
-    } else {
-        colors::muted_text(theme)
-    };
+    let label_color = colors::nav_label(theme, active);
 
     let icon_el = icon_element_sized::<Message>(icon, 22.0);
     let label_el = text(label)
@@ -257,9 +249,16 @@ fn nav_item_style(
             _ => None,
         }
     };
+    // The text of an item on the `strong` fill (active or hovered) is derived for that fill (J21); on
+    // the bare sidebar it is the body colour.
+    let text_color = if bg.is_some() {
+        colors::text_on(theme, p.background.strong.color)
+    } else {
+        p.background.base.text
+    };
     iced::widget::button::Style {
         background: bg,
-        text_color: p.background.base.text,
+        text_color,
         border: Border {
             color: Color::TRANSPARENT,
             width: 0.0,

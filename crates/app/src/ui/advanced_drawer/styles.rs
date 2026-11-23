@@ -24,7 +24,7 @@ pub(super) fn reset_button_style(
     let bg = match status {
         iced::widget::button::Status::Hovered => Color {
             a: 0.15,
-            ..palette.danger.weak.color
+            ..crate::ui::colors::danger_border(theme)
         },
         _ => Color::TRANSPARENT,
     };
@@ -32,7 +32,7 @@ pub(super) fn reset_button_style(
         background: Some(iced::Background::Color(bg)),
         text_color: palette.background.base.text,
         border: iced::Border {
-            color: palette.danger.weak.color,
+            color: crate::ui::colors::danger_border(theme),
             width: 1.0,
             radius: 6.0.into(),
         },
@@ -55,7 +55,7 @@ pub(super) fn secondary_drawer_button_style(
         background: Some(iced::Background::Color(bg)),
         text_color: palette.background.weak.text,
         border: iced::Border {
-            color: palette.background.strong.color,
+            color: crate::ui::colors::control_border(theme),
             width: 1.0,
             radius: 6.0.into(),
         },

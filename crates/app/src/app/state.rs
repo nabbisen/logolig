@@ -310,8 +310,8 @@ impl Default for AppState {
 /// v1.14.0: exposed as `pub(crate)` so UI modules can resolve theme-palette colours.
 pub(crate) fn resolve_theme(state: &AppState) -> Theme {
     match resolve_mode(state.theme, state.system_theme) {
-        ThemeMode::Dark => Theme::Dark,
-        ThemeMode::Light | ThemeMode::System => Theme::Light,
+        ThemeMode::Dark => crate::ui::theme::dark(),
+        ThemeMode::Light | ThemeMode::System => crate::ui::theme::light(),
     }
 }
 

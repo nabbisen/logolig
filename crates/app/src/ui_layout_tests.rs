@@ -12,6 +12,8 @@
 //! |---|---|
 //! | `ui_layout_tests/fonts.rs` | the font set (no machine fonts) and the guard that it covers every Japanese character |
 //! | `ui_layout_tests/checkboxes.rs` | the checkboxes: Tab stops, and a click, Enter and Space each publish the one message the iced checkbox published |
+//! | `ui_layout_tests/contrast.rs` | contrast measured on the drawn pictures: every text piece of every screen in Light and Dark reaches 7:1, every icon 3:1 (RFC 034, J21) |
+//! | `ui_layout_tests/contrast_inventory.rs` | the colours the palette and the helpers give, before and after, against 7:1 (text) and 3:1 (borders and marks), in both themes, and that every colour helper is in the inventory |
 //! | `ui_layout_tests/controls.rs` | the helper every migrated control is checked with: Tab stop, and Enter, Space and a click each publish the one message |
 //! | `ui_layout_tests/controls_customize.rs` | "+ Add custom size", the "Advanced settings" header and "Reset to defaults" as `snora::control`s |
 //! | `ui_layout_tests/controls_home.rs` | the drop-zone card and "View results →" as `snora::control`s |
@@ -37,6 +39,8 @@
 
 mod checkboxes;
 mod command_keys;
+mod contrast;
+mod contrast_inventory;
 mod controls;
 mod controls_customize;
 mod controls_home;

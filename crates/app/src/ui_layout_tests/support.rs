@@ -167,8 +167,10 @@ impl<'a, M> Probe<'a, M> {
         self.ui.draw(
             &mut self.renderer,
             theme,
+            // What the runtime passes: the theme's own text colour is the default of every `text`
+            // that sets no colour (a fixed black here made such text invisible on Dark).
             &iced_test::core::renderer::Style {
-                text_color: iced::Color::BLACK,
+                text_color: iced_test::core::theme::Base::base(theme).text_color,
             },
             mouse::Cursor::Unavailable,
         );

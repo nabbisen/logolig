@@ -121,6 +121,7 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
             .on_submit(Message::PngSizeAddRequested)
             .size(12)
             .padding(4)
+            .style(crate::ui::styles::input_style)
             .width(Length::Fixed(80.0)),
         snora::control(text(t.t(MessageKey::AddCustomSize)).size(12))
             .padding([4, 10])

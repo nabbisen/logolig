@@ -90,7 +90,8 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             .align_y(iced::Alignment::Center),
         )
         .padding([12, 28])
-        .on_press(Message::DownloadAllRequested),
+        .on_press(Message::DownloadAllRequested)
+        .style(crate::ui::styles::primary_button_style),
     )
     .center_x(Length::Fill)
     .padding(Padding::default().top(16).bottom(8));
@@ -349,7 +350,7 @@ fn download_button_style(
         background: Some(Background::Color(bg)),
         text_color: palette.background.weak.text,
         border: Border {
-            color: palette.background.strong.color,
+            color: colors::control_border(theme),
             width: 1.0,
             radius: 6.0.into(),
         },
@@ -371,7 +372,7 @@ fn secondary_button_style(
         background: Some(Background::Color(bg)),
         text_color: palette.background.weak.text,
         border: Border {
-            color: palette.background.strong.color,
+            color: colors::control_border(theme),
             width: 1.0,
             radius: 6.0.into(),
         },
