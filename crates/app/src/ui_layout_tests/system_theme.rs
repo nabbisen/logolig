@@ -182,3 +182,22 @@ fn the_preview_system_surface_follows_the_report() {
         "System + Dark draws what an explicit Dark surface draws"
     );
 }
+
+#[test]
+fn the_surface_picker_keeps_the_plain_system_while_settings_says_more() {
+    // RFC 013 review: in the narrow Surface picker "System" is enough (the mock-up beside it shows what
+    // it resolves to); the honest long label is the Settings page's.
+    for mode in [Mode::None, Mode::Light, Mode::Dark] {
+        let state = preview_state(logolig::ThemeMode::System, mode);
+        let texts: Vec<String> = probe_of(&state, TALL)
+            .walk()
+            .iter()
+            .map(|s| s.text.clone())
+            .collect();
+        assert!(texts.iter().any(|t| t == "System"), "{mode:?}: {texts:?}");
+        assert!(
+            !texts.iter().any(|t| t.starts_with("System (")),
+            "{mode:?}: no long label in the picker"
+        );
+    }
+}

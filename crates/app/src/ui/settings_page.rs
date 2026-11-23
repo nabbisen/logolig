@@ -17,7 +17,7 @@ use crate::ui::colors;
 /// The text of the theme group's "System" row (RFC 013): it says what System does right now, in
 /// words (never by colour alone). A reported theme is named ("System (currently Dark)"); no report,
 /// whether no service answered or the system has no preference (the program cannot tell which), says
-/// so and that the page is Light. Also the label of the preview's "System" surface.
+/// so and that the page is Light. The preview's Surface picker keeps the plain "System".
 pub fn system_option_label(state: &AppState) -> String {
     let t = &state.translator;
     let name = match state.system_theme {

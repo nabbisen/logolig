@@ -52,11 +52,9 @@ pub(super) fn surface_picker<'a>(
         radio_group(
             [ThemeMode::System, ThemeMode::Light, ThemeMode::Dark],
             &current,
-            |mode| match mode {
-                // RFC 013: the System surface says what it follows right now, as the Settings page does.
-                ThemeMode::System => crate::ui::system_option_label(state),
-                other => t.t(background_message_key(*other)),
-            },
+            // The plain "System": the mock-up beside the picker shows what it resolves to (RFC 013 review);
+            // the honest long label is the Settings page's.
+            |mode| t.t(background_message_key(*mode)),
             Message::PreviewBackgroundSelected,
         )
         .disabled(!context.respects_surface()),
