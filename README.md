@@ -237,9 +237,16 @@ favicon users rarely need to change these, and exposing every W3C field
 would defeat the "fewer settings" design (§5). v1.8.x can lift this
 limitation if a real need surfaces.
 
-Color values are validated at export time (not while typing), so `#FF…`
-in mid-edit doesn't trigger a warning. If a malformed color is detected at
-export, a Toast is shown and the export is blocked until it's fixed.
+Colors are written as `#RRGGBB`; you may also type the short form `#RGB`
+(`#1ab` means `#11AABB`), in any letter case. A name must not be empty. What
+you type is checked as you type: **a value that is not valid is never used or
+saved**: the last valid value stays, and a line under the field, with a warning
+icon, says what is accepted ("Use a color like #1A2B3C or #1AB", "Enter a
+name"). It appears only after you have typed in the field or pressed Enter in
+it, not on the untouched defaults. Press Enter to see the value in its final
+form (`#1ab` becomes `#11AABB`). If a hand-edited settings file holds a value
+that is not valid, Logolig starts anyway, uses the default for that value and
+tells you once; the export itself also refuses an invalid manifest.
 
 ## Monochrome output
 

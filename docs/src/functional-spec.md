@@ -258,7 +258,7 @@ are composited against white (Porter-Duff over) before writing.
 - Include SVG output / vectorise raster sources (two checkboxes; the vectorisation one only while SVG output is on)
 - Apple touch icon (180×180 PNG)
 - HTML snippet file
-- Web manifest (off by default; name, short name, theme colour, background colour)
+- Web manifest (off by default; name, short name, theme colour, background colour). **Input rules (RFC 012):** a colour is `#RRGGBB` or the shorthand `#RGB`, in any letter case, with surrounding white space ignored; it is stored as `#RRGGBB` in upper case (`#1ab` is `#11AABB`). A name is valid when it is not empty after trimming (it is stored trimmed). The page keeps what the user typed in an edit buffer; **only a valid value reaches the output plan and `settings.json`**: while the text is invalid the previous valid value stays and nothing is saved, so a half-typed colour (`#1A`) is never written. iced's text field has no blur event, so a keystroke that makes the text valid is committed at once, and **Enter** additionally rewrites the field in its canonical form (what is shown is what is written). A field shows an error line (a warning icon and "Use a color like #1A2B3C or #1AB" or "Enter a name", in the interface language) only once it has been typed in or submitted, never on an untouched default and never by colour alone. **Bad values in `settings.json`** (a hand-edited file) are replaced by the defaults when the application starts, with one warning notice; valid ones are kept in canonical form; the application always starts. The export refuses a manifest with an empty name or a colour that is not `#RRGGBB` with a typed error (reachable only through such a file).
 - Monochrome output set
 - Resize algorithm (the five-option group)
 
