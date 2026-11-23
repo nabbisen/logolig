@@ -167,10 +167,14 @@ vision or color-blindness do not lose information. Each cue has one meaning:
   bar, the top edge of the bottom bar).
 - Chosen option of a single choice (language, theme, View as, Surface, SVG
   conversion, resize algorithm): a **filled dot in a ring** (a radio group).
-- Checked option: a **box with a tick** (a checkbox). The marks are drawn by the
-  interface engine in the accent blue on the light theme (5.2:1 and 4.5:1 against
-  the page, measured) and in white on the dark theme (13.8:1); the outlines of
-  unchecked boxes and unselected options are the text colour (10:1 or more).
+- Checked option: a **box with a tick** (a checkbox). The marks (the box fill, the radio's dot and
+  ring) are **the accent, the same colour as the primary button** in both themes: `#3C47B8` on
+  light (7.5:1 against the page, 5.6:1 against a hovered row, 4.8:1 against a pressed row) and
+  `#979FF8` on dark (5.7 / 3.8 / 3.1:1); the tick on them reads at 7:1. The interface engine
+  draws them in the theme's `primary.strong` and keeps that colour only where it holds 3:1
+  against the page and both row tints, so the theme sets `primary.strong` to the primary itself.
+  The outlines of unchecked boxes and unselected options stay the text colour (10:1 or more),
+  and the focus ring stays neutral, so a ring never merges with a mark.
 - Busy: the **Loader** icon before the message.
 - Success: the **Check** icon on the Result headline.
 
@@ -188,7 +192,7 @@ any other release; it was made on the headless renderer (CPU, bundled fonts), no
 window, and says nothing about Windows or macOS beyond that the colours are the same.
 
 - **One place defines the two themes** (`ui/theme.rs`): iced's Light and Dark with the accent
-  moved (Light: `#3C47B8`, white text 7.5:1; Dark: `#8A93F7`, black text 7.6:1), the success,
+  moved (Light: `#3C47B8`, white text 7.5:1; Dark: `#979FF8`, black text 8.6:1), the success,
   warning and danger colours moved so that toast text reads at 7:1, and **every tier's text
   lifted to 7:1 against its own fill**. Secondary text is a **solid** colour derived against
   the page and the card it sits on (it used to be the body colour at 60 % alpha, 5.0 to 5.7:1);
