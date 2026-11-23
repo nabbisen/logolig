@@ -159,7 +159,7 @@ fn the_system_option_says_honestly_what_it_does_in_both_languages() {
         for (mode, want) in [(Mode::Light, light), (Mode::Dark, dark), (Mode::None, none)] {
             state.system_theme = mode;
             assert_eq!(
-                crate::ui::system_option_label(&state),
+                crate::ui::settings_page::system_option_label(&state),
                 want,
                 "{locale:?} {mode:?}"
             );
