@@ -125,6 +125,11 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         // v1.17.0: toggle the Advanced extras collapsible
+        // RFC 013: stored in the state only; nothing is saved and nothing else changes.
+        Message::SystemThemeMode(mode) => {
+            state.system_theme = mode;
+            Task::none()
+        }
         Message::AdvancedExtrasToggled => {
             state.advanced_extras_open = !state.advanced_extras_open;
             crate::focus::keep_focus(crate::focus::Disclosure::AdvancedHeader)

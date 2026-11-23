@@ -223,6 +223,8 @@ pub(crate) struct Dictionary {
     pub theme_name_light: String,
     pub theme_name_dark: String,
     pub theme_system: String,
+    pub theme_system_currently: String,
+    pub theme_system_not_reported: String,
 
     // v1.22.0: side nav
     pub nav_home: String,
@@ -268,9 +270,9 @@ impl Dictionary {
     /// Look up the translation template string for a `MessageKey`.
     /// Exhaustiveness is enforced by the match expression at compile time.
     ///
-    /// `#[allow(deprecated)]` is deliberate and sits here only: four keys are deprecated since
-    /// 1.28.0 (`PresetLabel`, `SvgConversionSimple`, `SvgConversionDetailed`; RFC 021; and
-    /// `ShortcutsLimitNote`, RFC 027) but stay in
+    /// `#[allow(deprecated)]` is deliberate and sits here only: five keys are deprecated
+    /// (`PresetLabel`, `SvgConversionSimple`, `SvgConversionDetailed`; RFC 021; and
+    /// `ShortcutsLimitNote`, RFC 027, since 1.28.0; `ThemeSystem`, RFC 013, since 1.29.0) but stay in
     /// the public `MessageKey` until the next major version (SemVer), and this match must still
     /// name every variant. No other code uses them.
     #[allow(deprecated)]
@@ -469,6 +471,8 @@ impl Dictionary {
             MessageKey::ThemeNameLight => &self.theme_name_light,
             MessageKey::ThemeNameDark => &self.theme_name_dark,
             MessageKey::ThemeSystem => &self.theme_system,
+            MessageKey::ThemeSystemCurrently => &self.theme_system_currently,
+            MessageKey::ThemeSystemNotReported => &self.theme_system_not_reported,
             // v1.22.0
             MessageKey::NavHome => &self.nav_home,
             MessageKey::NavCustomize => &self.nav_customize,

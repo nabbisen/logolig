@@ -165,8 +165,8 @@ fn smartphone_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> {
 // ---------------------------------------------------------------------------
 //
 // `PreviewProfile::background` is the **preview context background**,
-// independent of the app Theme. `System` is currently treated as Light
-// (OS preference reading is planned for a later step).
+// independent of the app Theme. It arrives **resolved** (RFC 013): `render_context` is given Light or
+// Dark, never `System`, so the `System` arms below are only the exhaustive fallback.
 
 fn chrome_bg_for(theme: ThemeMode) -> Color {
     match theme {

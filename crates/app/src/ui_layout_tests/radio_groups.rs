@@ -178,7 +178,10 @@ fn preview_groups_publish_the_messages_the_buttons_published() {
         click(&preview, "Browser tab (16×16)").is_empty(),
         "the chosen option"
     );
-    assert!(click(&preview, "System").is_empty(), "the chosen option");
+    assert!(
+        click(&preview, "System (not reported; using Light)").is_empty(),
+        "the chosen option"
+    );
 }
 
 /// A disabled group (Surface during the checker) ignores the pointer.

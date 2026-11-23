@@ -76,6 +76,10 @@ pub enum Message {
     WindowResized(iced::Size<f32>),
     /// Toggles the 'Advanced extras' collapsible in the Customize page.
     AdvancedExtrasToggled,
+    /// What iced reports as the system theme (RFC 013): the one-shot query at boot and every
+    /// `theme_changes()` event arrive as this message, in order; the last wins. `Mode::None` is
+    /// "no preference or nothing answered".
+    SystemThemeMode(iced::theme::Mode),
     /// Adds a preset PNG size (checked in the Customize page).
     /// Expected to be one of 16/32/48/96/192/512.
     PngPresetSizeAdded(u32),

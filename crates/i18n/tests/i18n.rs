@@ -223,6 +223,8 @@ fn japanese_every_key_has_non_empty_translation() {
         MessageKey::ToastFormatMismatchTitle,
         MessageKey::ToastFormatMismatchBody,
         MessageKey::ToastFormatMismatchJpegTail,
+        MessageKey::ThemeSystemCurrently,
+        MessageKey::ThemeSystemNotReported,
         MessageKey::ErrorUnsupportedFile,
         MessageKey::ErrorIo,
         MessageKey::ErrorInputTooLarge,
@@ -415,7 +417,7 @@ fn dialog_unavailable_texts_match_the_specification() {
     );
 }
 
-/// Keys deprecated in 1.28.0 (RFC 021, RFC 027) stay in the public `MessageKey` until the next major
+/// Keys deprecated in 1.28.0 (RFC 021, RFC 027) and 1.29.0 (RFC 013) stay in the public `MessageKey` until the next major
 /// version, so a caller that still names one gets its text. The attribute is on this test only.
 #[test]
 #[allow(deprecated)]
@@ -427,6 +429,7 @@ fn the_deprecated_keys_still_translate() {
             MessageKey::SvgConversionSimple,
             MessageKey::SvgConversionDetailed,
             MessageKey::ShortcutsLimitNote,
+            MessageKey::ThemeSystem,
         ] {
             assert!(!t.t(key).is_empty(), "{locale:?} {key:?}");
         }

@@ -214,6 +214,9 @@ locale_system = "システム設定に従う"
 theme_name_light = "ライト"
 theme_name_dark = "ダーク"
 theme_system = "システム設定に従う"
+# RFC 013: システム行の説明。 {theme} は theme_name_light か theme_name_dark。
+theme_system_currently = "システム設定に従う (現在: {theme})"
+theme_system_not_reported = "システム設定に従う (取得できないためライトを使用)"
 
 # v1.22.0: サイドナビ
 nav_home = "ホーム"

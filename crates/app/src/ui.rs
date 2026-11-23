@@ -9,4 +9,5 @@ pub mod drop_zone;
 pub mod preview_panel;
 pub mod result_view;
 pub mod settings_page;
+pub use settings_page::system_option_label;
 pub mod sidebar;

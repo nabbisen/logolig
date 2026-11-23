@@ -318,7 +318,17 @@ pub enum MessageKey {
     /// Theme picker 'Dark' row.
     ThemeNameDark,
     /// Theme picker 'Follow system' row.
+    #[deprecated(
+        since = "1.29.0",
+        note = "unused: the row says what System does now (`ThemeSystemCurrently`, `ThemeSystemNotReported`); removed at the next major version"
+    )]
     ThemeSystem,
+    /// Theme picker 'System' row when the system reports a theme (RFC 013): a template with
+    /// `{theme}`, the name of the theme in use (`ThemeNameLight` or `ThemeNameDark`).
+    ThemeSystemCurrently,
+    /// Theme picker 'System' row when the system reports no theme (RFC 013): it covers "no service"
+    /// and "no preference" alike, which the program cannot tell apart; the page is Light.
+    ThemeSystemNotReported,
 
     // --- v1.22.0: side-nav three items ---
     /// Side-nav 'Home' label.

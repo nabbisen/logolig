@@ -9,13 +9,13 @@
 //! both themes (`layout_matrix`). (Colour contrast is a different question and belongs to RFC
 //! 034's test of the colour functions.)
 
-use super::support::{Case, Combo, layout_matrix, matrix, probe_of};
+use super::support::{Combo, layout_matrix, matrix, probe_of};
 
 #[test]
 fn the_layout_does_not_depend_on_the_theme() {
     let all = matrix();
     let mut compared = 0;
-    for light in all.iter().filter(|c| !c.dark && c.case != Case::Settings) {
+    for light in all.iter().filter(|c| !c.dark && !c.case.is_settings()) {
         let dark = Combo {
             dark: true,
             ..*light
@@ -42,7 +42,7 @@ fn the_layout_does_not_depend_on_the_theme() {
         compared += 1;
     }
     // Every combination is either compared here or run on both themes.
-    let settings = all.iter().filter(|c| c.case == Case::Settings).count();
+    let settings = all.iter().filter(|c| c.case.is_settings()).count();
     assert_eq!(compared * 2 + settings, all.len());
     assert_eq!(
         layout_matrix().len(),

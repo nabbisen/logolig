@@ -14,6 +14,20 @@ use crate::app::{AppState, Message, resolve_theme};
 use crate::ui::choice::radio_group;
 use crate::ui::colors;
 
+/// The text of the theme group's "System" row (RFC 013): it says what System does right now, in
+/// words (never by colour alone). A reported theme is named ("System (currently Dark)"); no report,
+/// whether no service answered or the system has no preference (the program cannot tell which), says
+/// so and that the page is Light. Also the label of the preview's "System" surface.
+pub fn system_option_label(state: &AppState) -> String {
+    let t = &state.translator;
+    let name = match state.system_theme {
+        iced::theme::Mode::Dark => MessageKey::ThemeNameDark,
+        iced::theme::Mode::Light => MessageKey::ThemeNameLight,
+        iced::theme::Mode::None => return t.t(MessageKey::ThemeSystemNotReported),
+    };
+    t.t_args(MessageKey::ThemeSystemCurrently, &[("theme", &t.t(name))])
+}
+
 /// Root view. Called from `shell::body()`.
 pub fn view(state: &AppState) -> Element<'_, Message> {
     let theme = resolve_theme(state);
@@ -43,7 +57,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
             |mode| match mode {
                 ThemeMode::Light => t.t(MessageKey::ThemeNameLight),
                 ThemeMode::Dark => t.t(MessageKey::ThemeNameDark),
-                ThemeMode::System => t.t(MessageKey::ThemeSystem),
+                ThemeMode::System => system_option_label(state),
             },
             Message::ThemePicked,
         )

@@ -431,6 +431,10 @@ pub(super) enum Case {
     /// Customize with the advanced settings open and every option on (the widest set of controls).
     CustomizeAdvanced,
     Settings,
+    /// Settings when the system reports Dark / Light (RFC 013): the "System" row reads "System
+    /// (currently Dark)" / "System (currently Light)"; plain `Settings` is the not-reported state.
+    SettingsSystemDark,
+    SettingsSystemLight,
     /// The result of the default plan with the preview panel open (the "View as" and "Surface"
     /// pickers, enabled).
     ResultPreview,
@@ -438,7 +442,18 @@ pub(super) enum Case {
     ResultPreviewChecker,
 }
 
-pub(super) const CASES: [Case; 9] = [
+impl Case {
+    /// The Settings page in any of the three states of its "System" row. It marks the selected theme
+    /// and so lays out differently on Dark than on Light.
+    pub(super) fn is_settings(self) -> bool {
+        matches!(
+            self,
+            Case::Settings | Case::SettingsSystemDark | Case::SettingsSystemLight
+        )
+    }
+}
+
+pub(super) const CASES: [Case; 11] = [
     Case::Home,
     Case::HomeWithHistory,
     Case::Converting,
@@ -446,6 +461,8 @@ pub(super) const CASES: [Case; 9] = [
     Case::ResultAllOptions,
     Case::CustomizeAdvanced,
     Case::Settings,
+    Case::SettingsSystemDark,
+    Case::SettingsSystemLight,
     Case::ResultPreview,
     Case::ResultPreviewChecker,
 ];
@@ -520,6 +537,14 @@ impl Combo {
                 state.advanced_extras_open = true;
             }
             Case::Settings => state.nav_page = NavPage::Settings,
+            Case::SettingsSystemDark => {
+                state.nav_page = NavPage::Settings;
+                state.system_theme = iced::theme::Mode::Dark;
+            }
+            Case::SettingsSystemLight => {
+                state.nav_page = NavPage::Settings;
+                state.system_theme = iced::theme::Mode::Light;
+            }
             Case::ResultPreview | Case::ResultPreviewChecker => {
                 state.screen = Screen::Result;
                 state.result_assets = Some(result_assets_of_cards(false));
@@ -563,7 +588,7 @@ pub(super) fn matrix() -> Vec<Combo> {
 pub(super) fn layout_matrix() -> Vec<Combo> {
     matrix()
         .into_iter()
-        .filter(|combo| !combo.dark || combo.case == Case::Settings)
+        .filter(|combo| !combo.dark || combo.case.is_settings())
         .collect()
 }
 

@@ -22,7 +22,7 @@ use iced::{Element, Length, Padding};
 
 use logolig::{MessageKey, PreviewContext, ThemeMode};
 
-use crate::app::{AppState, Message, resolve_theme};
+use crate::app::{AppState, Message, resolve_mode, resolve_theme};
 use crate::ui::colors;
 use checker::checker_view;
 use mockups::render_context;
@@ -51,7 +51,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let preview_area: Element<'a, Message> = match state.preview_cache.as_ref() {
         Some(cache) => match context {
             PreviewContext::TransparencyChecker => checker_view(&cache.icon_120),
-            _ => render_context(cache, context, bg),
+            // RFC 013: the mock-ups draw a resolved mode (Light or Dark), so "System" here follows
+            // the operating system exactly as the app's own theme does.
+            _ => render_context(cache, context, resolve_mode(bg, state.system_theme)),
         },
         None => loading_placeholder(state),
     };

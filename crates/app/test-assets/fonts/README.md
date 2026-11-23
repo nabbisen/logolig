@@ -9,10 +9,10 @@ holds Fira Sans (bundled by `iced_graphics`), the Lucide icon font, and these tw
 
 | File | Source (system copy used) | Source sha256 | Subset sha256 |
 |---|---|---|---|
-| `NotoSansJP-subset.otf` | `/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc`, face 0 (Noto Sans CJK JP, Regular) | `b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a` | `e01ecd00a28b07309f3c635126367ff67ff2168f783c9a3c6eb64d6b3f20dafb` |
+| `NotoSansJP-subset.otf` | `/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc`, face 0 (Noto Sans CJK JP, Regular) | `b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a` | `48b1372e5f4d57eff92a1d6733e99c5cef6fba6d59ecfb3e1878d13339ee4e86` |
 | `AdwaitaSans-symbols-subset.ttf` | `/usr/share/fonts/Adwaita/AdwaitaSans-Regular.ttf` (Adwaita Sans, Regular) | `8381c33b9a44f066f2b99dba3d416a2342891e28c956a35dfd8d16ee2987e6d4` | `107b0b0bc8ef10f2c048d9bedc36c30aa163371444cf89d0b2ce67988abce541` |
 
-Sizes: 111732 bytes and 3880 bytes.
+Sizes: 112360 bytes and 3880 bytes.
 Licence: SIL Open Font License 1.1, see `OFL.txt` (both source fonts; the copyright notices are there).
 
 **Tool:** `pyftsubset` of fonttools 4.68.0, run by `scripts/make-test-font.sh` (by hand, never by the

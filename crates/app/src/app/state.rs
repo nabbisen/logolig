@@ -64,6 +64,9 @@ pub struct AppState {
     /// on screen before the first of them; cleared when a file has loaded. The result, the source and
     /// the preview are not in it: they are not cleared until the new file has loaded.
     pub ingest_return: Option<IngestReturn>,
+    /// The system theme iced last reported (RFC 013). Session-only, never saved: the setting stays
+    /// `ThemeMode::System`; `Mode::None` means "no preference or nothing answered" and resolves to Light.
+    pub system_theme: iced::theme::Mode,
     pub source_asset: Option<SourceAsset>,
     pub preview: Option<PreviewProfile>,
     /// Resized raster cache for context preview rendering (§5.2).
@@ -265,6 +268,7 @@ impl Default for AppState {
             source_path: None,
             source_format_note: None,
             ingest_return: None,
+            system_theme: iced::theme::Mode::None,
             source_asset: None,
             preview: None,
             preview_cache: None,
@@ -298,10 +302,22 @@ impl Default for AppState {
 ///
 /// v1.14.0: exposed as `pub(crate)` so UI modules can resolve theme-palette colours.
 pub(crate) fn resolve_theme(state: &AppState) -> Theme {
-    match state.theme {
-        // System: will query OS theme in a future step; currently falls back to Light.
-        ThemeMode::System | ThemeMode::Light => Theme::Light,
+    match resolve_mode(state.theme, state.system_theme) {
         ThemeMode::Dark => Theme::Dark,
+        ThemeMode::Light | ThemeMode::System => Theme::Light,
+    }
+}
+
+/// The mode a setting resolves to (RFC 013): never `System`. `Light` and `Dark` ignore the system;
+/// `System` follows it (`Dark` only when the system reports dark; no report is Light).
+pub(crate) fn resolve_mode(setting: ThemeMode, system: iced::theme::Mode) -> ThemeMode {
+    match setting {
+        ThemeMode::Light => ThemeMode::Light,
+        ThemeMode::Dark => ThemeMode::Dark,
+        ThemeMode::System => match system {
+            iced::theme::Mode::Dark => ThemeMode::Dark,
+            iced::theme::Mode::Light | iced::theme::Mode::None => ThemeMode::Light,
+        },
     }
 }
 

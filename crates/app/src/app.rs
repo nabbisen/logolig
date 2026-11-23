@@ -27,7 +27,7 @@ mod update;
 
 pub use message::{DialogKind, Message};
 pub use state::{AppState, IngestReturn, NavPage, Screen};
-pub(crate) use state::{is_mobile, resolve_theme};
+pub(crate) use state::{is_mobile, resolve_mode, resolve_theme};
 
 use iced::{Element, Subscription, Theme};
 
@@ -64,13 +64,24 @@ use toast::{
 /// v1.5.0: title is localised via `state.translator.t(MessageKey::AppTitle)`
 /// so it updates automatically on locale change.
 pub fn run() -> iced::Result {
-    iced::application(AppState::boot, update, view)
-        .font(snora::lucide::LUCIDE_FONT_BYTES)
-        .window(crate::window::settings())
-        .title(window_title)
-        .theme(theme)
-        .subscription(subscription)
-        .run()
+    // RFC 013: the system theme is asked once at boot (a task) and followed (a subscription): both
+    // arrive as `SystemThemeMode`, in order, the last wins.
+    iced::application(
+        || {
+            (
+                AppState::boot(),
+                iced::system::theme().map(Message::SystemThemeMode),
+            )
+        },
+        update,
+        view,
+    )
+    .font(snora::lucide::LUCIDE_FONT_BYTES)
+    .window(crate::window::settings())
+    .title(window_title)
+    .theme(theme)
+    .subscription(subscription)
+    .run()
 }
 
 fn window_title(state: &AppState) -> String {
@@ -96,7 +107,8 @@ fn subscription(state: &AppState) -> Subscription<Message> {
     let runtime_events =
         iced::event::listen_with(|event, status, _id| runtime_event(event, status));
 
-    Subscription::batch([toasts, runtime_events])
+    let system_theme = iced::system::theme_changes().map(Message::SystemThemeMode);
+    Subscription::batch([toasts, runtime_events, system_theme])
 }
 
 /// What the runtime event subscription makes of one event (a pure function so that the headless
@@ -176,6 +188,9 @@ mod settings_tests;
 
 #[cfg(test)]
 mod shortcuts_tests;
+
+#[cfg(test)]
+mod system_theme_tests;
 
 #[cfg(test)]
 pub(crate) mod test_support;

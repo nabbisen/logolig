@@ -214,6 +214,9 @@ locale_system = "System"
 theme_name_light = "Light"
 theme_name_dark = "Dark"
 theme_system = "System"
+# RFC 013: what the System row does. {theme} is theme_name_light or theme_name_dark.
+theme_system_currently = "System (currently {theme})"
+theme_system_not_reported = "System (not reported; using Light)"
 
 # v1.22.0: side nav
 nav_home = "Home"
