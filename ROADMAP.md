@@ -154,7 +154,7 @@ Remove the items deprecated in 1.28.0 (`MessageKey::{PresetLabel, SvgConversionS
 3c. **Flathub MetaInfo is current:** a `<release>` entry for the new version (enforced in CI by `scripts/metainfo-version.sh`), the screenshot retaken on the final UI **before** tagging (its URL is at the tag: after the push, check it answers with the right bytes).
 3b. **Microsoft Store manifest version is current** (`scripts/appx-version.sh check`, enforced in CI from RFC 037 phase A; the tile images change only when the logo changes; the Store listing images are separate uploads in Partner Center).
 4. Evidence kept: review requests, gate logs, CI run URLs, known limitations.
-5. Release notes and a draft GitHub Release; **the owner publishes**.
+5. Release notes and a draft GitHub Release; **the owner publishes** (or authorizes the architect to). **The release title is the bare version, `X.Y.Z`, the same as the tag** (owner's preference, 2026-11-23; 1.27.0 and 1.28.0 were titled "Logolig X.Y.Z" by precedent).
 6. Post-release: record deviations from plan and lessons; update this file.
 
 ## 6. Authorizations
