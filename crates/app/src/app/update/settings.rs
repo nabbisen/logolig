@@ -112,6 +112,7 @@ pub(super) fn export_plan_reset_requested(state: &mut AppState) -> Task<Message>
     // Reset ExportPlan only. theme, locale, and nav state are unaffected
     // (§v1.4.1 reset scope decision).
     state.export_plan = ExportPlan::default();
+    state.manifest_inputs = Default::default();
     // Also clear text input buffers so stale values don't reappear.
     state.png_size_input.clear();
     // Algorithm may have changed (reset restores Lanczos3); rebuild preview.

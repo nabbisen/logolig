@@ -44,3 +44,21 @@ pub(super) fn persist_settings(state: &mut AppState) {
         push_warning_toast(state, &title, &body);
     }
 }
+
+/// RFC 012, the loader's defence: invalid web manifest values found in `settings.json` are replaced
+/// by their defaults (valid ones are kept in their canonical form), the edit buffers show what is in
+/// use, and **one** warning says so, however many values were bad. The application never fails to start.
+/// Nothing is written back here: the file is corrected the next time a setting is saved.
+pub(super) fn sanitize_loaded_manifest(state: &mut AppState) {
+    let Some(loaded) = state.export_plan.web_manifest.take() else {
+        return;
+    };
+    let (clean, replaced) = loaded.sanitized();
+    state.manifest_inputs = super::ManifestInputs::from_settings(&clean);
+    state.export_plan.web_manifest = Some(clean);
+    if replaced {
+        let title = state.translator.t(MessageKey::ToastManifestResetTitle);
+        let body = state.translator.t(MessageKey::ToastManifestResetBody);
+        push_warning_toast(state, &title, &body);
+    }
+}

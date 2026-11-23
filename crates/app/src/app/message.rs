@@ -152,6 +152,9 @@ pub enum Message {
     WebManifestThemeColorChanged(String),
     /// Web manifest `background_color` edited.
     WebManifestBackgroundColorChanged(String),
+    /// Enter in a web manifest field (RFC 012): a valid text is committed and the field shows its
+    /// canonical form; an invalid one shows its error and changes nothing.
+    WebManifestSubmitted(crate::app::ManifestField),
 
     // v1.9.0: monochrome output
     /// Toggles the `mono/` grayscale output set.

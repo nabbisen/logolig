@@ -19,12 +19,14 @@
 //! | `app/persist.rs` | saving the settings |
 //! | `app/*_tests.rs`, `app/test_support.rs` | the `update` tests, by theme, and the helpers they share |
 
+mod manifest_inputs;
 mod message;
 mod persist;
 mod state;
 mod toast;
 mod update;
 
+pub use manifest_inputs::{ManifestField, ManifestInputs};
 pub use message::{DialogKind, Message};
 pub use state::{AppState, IngestReturn, NavPage, Screen};
 pub(crate) use state::{is_mobile, resolve_mode, resolve_theme};
@@ -176,6 +178,9 @@ mod input_tests;
 
 #[cfg(test)]
 mod job_tests;
+
+#[cfg(test)]
+mod manifest_input_tests;
 
 #[cfg(test)]
 mod rejected_file_tests;

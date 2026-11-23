@@ -85,6 +85,8 @@ pub struct AppState {
     // v1.3.0: text buffer for the custom-size input in the Customize page.
     // Transient UI state: belongs in the app layer, not in logolig (core).
     pub png_size_input: String,
+    /// The edit buffers of the four web manifest fields (RFC 012). The plan only receives valid values.
+    pub manifest_inputs: super::ManifestInputs,
 
     // v1.4.0: settings persistence store. Loaded at startup via load_or_default();
     // updated immediately on every settings change.
@@ -256,6 +258,10 @@ impl AppState {
         state.locale_override = resolved_locale.0;
         state.translator = Translator::for_locale(resolved_locale.1);
 
+        // RFC 012: bad web manifest values in the settings file become the defaults, with one warning (in
+        // the language just resolved).
+        super::persist::sanitize_loaded_manifest(&mut state);
+
         state
     }
 }
@@ -277,6 +283,7 @@ impl Default for AppState {
             next_toast_id: 0,
             holds: snora::toast::Holds::default(),
             png_size_input: String::new(),
+            manifest_inputs: super::ManifestInputs::default(),
             store: None,
             translator: Translator::default(),
             locale_override: None,

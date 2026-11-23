@@ -200,6 +200,7 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
         // -----------------------------------------------------------------
         Message::IncludeWebManifestToggled(on) => manifest::include_web_manifest_toggled(state, on),
         Message::WebManifestNameChanged(s) => manifest::web_manifest_name_changed(state, s),
+        Message::WebManifestSubmitted(field) => manifest::web_manifest_submitted(state, field),
         Message::WebManifestShortNameChanged(s) => {
             manifest::web_manifest_short_name_changed(state, s)
         }

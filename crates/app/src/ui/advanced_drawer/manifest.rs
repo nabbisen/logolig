@@ -1,11 +1,15 @@
 //! The sub-section layout helpers and the web manifest form of the Customize page.
 
-use iced::widget::{column, container, row, text, text_input};
+use iced::widget::{Space, column, container, row, text, text_input};
 use iced::{Alignment, Color, Element, Length, Padding};
+
+use snora::Icon;
+use snora::lucide;
+use snora::widget::icon_element_sized;
 
 use logolig::MessageKey;
 
-use crate::app::{AppState, Message};
+use crate::app::{AppState, ManifestField, Message};
 use crate::ui::choice::checkbox;
 
 // ---------------------------------------------------------------------------
@@ -34,52 +38,69 @@ pub(super) fn subsection<'a>(
 
 /// v1.8.0: Web manifest section body.
 ///
-/// When off: toggle only. When on: four text inputs (name /
-/// short_name / theme_color / background_color) stacked vertically.
+/// When off: toggle only. When on: four text inputs (name / short_name / theme_color /
+/// background_color) stacked vertically, each with a line under it for its error.
 ///
-/// Design decisions:
-/// - No validation during typing (avoids mid-input warning UX)
-/// - Validation runs at export time
-/// - Persist on every keystroke (`persist_settings`) — consistent with other inputs
+/// RFC 012 (K2): the fields show their **edit buffers** (`state.manifest_inputs`); the plan only
+/// holds valid values. A field shows its error only once it was typed in or submitted: a lucide
+/// warning icon and a plain sentence that says what is accepted, never colour alone. Enter commits
+/// (`WebManifestSubmitted`) and shows the canonical form.
 pub(super) fn web_manifest_body<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     let toggle = checkbox(state.export_plan.web_manifest.is_some())
         .label(t.t(MessageKey::IncludeWebManifestLabel))
         .on_toggle(Message::IncludeWebManifestToggled);
 
-    let Some(manifest) = state.export_plan.web_manifest.as_ref() else {
+    if state.export_plan.web_manifest.is_none() {
         // Off: show only the toggle. Revealing all fields upfront
         // adds cognitive load; expand only when on.
         return column![toggle].spacing(8).into();
-    };
+    }
 
-    // On: four fields stacked vertically.
-    // Each field is a label + text_input row.
-    // Fixed-width labels would look cleaner, but v1.8 uses labeled_input for simplicity.
+    let field = |field: ManifestField,
+                 label: MessageKey,
+                 placeholder: String,
+                 on_change: fn(String) -> Message| {
+        let error = state.manifest_inputs.shows_error(field).then(|| {
+            t.t(if field.is_color() {
+                MessageKey::WebManifestColorError
+            } else {
+                MessageKey::WebManifestNameError
+            })
+        });
+        labeled_input(
+            &t.t(label),
+            state.manifest_inputs.get(field),
+            &placeholder,
+            on_change,
+            Message::WebManifestSubmitted(field),
+            error,
+        )
+    };
     column![
         toggle,
-        labeled_input(
-            &t.t(MessageKey::WebManifestNameLabel),
-            &manifest.name,
-            &t.t(MessageKey::WebManifestNamePlaceholder),
+        field(
+            ManifestField::Name,
+            MessageKey::WebManifestNameLabel,
+            t.t(MessageKey::WebManifestNamePlaceholder),
             Message::WebManifestNameChanged,
         ),
-        labeled_input(
-            &t.t(MessageKey::WebManifestShortNameLabel),
-            &manifest.short_name,
-            &t.t(MessageKey::WebManifestShortNamePlaceholder),
+        field(
+            ManifestField::ShortName,
+            MessageKey::WebManifestShortNameLabel,
+            t.t(MessageKey::WebManifestShortNamePlaceholder),
             Message::WebManifestShortNameChanged,
         ),
-        labeled_input(
-            &t.t(MessageKey::WebManifestThemeColorLabel),
-            &manifest.theme_color,
-            "#RRGGBB",
+        field(
+            ManifestField::ThemeColor,
+            MessageKey::WebManifestThemeColorLabel,
+            "#RRGGBB".to_string(),
             Message::WebManifestThemeColorChanged,
         ),
-        labeled_input(
-            &t.t(MessageKey::WebManifestBackgroundColorLabel),
-            &manifest.background_color,
-            "#RRGGBB",
+        field(
+            ManifestField::BackgroundColor,
+            MessageKey::WebManifestBackgroundColorLabel,
+            "#RRGGBB".to_string(),
             Message::WebManifestBackgroundColorChanged,
         ),
     ]
@@ -87,22 +108,46 @@ pub(super) fn web_manifest_body<'a>(state: &'a AppState) -> Element<'a, Message>
     .into()
 }
 
-/// One-row label + text_input field. Extracted as a helper for v1.8 form inputs.
-/// Fixed label width (140 px) aligned with the text input.
+const LABEL_WIDTH: f32 = 140.0;
+const INPUT_WIDTH: f32 = 220.0;
+const ROW_SPACING: f32 = 8.0;
+
+/// One label + text_input field, and under the input a line for its error (RFC 012). The line is
+/// **always** in the tree (an empty one when there is no error), so an error appearing does not
+/// reshape the tree and the field being typed in keeps its focus.
 fn labeled_input<'a>(
     label: &str,
     value: &str,
     placeholder: &str,
     on_change: fn(String) -> Message,
+    on_submit: Message,
+    error: Option<String>,
 ) -> Element<'a, Message> {
-    row![
-        text(label.to_string()).size(13).width(Length::Fixed(140.0)),
+    let input_row = row![
+        text(label.to_string())
+            .size(13)
+            .width(Length::Fixed(LABEL_WIDTH)),
         text_input(placeholder, value)
             .on_input(on_change)
+            .on_submit(on_submit)
             .size(13)
-            .width(Length::Fixed(220.0)),
+            .width(Length::Fixed(INPUT_WIDTH)),
     ]
-    .spacing(8)
-    .align_y(Alignment::Center)
-    .into()
+    .spacing(ROW_SPACING)
+    .align_y(Alignment::Center);
+    let message: Element<'a, Message> = match error {
+        Some(sentence) => container(
+            row![
+                icon_element_sized::<Message>(&Icon::Lucide(lucide::AlertTriangle), 13.0),
+                text(sentence).size(12),
+            ]
+            .spacing(6)
+            .align_y(Alignment::Start),
+        )
+        .width(Length::Fixed(LABEL_WIDTH + ROW_SPACING + INPUT_WIDTH))
+        .padding(Padding::default().left(LABEL_WIDTH + ROW_SPACING))
+        .into(),
+        None => Space::new().into(),
+    };
+    column![input_row, message].spacing(2).into()
 }

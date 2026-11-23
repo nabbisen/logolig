@@ -430,6 +430,9 @@ pub(super) enum Case {
     ResultAllOptions,
     /// Customize with the advanced settings open and every option on (the widest set of controls).
     CustomizeAdvanced,
+    /// The same, with every web manifest field typed in with an invalid value: each of the four
+    /// shows its error line (an icon and a sentence; RFC 012).
+    CustomizeManifestErrors,
     Settings,
     /// Settings when the system reports Dark / Light (RFC 013): the "System" row reads "System
     /// (currently Dark)" / "System (currently Light)"; plain `Settings` is the not-reported state.
@@ -453,13 +456,14 @@ impl Case {
     }
 }
 
-pub(super) const CASES: [Case; 11] = [
+pub(super) const CASES: [Case; 12] = [
     Case::Home,
     Case::HomeWithHistory,
     Case::Converting,
     Case::ResultDefault,
     Case::ResultAllOptions,
     Case::CustomizeAdvanced,
+    Case::CustomizeManifestErrors,
     Case::Settings,
     Case::SettingsSystemDark,
     Case::SettingsSystemLight,
@@ -501,7 +505,10 @@ impl Combo {
 
     /// The state the application is in for this combination.
     pub(super) fn state(&self) -> AppState {
-        let all_options = matches!(self.case, Case::ResultAllOptions | Case::CustomizeAdvanced);
+        let all_options = matches!(
+            self.case,
+            Case::ResultAllOptions | Case::CustomizeAdvanced | Case::CustomizeManifestErrors
+        );
         let export_plan = if all_options {
             ExportPlan {
                 monochrome: true,
@@ -524,6 +531,21 @@ impl Combo {
             export_plan,
             ..AppState::default()
         };
+        // The manifest form shows its edit buffers (RFC 012): they start as the plan's values.
+        if let Some(manifest) = state.export_plan.web_manifest.as_ref() {
+            state.manifest_inputs = crate::app::ManifestInputs::from_settings(manifest);
+        }
+        if self.case == Case::CustomizeManifestErrors {
+            use crate::app::ManifestField::{BackgroundColor, Name, ShortName, ThemeColor};
+            for (field, text) in [
+                (Name, ""),
+                (ShortName, "   "),
+                (ThemeColor, "red"),
+                (BackgroundColor, "#12"),
+            ] {
+                state.manifest_inputs.set(field, text.to_string());
+            }
+        }
         match self.case {
             Case::Home => {}
             Case::HomeWithHistory => state.result_assets = Some(result_assets_of_cards(false)),
@@ -532,7 +554,7 @@ impl Combo {
                 state.screen = Screen::Result;
                 state.result_assets = Some(result_assets_of_cards(all_options));
             }
-            Case::CustomizeAdvanced => {
+            Case::CustomizeAdvanced | Case::CustomizeManifestErrors => {
                 state.nav_page = NavPage::Customize;
                 state.advanced_extras_open = true;
             }
