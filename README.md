@@ -145,7 +145,7 @@ generated HTML so modern browsers prefer it on high-DPI displays; older
 browsers fall back to the ICO and PNGs.
 
 If your input is a photograph or otherwise unsuitable for vectorization,
-turn off **Vectorize raster sources to SVG** in Customize → Advanced settings to skip
+turn off **Turn a PNG, WebP or JPEG into SVG** in Customize → Advanced settings to skip
 `favicon.svg` for that run.
 
 Optionally, enabling **Output `manifest.webmanifest`** (since v1.8.0) adds a

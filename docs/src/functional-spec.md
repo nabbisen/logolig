@@ -115,18 +115,27 @@ not expose and the exporter honours, so only an edited settings file can change 
 
 Three presets, named in the interface as follows:
 
-- **Default (balanced)**: the default.
-- **Sharp (logos, icons)**: an opt-in preset intended for logos and icons.
-- **Photo-rich (gradients)**: smooth curves for photo-like or gradient sources.
+- **A balance for most pictures (Default, recommended)**: the default.
+- **Logos and icons, with crisp edges (Sharp)**: an opt-in preset intended for logos and icons.
+- **Photos and gradients, keeps fine color differences (Photo-rich)**: smooth curves for photo-like
+  or gradient sources.
 
-One group of these three choices, in the Customize page's "SVG conversion" section, is the only
-control for this setting.
+One group of these three choices, in the Customize page's "Turning a picture into SVG" section, is
+the only control for this setting. It applies only when a PNG, WebP or JPEG is turned into SVG, that
+is, when "Turn a PNG, WebP or JPEG into SVG (vtracer)" under Advanced settings is on (it is on at
+first); an SVG source is copied as it is.
 
 ### Resize algorithm
 
-Five algorithms, named in the interface as follows: **Lanczos3 (sharp)** (the default, highest
-quality), **Mitchell-Netravali**, **Catmull-Rom**, **Bilinear** (faster) and **Nearest (pixel
-art)** (no interpolation).
+Five algorithms, each named in the interface by a plain line with the technical name in brackets
+(RFC 034, J23): **Crisp and detailed, for most logos (Lanczos3, recommended)** (the default),
+**Softer, with fewer halos around edges (Mitchell-Netravali)**, **Crisp, with slightly fewer halos
+than Lanczos3 (Catmull-Rom)**, **Softest, with no halos around edges (Bilinear)** and **Keeps hard
+pixel edges, for pixel art (Nearest)** (no interpolation). The words follow a measurement of one
+synthetic edge scaled to 32 and 16 px (`crates/core/tests/resize_edges.rs`: 10-90 % transition
+width, and overshoot): Lanczos3 has the narrowest transition of the smooth methods and the largest
+halo, Bilinear the widest transition and none. The method does not apply to an SVG source, which is
+drawn at each size.
 
 ## 4. UI structure
 
@@ -243,24 +252,26 @@ width, always reachable via the Customize nav item.
 
 ### Sections
 
-**PNG output sizes** — six preset checkboxes (16/32/48/96/192/512) plus
-a custom-size input. Checked sizes are included in the export.
+**Icon sizes (PNG files)** — a line that explains "favicon", six preset checkboxes
+(16/32/48/96/192/512) plus a custom-size input ("+ Add another size"). Checked sizes are included in
+the export.
 
-**SVG conversion mode** — one group of three named choices, "Sharp (logos,
-icons)", "Default (balanced)" and "Photo-rich (gradients)", mapping to the
+**Turning a picture into SVG** — a line that says when the group applies, then one group of three
+named choices ("Logos and icons, with crisp edges (Sharp)", "A balance for most pictures (Default,
+recommended)" and "Photos and gradients, keeps fine color differences (Photo-rich)"), mapping to the
 vtracer presets Sharp / Default / PhotoRich. The same group is the only control
 for this setting (there is no separate preset list under the SVG option).
 
-**Other** — "Keep transparency (alpha)" checkbox. When off, raster outputs
-are composited against white (Porter-Duff over) before writing.
+**Transparent areas** — "Keep transparent areas (alpha)" checkbox, with a line saying what turning
+it off does. When off, raster outputs are composited against white (Porter-Duff over) before writing.
 
 **Advanced** (collapsible) — infrequently-changed settings:
 - Include SVG output / vectorise raster sources (two checkboxes; the vectorisation one only while SVG output is on)
 - Apple touch icon (180×180 PNG)
 - HTML snippet file
 - Web manifest (off by default; name, short name, theme colour, background colour). **Input rules (RFC 012):** a colour is `#RRGGBB` or the shorthand `#RGB`, in any letter case, with surrounding white space ignored; it is stored as `#RRGGBB` in upper case (`#1ab` is `#11AABB`). A name is valid when it is not empty after trimming (it is stored trimmed). The page keeps what the user typed in an edit buffer; **only a valid value reaches the output plan and `settings.json`**: while the text is invalid the previous valid value stays and nothing is saved, so a half-typed colour (`#1A`) is never written. iced's text field has no blur event, so a keystroke that makes the text valid is committed at once, and **Enter** additionally rewrites the field in its canonical form (what is shown is what is written). A field shows an error line (a warning icon and "Use a color like #1A2B3C or #1AB" or "Enter a name", in the interface language) only once it has been typed in or submitted, never on an untouched default and never by colour alone. **Bad values in `settings.json`** (a hand-edited file) are replaced by the defaults when the application starts, with one warning notice; valid ones are kept in canonical form; the application always starts. The export refuses a manifest with an empty name or a colour that is not `#RRGGBB` with a typed error (reachable only through such a file).
-- Monochrome output set
-- Resize algorithm (the five-option group)
+- Grayscale copies (the `mono/` folder; RFC 034 J23 renamed "Monochrome output")
+- How the picture is resized (the five-option group)
 
 **Footer** — "Reset to defaults" (↻) restores all settings to defaults. It sits below the scrolling part, so it is always in view.
 

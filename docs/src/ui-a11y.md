@@ -67,7 +67,7 @@ covered by unit tests of the key mapping only, not by a run on such a layout.
   control is a stop: the navigation items, the drop-zone card and "View results →",
   "Back", every card's "Save", the preview toggle and "Download all (ZIP)", every
   checkbox, every group of choices (one stop for the whole group), every text field,
-  "+ Add custom size", the "Advanced settings" header, "Reset to defaults" and the
+  "+ Add another size", the "Advanced settings" header, "Reset to defaults" and the
   close control of a message.
 - The order is the order on the screen: the side navigation first (on a narrow
   window the bottom navigation comes last), then the page from top to bottom and,
@@ -275,7 +275,7 @@ system's display scaling, see the README), a run in a real window, Windows or ma
 - **Targets**, both axes, measured on every screen at every matrix size in both languages:
   **primary controls at least 44 px** ("Download all (ZIP)", "← Back", the three navigation items;
   the "Choose file…" chip, which sits in the drop-zone card whose whole area is the control, is 44 px
-  too), **every other control at least 32 px** (the Save buttons, "+ Add custom size" and the text
+  too), **every other control at least 32 px** (the Save buttons, "+ Add another size" and the text
   fields, "Reset to defaults", the preview toggle, the "Advanced settings" header, the options of the
   choice groups, which are 36 px each). Raised by padding, never by text size.
 - **Two exceptions that are the interface engine's, measured and not worked around:** the **checkbox
@@ -320,3 +320,13 @@ leaving power-user controls discoverable.
   alternative. It is opened with a mouse click or with Ctrl+O (see "Keyboard
   support (current)").
 - We do **not** auto-dismiss error notifications.
+
+## Plain language on the Customize page (RFC 034, J23)
+
+Every option on the Customize page says what it gives the user, in the user's words, and keeps the
+technical name or the file name beside it, in brackets ("Icon for iPhone and iPad home screens
+(apple-touch-icon.png)"). No title carries jargon outside brackets; each resize method and trace
+preset has one plain line that says when to choose it, and "recommended" stands only on the default
+of each. "favicon" and "ICO" are each explained once. The words about the resize methods follow a
+measurement (`crates/core/tests/resize_edges.rs`), and a test (`crates/i18n/tests/plain_language.rs`)
+pins every string of the page in both languages. The Japanese is not yet reviewed by a native reader.
