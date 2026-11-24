@@ -257,6 +257,38 @@ window, and says nothing about Windows or macOS beyond that the colours are the 
 Captions (11 to 13 px text, such as the sizes on a result card and the lines under a field) carry
 nothing that is not also said by a larger label next to them; they are secondary text at 7:1 too.
 
+## Type and target sizes
+
+The rule (RFC 034, requirements 1 and 4), measured on the 1.29.0 interface with the headless
+renderer; **not** claimed: an interface-size setting of the application's own (use the operating
+system's display scaling, see the README), a run in a real window, Windows or macOS.
+
+- **Five text steps, no others** (`ui/type_scale.rs`; a source test fails on a literal size under
+  `ui/` or in `shell.rs`): `CAPTION` **13** (only text no action depends on: the footer line
+  "Logolig — favicon generator"), `SECONDARY` **14** (supporting lines: the blurbs, the details of a
+  result card, the navigation labels, the shortcut descriptions), `BODY` **16** (everything the user
+  reads or acts on: labels, button text, the text of a field, the messages), `TITLE` **20**
+  (section titles, the drop zone's invitation, the preview title), `HEADING` **28** (the Result
+  screen's headline and the large glyph standing for a text asset). Nothing is below 13. Icons are 16
+  or 22. Text with no size set is iced's 16, the same as `BODY`. **Exempt:** the preview's mock-ups,
+  which depict a browser tab and a phone's home screen.
+- **Targets**, both axes, measured on every screen at every matrix size in both languages:
+  **primary controls at least 44 px** ("Download all (ZIP)", "← Back", the three navigation items;
+  the "Choose file…" chip, which sits in the drop-zone card whose whole area is the control, is 44 px
+  too), **every other control at least 32 px** (the Save buttons, "+ Add custom size" and the text
+  fields, "Reset to defaults", the preview toggle, the "Advanced settings" header, the options of the
+  choice groups, which are 36 px each). Raised by padding, never by text size.
+- **Two exceptions that are the interface engine's, measured and not worked around:** the **checkbox
+  rows** are 30.5 px high (label at 16 px plus the engine's padding; held to 30 by the test), and the
+  **close control of a message** is 23.75 px (the engine sizes it at the larger of 24 px and one and a
+  half times the text). Both are open requests for the engine's maintainers.
+- **What the larger text changed:** the side navigation is 112 px wide (it was 90) so that the Japanese
+  labels stay on one line at 14 px; below a window width of 900 px the result grid has two columns
+  (three above), so that the longest file name stays on one line and the Save buttons of a row stay
+  level; on a phone the size of a result card moves to a line of its own; the custom-size button moves
+  under its field when the two do not fit one line. The Result screen's scrolling middle is at least
+  200 px high at every matrix size, with 7 or 15 cards, the preview closed or open, in both languages.
+
 ## Labels, not glyphs
 
 Every interactive widget has a meaningful text label even when its
