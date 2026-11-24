@@ -205,12 +205,16 @@ pub(crate) struct Dictionary {
     // Settings — right-sheet + flat section layout (v1.17.0)
     pub settings_title: String,
     pub section_png_output_sizes: String,
+    pub section_png_output_sizes_blurb: String,
     pub add_custom_size: String,
+    pub custom_size_placeholder: String,
     pub section_svg_conversion: String,
+    pub section_svg_conversion_blurb: String,
     pub svg_conversion_simple: String,
     pub svg_conversion_detailed: String,
     pub section_misc: String,
     pub keep_transparency: String,
+    pub keep_transparency_blurb: String,
     pub advanced_extras_section: String,
 
     // Microsoft app logos (v1.26.0)
@@ -458,12 +462,16 @@ impl Dictionary {
             // v1.17.0
             MessageKey::SettingsTitle => &self.settings_title,
             MessageKey::SectionPngOutputSizes => &self.section_png_output_sizes,
+            MessageKey::SectionPngOutputSizesBlurb => &self.section_png_output_sizes_blurb,
             MessageKey::AddCustomSize => &self.add_custom_size,
+            MessageKey::CustomSizePlaceholder => &self.custom_size_placeholder,
             MessageKey::SectionSvgConversion => &self.section_svg_conversion,
+            MessageKey::SectionSvgConversionBlurb => &self.section_svg_conversion_blurb,
             MessageKey::SvgConversionSimple => &self.svg_conversion_simple,
             MessageKey::SvgConversionDetailed => &self.svg_conversion_detailed,
             MessageKey::SectionMisc => &self.section_misc,
             MessageKey::KeepTransparency => &self.keep_transparency,
+            MessageKey::KeepTransparencyBlurb => &self.keep_transparency_blurb,
             MessageKey::AdvancedExtrasSection => &self.advanced_extras_section,
 
             // v1.26.0

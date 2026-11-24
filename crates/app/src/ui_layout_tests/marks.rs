@@ -87,7 +87,10 @@ fn the_mark_is_the_primary_fill_in_both_themes_drawn() {
         let fill = rgb8(colors::primary_fill(&theme, PrimaryState::Rest));
         for (what, label) in [
             ("checked box", "32 × 32"),
-            ("selected radio", "Default (balanced)"),
+            (
+                "selected radio",
+                "A balance for most pictures (Default, recommended)",
+            ),
         ] {
             let hist = mark_histogram(dark, label);
             let n = count_near(&hist, fill);

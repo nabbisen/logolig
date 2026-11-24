@@ -15,7 +15,7 @@
 //! chevron. The default PNG / ICO sizes are shown but visually de-emphasised
 //! to signal "you probably don't need to change these".
 
-mod choices;
+pub(crate) mod choices;
 mod manifest;
 mod styles;
 mod svg;
@@ -81,6 +81,7 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
         text(t.t(MessageKey::SectionPngOutputSizes))
             .size(type_scale::TITLE)
             .color(colors::section_label(&theme)),
+        blurb(t.t(MessageKey::SectionPngOutputSizesBlurb), &theme),
     ]
     .spacing(8);
     for px in preset_sizes {
@@ -117,13 +118,16 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
     // Custom size input: text_input + Add button in one row.
 
     let custom_input = row![
-        text_input("e.g. 256", &state.png_size_input)
-            .on_input(Message::PngSizeInputChanged)
-            .on_submit(Message::PngSizeAddRequested)
-            .size(type_scale::BODY)
-            .padding(6)
-            .style(crate::ui::styles::input_style)
-            .width(Length::Fixed(80.0)),
+        text_input(
+            &t.t(MessageKey::CustomSizePlaceholder),
+            &state.png_size_input
+        )
+        .on_input(Message::PngSizeInputChanged)
+        .on_submit(Message::PngSizeAddRequested)
+        .size(type_scale::BODY)
+        .padding(6)
+        .style(crate::ui::styles::input_style)
+        .width(Length::Fixed(80.0)),
         snora::control(text(t.t(MessageKey::AddCustomSize)).size(type_scale::BODY))
             .padding([6, 10])
             .on_press(Message::PngSizeAddRequested)
@@ -150,6 +154,7 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
         text(t.t(MessageKey::SectionSvgConversion))
             .size(type_scale::TITLE)
             .color(colors::section_label(&theme)),
+        blurb(t.t(MessageKey::SectionSvgConversionBlurb), &theme),
         radio_group(
             VtracerPreset::all(),
             &state.export_plan.vtracer_preset,
@@ -169,6 +174,7 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
         text(t.t(MessageKey::SectionMisc))
             .size(type_scale::TITLE)
             .color(colors::section_label(&theme)),
+        blurb(t.t(MessageKey::KeepTransparencyBlurb), &theme),
         checkbox(state.export_plan.keep_transparency)
             .label(t.t(MessageKey::KeepTransparency))
             .on_toggle(Message::KeepTransparencyToggled),
@@ -274,6 +280,15 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
     // ─────────────────────────────────────────────────────────────
     column![sizes_col, svg_section, misc_section, extras_section,]
         .spacing(20)
+        .into()
+}
+
+/// The one muted line under a section heading that says what the section is for (RFC 034, J23): the
+/// secondary step, in the muted text colour (the same look as the blurbs of the Advanced block).
+fn blurb<'a>(sentence: String, theme: &iced::Theme) -> Element<'a, Message> {
+    text(sentence)
+        .size(type_scale::SECONDARY)
+        .color(colors::muted_text(theme))
         .into()
 }
 

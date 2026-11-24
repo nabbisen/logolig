@@ -37,7 +37,7 @@ fn rust_files(dir: &Path, out: &mut Vec<PathBuf>) {
 }
 
 /// The files of the interface: everything under `ui/` and `shell.rs`.
-fn interface_files() -> Vec<PathBuf> {
+pub(super) fn interface_files() -> Vec<PathBuf> {
     let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut files = Vec::new();
     rust_files(&src.join("ui"), &mut files);

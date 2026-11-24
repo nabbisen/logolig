@@ -277,12 +277,18 @@ pub enum MessageKey {
     // --- v1.17.0: Settings drawer converted to Right Sheet + flat layout ---
     /// Drawer title "Settings".
     SettingsTitle,
-    /// "PNG output sizes" section heading.
+    /// "Icon sizes (PNG files)" section heading (RFC 034, J23: was "PNG output sizes").
     SectionPngOutputSizes,
-    /// "Add custom size" button (appended to the PNG size list).
+    /// One-line blurb under the "Icon sizes (PNG files)" heading; explains "favicon" (RFC 034, J23).
+    SectionPngOutputSizesBlurb,
+    /// "+ Add another size" button (appended to the PNG size list).
     AddCustomSize,
-    /// "SVG conversion mode" section heading.
+    /// Placeholder of the custom-size field (RFC 034, J23: it was a hard-coded English string).
+    CustomSizePlaceholder,
+    /// "Turning a picture into SVG" section heading (the trace-preset group).
     SectionSvgConversion,
+    /// Blurb under the "Turning a picture into SVG" heading: when the group applies (RFC 034, J23).
+    SectionSvgConversionBlurb,
     /// SVG conversion slider left label ("Simple").
     #[deprecated(
         since = "1.28.0",
@@ -295,10 +301,12 @@ pub enum MessageKey {
         note = "unused: the slider is gone, the 'SVG conversion' group uses the `VtracerPreset*` names; removed at the next major version"
     )]
     SvgConversionDetailed,
-    /// "Misc" section heading.
+    /// "Transparent areas" section heading (RFC 034, J23: was "Other").
     SectionMisc,
-    /// "Keep transparency (alpha)" toggle label.
+    /// "Keep transparent areas (alpha)" toggle label.
     KeepTransparency,
+    /// Blurb under the "Transparent areas" heading: what turning the option off does (RFC 034, J23).
+    KeepTransparencyBlurb,
     /// "Advanced settings" collapsible section heading.
     AdvancedExtrasSection,
 

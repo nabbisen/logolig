@@ -98,6 +98,10 @@ name = "resize"
 path = "tests/resize.rs"
 
 [[test]]
+name = "resize_edges"
+path = "tests/resize_edges.rs"
+
+[[test]]
 name = "vectorize"
 path = "tests/vectorize.rs"
 

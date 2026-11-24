@@ -238,34 +238,37 @@ fn customize_click(label: &str) -> Vec<String> {
 /// gone. The names are the descriptive ones.
 #[test]
 fn the_svg_conversion_group_publishes_the_preset_messages() {
-    // Default (balanced) is selected.
+    // The Default preset ("A balance for most pictures") is selected.
     assert_eq!(
-        customize_press("Sharp (logos, icons)", Named::ArrowDown),
+        customize_press(
+            "Logos and icons, with crisp edges (Sharp)",
+            Named::ArrowDown
+        ),
         ["VtracerPresetChanged(PhotoRich)"]
     );
     assert_eq!(
-        customize_press("Sharp (logos, icons)", Named::ArrowUp),
+        customize_press("Logos and icons, with crisp edges (Sharp)", Named::ArrowUp),
         ["VtracerPresetChanged(Sharp)"]
     );
     assert_eq!(
-        customize_click("Sharp (logos, icons)"),
+        customize_click("Logos and icons, with crisp edges (Sharp)"),
         ["VtracerPresetChanged(Sharp)"]
     );
     assert_eq!(
-        customize_click("Photo-rich (gradients)"),
+        customize_click("Photos and gradients, keeps fine color differences (Photo-rich)"),
         ["VtracerPresetChanged(PhotoRich)"]
     );
     assert!(
-        customize_click("Default (balanced)").is_empty(),
+        customize_click("A balance for most pictures (Default, recommended)").is_empty(),
         "the chosen option"
     );
     // The same three names appear once on the page: no second control for the same setting.
     let state = customize();
     let mut p = probe_of(&state, Size::new(720.0, 4000.0));
     for name in [
-        "Sharp (logos, icons)",
-        "Default (balanced)",
-        "Photo-rich (gradients)",
+        "Logos and icons, with crisp edges (Sharp)",
+        "A balance for most pictures (Default, recommended)",
+        "Photos and gradients, keeps fine color differences (Photo-rich)",
     ] {
         let count = p.walk().iter().filter(|s| s.text == name).count();
         assert_eq!(count, 1, "{name:?} is on the page {count} times");
@@ -280,19 +283,28 @@ fn the_svg_conversion_group_publishes_the_preset_messages() {
 
 #[test]
 fn the_resize_algorithm_group_publishes_the_algorithm_messages() {
-    // Lanczos3 (sharp) is selected; the five in order.
+    // Lanczos3 ("Crisp and detailed") is selected; the five in order.
     assert_eq!(
-        customize_press("Lanczos3 (sharp)", Named::ArrowDown),
+        customize_press(
+            "Crisp and detailed, for most logos (Lanczos3, recommended)",
+            Named::ArrowDown
+        ),
         ["AlgorithmChanged(MitchellNetravali)"]
     );
     assert_eq!(
-        customize_press("Lanczos3 (sharp)", Named::ArrowUp),
+        customize_press(
+            "Crisp and detailed, for most logos (Lanczos3, recommended)",
+            Named::ArrowUp
+        ),
         ["AlgorithmChanged(Nearest)"],
         "wraps to the last"
     );
-    assert_eq!(customize_click("Bilinear"), ["AlgorithmChanged(Bilinear)"]);
+    assert_eq!(
+        customize_click("Softest, with no halos around edges (Bilinear)"),
+        ["AlgorithmChanged(Bilinear)"]
+    );
     assert!(
-        customize_click("Lanczos3 (sharp)").is_empty(),
+        customize_click("Crisp and detailed, for most logos (Lanczos3, recommended)").is_empty(),
         "the chosen option"
     );
 }

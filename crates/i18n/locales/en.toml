@@ -32,21 +32,21 @@ preview_no_source = "No file imported yet"
 advanced_title = "Advanced settings"
 advanced_blurb = "Defaults are tuned for quality and minimal output. Adjust only if you have a specific need."
 
-section_resize = "Resize algorithm"
-section_resize_blurb = "Lanczos3 is the recommended default. Switch to Nearest only for pixel art."
-algorithm_label = "Algorithm:"
+section_resize = "How the picture is resized"
+section_resize_blurb = "How a PNG, WebP or JPEG is scaled to each icon size (an SVG is drawn directly at each size). The recommended choice suits most logos."
+algorithm_label = "Method:"
 
 section_svg = "SVG output"
 section_svg_blurb = "Modern browsers prefer SVG on high-DPI displays. Turn off vectorization for photos or noisy images. The preset tunes vtracer for the source style."
-include_svg_label = "Output favicon.svg"
-vectorize_on_raster_label = "Vectorize raster sources to SVG (vtracer)"
+include_svg_label = "Icon that stays sharp at any size (favicon.svg)"
+vectorize_on_raster_label = "Turn a PNG, WebP or JPEG into SVG (vtracer)"
 preset_label = "Preset:"
 
 section_files = "Files to write"
 section_files_blurb = "Each artifact can be skipped if your project doesn't need it."
 include_ico_label = "favicon.ico (legacy compatibility)"
-include_apple_touch_label = "apple-touch-icon.png (iOS / iPadOS home screen)"
-include_html_snippet_label = "favicon-snippet.html (paste-ready <head> markup)"
+include_apple_touch_label = "Icon for iPhone and iPad home screens (apple-touch-icon.png)"
+include_html_snippet_label = "Ready-to-paste lines for your web page (favicon-snippet.html)"
 
 section_png_sizes = "PNG sizes"
 section_png_sizes_blurb = "Each size becomes a separate favicon-{size}.png. 32 / 192 / 512 covers tabs, PWA install, and high-DPI splash. Range: 16–1024 px."
@@ -65,16 +65,16 @@ toggle_advanced_button = "Show advanced"
 toggle_theme_button = "Theme"
 
 # --- Resize algorithm names ---
-algorithm_lanczos3 = "Lanczos3 (sharp)"
-algorithm_mitchell_netravali = "Mitchell-Netravali"
-algorithm_catmull_rom = "Catmull-Rom"
-algorithm_bilinear = "Bilinear"
-algorithm_nearest = "Nearest (pixel art)"
+algorithm_lanczos3 = "Crisp and detailed, for most logos (Lanczos3, recommended)"
+algorithm_mitchell_netravali = "Softer, with fewer halos around edges (Mitchell-Netravali)"
+algorithm_catmull_rom = "Crisp, with slightly fewer halos than Lanczos3 (Catmull-Rom)"
+algorithm_bilinear = "Softest, with no halos around edges (Bilinear)"
+algorithm_nearest = "Keeps hard pixel edges, for pixel art (Nearest)"
 
 # --- vtracer preset names ---
-vtracer_preset_sharp = "Sharp (logos, icons)"
-vtracer_preset_default = "Default (balanced)"
-vtracer_preset_photo_rich = "Photo-rich (gradients)"
+vtracer_preset_sharp = "Logos and icons, with crisp edges (Sharp)"
+vtracer_preset_default = "A balance for most pictures (Default, recommended)"
+vtracer_preset_photo_rich = "Photos and gradients, keeps fine color differences (Photo-rich)"
 
 # --- Language selection ---
 section_language = "Language"
@@ -121,12 +121,12 @@ toast_fully_transparent_body = "Every pixel in this image is fully transparent. 
 preview_checker_label = "Show transparency checker"
 
 # --- Web manifest (v1.8.0) ---
-section_web_manifest = "Web manifest"
-section_web_manifest_blurb = "Generates manifest.webmanifest so browsers treat the icon set as an installable PWA. Leave off if you only need favicons."
-include_web_manifest_label = "Output manifest.webmanifest"
-web_manifest_name_label = "Name"
+section_web_manifest = "Details for installing as an app (web manifest)"
+section_web_manifest_blurb = "Writes manifest.webmanifest, which gives a browser the name, colors and icons to use when your website is installed like an app; it lists the PNG sizes you ticked. Leave this off if you only need favicons."
+include_web_manifest_label = "Save the app details (manifest.webmanifest)"
+web_manifest_name_label = "App name"
 web_manifest_name_placeholder = "e.g. My App"
-web_manifest_short_name_label = "Short name"
+web_manifest_short_name_label = "Short name (for small spaces)"
 web_manifest_short_name_placeholder = "e.g. App"
 web_manifest_theme_color_label = "Theme color"
 web_manifest_background_color_label = "Background color"
@@ -134,9 +134,9 @@ toast_invalid_color_title = "Invalid color"
 toast_invalid_color_body = "'{input}' is not a valid color. Use #RRGGBB (7 characters, hex digits)."
 
 # --- Monochrome output (v1.9.0) ---
-section_monochrome = "Monochrome output"
-section_monochrome_blurb = "Adds a mono/ subdirectory with grayscale (BT.709) versions of PNG and ICO artifacts. Useful for single-color print, theme-aware mask icons, and stencils. SVG monochrome is not yet supported."
-include_monochrome_label = "Output mono/ grayscale set"
+section_monochrome = "Grayscale copies"
+section_monochrome_blurb = "Saves grayscale copies of the PNG sizes and the ICO file (ICO is the classic favicon.ico file format) in a folder named mono, for one-color printing and similar uses. SVG files are not included."
+include_monochrome_label = "Also save grayscale copies (in the mono folder)"
 
 # --- UI redesign (v1.10.0) ---
 picker_label_view_as = "View as:"
@@ -195,18 +195,22 @@ result_preview_toggle = "Preview"
 
 # --- Settings drawer → Right Sheet + flat layout (v1.17.0) ---
 settings_title = "Settings"
-section_png_output_sizes = "PNG output sizes"
-add_custom_size = "+ Add custom size"
-section_svg_conversion = "SVG conversion"
+section_png_output_sizes = "Icon sizes (PNG files)"
+section_png_output_sizes_blurb = "A favicon is the small icon shown in a browser tab. Each size you tick is saved as its own image file, such as favicon-32.png."
+add_custom_size = "+ Add another size"
+custom_size_placeholder = "e.g. 256"
+section_svg_conversion = "Turning a picture into SVG"
+section_svg_conversion_blurb = "These choices apply when a PNG, WebP or JPEG is turned into SVG, which happens only if \"Turn a PNG, WebP or JPEG into SVG\" under Advanced settings is on (it is on at first). An SVG file you load is copied as it is."
 svg_conversion_simple = "Simple"
 svg_conversion_detailed = "Detailed"
-section_misc = "Other"
-keep_transparency = "Keep transparency (alpha)"
+section_misc = "Transparent areas"
+keep_transparency = "Keep transparent areas (alpha)"
+keep_transparency_blurb = "If you turn this off, transparent areas are filled with white in all PNG images and in favicon.ico. SVG files are not changed."
 
 # --- Microsoft app logos (v1.26.0) ---
-section_microsoft_app_logos = "Microsoft app logos"
-section_microsoft_app_logos_blurb = "Optional Windows app logo files: StoreLogo.png, Square44x44Logo.png, Square150x150Logo.png, and Wide310x150Logo.png."
-include_microsoft_app_logos_label = "Output Microsoft app logos"
+section_microsoft_app_logos = "Logos for a Windows app (Microsoft Store)"
+section_microsoft_app_logos_blurb = "Four logo images for packaging a Windows app: StoreLogo.png, Square44x44Logo.png, Square150x150Logo.png and Wide310x150Logo.png. A website does not need them."
+include_microsoft_app_logos_label = "Save the four Windows app logos"
 
 advanced_extras_section = "Advanced settings"
 

@@ -1,4 +1,4 @@
-//! The Customize page's buttons (RFC 027 J14b step 4): "+ Add custom size", the "Advanced
+//! The Customize page's buttons (RFC 027 J14b step 4): "+ Add another size", the "Advanced
 //! settings" header (open or closed) and "Reset to defaults" (the fixed footer). Each is a Tab stop
 //! and Enter, Space and a click publish the one message the button published. With these the page
 //! has no control left outside the Tab order.
@@ -30,13 +30,13 @@ fn the_three_buttons_are_stops_and_keep_their_messages() {
         for (locale, add, advanced, reset) in [
             (
                 Locale::En,
-                "+ Add custom size",
+                "+ Add another size",
                 "Advanced settings",
                 "Reset to defaults",
             ),
             (
                 Locale::Ja,
-                "+ カスタムサイズ追加",
+                "+ ほかのサイズを追加",
                 "上級設定",
                 "既定値に戻す",
             ),

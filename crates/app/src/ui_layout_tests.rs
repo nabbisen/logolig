@@ -15,12 +15,13 @@
 //! | `ui_layout_tests/contrast.rs` | contrast measured on the drawn pictures: every text piece of every screen in Light and Dark reaches 7:1, every icon 3:1 (RFC 034, J21) |
 //! | `ui_layout_tests/contrast_inventory.rs` | the colours the palette and the helpers give, before and after, against 7:1 (text) and 3:1 (borders and marks), in both themes, and that every colour helper is in the inventory |
 //! | `ui_layout_tests/controls.rs` | the helper every migrated control is checked with: Tab stop, and Enter, Space and a click each publish the one message |
-//! | `ui_layout_tests/controls_customize.rs` | "+ Add custom size", the "Advanced settings" header and "Reset to defaults" as `snora::control`s |
+//! | `ui_layout_tests/controls_customize.rs` | "+ Add another size", the "Advanced settings" header and "Reset to defaults" as `snora::control`s |
 //! | `ui_layout_tests/controls_home.rs` | the drop-zone card and "View results →" as `snora::control`s |
 //! | `ui_layout_tests/controls_result.rs` | the Result page's controls: Back, the Save buttons, the preview toggle, Download all |
 //! | `ui_layout_tests/controls_nav.rs` | the navigation items (side bar and bottom bar) as `snora::control`s |
 //! | `ui_layout_tests/command_keys.rs` | key events into a focused text field: a command chord is a shortcut, never text |
 //! | `ui_layout_tests/nav_cue.rs` | the active page in the navigation (filled, bold, accent bar), and no text glyph as a state cue |
+//! | `ui_layout_tests/plain_language.rs` | "recommended" is on the default algorithm and preset only; each blurb is drawn directly under its heading in both languages; no literal placeholder (J23) |
 //! | `ui_layout_tests/radio_groups.rs` | the single-choice groups: one Tab stop each, the keys and clicks publish the messages the buttons did |
 //! | `ui_layout_tests/scroll_areas.rs` | a page scrolls as one: no scroll area inside another, the Customize page has exactly one |
 //! | `ui_layout_tests/result_middle.rs` | the Result screen's scrolling middle is at least 200 px high at every matrix size, in both languages, 7 and 15 cards, preview closed and open (J22) |
@@ -59,6 +60,7 @@ mod manifest_input;
 mod marks;
 mod nav_cue;
 mod overflow;
+mod plain_language;
 mod radio_groups;
 mod reachable;
 mod result_middle;

@@ -33,21 +33,21 @@ preview_no_source = "ファイル未読み込み"
 advanced_title = "詳細設定"
 advanced_blurb = "既定値は品質と最小出力のために調整済み。 必要なときだけ変更を。"
 
-section_resize = "リサイズアルゴリズム"
-section_resize_blurb = "Lanczos3 を推奨。 ピクセルアートには Nearest を選択。"
-algorithm_label = "アルゴリズム:"
+section_resize = "拡大・縮小のしかた"
+section_resize_blurb = "PNG・WebP・JPEG を各アイコンのサイズに拡大・縮小する方法です (SVG は各サイズで直接描画されます)。 おすすめの選択肢は、 ほとんどのロゴに向いています。"
+algorithm_label = "方法:"
 
 section_svg = "SVG 出力"
 section_svg_blurb = "高 DPI ディスプレイでは SVG が望ましい。 写真やノイズが多い画像にはベクトル化を無効に。 プリセットで vtracer を素材に合わせて調整。"
-include_svg_label = "favicon.svg を出力"
-vectorize_on_raster_label = "ラスタ画像を SVG にベクトル化 (vtracer)"
+include_svg_label = "どんな大きさでもくっきり見えるアイコン (favicon.svg)"
+vectorize_on_raster_label = "PNG・WebP・JPEG を SVG に変換する (vtracer)"
 preset_label = "プリセット:"
 
 section_files = "出力ファイル"
 section_files_blurb = "プロジェクトに不要なものはオフに。"
 include_ico_label = "favicon.ico (旧来互換)"
-include_apple_touch_label = "apple-touch-icon.png (iOS / iPadOS のホーム画面用)"
-include_html_snippet_label = "favicon-snippet.html (<head> に貼れるマークアップ)"
+include_apple_touch_label = "iPhone・iPad のホーム画面用アイコン (apple-touch-icon.png)"
+include_html_snippet_label = "Web ページに貼り付けるだけの行 (favicon-snippet.html)"
 
 section_png_sizes = "PNG サイズ"
 section_png_sizes_blurb = "各サイズが favicon-{size}.png として出力される。 32 / 192 / 512 でタブ・PWA インストール・高 DPI スプラッシュをカバー。 範囲: 16〜1024 px。"
@@ -67,16 +67,16 @@ toggle_theme_button = "テーマ"
 
 # --- リサイズアルゴリズム名 ---
 # 固有名詞は原則そのまま、 補足のみ日本語
-algorithm_lanczos3 = "Lanczos3 (シャープ)"
-algorithm_mitchell_netravali = "Mitchell-Netravali"
-algorithm_catmull_rom = "Catmull-Rom"
-algorithm_bilinear = "Bilinear"
-algorithm_nearest = "Nearest (ピクセルアート向け)"
+algorithm_lanczos3 = "くっきり細かく仕上げる・ほとんどのロゴ向け (Lanczos3・推奨)"
+algorithm_mitchell_netravali = "やわらかめ・輪郭の縁取りが出にくい (Mitchell-Netravali)"
+algorithm_catmull_rom = "くっきり・Lanczos3 より縁取りがやや少なめ (Catmull-Rom)"
+algorithm_bilinear = "いちばんやわらかく・縁取りが出ない (Bilinear)"
+algorithm_nearest = "ピクセルの境目をそのまま残す・ピクセルアート向け (Nearest)"
 
 # --- vtracer プリセット名 ---
-vtracer_preset_sharp = "Sharp (ロゴ・アイコン)"
-vtracer_preset_default = "Default (バランス)"
-vtracer_preset_photo_rich = "Photo-rich (グラデーション)"
+vtracer_preset_sharp = "ロゴやアイコン向け・輪郭くっきり (Sharp)"
+vtracer_preset_default = "ほとんどの画像向けのバランス型 (Default・推奨)"
+vtracer_preset_photo_rich = "写真やグラデーション向け・色の細かな違いを残す (Photo-rich)"
 
 # --- 言語選択 ---
 section_language = "言語"
@@ -123,12 +123,12 @@ toast_fully_transparent_body = "この画像の全ピクセルが完全に透明
 preview_checker_label = "透過チェッカーを表示"
 
 # --- Web manifest (v1.8.0) ---
-section_web_manifest = "Web manifest"
-section_web_manifest_blurb = "manifest.webmanifest を生成し、 アイコンを PWA としてインストール可能にする。 favicon だけでよければオフのままで。"
-include_web_manifest_label = "manifest.webmanifest を出力"
-web_manifest_name_label = "名前"
+section_web_manifest = "アプリとしてインストールするための情報 (Web マニフェスト)"
+section_web_manifest_blurb = "Web サイトをアプリのようにインストールするときにブラウザが使う、 名前・色・アイコンの情報 (manifest.webmanifest) を作り、 その中にチェックを入れた PNG のサイズを載せます。 favicon だけでよければオフのままで構いません。"
+include_web_manifest_label = "アプリの情報を出力 (manifest.webmanifest)"
+web_manifest_name_label = "アプリ名"
 web_manifest_name_placeholder = "例: My App"
-web_manifest_short_name_label = "短縮名"
+web_manifest_short_name_label = "短い名前 (表示場所が狭いとき用)"
 web_manifest_short_name_placeholder = "例: App"
 web_manifest_theme_color_label = "テーマカラー"
 web_manifest_background_color_label = "背景色"
@@ -136,9 +136,9 @@ toast_invalid_color_title = "色の指定が不正"
 toast_invalid_color_body = "「{input}」 は有効な色ではありません。 #RRGGBB (7 文字の 16 進数) で指定してください。"
 
 # --- モノクローム出力 (v1.9.0) ---
-section_monochrome = "モノクローム出力"
-section_monochrome_blurb = "PNG / ICO のグレースケール版 (BT.709) を mono/ サブディレクトリに追加出力。 単色印刷物、 テーマ対応のマスク用アイコン、 ステンシル用途に。 SVG のモノクローム化は現状未対応。"
-include_monochrome_label = "mono/ グレースケールセットを出力"
+section_monochrome = "グレースケール版"
+section_monochrome_blurb = "PNG の各サイズと ICO ファイル (ICO は favicon.ico の従来からある形式) のグレースケール版を mono フォルダーに保存し、 単色の印刷などに使えます。 SVG は含まれません。"
+include_monochrome_label = "グレースケール版も出力 (mono フォルダー)"
 
 # --- UI 情報設計刷新 (v1.10.0) ---
 picker_label_view_as = "表示:"
@@ -195,18 +195,22 @@ result_preview_toggle = "プレビューを見る"
 
 # --- 設定ドロワー Right Sheet 化 + flat 再編 (v1.17.0) ---
 settings_title = "設定"
-section_png_output_sizes = "出力サイズ (PNG)"
-add_custom_size = "+ カスタムサイズ追加"
-section_svg_conversion = "SVG 変換方式"
+section_png_output_sizes = "アイコンのサイズ (PNG ファイル)"
+section_png_output_sizes_blurb = "favicon とは、 ブラウザのタブに表示される小さなアイコンのことです。 チェックを入れたサイズごとに、 favicon-32.png のような画像ファイルが 1 つずつ作られます。"
+add_custom_size = "+ ほかのサイズを追加"
+custom_size_placeholder = "例: 256"
+section_svg_conversion = "画像を SVG に変換する方法"
+section_svg_conversion_blurb = "ここでの選択は、 「上級設定」の「PNG・WebP・JPEG を SVG に変換する」がオンのとき (最初はオン) に、 PNG・WebP・JPEG を SVG に変換する方法として使われます。 読み込んだ SVG ファイルは、 そのままコピーされます。"
 svg_conversion_simple = "シンプル"
 svg_conversion_detailed = "詳細"
-section_misc = "その他"
-keep_transparency = "透過 (アルファ) を維持する"
+section_misc = "透明な部分"
+keep_transparency = "透明な部分をそのまま残す (アルファ)"
+keep_transparency_blurb = "オフにすると、 すべての PNG 画像と favicon.ico で、 透明な部分が白になります。 SVG ファイルは変わりません。"
 
 # --- Microsoft app logos (v1.26.0) ---
-section_microsoft_app_logos = "Microsoft app logos"
-section_microsoft_app_logos_blurb = "Windows アプリ向けの追加ロゴファイル: StoreLogo.png, Square44x44Logo.png, Square150x150Logo.png, Wide310x150Logo.png。"
-include_microsoft_app_logos_label = "Microsoft app logos を出力"
+section_microsoft_app_logos = "Windows アプリ用のロゴ (Microsoft Store)"
+section_microsoft_app_logos_blurb = "Windows アプリを作るときに使う 4 つのロゴ画像です: StoreLogo.png, Square44x44Logo.png, Square150x150Logo.png, Wide310x150Logo.png。 Web サイトには必要ありません。"
+include_microsoft_app_logos_label = "Windows アプリ用のロゴ 4 つを出力"
 
 advanced_extras_section = "上級設定"
 

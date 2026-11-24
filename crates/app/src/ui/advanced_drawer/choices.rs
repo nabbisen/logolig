@@ -10,7 +10,7 @@ use logolig::{MessageKey, ResizeAlgorithm, VtracerPreset};
 // enum → MessageKey map (UI layer only, to keep core independent of i18n)
 // ---------------------------------------------------------------------------
 
-pub(super) fn algorithm_message_key(alg: ResizeAlgorithm) -> MessageKey {
+pub(crate) fn algorithm_message_key(alg: ResizeAlgorithm) -> MessageKey {
     match alg {
         ResizeAlgorithm::Lanczos3 => MessageKey::AlgorithmLanczos3,
         ResizeAlgorithm::MitchellNetravali => MessageKey::AlgorithmMitchellNetravali,
@@ -20,7 +20,7 @@ pub(super) fn algorithm_message_key(alg: ResizeAlgorithm) -> MessageKey {
     }
 }
 
-pub(super) fn preset_message_key(preset: VtracerPreset) -> MessageKey {
+pub(crate) fn preset_message_key(preset: VtracerPreset) -> MessageKey {
     match preset {
         VtracerPreset::Sharp => MessageKey::VtracerPresetSharp,
         VtracerPreset::Default => MessageKey::VtracerPresetDefault,
