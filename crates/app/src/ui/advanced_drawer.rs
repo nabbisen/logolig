@@ -32,6 +32,7 @@ use logolig::{MessageKey, VtracerPreset};
 use crate::app::{AppState, Message, resolve_theme};
 use crate::ui::choice::{checkbox, radio_group};
 use crate::ui::colors;
+use crate::ui::type_scale;
 use choices::preset_message_key;
 use manifest::{subsection, web_manifest_body};
 use styles::{extras_header_style, reset_button_style, secondary_drawer_button_style};
@@ -78,7 +79,7 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
     let preset_sizes: [u32; 6] = [16, 32, 48, 96, 192, 512];
     let mut sizes_col = column![
         text(t.t(MessageKey::SectionPngOutputSizes))
-            .size(17)
+            .size(type_scale::TITLE)
             .color(colors::section_label(&theme)),
     ]
     .spacing(8);
@@ -119,17 +120,21 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
         text_input("e.g. 256", &state.png_size_input)
             .on_input(Message::PngSizeInputChanged)
             .on_submit(Message::PngSizeAddRequested)
-            .size(12)
-            .padding(4)
+            .size(type_scale::BODY)
+            .padding(6)
             .style(crate::ui::styles::input_style)
             .width(Length::Fixed(80.0)),
-        snora::control(text(t.t(MessageKey::AddCustomSize)).size(12))
-            .padding([4, 10])
+        snora::control(text(t.t(MessageKey::AddCustomSize)).size(type_scale::BODY))
+            .padding([6, 10])
             .on_press(Message::PngSizeAddRequested)
             .style(secondary_drawer_button_style),
     ]
     .spacing(6)
-    .align_y(Alignment::Center);
+    .align_y(Alignment::Center)
+    // The button's label can be long (Japanese at 16 px): when the two do not fit one line the button
+    // moves under the field instead of wrapping its text (RFC 034 J22).
+    .wrap()
+    .vertical_spacing(6);
     sizes_col = sizes_col.push(custom_input);
 
     // ─────────────────────────────────────────────────────────────
@@ -143,7 +148,7 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
     // keys choose.
     let svg_section = column![
         text(t.t(MessageKey::SectionSvgConversion))
-            .size(17)
+            .size(type_scale::TITLE)
             .color(colors::section_label(&theme)),
         radio_group(
             VtracerPreset::all(),
@@ -162,7 +167,7 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
     // flattened against white via services::flatten. SVG outputs are unaffected.
     let misc_section = column![
         text(t.t(MessageKey::SectionMisc))
-            .size(17)
+            .size(type_scale::TITLE)
             .color(colors::section_label(&theme)),
         checkbox(state.export_plan.keep_transparency)
             .label(t.t(MessageKey::KeepTransparency))
@@ -190,9 +195,12 @@ pub fn body<'a>(state: &'a AppState) -> Element<'a, Message> {
     let extras_header = crate::focus::disclosure(
         snora::control(
             row![
-                icon_element_sized::<Message>(&Icon::Lucide(extras_chevron), 12.0),
+                icon_element_sized::<Message>(
+                    &Icon::Lucide(extras_chevron),
+                    type_scale::ICON_SMALL
+                ),
                 text(t.t(MessageKey::AdvancedExtrasSection))
-                    .size(13)
+                    .size(type_scale::BODY)
                     .color(colors::group_heading(&theme)),
             ]
             .spacing(8)
@@ -276,8 +284,8 @@ pub fn footer<'a>(state: &'a AppState) -> Element<'a, Message> {
     row![
         snora::control(
             row![
-                text("↻").size(13),
-                text(t.t(MessageKey::ResetButton)).size(13),
+                text("↻").size(type_scale::BODY),
+                text(t.t(MessageKey::ResetButton)).size(type_scale::BODY),
             ]
             .spacing(6)
             .align_y(Alignment::Center),

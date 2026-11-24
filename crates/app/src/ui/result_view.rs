@@ -35,6 +35,7 @@ use crate::app::{AppState, Message, resolve_theme};
 use crate::result::{ResultAssetItem, ResultAssetKind, ResultAssets};
 use crate::ui::colors;
 use crate::ui::cues;
+use crate::ui::type_scale;
 
 /// Entry point for the Result screen.
 pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
@@ -55,9 +56,9 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             // Success marker. Per ABDD §12, convey success by a shape (not colour alone): the
             // lucide check icon (RFC 021: a state cue is never a text glyph). The large size
             // makes it the focal element.
-            cues::success(28.0),
+            cues::success(type_scale::HEADING),
             text(t.t(MessageKey::ResultSuccessHeadline))
-                .size(22)
+                .size(type_scale::HEADING)
                 .color(colors::page_title(&theme)),
         ]
         .spacing(12)
@@ -68,23 +69,34 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
 
     // 2. Sub-heading: generated assets list
     let subheading = text(t.t(MessageKey::ResultAssetsSubheading))
-        .size(13)
+        .size(type_scale::SECONDARY)
         .color(colors::muted_text(&theme));
 
     // 3. Asset card grid (3 columns)
     // v1.20.0: 2 columns on mobile, 3 on desktop.
     // 1 column is too tall for 7–12 items; 2 columns fits 4–6 per screen,
     // an acceptable scroll amount on mobile.
-    let columns = if crate::app::is_mobile(state) { 2 } else { 3 };
+    // RFC 034 J22: the larger text needs wider cards: below 900 px the desktop layout also takes two
+    // columns, so that the longest file name ("mono/apple-touch-icon.png") stays on one line and the
+    // Save buttons of a row stay level.
+    let columns = if crate::app::is_mobile(state) || state.window_size.width < THREE_COLUMNS_FROM {
+        2
+    } else {
+        3
+    };
     let download_one_label = t.t(MessageKey::ResultDownloadOne);
-    let grid = build_grid(assets, columns, &theme, &download_one_label);
+    let compact = crate::app::is_mobile(state);
+    let grid = build_grid(assets, columns, compact, &theme, &download_one_label);
 
     // 4. ZIP "Download all" button: the fixed footer.
     let download_all = container(
         snora::control(
             row![
-                icon_element_sized::<Message>(&Icon::Lucide(lucide::Download), 16.0),
-                text(t.t(MessageKey::ResultDownloadAllButton)).size(15),
+                icon_element_sized::<Message>(
+                    &Icon::Lucide(lucide::Download),
+                    type_scale::ICON_SMALL
+                ),
+                text(t.t(MessageKey::ResultDownloadAllButton)).size(type_scale::BODY),
             ]
             .spacing(10)
             .align_y(iced::Alignment::Center),
@@ -108,8 +120,8 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     let preview_toggle = crate::focus::disclosure(
         snora::control(
             row![
-                icon_element_sized::<Message>(&Icon::Lucide(chevron), 13.0),
-                text(t.t(MessageKey::ResultPreviewToggle)).size(13),
+                icon_element_sized::<Message>(&Icon::Lucide(chevron), type_scale::ICON_SMALL),
+                text(t.t(MessageKey::ResultPreviewToggle)).size(type_scale::BODY),
             ]
             .spacing(6)
             .align_y(iced::Alignment::Center),
@@ -136,8 +148,8 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // 7. Header: the Back button only (re-selecting drops a new file, so explicit Re-select was
     //    removed in v1.16). Fixed, like the footer.
     let header = row![
-        snora::control(text(t.t(MessageKey::EditCancelButton)).size(13))
-            .padding([8, 16])
+        snora::control(text(t.t(MessageKey::EditCancelButton)).size(type_scale::BODY))
+            .padding([12, 16])
             .on_press(Message::EditCancelled)
             .style(secondary_button_style),
         Space::new().width(Length::Fill),
@@ -173,12 +185,16 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     .into()
 }
 
+/// The window width from which the result grid has three columns.
+const THREE_COLUMNS_FROM: f32 = 900.0;
+
 /// Build an asset card grid with the given number of columns.
 ///
 /// v1.20.0: column count is a parameter (3 desktop / 2 mobile).
 fn build_grid<'a>(
     assets: &'a ResultAssets,
     columns: usize,
+    compact: bool,
     theme: &Theme,
     download_one_label: &str,
 ) -> Element<'a, Message> {
@@ -186,7 +202,7 @@ fn build_grid<'a>(
     let mut cur_row = row![].spacing(12);
     let mut count_in_row = 0usize;
     for (idx, item) in assets.items.iter().enumerate() {
-        cur_row = cur_row.push(asset_card(idx, item, theme, download_one_label));
+        cur_row = cur_row.push(asset_card(idx, item, compact, theme, download_one_label));
         count_in_row += 1;
         if count_in_row == columns {
             col = col.push(cur_row);
@@ -208,12 +224,13 @@ fn build_grid<'a>(
 fn asset_card<'a>(
     idx: usize,
     item: &'a ResultAssetItem,
+    compact: bool,
     theme: &Theme,
     download_one_label: &str,
 ) -> Element<'a, Message> {
     // Source file name (abbreviated)
     let file_name_text = text(item.relative_path.clone())
-        .size(13)
+        .size(type_scale::SECONDARY)
         .color(colors::file_name(theme));
 
     // Thumbnail area: decoded raster for images, placeholder icon for text
@@ -224,37 +241,49 @@ fn asset_card<'a>(
 
     // Meta row: badge (ICO / PNG / SVG / HTML / JSON) + dimensions (images) + size
     let badge = text(item.kind.badge_label())
-        .size(11)
+        .size(type_scale::SECONDARY)
         .color(colors::section_label(theme));
     let size_label = text(item.size_display())
-        .size(11)
+        .size(type_scale::SECONDARY)
         .color(colors::muted_text(theme));
     let dim_text: Element<'a, Message> = if let Some(d) = item.dimensions_display() {
-        text(d).size(11).color(colors::muted_text(theme)).into()
+        text(d)
+            .size(type_scale::SECONDARY)
+            .color(colors::muted_text(theme))
+            .into()
     } else {
         Space::new().width(Length::Shrink).into()
     };
-    let meta_row = row![
-        badge,
-        dim_text,
-        Space::new().width(Length::Fill),
-        size_label
-    ]
-    .spacing(8)
-    .align_y(iced::Alignment::Center);
+    // On a phone the card is about 140 px wide inside: kind, dimensions and size do not fit one line at
+    // 14 px (they wrapped, and the size broke in two), so the size takes a line of its own (J22).
+    let meta_row: Element<'a, Message> = if compact {
+        column![row![badge, dim_text].spacing(8), size_label]
+            .spacing(2)
+            .into()
+    } else {
+        row![
+            badge,
+            dim_text,
+            Space::new().width(Length::Fill),
+            size_label
+        ]
+        .spacing(8)
+        .align_y(iced::Alignment::Center)
+        .into()
+    };
 
     // Download button uses icon + text so the action is visible without hover.
     let dl_button = snora::control(
         row![
-            icon_element_sized::<Message>(&Icon::Lucide(lucide::Download), 16.0),
+            icon_element_sized::<Message>(&Icon::Lucide(lucide::Download), type_scale::ICON_SMALL),
             text(download_one_label.to_string())
-                .size(12)
+                .size(type_scale::BODY)
                 .color(colors::file_name(theme)),
         ]
         .spacing(6)
         .align_y(iced::Alignment::Center),
     )
-    .padding([4, 12])
+    .padding([6, 12])
     .on_press(Message::DownloadOneRequested(idx))
     .style(download_button_style);
 
@@ -308,10 +337,14 @@ fn placeholder_thumbnail<'a>(kind: ResultAssetKind, theme: &Theme) -> Element<'a
         ResultAssetKind::Svg => "<>",
         _ => "•",
     };
-    container(text(glyph).size(28).color(colors::muted_text(theme)))
-        .center_x(Length::Fill)
-        .center_y(Length::Fixed(80.0))
-        .into()
+    container(
+        text(glyph)
+            .size(type_scale::HEADING)
+            .color(colors::muted_text(theme)),
+    )
+    .center_x(Length::Fill)
+    .center_y(Length::Fixed(80.0))
+    .into()
 }
 
 /// Collapsible toggle button style (transparent + subtle hover fill).

@@ -15,7 +15,7 @@ use logolig_i18n::Locale;
 
 const SCALE: f32 = 2.0;
 const BAR: f32 = 3.0;
-const SIDEBAR_WIDTH: f32 = 90.0;
+const SIDEBAR_WIDTH: f32 = 112.0;
 const BOTTOM_BAR_HEIGHT: f32 = 64.0;
 
 fn state_on(page: NavPage, size: Size, dark: bool) -> AppState {

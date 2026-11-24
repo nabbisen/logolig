@@ -13,6 +13,7 @@ use logolig_i18n::Locale;
 use crate::app::{AppState, Message, resolve_theme};
 use crate::ui::choice::radio_group;
 use crate::ui::colors;
+use crate::ui::type_scale;
 
 /// The text of the theme group's "System" row (RFC 013): it says what System does right now, in
 /// words (never by colour alone). A reported theme is named ("System (currently Dark)"); no report,
@@ -92,7 +93,9 @@ fn section<'a>(
     content: Element<'a, Message>,
     theme: &Theme,
 ) -> Element<'a, Message> {
-    let heading = text(title).size(15).color(colors::page_title(theme));
+    let heading = text(title)
+        .size(type_scale::TITLE)
+        .color(colors::page_title(theme));
 
     column![heading, content].spacing(12).into()
 }
@@ -126,10 +129,12 @@ fn shortcuts_section<'a>(state: &'a AppState, theme: &Theme) -> Element<'a, Mess
             list.push(
                 row![
                     text(keys)
-                        .size(14)
+                        .size(type_scale::SECONDARY)
                         .color(colors::page_title(theme))
                         .width(Length::Fixed(SHORTCUT_KEYS_WIDTH)),
-                    text(t.t(action)).size(14).color(text_color),
+                    text(t.t(action))
+                        .size(type_scale::SECONDARY)
+                        .color(text_color),
                 ]
                 .spacing(12),
             )

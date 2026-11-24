@@ -30,6 +30,7 @@ use logolig::MessageKey;
 
 use crate::app::{AppState, Message, resolve_theme};
 use crate::ui::colors;
+use crate::ui::type_scale;
 
 // v1.14.0: replaced hardcoded HEADLINE_COLOR constant with colors::drop_zone_headline
 // — now tracks dark/light theme changes.
@@ -46,20 +47,20 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // iced/winit currently does not deliver FileDropped). Making the full card a
     // large button keeps the visible "drag or click" promise accessible while
     // still accepting native FileDropped events on platforms that emit them.
-    let choose_chip = container(text(t.t(MessageKey::ChooseFileButton)).size(15))
-        .padding([9, 22])
+    let choose_chip = container(text(t.t(MessageKey::ChooseFileButton)).size(type_scale::BODY))
+        .padding([12, 22])
         .style(drop_zone_choose_chip_style);
 
     let inner = column![
         text(t.t(MessageKey::DropZoneHeadline))
-            .size(22)
+            .size(type_scale::TITLE)
             .color(colors::drop_zone_headline(&theme)),
         text(t.t(MessageKey::DropZoneSecondary))
-            .size(13)
+            .size(type_scale::SECONDARY)
             .color(card_text(&theme)),
         choose_chip,
         text(t.t(MessageKey::DropZoneAcceptedFormats))
-            .size(12)
+            .size(type_scale::SECONDARY)
             .color(card_text(&theme)),
     ]
     .spacing(14)
@@ -176,18 +177,22 @@ fn history_section<'a>(state: &'a AppState, theme: &Theme) -> Element<'a, Messag
     let count_label = format!("{} files", asset_count);
 
     let section_label = text(t.t(MessageKey::HistoryLastConversionLabel))
-        .size(12)
+        .size(type_scale::SECONDARY)
         .color(colors::muted_text(theme));
 
-    let file_text = text(file_label).size(13).color(colors::file_name(theme));
+    let file_text = text(file_label)
+        .size(type_scale::SECONDARY)
+        .color(colors::file_name(theme));
 
-    let count_text = text(count_label).size(12).color(colors::muted_text(theme));
+    let count_text = text(count_label)
+        .size(type_scale::SECONDARY)
+        .color(colors::muted_text(theme));
 
     // "View results →" button with the History lucide icon.
     let view_btn = snora::control(
         row![
-            icon_element_sized::<Message>(&Icon::Lucide(lucide::History), 14.0),
-            text(t.t(MessageKey::HistoryViewResultsButton)).size(13),
+            icon_element_sized::<Message>(&Icon::Lucide(lucide::History), type_scale::ICON_SMALL),
+            text(t.t(MessageKey::HistoryViewResultsButton)).size(type_scale::BODY),
         ]
         .spacing(6)
         .align_y(iced::Alignment::Center),
@@ -198,7 +203,9 @@ fn history_section<'a>(state: &'a AppState, theme: &Theme) -> Element<'a, Messag
 
     let info_row = row![
         file_text,
-        text("•").size(12).color(colors::muted_text(theme)),
+        text("•")
+            .size(type_scale::SECONDARY)
+            .color(colors::muted_text(theme)),
         count_text,
         space(),
         view_btn,

@@ -23,6 +23,7 @@
 //! | `ui_layout_tests/nav_cue.rs` | the active page in the navigation (filled, bold, accent bar), and no text glyph as a state cue |
 //! | `ui_layout_tests/radio_groups.rs` | the single-choice groups: one Tab stop each, the keys and clicks publish the messages the buttons did |
 //! | `ui_layout_tests/scroll_areas.rs` | a page scrolls as one: no scroll area inside another, the Customize page has exactly one |
+//! | `ui_layout_tests/result_middle.rs` | the Result screen's scrolling middle is at least 200 px high at every matrix size, in both languages, 7 and 15 cards, preview closed and open (J22) |
 //! | `ui_layout_tests/ring.rs` | the focus ring, drawn: present, neutral, outside the control (so never merged with a selection mark), in both themes |
 //! | `ui_layout_tests/support.rs` | the probe (layout, widget bounds, hover hit-testing), the states and the matrix |
 //! | `ui_layout_tests/overflow.rs` | P1: nothing lies beyond the right edge of the window |
@@ -35,6 +36,7 @@
 //! | `ui_layout_tests/hit_area.rs` | P3: every interactive area is at least 24 × 24 px |
 //! | `ui_layout_tests/tab_stops.rs` | the Tab stops: in layout order, each one an interactive area, and every interactive area one of them except a named list (J14b empties it) |
 //! | `ui_layout_tests/system_theme.rs` | "System" follows the operating system: a report repaints the page, the Settings text in the three states (both languages), the preview's System surface follows the report |
+//! | `ui_layout_tests/type_scale.rs` | the five steps ascend and none is below 13 px; no literal size under `ui/` or in `shell.rs` (a source test that can fail); CAPTION only where nothing depends on the text; no navigation label wraps (J22) |
 //! | `ui_layout_tests/theme.rs` | the proof that Light and Dark lay out identically (so the properties run on Light only) |
 //! | `ui_layout_tests/reachable.rs` | P2: the main controls are fully visible without scrolling |
 
@@ -59,9 +61,11 @@ mod nav_cue;
 mod overflow;
 mod radio_groups;
 mod reachable;
+mod result_middle;
 mod ring;
 mod scroll_areas;
 mod support;
 mod system_theme;
 mod tab_stops;
 mod theme;
+mod type_scale;

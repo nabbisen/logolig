@@ -9,6 +9,7 @@ use crate::app::{AppState, Message, resolve_theme};
 use crate::ui::choice::radio_group;
 use crate::ui::colors;
 use crate::ui::cues;
+use crate::ui::type_scale;
 
 // ---------------------------------------------------------------------------
 // "View as" and "Surface" (RFC 021): two single-choice groups, each a `snora::radio_group`
@@ -25,7 +26,7 @@ pub(super) fn view_as_picker<'a>(
     let t = &state.translator;
     column![
         text(t.t(MessageKey::PickerLabelViewAs))
-            .size(13)
+            .size(type_scale::BODY)
             .color(colors::muted_text(&resolve_theme(state))),
         radio_group(
             PreviewContext::all(),
@@ -47,7 +48,7 @@ pub(super) fn surface_picker<'a>(
     let t = &state.translator;
     column![
         text(t.t(MessageKey::PickerLabelSurface))
-            .size(13)
+            .size(type_scale::BODY)
             .color(colors::muted_text(&resolve_theme(state))),
         radio_group(
             [ThemeMode::System, ThemeMode::Light, ThemeMode::Dark],
@@ -66,9 +67,12 @@ pub(super) fn surface_picker<'a>(
 pub(super) fn loading_placeholder<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     container(
-        column![cues::busy(t.t(MessageKey::ImportingMessage), 16.0)]
-            .spacing(6)
-            .align_x(iced::alignment::Horizontal::Center),
+        column![cues::busy(
+            t.t(MessageKey::ImportingMessage),
+            type_scale::BODY
+        )]
+        .spacing(6)
+        .align_x(iced::alignment::Horizontal::Center),
     )
     .padding(40)
     .center_x(Length::Fill)

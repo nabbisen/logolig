@@ -24,6 +24,7 @@ use logolig::{MessageKey, PreviewContext, ThemeMode};
 
 use crate::app::{AppState, Message, resolve_mode, resolve_theme};
 use crate::ui::colors;
+use crate::ui::type_scale;
 use checker::checker_view;
 use mockups::render_context;
 use pickers::{loading_placeholder, surface_picker, view_as_picker};
@@ -78,7 +79,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // 1. Screen title (centred, medium weight)
     let page_title = container(
         text(t.t(MessageKey::PageTitleEdit))
-            .size(20)
+            .size(type_scale::TITLE)
             .color(colors::page_title(&theme)),
     )
     .center_x(Length::Fill)
@@ -89,7 +90,7 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
         column![
             // "Preview" label (top-left inside frame, section-title weight)
             text(t.t(MessageKey::SectionTitlePreview))
-                .size(13)
+                .size(type_scale::SECONDARY)
                 .color(colors::section_label(&theme)),
             // The two groups, one block centred, their left edges aligned
             container(

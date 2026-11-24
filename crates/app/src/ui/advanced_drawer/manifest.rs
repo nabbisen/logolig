@@ -11,6 +11,7 @@ use logolig::MessageKey;
 
 use crate::app::{AppState, ManifestField, Message};
 use crate::ui::choice::checkbox;
+use crate::ui::type_scale;
 
 // ---------------------------------------------------------------------------
 // Layout helpers
@@ -26,9 +27,13 @@ pub(super) fn subsection<'a>(
     body: Element<'a, Message>,
     muted_color: Color,
 ) -> Element<'a, Message> {
-    let mut col = column![text(title.to_string()).size(15),].spacing(2);
+    let mut col = column![text(title.to_string()).size(type_scale::BODY),].spacing(2);
     if let Some(b) = blurb {
-        col = col.push(text(b.to_string()).size(11).color(muted_color));
+        col = col.push(
+            text(b.to_string())
+                .size(type_scale::SECONDARY)
+                .color(muted_color),
+        );
     }
     col = col.push(container(body).padding(Padding::default().top(4)));
     container(col)
@@ -125,12 +130,13 @@ fn labeled_input<'a>(
 ) -> Element<'a, Message> {
     let input_row = row![
         text(label.to_string())
-            .size(13)
+            .size(type_scale::BODY)
             .width(Length::Fixed(LABEL_WIDTH)),
         text_input(placeholder, value)
             .on_input(on_change)
             .on_submit(on_submit)
-            .size(13)
+            .size(type_scale::BODY)
+            .padding(6)
             .style(crate::ui::styles::input_style)
             .width(Length::Fixed(INPUT_WIDTH)),
     ]
@@ -139,8 +145,11 @@ fn labeled_input<'a>(
     let message: Element<'a, Message> = match error {
         Some(sentence) => container(
             row![
-                icon_element_sized::<Message>(&Icon::Lucide(lucide::AlertTriangle), 13.0),
-                text(sentence).size(12),
+                icon_element_sized::<Message>(
+                    &Icon::Lucide(lucide::AlertTriangle),
+                    type_scale::ICON_SMALL
+                ),
+                text(sentence).size(type_scale::BODY),
             ]
             .spacing(6)
             .align_y(Alignment::Start),

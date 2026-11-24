@@ -24,7 +24,10 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     // Per ABDD §12, convey "in progress" via a shape (not colour alone), from the bundled icon
     // font (RFC 021).
     //
-    let main_label = cues::busy(t.t(MessageKey::ImportingMessage), 22.0);
+    let main_label = cues::busy(
+        t.t(MessageKey::ImportingMessage),
+        crate::ui::type_scale::TITLE,
+    );
 
     // Sub-message: show the source file name so the user knows what is being converted.
     // Defensively handle the case where the file name is not yet available:
@@ -35,9 +38,11 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             t.t(MessageKey::PreviewSourceLabel),
             asset.display_name()
         );
-        text(label).size(13).into()
+        text(label).size(crate::ui::type_scale::BODY).into()
     } else {
-        text(t.t(MessageKey::ImportingPleaseWait)).size(13).into()
+        text(t.t(MessageKey::ImportingPleaseWait))
+            .size(crate::ui::type_scale::BODY)
+            .into()
     };
 
     let inner = column![main_label, processing_subtext]

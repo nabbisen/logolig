@@ -1,26 +1,104 @@
-//! P3: every interactive area is at least 24 × 24 px (RFC 035).
+//! P3: target sizes (RFC 035; RFC 034, job J22).
 //!
 //! An interactive area is where the pointer finds something to press (a button, a checkbox, a
-//! pick list, a text input, the slider). 24 px is the least a finger or a pointer hits reliably
-//! (WCAG 2.2, target size minimum). The interface is laid out at the matrix's width with the
-//! height stretched to 4000 px, so that nothing the viewport hides is skipped: the size of a
-//! control does not depend on the window's height.
+//! pick list, a text input). The rule of RFC 034 (requirement 4), in logical pixels, in **both**
+//! axes: a **primary** control is at least [`PRIMARY_MIN`] (44) and every other control at least
+//! [`MIN`] (32). The primary controls are the named list in [`is_primary`]: adding a primary control
+//! without listing it is a review question.
+//!
+//! **The one exception, pinned and commented:** snora's own checkbox rows (the label at 16 px plus
+//! snora's padding; `Checkbox` has no padding or size setter) measure about 30.5 px. They are held to
+//! [`CHECKBOX_MIN`] (30), the shortfall against 32 is reported in the review request, and the request
+//! to snora is the architect's. The interface is laid out at the matrix's width with the height
+//! stretched to 4000 px, so that nothing the viewport hides is skipped.
 
 use iced::{Rectangle, Size};
 
 use super::support::{Combo, Finding, Seen, label_in, layout_matrix, probe_of};
+use crate::app::AppState;
+use logolig::MessageKey;
 
-/// The least size, in logical pixels, of an interactive area.
-pub(super) const MINIMUM: f32 = 24.0;
+/// The least size of a primary control.
+pub(super) const PRIMARY_MIN: f32 = 44.0;
+/// The least size of any other control.
+pub(super) const MIN: f32 = 32.0;
+/// snora's checkbox row (RFC 034 J22): measured about 30.5 px; held to 30.
+pub(super) const CHECKBOX_MIN: f32 = 30.0;
 /// Measurement tolerance (the area is measured to a quarter pixel).
 const TOLERANCE: f32 = 0.3;
 
-/// The areas of `areas` smaller than [`MINIMUM`] in either direction.
-pub(super) fn too_small(areas: &[Rectangle]) -> Vec<Rectangle> {
+/// The primary controls, by the label the area carries, in the language of `state`: "Download all
+/// (ZIP)", "← Back" and the three navigation items. ("Choose file…" is the chip inside the drop-zone
+/// card, whose whole area is the control and is far larger than 44 px.)
+fn is_primary(state: &AppState, label: &str) -> bool {
+    let t = &state.translator;
+    [
+        MessageKey::ResultDownloadAllButton,
+        MessageKey::EditCancelButton,
+        MessageKey::NavHome,
+        MessageKey::NavCustomize,
+        MessageKey::NavSettings,
+    ]
+    .iter()
+    .any(|key| t.t(*key) == label)
+}
+
+/// Is this the row of one of snora's checkboxes (by its label)? The preset sizes ("32 × 32") and the
+/// labelled options of the Customize page.
+fn is_checkbox_row(state: &AppState, label: &str) -> bool {
+    let t = &state.translator;
+    let size_row =
+        label.split(" × ").count() == 2 && label.split(" × ").all(|n| n.parse::<u32>().is_ok());
+    size_row
+        || [
+            MessageKey::KeepTransparency,
+            MessageKey::IncludeAppleTouchLabel,
+            MessageKey::IncludeHtmlSnippetLabel,
+            MessageKey::IncludeSvgLabel,
+            MessageKey::VectorizeOnRasterLabel,
+            MessageKey::IncludeWebManifestLabel,
+            MessageKey::IncludeMicrosoftAppLogosLabel,
+            MessageKey::IncludeMonochromeLabel,
+        ]
+        .iter()
+        .any(|key| t.t(*key) == label)
+}
+
+/// Every text inside the area (a control with an icon has the icon's glyph first).
+fn labels_in(seen: &[Seen], area: Rectangle) -> Vec<String> {
+    seen.iter()
+        .filter(|s| {
+            s.kind == super::support::Kind::Text
+                && !s.text.trim().is_empty()
+                && area.contains(s.bounds.center())
+        })
+        .map(|s| s.text.clone())
+        .collect()
+}
+
+/// The tick of a checked snora checkbox (a glyph of the bundled icon font).
+const TICK: &str = "\u{e06c}";
+
+/// What an area with these texts has to measure.
+fn needed(state: &AppState, labels: &[String]) -> f32 {
+    if labels.iter().any(|l| is_primary(state, l)) {
+        PRIMARY_MIN
+    } else if labels
+        .iter()
+        .any(|l| l == TICK || is_checkbox_row(state, l))
+    {
+        CHECKBOX_MIN
+    } else {
+        MIN
+    }
+}
+
+/// The areas of `areas` smaller than `need` in either direction.
+pub(super) fn smaller_than(areas: &[Rectangle], need: f32) -> Vec<Rectangle> {
     areas
         .iter()
         .copied()
-        .filter(|a| a.width < MINIMUM - TOLERANCE || a.height < MINIMUM - TOLERANCE)
+        .filter(|a| a.width < need - TOLERANCE || a.height < need - TOLERANCE)
         .collect()
 }
 
@@ -31,68 +109,37 @@ pub(super) fn findings_of(combo: &Combo) -> Vec<Finding> {
     let mut probe = probe_of(&state, tall);
     let seen: Vec<Seen> = probe.walk();
     let areas = probe.interactive_areas(&seen);
-    too_small(&areas)
+    areas
         .into_iter()
-        .map(|a| Finding {
-            combo: combo.describe(),
-            what: format!(
-                "{:?} at ({:.0}, {:.0}) is {:.1} x {:.1} px, smallest side {}",
-                label_in(&seen, a),
-                a.x,
-                a.y,
-                a.width,
-                a.height,
-                a.width.min(a.height).floor() as u32
-            ),
+        .filter_map(|a| {
+            let labels = labels_in(&seen, a);
+            let label = label_in(&seen, a);
+            let need = needed(&state, &labels);
+            (a.width < need - TOLERANCE || a.height < need - TOLERANCE).then(|| Finding {
+                combo: combo.describe(),
+                what: format!(
+                    "{:?} at ({:.0}, {:.0}) is {:.1} x {:.1} px, needs {need:.0}",
+                    label, a.x, a.y, a.width, a.height,
+                ),
+            })
         })
         .collect()
 }
 
-/// P3 over the whole matrix, minus the exceptions named in [`KNOWN`].
+/// P3 over the whole matrix: no exception list.
 #[test]
-fn every_interactive_area_is_at_least_24_by_24() {
+fn primary_controls_are_44_and_every_other_control_32_with_snoras_checkbox_pinned_at_30() {
     let all: Vec<Finding> = layout_matrix().iter().flat_map(findings_of).collect();
-    let unexpected: Vec<_> = all.iter().filter(|f| !is_known(f)).collect();
     assert!(
-        unexpected.is_empty(),
+        all.is_empty(),
         "{} finding(s) of {} combinations:\n{}",
-        unexpected.len(),
+        all.len(),
         layout_matrix().len(),
-        unexpected
-            .iter()
+        all.iter()
             .map(|f| f.to_string())
             .collect::<Vec<_>>()
             .join("\n")
     );
-    // An exception that no longer matches a finding is a fixed defect: delete the entry.
-    let stale: Vec<_> = KNOWN
-        .iter()
-        .filter(|e| !all.iter().any(|f| entry_matches(e, f)))
-        .collect();
-    assert!(
-        stale.is_empty(),
-        "{} exception(s) no longer needed, delete them: {stale:?}",
-        stale.len()
-    );
-}
-
-/// Interactive areas smaller than 24 x 24 today. Cause: the custom-size field is 23.5 px high
-/// (RFC 034, job J22); its "Add custom size" button grew to the 24 px minimum of `snora::control`
-/// when it became one (RFC 027 J14b). The checkboxes and the SVG slider are gone from this list:
-/// they are `snora` checkboxes and radio groups now (RFC 021). Each entry is a control by its
-/// label (the field has none) and the whole pixels of its smallest side, as the finding prints
-/// them; the job deletes entries as it fixes them (a stale entry fails the test), and the list
-/// must end empty. No new `(no label)` entry may be added. A loosened threshold would hide them;
-/// a named list does not.
-const KNOWN: &[(&str, &str)] = &[("(no label)", "23")];
-
-fn entry_matches(entry: &(&str, &str), f: &Finding) -> bool {
-    f.what.starts_with(&format!("{:?} at ", entry.0))
-        && f.what.ends_with(&format!("smallest side {}", entry.1))
-}
-
-fn is_known(f: &Finding) -> bool {
-    KNOWN.iter().any(|entry| entry_matches(entry, f))
 }
 
 // ---- self-test: the property can fail ---------------------------------------------------------
@@ -110,7 +157,7 @@ fn p3_reports_a_ten_by_ten_button() {
     let seen = probe.walk();
     let areas = probe.interactive_areas(&seen);
     assert_eq!(areas.len(), 2, "both buttons are found: {areas:?}");
-    let small = too_small(&areas);
+    let small = smaller_than(&areas, 24.0);
     assert_eq!(
         small.len(),
         1,
@@ -175,4 +222,64 @@ fn inflated(a: &Rectangle) -> Rectangle {
         iced::Point::new(a.x - 0.5, a.y - 0.5),
         Size::new(a.width + 1.0, a.height + 1.0),
     )
+}
+
+// ---- the toast's close control, and the measured exception -------------------------------------
+
+/// What the toast's close control measures: 23.75 px, snora's (`control`'s rule: `max(24, 1.5 x text)`, drawn
+/// by `snora::toast`; the application sets neither). **Not the rule of RFC 034 (32) and not decided by me:**
+/// it is held to the 1.28.0 rule of 23.5 (the old 24 minus the measurement tolerance) until the architect says
+/// whether it joins the snora request with the checkbox rows; the shortfall is reported in the J22 request.
+const TOAST_CLOSE_MEASURED: f32 = 23.5;
+
+/// Toasts of every intent over the Home page: one close control each, none smaller than it is today.
+#[test]
+fn the_toasts_close_control_is_snoras_and_is_not_smaller_than_it_was() {
+    use snora::{Toast, ToastIntent};
+    for dark in [false, true] {
+        let size = Size::new(1280.0, 800.0);
+        let mut state = Combo {
+            case: super::support::Case::Home,
+            size,
+            locale: logolig_i18n::Locale::En,
+            dark,
+        }
+        .state();
+        state.toasts = [
+            ToastIntent::Error,
+            ToastIntent::Warning,
+            ToastIntent::Success,
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(i, intent)| {
+            Toast::new(
+                i as u64,
+                intent,
+                "Title".to_string(),
+                "A message of a few words.".to_string(),
+                crate::app::Message::DismissToast(i as u64),
+            )
+            .persistent()
+        })
+        .collect();
+        let before = {
+            let plain = Combo {
+                case: super::support::Case::Home,
+                size,
+                locale: logolig_i18n::Locale::En,
+                dark,
+            }
+            .state();
+            let mut p = probe_of(&plain, size);
+            let seen = p.walk();
+            p.interactive_areas(&seen).len()
+        };
+        let mut probe = probe_of(&state, size);
+        let seen = probe.walk();
+        let areas = probe.interactive_areas(&seen);
+        assert_eq!(areas.len(), before + 3, "one close control per toast");
+        let small = smaller_than(&areas, TOAST_CLOSE_MEASURED + 0.3);
+        assert!(small.is_empty(), "dark={dark}: {small:?}");
+    }
 }

@@ -9,6 +9,7 @@ use logolig::{MessageKey, ResizeAlgorithm};
 use crate::app::{AppState, Message};
 use crate::ui::choice::{checkbox, radio_group};
 use crate::ui::colors;
+use crate::ui::type_scale;
 
 use super::choices::algorithm_message_key;
 
@@ -54,7 +55,7 @@ pub(super) fn algorithm_row<'a>(state: &'a AppState) -> Element<'a, Message> {
     let t = &state.translator;
     column![
         text(t.t(MessageKey::AlgorithmLabel))
-            .size(13)
+            .size(type_scale::BODY)
             .color(colors::muted_text(&crate::app::resolve_theme(state))),
         radio_group(
             ResizeAlgorithm::all().iter().copied(),

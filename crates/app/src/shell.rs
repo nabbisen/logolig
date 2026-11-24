@@ -75,10 +75,10 @@ fn app_name_footer(state: &AppState) -> Element<'_, Message> {
     container(
         row![
             text(t.t(MessageKey::AppTitle))
-                .size(12)
+                .size(crate::ui::type_scale::CAPTION)
                 .color(colors::app_name(&theme)),
             text(format!("— {}", t.t(MessageKey::AppTagline)))
-                .size(11)
+                .size(crate::ui::type_scale::CAPTION)
                 .color(colors::muted_text(&theme)),
         ]
         .spacing(6)

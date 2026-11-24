@@ -18,6 +18,7 @@ use logolig::MessageKey;
 
 use crate::app::{AppState, Message, NavPage, resolve_theme};
 use crate::ui::colors;
+use crate::ui::type_scale;
 
 /// Desktop left sidebar. Passed to `AppLayout::side_bar(...)`.
 pub fn view(state: &AppState) -> Element<'_, Message> {
@@ -51,7 +52,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
             .spacing(4)
             .padding(Padding::default().top(12).bottom(12).left(6).right(0)),
     )
-    .width(Length::Fixed(90.0))
+    .width(Length::Fixed(SIDEBAR_WIDTH))
     .height(Length::Fill)
     .style(move |t: &Theme| sidebar_style(t))
     .into()
@@ -112,9 +113,9 @@ fn nav_item<'a>(
 ) -> Element<'a, Message> {
     let icon_color = colors::nav_label(theme, active);
 
-    let icon_el = icon_element_sized::<Message>(icon, 22.0);
+    let icon_el = icon_element_sized::<Message>(icon, type_scale::ICON_LARGE);
     let label_el = text(label)
-        .size(11)
+        .size(type_scale::SECONDARY)
         .color(icon_color)
         .font(label_font(active));
 
@@ -158,9 +159,9 @@ fn bottom_nav_item<'a>(
 ) -> Element<'a, Message> {
     let label_color = colors::nav_label(theme, active);
 
-    let icon_el = icon_element_sized::<Message>(icon, 22.0);
+    let icon_el = icon_element_sized::<Message>(icon, type_scale::ICON_LARGE);
     let label_el = text(label)
-        .size(10)
+        .size(type_scale::SECONDARY)
         .color(label_color)
         .font(label_font(active));
 
@@ -188,6 +189,10 @@ fn bottom_nav_item<'a>(
 // The active-page cue (RFC 021 Q1, D7): a filled item, a bold label and a thin accent bar on
 // the edge facing the content. Three cues, so the state is never colour alone.
 // ---------------------------------------------------------------------------
+
+/// The desktop sidebar's width (RFC 034 J22): 112 px, up from 90, so that the Japanese labels
+/// ("カスタマイズ") are one line at 14 px. The bound set by the architect.
+pub(crate) const SIDEBAR_WIDTH: f32 = 112.0;
 
 /// Thickness of the accent bar, in pixels.
 const BAR: f32 = 3.0;

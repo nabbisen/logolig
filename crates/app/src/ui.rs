@@ -13,3 +13,4 @@ pub mod settings_page;
 pub mod sidebar;
 pub mod styles;
 pub mod theme;
+pub mod type_scale;
