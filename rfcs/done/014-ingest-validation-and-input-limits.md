@@ -1,6 +1,6 @@
 # RFC 014 — Ingest validation policy and input limits
 
-**Status.** Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
+**Status.** Implemented (1.29.0). Earlier: Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
 **Priority.** P2 (policy clarification plus hardening)
 **Tracks.** Spec/implementation mismatch (extension vs magic bytes) and missing resource limits.
 **Touches.** `crates/core/src/services/ingest.rs`, `domain/source_asset.rs`, `error.rs`, i18n keys, `docs/src/functional-spec.md`, README.

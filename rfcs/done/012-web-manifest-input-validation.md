@@ -1,6 +1,6 @@
 # RFC 012 — Web manifest input validation
 
-**Status.** Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
+**Status.** Implemented (1.29.0). Earlier: Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
 **Priority.** P2
 **Tracks.** Defect: manifest colour/name validation exists but is never invoked.
 **Touches.** `crates/core/src/domain/web_manifest.rs`, `services/exporter.rs`, `crates/app` (Customize page, `app.rs` handlers), `crates/i18n` (reuse of dormant keys), docs.

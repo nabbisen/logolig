@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 014: ingest policy and input limits (job K1, release 1.29.0)
 
-Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; GUI Evidence and Test Optimization rules; Rust 2024, 2018+ module style, tests in separate files, English only, `unsafe` forbidden; relative paths with `cd`, never absolute). Governing text: [RFC 014](../../accepted/014-ingest-validation-and-input-limits.md), **"Decisions 2026-11-22" D1–D5 are binding** (and the addendum of 2026-10-24). Context: `ROADMAP.md` §4 (scope of 1.29.0), the SemVer rule (a public item is never removed in 1.x; adding `AppError` variants is a source-compatibility note, accepted as for `MessageKey`).
+Role and rules as always (`.git-exclude/roles/*`, `.git-exclude/rules/*`; GUI Evidence and Test Optimization rules; Rust 2024, 2018+ module style, tests in separate files, English only, `unsafe` forbidden; relative paths with `cd`, never absolute). Governing text: [RFC 014](../../done/014-ingest-validation-and-input-limits.md), **"Decisions 2026-11-22" D1–D5 are binding** (and the addendum of 2026-10-24). Context: `ROADMAP.md` §4 (scope of 1.29.0), the SemVer rule (a public item is never removed in 1.x; adding `AppError` variants is a source-compatibility note, accepted as for `MessageKey`).
 
 Owner philosophy: clean, safe and secure, robust design; users must not be confused. **This is the safety hardening of the release: read untrusted input with care.**
 

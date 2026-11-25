@@ -1,6 +1,6 @@
 # RFC 022 — Verify the vtracer "Sharp" preset
 
-**Status.** Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
+**Status.** Implemented (1.29.0) (the spike found Sharp wrong; Sharp is 45 and the labels say only what is measured). Earlier: Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
 **Priority.** P3 (spike first; no behaviour change until evidence exists)
 **Tracks.** Possible mismatch between a preset's name and its effect. Raised by RFC 018 D2.
 **Touches.** `crates/core/src/services/vectorize.rs`, `domain/vtracer_preset.rs`, Customize page labels, docs.

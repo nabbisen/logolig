@@ -1,6 +1,6 @@
 # RFC 034 — A readable, comfortable interface for older users and low vision
 
-**Status.** Accepted (question from the owner, 2026-11-12: "I wonder the app UI is optimized for elder people"; the answer was: not yet. The owner delegated the four questions to the architect on 2026-11-12 under the philosophy "clean, safe and secure, robust and sophisticated; users must not be confused"; the decisions are below. Release 1.29.0.)
+**Status.** Implemented (1.29.0) (complete: contrast, type scale and targets, plain language, Interface size). Earlier: Accepted (question from the owner, 2026-11-12: "I wonder the app UI is optimized for elder people"; the answer was: not yet. The owner delegated the four questions to the architect on 2026-11-12 under the philosophy "clean, safe and secure, robust and sophisticated; users must not be confused"; the decisions are below. Release 1.29.0.)
 **Priority.** P2 (the owner's philosophy: users must not be confused; the keyboard work of RFC 027 is P1 and comes first)
 **Tracks.** Audit of text size, contrast, target size, effects, wording and settings, from the source and the palette constants (no user study).
 **Touches.** `crates/app/src/ui/*` (type sizes, paddings), `app.rs` (one `scale_factor` call), Settings page, persisted settings (one new value), i18n texts, `docs/src/ui-a11y.md`. Depends on the headless test level of RFC 035. Interacts with RFC 021 (selection cues), RFC 026 (result layout) and RFC 027 (focus): all four touch the same views, so they are ordered, not parallel.

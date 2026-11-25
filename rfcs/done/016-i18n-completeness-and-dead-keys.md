@@ -1,6 +1,6 @@
 # RFC 016 — i18n completeness and dead-key cleanup
 
-**Status.** Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
+**Status.** Implemented (1.29.0) (narrowed: no hardcoded user-visible text and two guards; no key removed, the 44 unused keys wait for 2.0). Earlier: Accepted (architect, under the owner's delegation of 2026-11-22 "review them carefully with my fundamental philosophy"; release 1.29.0; decisions in the section "Decisions 2026-11-22")
 **Priority.** P3
 **Tracks.** Hardcoded English in the UI; unused translation keys; no guard against either.
 **Touches.** `crates/core/src/message_key.rs`, `crates/i18n` (dictionary, `en.toml`, `ja.toml`), `crates/app` UI and `app.rs`, `task_queue.rs`, a repository check.

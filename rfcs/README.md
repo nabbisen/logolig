@@ -29,11 +29,16 @@ recommendation; the owner authorizes the plan.
 | [009](./done/009-result-artifact-identity-and-zip-integrity.md) | Result artifact identity and ZIP integrity | 1.27.0 |
 | [010](./done/010-non-square-raster-sources.md) | Non-square raster sources in square outputs | 1.27.0 |
 | [011](./done/011-conversion-job-identity.md) | Conversion job identity and concurrent-input policy | 1.28.0 |
+| [012](./done/012-web-manifest-input-validation.md) | Web manifest input validation | 1.29.0 |
+| [013](./done/013-system-theme-follows-os.md) | "System" theme follows the operating system | 1.29.0 |
+| [014](./done/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | 1.29.0 |
+| [016](./done/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | 1.29.0 |
 | [017](./done/017-source-structure-conformance.md) | Source structure conformance (tests, file size, dead code) | 1.28.0 |
 | [018](./done/018-documentation-synchronisation.md) | Documentation synchronisation (J15 done; row 9 waits for RFC 014) | 1.28.0 |
 | [019](./done/019-keyboard-accessibility.md) | Keyboard accessibility (phases 1 and 2 done; the focus model is RFC 027) | 1.28.0 |
 | [020](./done/020-ci-and-aur-packaging.md) | CI gates (AUR packaging dropped, phases 2–4 removed/withdrawn) | 1.27.0 (phase 1) |
 | [021](./done/021-selection-state-indicators.md) | Selection-state indicators | 1.28.0 |
+| [022](./done/022-vtracer-sharp-preset-verification.md) | Verify the vtracer "Sharp" preset | 1.29.0 |
 | [024](./done/024-dependency-and-toolchain-baseline.md) | Dependency and toolchain baseline (MSRV, `cargo audit`) | 1.27.0 |
 | [025](./done/025-window-application-id.md) | Window application ID and desktop integration | 1.27.0 |
 | [026](./done/026-result-screen-layout-small-windows.md) | Result screen layout at small window heights | 1.28.0 |
@@ -44,6 +49,7 @@ recommendation; the owner authorizes the plan.
 | [031](./done/031-silent-file-dialog-failure.md) | A file dialog that cannot open must not fail silently | 1.28.0 |
 | [032](./done/032-snora-0-57-upgrade.md) | Upgrade snora from 0.53 to 0.57 | 1.28.0 |
 | [033](./done/033-new-application-logo.md) | Adopt the new application logo (docs, Linux package, Microsoft Store) | 1.28.0 |
+| [034](./done/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | 1.29.0 |
 | [035](./done/035-headless-ui-test-level.md) | A headless UI test level (layout, size, language and theme matrix without a window) | 1.28.0 |
 | [036](./done/036-snora-0-62-upgrade.md) | Upgrade snora 0.57 → 0.65 (steps 0.62 and 0.65; the keyboard `control` and form controls) | 1.28.0 |
 
@@ -52,13 +58,7 @@ recommendation; the owner authorizes the plan.
 | # | Title | Priority |
 | --- | --- | --- |
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
-| [034](./accepted/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | P2 |
 | [037](./accepted/037-microsoft-store-packaging-automation.md) | Microsoft Store packaging: a guarded version, a Windows build in CI, optional submission | P1 |
-| [012](./accepted/012-web-manifest-input-validation.md) | Web manifest input validation | P2 |
-| [013](./accepted/013-system-theme-follows-os.md) | "System" theme follows the operating system | P2 |
-| [014](./accepted/014-ingest-validation-and-input-limits.md) | Ingest validation policy and input limits | P2 |
-| [016](./accepted/016-i18n-completeness-and-dead-keys.md) | i18n completeness and dead-key cleanup | P3 |
-| [022](./accepted/022-vtracer-sharp-preset-verification.md) | Verify the vtracer "Sharp" preset | P3 |
 | [023](./accepted/023-flatpak-publication.md) | Flatpak publication (Flathub) | P1 |
 ### Proposed (`proposed/`)
 
