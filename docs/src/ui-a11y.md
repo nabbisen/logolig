@@ -138,7 +138,11 @@ file…" control, so it does nothing there.
 
 - A mouse click on the "Advanced settings" header or the preview toggle leaves the focus ring
   on that control, as Space does (the application cannot tell the two presses apart); the ring
-  goes at the next click elsewhere or at the next Tab.
+  goes at the next click elsewhere or at the next Tab. The same holds for a click on an option
+  of the Interface size group.
+- A step chosen with ↑ ↓ keeps the focus on the Interface size group, also when the step switches
+  the layout (Extra large is the phone layout in a window that is a desktop layout at Normal): the
+  ring stays and the next arrow key chooses the next step (RFC 034, J24b).
 - After Enter on a navigation item that changes the page, nothing is focused (the
   page has a different number of controls) and the next Tab starts at the first
   stop, so a keyboard user passes the three navigation items again to reach the page.
@@ -319,7 +323,8 @@ Settings has an **Interface size** group: **Normal** (100 %), **Large** (125 %),
 the system's own scaling); the choice is saved and read back at start, an unknown stored value loads
 as Normal. The window's minimum size is 360 × 480 logical pixels (the smallest size the layout is
 tested at), asked again after every change of the step. The group is one Tab stop, ↑ ↓ choose and
-apply at once, and the page keeps the focus in view as it grows. The breakpoint to the phone layout is
+apply at once, the group keeps the focus when the layout switches (the update asks for it back by a
+fixed id, as the disclosure controls do), and the page keeps the focus in view as it grows. The breakpoint to the phone layout is
 read in scaled pixels, so a larger step reaches it at a wider window. The page makes no claim about
 the system's own scaling, which the application did not follow under X11 when it was last checked.
 
