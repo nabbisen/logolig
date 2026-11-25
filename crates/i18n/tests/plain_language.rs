@@ -46,8 +46,8 @@ const CONFIRMED: &[(MessageKey, &str, &str)] = &[
     ),
     (
         MessageKey::VtracerPresetSharp,
-        "Logos and icons, with crisp edges (Sharp)",
-        "ロゴやアイコン向け・輪郭くっきり (Sharp)",
+        "Logos and icons, keeps corners sharp (Sharp)",
+        "ロゴやアイコン向け・角をくっきり残す (Sharp)",
     ),
     (
         MessageKey::VtracerPresetDefault,
@@ -56,8 +56,8 @@ const CONFIRMED: &[(MessageKey, &str, &str)] = &[
     ),
     (
         MessageKey::VtracerPresetPhotoRich,
-        "Photos and gradients, keeps fine color differences (Photo-rich)",
-        "写真やグラデーション向け・色の細かな違いを残す (Photo-rich)",
+        "Photos and colorful images, keeps a little more color detail (Photo-rich)",
+        "写真やカラフルな画像向け・色の細かな違いを少し多く残す (Photo-rich)",
     ),
     (MessageKey::SectionMisc, "Transparent areas", "透明な部分"),
     (

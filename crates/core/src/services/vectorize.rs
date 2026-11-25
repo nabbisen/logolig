@@ -103,22 +103,28 @@ fn trace(rgba: &Rgba8, preset: VtracerPreset) -> Result<String, AppError> {
 /// The preset→Config mapping is centralised here. A future `Custom { … }` variant
 /// could be added without changing call sites.
 ///
-/// ## v1.4.2 Sharp calibration approach
+/// ## The `Sharp` value (RFC 022, job H2b)
 ///
-/// v1.4.1 changed 4 parameters simultaneously (including `filter_speckle=2`,
-/// `path_precision=Some(3)`). Testing found that `filter_speckle=2` and
-/// `path_precision=3` likely degraded logo contour quality.
+/// `corner_threshold` is vtracer's *minimum turn angle that counts as a corner* ("Minimum momentary
+/// angle (degree) to be considered a corner"; the test in `visioncortex` is `angle >= threshold`),
+/// so a **higher** value smooths **more**. v1.4.2 set it to 80 meaning "no corner rounding"; that
+/// was the wrong direction. The H2 spike (`.git-exclude/review-request/rfc-022-sharp-spike/`,
+/// 25 hard-edged and anti-aliased shapes, the interior angle of the traced outline at each true
+/// corner) found 80 identical to the default 60 on 90 degree and acute corners and *rounder* on
+/// corners of about 100 to 120 degrees (a pentagon's 108 degrees traced as 126, against 112), with
+/// about 1.7 times the path segments. At **45** every corner is at least as sharp as at 60 and
+/// there are no more segments than at 60 on 21 of the 22 corner shapes; 30 and 15 begin to cut
+/// shallow corners. 45 is also the value `PhotoRich` has always used.
 ///
-/// v1.4.2 reduces the diff to a single parameter (`corner_threshold`)
-/// so the effect of "no corner rounding" can be observed in isolation.
-/// Evidence-based preset tuning: one parameter change = clear causal attribution.
+/// `Default` is vtracer's own default (60) and is not changed: it too rounds 120 degree corners (a
+/// hexagon reads 145 degrees against 120), but changing it would change everybody's output.
 fn config_for(preset: VtracerPreset) -> Config {
     match preset {
         VtracerPreset::Sharp => Config {
-            // Logo preset: no corner rounding. All other params at default.
-            // v1.4.1 included filter_speckle=2 / path_precision=3, but they
-            // likely degraded logo quality and were removed in v1.4.2.
-            corner_threshold: 80, // default 60 → 80
+            // Logo preset: corners are kept down to about 45 degrees of turn. Everything else is
+            // the default (v1.4.1 also changed filter_speckle and path_precision; they likely
+            // degraded logo contours and were removed in v1.4.2).
+            corner_threshold: 45, // default 60 → 45 (was 80, which rounds more: RFC 022)
             ..Config::default()
         },
         VtracerPreset::Default => {
@@ -126,7 +132,9 @@ fn config_for(preset: VtracerPreset) -> Config {
             Config::default()
         }
         VtracerPreset::PhotoRich => Config {
-            // Photo preset: fine colour gradations preserved; small noise ignored
+            // Photo preset: a little more colour detail than the default (colour precision 8, small
+            // noise ignored); on a noisy colour field its error against the source is a few percent
+            // lower, on a smooth gradient no preset keeps more than one colour (RFC 022, H2).
             color_precision: 8, // maximum precision
             filter_speckle: 8,  // ignore small noise
             corner_threshold: 45,

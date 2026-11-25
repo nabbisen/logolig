@@ -70,7 +70,7 @@ pub struct ExportPlan {
     pub vectorize_on_raster: bool,
     /// vtracer tuning preset (v1.4.1+).
     /// `Sharp` for logos/icons; `Default` matches the v1.2.0 behaviour;
-    /// `PhotoRich` for photo-like or gradient sources.
+    /// `PhotoRich` for photo-like and colourful images (a little more colour detail).
     pub vtracer_preset: VtracerPreset,
 
     /// Web manifest output (v1.8.0+). When `Some(_)`, writes `manifest.webmanifest`

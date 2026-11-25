@@ -273,21 +273,26 @@ fn the_svg_conversion_group_publishes_the_preset_messages() {
     // The Default preset ("A balance for most pictures") is selected.
     assert_eq!(
         customize_press(
-            "Logos and icons, with crisp edges (Sharp)",
+            "Logos and icons, keeps corners sharp (Sharp)",
             Named::ArrowDown
         ),
         ["VtracerPresetChanged(PhotoRich)"]
     );
     assert_eq!(
-        customize_press("Logos and icons, with crisp edges (Sharp)", Named::ArrowUp),
+        customize_press(
+            "Logos and icons, keeps corners sharp (Sharp)",
+            Named::ArrowUp
+        ),
         ["VtracerPresetChanged(Sharp)"]
     );
     assert_eq!(
-        customize_click("Logos and icons, with crisp edges (Sharp)"),
+        customize_click("Logos and icons, keeps corners sharp (Sharp)"),
         ["VtracerPresetChanged(Sharp)"]
     );
     assert_eq!(
-        customize_click("Photos and gradients, keeps fine color differences (Photo-rich)"),
+        customize_click(
+            "Photos and colorful images, keeps a little more color detail (Photo-rich)"
+        ),
         ["VtracerPresetChanged(PhotoRich)"]
     );
     assert!(
@@ -298,9 +303,9 @@ fn the_svg_conversion_group_publishes_the_preset_messages() {
     let state = customize();
     let mut p = probe_of(&state, Size::new(720.0, 4000.0));
     for name in [
-        "Logos and icons, with crisp edges (Sharp)",
+        "Logos and icons, keeps corners sharp (Sharp)",
         "A balance for most pictures (Default, recommended)",
-        "Photos and gradients, keeps fine color differences (Photo-rich)",
+        "Photos and colorful images, keeps a little more color detail (Photo-rich)",
     ] {
         let count = p.walk().iter().filter(|s| s.text == name).count();
         assert_eq!(count, 1, "{name:?} is on the page {count} times");

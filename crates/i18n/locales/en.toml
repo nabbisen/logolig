@@ -72,9 +72,9 @@ algorithm_bilinear = "Softest, with no halos around edges (Bilinear)"
 algorithm_nearest = "Keeps hard pixel edges, for pixel art (Nearest)"
 
 # --- vtracer preset names ---
-vtracer_preset_sharp = "Logos and icons, with crisp edges (Sharp)"
+vtracer_preset_sharp = "Logos and icons, keeps corners sharp (Sharp)"
 vtracer_preset_default = "A balance for most pictures (Default, recommended)"
-vtracer_preset_photo_rich = "Photos and gradients, keeps fine color differences (Photo-rich)"
+vtracer_preset_photo_rich = "Photos and colorful images, keeps a little more color detail (Photo-rich)"
 
 # --- Language selection ---
 section_language = "Language"

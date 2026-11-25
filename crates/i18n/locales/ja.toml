@@ -74,9 +74,9 @@ algorithm_bilinear = "いちばんやわらかく・縁取りが出ない (Bilin
 algorithm_nearest = "ピクセルの境目をそのまま残す・ピクセルアート向け (Nearest)"
 
 # --- vtracer プリセット名 ---
-vtracer_preset_sharp = "ロゴやアイコン向け・輪郭くっきり (Sharp)"
+vtracer_preset_sharp = "ロゴやアイコン向け・角をくっきり残す (Sharp)"
 vtracer_preset_default = "ほとんどの画像向けのバランス型 (Default・推奨)"
-vtracer_preset_photo_rich = "写真やグラデーション向け・色の細かな違いを残す (Photo-rich)"
+vtracer_preset_photo_rich = "写真やカラフルな画像向け・色の細かな違いを少し多く残す (Photo-rich)"
 
 # --- 言語選択 ---
 section_language = "言語"

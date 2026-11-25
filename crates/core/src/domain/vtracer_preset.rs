@@ -16,12 +16,14 @@ use serde::{Deserialize, Serialize};
 /// vtracer tuning preset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum VtracerPreset {
-    /// Logos, icons, line art. Maintains sharp contours.
+    /// Logos, icons, line art. Keeps corners sharp: `corner_threshold` 45, where 80 (before RFC 022)
+    /// rounded corners of about 100 to 120 degrees more than the default does.
     Sharp,
     /// Same vtracer defaults as v1.2.0. Used as the default.
     #[default]
     Default,
-    /// Photo-like or gradient sources. Preserves fine colour gradations.
+    /// Photo-like and colourful images: a little more colour detail than the default (precision 8,
+    /// small noise ignored). The gain is small, and a smooth gradient is flattened by every preset.
     PhotoRich,
 }
 
