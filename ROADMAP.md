@@ -88,6 +88,8 @@
 
 ## 4. Release 1.29.0: readable and robust (scope **authorized 2026-11-22**: the owner delegated the four decisions to the architect under the fundamental philosophy; decided below; the owner can overrule)
 
+**RELEASED 2026-11-26** (signed tag `1.29.0` on `9e9f8a4`; GitHub Release `1.29.0`; crates.io `logolig`, `logolig-i18n`, `logolig-app` 1.29.0). **Deviations and lessons:** (1) the owner answered the `chrono` question with "Security is really important", so job H3 (replace `chrono` with std-only code and the ZIP's extended timestamp) was added before the tag: audit 12 → 11, 523 tests; (2) the real run found a defect the headless tests had not (an invalid manifest colour's explanation below the visible area): fixed in R2b before the tag; three of the dev's real passes stopped on its own expectations (a guessed pixel count, a state before typing, a drop derived from headless numbers): **for an absence check use a before/after of the same box in the same run, or the picture**; (3) **crates.io order is `logolig`, then `logolig-i18n` (it depends on `logolig`), then `logolig-app`**: the checklist said i18n first, which a dry run disproved; (4) the MetaInfo screenshot is the R2 capture of the Result screen on the release-candidate binary (the Result screen did not change afterwards); its URL at the tag answered with the right sha256 after the push; (5) the owner's Japanese review list is still open (not blocking). **Next:** the owner's Flathub submission (tag exists now), 1.30.0 (distribution reach), `vtracer` 1.0 bump when final.
+
 **Theme.** What every user meets first: a readable interface (RFC 034, the owner's question of 2026-11-12), and the correctness and safety items that are small, independent of the UI and already designed. **Distribution reach moves to 1.30.0** (below). 1.28.0 took 13 days and about 35 reviewed steps; this scope is about **15 jobs**, planned at two to three weeks.
 
 ### In scope, in this order (**F0, F1, K1b inserted 2026-11-22 after the AUR decision: Flathub upstream work comes first so that the owner can write and test the manifest while the rest of the release proceeds**)
@@ -167,7 +169,8 @@ Remove the items deprecated in 1.28.0 (`MessageKey::{PresetLabel, SvgConversionS
 4. **Granted 2026-10-29/30:** tag and publication of 1.27.0 (GitHub Release, crates.io). The first AUR publication is the owner's own action.
 5. **Granted 2026-11-09:** the scope and order of 1.28.0 (§3), RFC 021 Q1 (accent bar plus bold) and RFC 032 D1 (toast attention).
 6. **Delegated 2026-11-12:** the four questions of RFC 034 (sizes, interface-size steps, contrast approach, release split) were left to the architect under the owner's philosophy; decided and recorded in RFC 034 (D1–D5), release 1.29.0. The owner can overrule any of them.
-7. **Still to be authorized separately, when the time comes:** the release tag and publication of 1.28.0 and every later release.
+7. **Granted 2026-11-21:** tag and publication of 1.28.0. **Granted 2026-11-26:** tag and publication of 1.29.0 (done: signed tag `1.29.0` on `9e9f8a4`, GitHub Release titled `1.29.0`, crates.io `logolig`, `logolig-i18n`, `logolig-app` 1.29.0).
+8. **Still to be authorized separately, when the time comes:** the release tag and publication of every later release.
 
 ## 7. Risks to the schedule
 
