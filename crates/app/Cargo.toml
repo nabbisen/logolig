@@ -27,7 +27,6 @@ snora                   = { workspace = true }
 rfd                     = { workspace = true }
 app-json-settings       = { workspace = true }
 
-chrono                  = { workspace = true }
 # RFC 030: `spawn_blocking` for CPU-bound tasks. Already in the tree through iced's `tokio` feature.
 tokio                   = { workspace = true, features = ["rt", "time"] }
 image                   = { workspace = true }

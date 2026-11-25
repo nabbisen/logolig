@@ -9,7 +9,6 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use chrono::{Datelike, Local, Timelike};
 use iced::Task;
 
 use logolig::{AppError, ExportPlan, InMemoryArtifact, ResizeAlgorithm, Rgba8, SourceAsset};
@@ -377,11 +376,21 @@ pub fn write_zip_task(path: PathBuf, items: Vec<ResultAssetItem>) -> Task<Messag
 fn build_zip_bytes(items: &[ResultAssetItem]) -> Result<Vec<u8>, AppError> {
     use std::io::Write;
     let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-    let opts: zip::write::SimpleFileOptions = zip::write::SimpleFileOptions::default()
+    let unix = zip_time::now_unix();
+    let mut opts = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated)
-        .last_modified_time(current_zip_modified_time());
+        .last_modified_time(zip_time::dos_time(unix))
+        .into_full_options();
+    // The extended timestamp (UTC Unix seconds) beside the zone-less DOS time: extractors that read it
+    // (Info-ZIP `unzip`, `bsdtar`) show the instant the ZIP was made, in the user's own zone.
+    opts.add_extra_field(
+        zip_time::EXTENDED_TIMESTAMP_ID,
+        zip_time::extended_timestamp_payload(unix),
+        false,
+    )
+    .map_err(|e| AppError::export(format!("zip extra field: {}", e)))?;
     for item in items {
-        zip.start_file(item.relative_path.as_str(), opts)
+        zip.start_file(item.relative_path.as_str(), opts.clone())
             .map_err(|e| AppError::export(format!("zip start_file: {}", e)))?;
         zip.write_all(&item.bytes)
             .map_err(|e| AppError::export(format!("zip write_all: {}", e)))?;
@@ -400,21 +409,10 @@ fn write_zip_blocking(path: &std::path::Path, items: &[ResultAssetItem]) -> Resu
         .map_err(|e| AppError::export(format!("failed to write zip file: {}", e)))
 }
 
-fn current_zip_modified_time() -> zip::DateTime {
-    let now = Local::now();
-    let Ok(year) = u16::try_from(now.year()) else {
-        return zip::DateTime::default();
-    };
-    zip::DateTime::from_date_and_time(
-        year,
-        now.month() as u8,
-        now.day() as u8,
-        now.hour() as u8,
-        now.minute() as u8,
-        now.second() as u8,
-    )
-    .unwrap_or_else(|_| zip::DateTime::default())
-}
+mod zip_time;
+
+#[cfg(test)]
+mod zip_time_tests;
 
 #[cfg(test)]
 mod blocking_tests;

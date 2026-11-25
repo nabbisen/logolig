@@ -68,22 +68,34 @@ fn write_zip_blocking_writes_expected_contents_with_current_modified_time() {
     assert_eq!(bytes, br#"<svg viewBox="0 0 1 1"/>"#);
 }
 
+/// The ZIP's time field has no zone; the application stamps **UTC** (the extended timestamp beside it
+/// is UTC too). The stamp of a written archive is "now": between the clock read before the write and
+/// the one after, within the field's two-second resolution.
 #[test]
-fn current_zip_modified_time_uses_local_wall_clock_fields() {
-    let before = Local::now();
-    let modified = current_zip_modified_time();
-    let after = Local::now();
+fn the_entries_are_stamped_with_utc_now() {
+    let output = TempZip::new("bundle-utc");
+    let items = vec![asset("favicon.svg", b"<svg/>")];
+    let before = zip_time_tests::reference_now();
+    write_zip_blocking(&output.0, &items).expect("zip write should succeed");
+    let after = zip_time_tests::reference_now();
 
-    assert!(
-        same_local_minute(modified, before) || same_local_minute(modified, after),
-        "zip timestamp should use local wall-clock time; got {modified}, before={before}, after={after}"
+    let file = std::fs::File::open(&output.0).expect("zip should be created");
+    let mut archive = zip::ZipArchive::new(file).expect("zip should be readable");
+    let modified = archive
+        .by_index(0)
+        .expect("one entry")
+        .last_modified()
+        .expect("a modified time");
+    let stamped = zip_time_tests::reference_unix(
+        modified.year(),
+        modified.month(),
+        modified.day(),
+        modified.hour(),
+        modified.minute(),
+        modified.second(),
     );
-}
-
-fn same_local_minute(modified: zip::DateTime, local: chrono::DateTime<Local>) -> bool {
-    modified.year() == local.year() as u16
-        && modified.month() == local.month() as u8
-        && modified.day() == local.day() as u8
-        && modified.hour() == local.hour() as u8
-        && modified.minute() == local.minute() as u8
+    assert!(
+        before - 2 <= stamped && stamped <= after,
+        "the stamp {modified} (unix {stamped}) is not UTC now ({before}..{after})"
+    );
 }

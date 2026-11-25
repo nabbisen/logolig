@@ -117,6 +117,7 @@ const EXEMPT: &[(&str, &[&str], &str)] = &[
             "artifact path is not a plain relative path: {}",
             "artifact path is empty",
             "failed to write {name}: {e}",
+            "zip extra field: {}",
             "zip start_file: {}",
             "zip write_all: {}",
             "zip finish: {}",
