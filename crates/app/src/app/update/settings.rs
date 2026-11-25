@@ -38,6 +38,16 @@ pub(super) fn interface_size_chosen(
     if state.interface_size == size {
         return Task::none();
     }
+    // iced reports the window's logical size at start and when the window is resized, **not** when only
+    // the scale changes (the real run of J24 saw no event after a step change), and `window_size` is what
+    // the mobile breakpoint reads. The window itself does not change, so its size in scaled logical pixels
+    // changes by the ratio of the two factors: at Extra large a 1042 px window is 694 px, below the 768
+    // breakpoint, exactly as it is after a restart at that step.
+    let ratio = state.interface_size.factor() / size.factor();
+    state.window_size = iced::Size::new(
+        state.window_size.width * ratio,
+        state.window_size.height * ratio,
+    );
     state.interface_size = size;
     persist_settings(state);
     super::super::min_window_size_task()

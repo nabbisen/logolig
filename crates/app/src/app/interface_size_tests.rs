@@ -141,25 +141,10 @@ fn the_application_hands_iced_the_factor_and_asks_for_the_minimum_at_boot() {
     );
 }
 
-/// The breakpoint reads the window size iced reports, which is in **scaled** logical pixels (RFC 034
-/// D2): 767 is mobile, 768 desktop, at every interface size.
+/// The breakpoint reads `window_size`, in **scaled** logical pixels (RFC 034 D2): 767 is mobile and 768
+/// is desktop whatever the step.
 #[test]
-fn the_mobile_breakpoint_compares_the_reported_size() {
-    for step in InterfaceSize::all() {
-        let mut state = AppState {
-            interface_size: step,
-            ..AppState::default()
-        };
-        // 1280 physical px at 150 % is reported as 853: the phone layout starts at a wider window.
-        let reported = |physical: f32| physical / step.factor();
-        for (physical, mobile) in [(1280.0, false), (1000.0, reported(1000.0) < 768.0)] {
-            let _ = update(
-                &mut state,
-                Message::WindowResized(iced::Size::new(reported(physical), 720.0)),
-            );
-            assert_eq!(is_mobile(&state), mobile, "{step:?} {physical} px");
-        }
-    }
+fn the_mobile_breakpoint_is_at_768_scaled_pixels() {
     let mut state = AppState::default();
     let _ = update(
         &mut state,
@@ -169,6 +154,86 @@ fn the_mobile_breakpoint_compares_the_reported_size() {
     let _ = update(
         &mut state,
         Message::WindowResized(iced::Size::new(768.0, 600.0)),
+    );
+    assert!(!is_mobile(&state));
+}
+
+/// iced sends no `Resized` event when only the scale changes (the real run of J24: the sidebar stayed
+/// on screen in a 694 px viewport), so choosing a step rescales the window size the breakpoint reads.
+/// The window does not change: its size in scaled pixels is its physical size over the factor.
+#[test]
+fn choosing_a_step_rescales_the_window_size_the_breakpoint_reads() {
+    // The 1042 x 1144 window of the real run, reported at Normal.
+    let mut state = AppState::default();
+    let _ = update(
+        &mut state,
+        Message::WindowResized(iced::Size::new(1042.0, 1144.0)),
+    );
+    assert!(!is_mobile(&state));
+    let _ = update(
+        &mut state,
+        Message::InterfaceSizeChosen(InterfaceSize::Large),
+    );
+    assert!(
+        (state.window_size.width - 833.6).abs() < 0.1,
+        "{:?}",
+        state.window_size
+    );
+    assert!(!is_mobile(&state), "833.6 is above the breakpoint");
+    let _ = update(
+        &mut state,
+        Message::InterfaceSizeChosen(InterfaceSize::ExtraLarge),
+    );
+    assert!(
+        (state.window_size.width - 694.67).abs() < 0.1,
+        "{:?}",
+        state.window_size
+    );
+    assert!(
+        (state.window_size.height - 762.67).abs() < 0.1,
+        "{:?}",
+        state.window_size
+    );
+    assert!(
+        is_mobile(&state),
+        "694.7 is below the breakpoint: the phone layout, as after a restart"
+    );
+    // Back: the same window, the size it had.
+    let _ = update(
+        &mut state,
+        Message::InterfaceSizeChosen(InterfaceSize::Normal),
+    );
+    assert!(
+        (state.window_size.width - 1042.0).abs() < 0.01,
+        "{:?}",
+        state.window_size
+    );
+    assert!(!is_mobile(&state));
+    // Choosing the step already in force changes nothing.
+    let before = state.window_size;
+    let _ = update(
+        &mut state,
+        Message::InterfaceSizeChosen(InterfaceSize::Normal),
+    );
+    assert_eq!(state.window_size, before);
+}
+
+/// What the app reports at start at a step is already scaled: a restart at Extra large (the real run:
+/// opened at 694.4 x 762.8) is mobile, a 1280 px window at that step reports 853 and is not.
+#[test]
+fn a_window_reported_at_a_step_is_judged_in_scaled_pixels() {
+    let mut state = AppState {
+        interface_size: InterfaceSize::ExtraLarge,
+        ..AppState::default()
+    };
+    let _ = update(
+        &mut state,
+        Message::WindowResized(iced::Size::new(694.4, 762.8)),
+    );
+    assert!(is_mobile(&state));
+    let _ = update(
+        &mut state,
+        Message::WindowResized(iced::Size::new(853.0, 480.0)),
     );
     assert!(!is_mobile(&state));
 }

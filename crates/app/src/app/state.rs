@@ -354,6 +354,9 @@ pub(crate) fn is_mobile(state: &AppState) -> bool {
 /// system's scaling, and `window::Event::Resized` reports the logical size of that scaled viewport. At
 /// Extra large (150 %) a 1280 px wide window reports 853, so the breakpoint compares scaled pixels and
 /// a larger interface switches to the phone layout at a wider window, which is what keeps it readable.
+/// iced sends no `Resized` event when only the scale changes, so choosing a step rescales
+/// `AppState::window_size` itself (`update/settings.rs`): the real run of J24 showed the sidebar staying
+/// on screen in a 694 px viewport otherwise.
 pub(crate) const MOBILE_BREAKPOINT_PX: f32 = 768.0;
 
 /// The smallest logical window the layout is tested at (the headless matrix of RFC 035: 360 × 480).

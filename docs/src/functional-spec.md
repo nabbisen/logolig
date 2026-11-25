@@ -322,7 +322,9 @@ persisted. There is no 200 % step, no zoom shortcut and no free value.
   physical pixels on a display at 100 %.
 - **The mobile breakpoint (768 px) is evaluated in scaled logical pixels**, the size iced reports for
   the window: a 1280 px window at Extra large is reported as 853 and uses the desktop layout; one of
-  1000 px is reported as 666 and uses the phone layout.
+  1000 px is reported as 666 and uses the phone layout. iced sends no resize event when only the scale
+  changes, so choosing a step rescales the size the application holds for the window (the window
+  itself does not change); a real run showed the sidebar staying in a 694 px viewport before that.
 - **The system's own display scaling** is multiplied with the step where the application follows it
   (a native Wayland session); under X11 it was not followed in the last check (see the README), so
   the page makes no claim about it.
