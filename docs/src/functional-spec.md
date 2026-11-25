@@ -376,6 +376,20 @@ rather than assigning blame.
 - Locale selection is persisted.
 - `MessageKey` enum + exhaustive match ensures no translation can be
   missing at compile time.
+- **Every user-visible string is a `MessageKey`** (RFC 016): the title of an
+  error toast, the title and filter name of a file dialog, the captions of the
+  preview mock-ups, a count on the history card. What stays in the code is
+  only what is not a sentence a user reads: file names and extensions, format
+  and unit names (PNG, KB), key names (`Ctrl`, `Esc`), placeholder names,
+  identifiers, the technical detail inside an error, and the pictures the
+  mock-ups draw of other applications.
+- Two source tests keep it so and run in `cargo test`:
+  `text_guard_tests::hardcoded_literals` fails on an alphabetic string
+  literal in the application's non-test sources that is not on its named
+  list (each entry has a reason), and `text_guard_tests::unused_keys` fails on
+  a `MessageKey` that nothing uses, unless it is `#[deprecated]` or on
+  `UNUSED_UNTIL_2_0`: keys kept only because removing a public variant is a
+  SemVer break (they go at 2.0).
 
 ## 12. Theme colours
 
