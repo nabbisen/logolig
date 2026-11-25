@@ -64,6 +64,19 @@
   </provides>
 
   <releases>
+    <release version="1.29.0" date="2026-11-25">
+      <url type="details">https://github.com/nabbisen/logolig/blob/1.29.0/docs/release-notes/1.29.0.md</url>
+      <description>
+        <p>Larger and clearer text and controls, a setting that enlarges the whole interface, and safer handling of files.</p>
+        <ul>
+          <li>An Interface size setting (Normal, Large, Extra large), higher contrast and larger click targets</li>
+          <li>The Customize page says in plain words what each option does</li>
+          <li>The content of a file decides what it is, oversized files are refused with a clear message, and a refused file keeps your previous result</li>
+          <li>The System theme follows your operating system, and web manifest colours are checked as you type</li>
+          <li>The Sharp preset now keeps corners, so SVGs made with it differ from before</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.28.0" date="2026-11-21">
       <url type="details">https://github.com/nabbisen/logolig/blob/1.28.0/docs/release-notes/1.28.0.md</url>
       <description>
