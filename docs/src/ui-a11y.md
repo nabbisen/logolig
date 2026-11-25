@@ -312,6 +312,17 @@ They live on the full-page Customize view, with rare options grouped
 under a collapsible section. This keeps the startup path simple while
 leaving power-user controls discoverable.
 
+## Interface size (RFC 034, J24)
+
+Settings has an **Interface size** group: **Normal** (100 %), **Large** (125 %), **Extra large**
+(150 %), named in words. The whole interface scales together (iced's `scale_factor`, multiplied with
+the system's own scaling); the choice is saved and read back at start, an unknown stored value loads
+as Normal. The window's minimum size is 360 × 480 logical pixels (the smallest size the layout is
+tested at), asked again after every change of the step. The group is one Tab stop, ↑ ↓ choose and
+apply at once, and the page keeps the focus in view as it grows. The breakpoint to the phone layout is
+read in scaled pixels, so a larger step reaches it at a wider window. The page makes no claim about
+the system's own scaling, which the application did not follow under X11 when it was last checked.
+
 ## What we do not do
 
 - We do **not** rely on hover-only interactions.

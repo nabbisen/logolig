@@ -277,7 +277,7 @@ it off does. When off, raster outputs are composited against white (Porter-Duff 
 
 ## 9. Settings page
 
-Language and theme selection, reachable via the Settings nav item.
+Language, theme and interface size selection, reachable via the Settings nav item.
 
 The page scrolls as one when the window is short.
 
@@ -303,6 +303,33 @@ tell them apart). Light and Dark ignore the system. Only the choice (System, Lig
 what the system reported is not. The Surface picker's **System** surface in the preview follows the
 same value. **Windows and macOS were not exercised:** the same code path is expected to work there (the
 windowing library reports the theme on both) but it has not been run.
+
+### Interface size
+
+Between Theme and the keyboard shortcuts: a line "Makes text and buttons larger." and a group of
+three choices named in words, **Normal** (100 %), **Large** (125 %) and **Extra large** (150 %)
+(Japanese 標準 / 大きい / とても大きい). Choosing applies at once, on the whole interface (text, icons,
+spacing, fixed widths: iced's `scale_factor` multiplies the system's display scaling), and is
+persisted. There is no 200 % step, no zoom shortcut and no free value.
+
+- **Stored** in `settings.json` as `"interface_size"`: `"normal"`, `"large"` or `"extra_large"`. A file
+  without the field (1.28 and earlier) loads as Normal; so does an unknown name, an empty string, the
+  wrong case, a number, `null` or any other value; an unknown extra key in the file is ignored. The
+  application always starts.
+- **Minimum window size:** 360 × 480 logical pixels (the smallest size the layout is tested at), asked
+  of the window at start and again after every change of the step, because a logical size is
+  converted with the scale in force at the time of the request. At Extra large that is 540 × 720
+  physical pixels on a display at 100 %.
+- **The mobile breakpoint (768 px) is evaluated in scaled logical pixels**, the size iced reports for
+  the window: a 1280 px window at Extra large is reported as 853 and uses the desktop layout; one of
+  1000 px is reported as 666 and uses the phone layout.
+- **The system's own display scaling** is multiplied with the step where the application follows it
+  (a native Wayland session); under X11 it was not followed in the last check (see the README), so
+  the page makes no claim about it.
+- **Reachable at every step:** a Tab stop (one for the group), ↑ ↓ choose and apply at once, the page
+  scrolls to keep the focus in view, and the pointer works. The headless matrix needs no extra sizes:
+  a layout depends only on the logical window size, and 853 × 480 (a 1280 × 720 window at Extra large)
+  is one of its sizes.
 
 ### Keyboard shortcuts
 
@@ -367,6 +394,7 @@ Stored as JSON in the OS standard config directory.
 
 - Locale selection
 - Theme selection
+- Interface size (Normal, Large, Extra large)
 - Full export plan (checkboxes, PNG sizes, ICO frame sizes (default 16/32/48), vtracer preset, resize
   algorithm, web manifest fields, monochrome toggle, keep-transparency
   toggle)

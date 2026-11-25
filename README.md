@@ -104,11 +104,13 @@ your operating system's light or dark setting while Logolig runs (on Linux throu
 desktop portal; where nothing reports a theme it uses light, and Settings says so).
 Windows and macOS have not been tested.
 
-To make everything larger, use your operating system's display scaling. The
-application has no zoom setting of its own; it is drawn at the scale of your
-display. Checked on a native Wayland session (an output scale of 1.2 made the
-window 1.2 times larger); under X11 (including XWayland) the application was
-**not** scaled in the same check, and Windows and macOS were not checked.
+To make everything larger, choose **Interface size** in **Settings**: **Normal**,
+**Large** (125 %) or **Extra large** (150 %). Text, icons and spacing grow together, the
+choice is saved, and the window keeps a minimum size so that nothing is cut off. Your
+operating system's display scaling still works too: checked on a native Wayland session (an
+output scale of 1.2 made the window 1.2 times larger); under X11 (including XWayland) the
+application was **not** scaled by the system in that check, so there the Interface size
+setting is the way to enlarge it. Windows and macOS were not checked.
 
 The generated `favicon-snippet.html` is paste-ready for your `<head>`.
 
