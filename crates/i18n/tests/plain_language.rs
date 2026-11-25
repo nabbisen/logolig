@@ -10,7 +10,7 @@
 //!   grayscale blurb, and `ICO` is named nowhere else on the page.
 //!
 //! Layout is not tested here: the matrix of `ui_layout_tests` lays every one of these strings out at
-//! seven window sizes in both languages.
+//! eight window sizes in both languages.
 
 use logolig::MessageKey;
 use logolig_i18n::{Locale, Translator};

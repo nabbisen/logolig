@@ -85,6 +85,10 @@ fn each_group_is_one_tab_stop() {
     let language = one_stop(&settings, &["日本語", "English"]);
     let theme = one_stop(&settings, &["Light", "Dark"]);
     assert_ne!(language, theme, "two groups, two stops");
+    // RFC 034, J24: the Interface size group is a third one.
+    let interface_size = one_stop(&settings, &["Normal", "Large", "Extra large"]);
+    assert_ne!(interface_size, language);
+    assert_ne!(interface_size, theme);
 
     let preview = state(Case::ResultPreview);
     let view_as = one_stop(
@@ -149,6 +153,34 @@ fn settings_groups_publish_the_messages_the_rows_published() {
         assert!(
             press(&settings, "Light", key).is_empty(),
             "{key:?} on the theme group"
+        );
+    }
+}
+
+/// The Interface size group (RFC 034, J24): the arrow keys choose and apply at once, a click chooses,
+/// and the step already in force publishes nothing.
+#[test]
+fn the_interface_size_group_publishes_the_steps() {
+    let settings = state(Case::Settings); // Normal is in force
+    assert_eq!(
+        press(&settings, "Normal", Named::ArrowDown),
+        ["InterfaceSizeChosen(Large)"]
+    );
+    assert_eq!(
+        press(&settings, "Normal", Named::ArrowUp),
+        ["InterfaceSizeChosen(ExtraLarge)"],
+        "wraps to the last"
+    );
+    assert_eq!(
+        click(&settings, "Extra large"),
+        ["InterfaceSizeChosen(ExtraLarge)"]
+    );
+    assert_eq!(click(&settings, "Large"), ["InterfaceSizeChosen(Large)"]);
+    assert!(click(&settings, "Normal").is_empty(), "the chosen step");
+    for key in [Named::Enter, Named::Space] {
+        assert!(
+            press(&settings, "Normal", key).is_empty(),
+            "{key:?} on the chosen step"
         );
     }
 }

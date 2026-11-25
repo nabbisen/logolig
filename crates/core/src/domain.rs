@@ -1,6 +1,7 @@
 //! Domain model layer. No side effects; pure types only.
 
 pub mod export_plan;
+pub mod interface_size;
 pub mod microsoft_app_logo;
 pub mod persisted_settings;
 pub mod preview_profile;
@@ -15,6 +16,7 @@ pub use export_plan::{ExportPlan, ICO_SIZE_MAX, ICO_SIZE_MIN, PNG_SIZE_MAX, PNG_
 // Re-exported although deprecated: removing a public item would break the published API.
 #[allow(deprecated)]
 pub use export_plan::SizeOverride;
+pub use interface_size::InterfaceSize;
 pub use microsoft_app_logo::{MICROSOFT_APP_LOGOS, MicrosoftAppLogoSpec};
 pub use persisted_settings::PersistedSettings;
 pub use preview_profile::{PreviewContext, PreviewProfile};

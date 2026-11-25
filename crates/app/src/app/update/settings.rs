@@ -27,6 +27,22 @@ pub(super) fn locale_picked(state: &mut AppState, opt: Option<Locale>) -> Task<M
     Task::none()
 }
 
+/// Handler for `Message::InterfaceSizeChosen` (RFC 034, J24): stores the step, saves that leaf of the
+/// settings file, and asks the window to hold its minimum size again (the logical minimum is converted
+/// with the scale in force when the request is made, so it must follow every change). Choosing the step
+/// already in force does nothing: no write, no task.
+pub(super) fn interface_size_chosen(
+    state: &mut AppState,
+    size: logolig::InterfaceSize,
+) -> Task<Message> {
+    if state.interface_size == size {
+        return Task::none();
+    }
+    state.interface_size = size;
+    persist_settings(state);
+    super::super::min_window_size_task()
+}
+
 /// Handler for `Message::AlgorithmChanged`.
 pub(super) fn algorithm_changed(state: &mut AppState, alg: ResizeAlgorithm) -> Task<Message> {
     state.export_plan.algorithm = alg;

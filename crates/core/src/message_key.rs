@@ -381,4 +381,16 @@ pub enum MessageKey {
         note = "unused: Tab moves the focus through every control now (RFC 027); removed at the next major version"
     )]
     ShortcutsLimitNote,
+
+    // --- RFC 034, J24: interface size ---
+    /// "Interface size" heading of the Settings page section (RFC 034, J24).
+    SectionInterfaceSize,
+    /// The one line under it: what the setting does (no claim about the system's own scaling: it is not followed under X11).
+    SectionInterfaceSizeBlurb,
+    /// "Normal" (100 %) option.
+    InterfaceSizeNormal,
+    /// "Large" (125 %) option.
+    InterfaceSizeLarge,
+    /// "Extra large" (150 %) option.
+    InterfaceSizeExtraLarge,
 }

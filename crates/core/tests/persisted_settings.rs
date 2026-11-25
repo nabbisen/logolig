@@ -14,7 +14,9 @@
 use std::cell::RefCell;
 use std::convert::Infallible;
 
-use logolig::{ExportPlan, PersistedSettings, ResizeAlgorithm, SettingsStore, ThemeMode};
+use logolig::{
+    ExportPlan, InterfaceSize, PersistedSettings, ResizeAlgorithm, SettingsStore, ThemeMode,
+};
 use serde::{Serialize, de::DeserializeOwned};
 
 // ---------------------------------------------------------------------------
@@ -89,6 +91,7 @@ fn persisted_settings_round_trip_through_json() {
         },
         theme: ThemeMode::Dark,
         locale: Some("ja".to_string()),
+        interface_size: InterfaceSize::Large,
     };
 
     let json = serde_json::to_string(&original).unwrap();
@@ -99,6 +102,7 @@ fn persisted_settings_round_trip_through_json() {
     assert!(!restored.export_plan.include_svg);
     assert_eq!(restored.theme, ThemeMode::Dark);
     assert_eq!(restored.locale.as_deref(), Some("ja"));
+    assert_eq!(restored.interface_size, InterfaceSize::Large);
 }
 
 // ---------------------------------------------------------------------------

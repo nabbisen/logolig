@@ -55,6 +55,9 @@ pub struct IngestReturn {
 pub struct AppState {
     pub screen: Screen,
     pub theme: ThemeMode,
+    /// How large the interface is drawn (RFC 034, J24). Loaded from the settings file at boot, so the
+    /// first frame is already at the saved size; `app::scale_for` hands it to iced.
+    pub interface_size: logolig::InterfaceSize,
     pub source_path: Option<PathBuf>,
     /// Set when the name of the loaded file contradicts its content (RFC 014): the one notice has
     /// been shown, and for a JPEG it already contained the JPEG advisory.
@@ -228,6 +231,7 @@ impl AppState {
             Ok(persisted) => {
                 state.export_plan = persisted.export_plan;
                 state.theme = persisted.theme;
+                state.interface_size = persisted.interface_size;
                 persisted_locale_tag = persisted.locale.clone();
                 state.store = Some(store);
             }
@@ -271,6 +275,7 @@ impl Default for AppState {
         Self {
             screen: Screen::default(),
             theme: ThemeMode::default(),
+            interface_size: logolig::InterfaceSize::default(),
             source_path: None,
             source_format_note: None,
             ingest_return: None,
@@ -344,4 +349,33 @@ pub(crate) fn is_mobile(state: &AppState) -> bool {
 }
 
 /// Mobile breakpoint in logical pixels. See [`is_mobile`] for details.
+///
+/// "Logical" here is **after the interface size** (RFC 034, J24): iced's `scale_factor` multiplies the
+/// system's scaling, and `window::Event::Resized` reports the logical size of that scaled viewport. At
+/// Extra large (150 %) a 1280 px wide window reports 853, so the breakpoint compares scaled pixels and
+/// a larger interface switches to the phone layout at a wider window, which is what keeps it readable.
 pub(crate) const MOBILE_BREAKPOINT_PX: f32 = 768.0;
+
+/// The smallest logical window the layout is tested at (the headless matrix of RFC 035: 360 × 480).
+/// It is logical, so at any interface size the physical minimum grows with the scale: 540 × 720 at
+/// Extra large on a 1.0 display.
+pub(crate) const MIN_WINDOW_WIDTH_PX: f32 = 360.0;
+/// See [`MIN_WINDOW_WIDTH_PX`].
+pub(crate) const MIN_WINDOW_HEIGHT_PX: f32 = 480.0;
+
+/// The minimum window size, in logical pixels.
+pub(crate) fn min_window_size() -> iced::Size {
+    iced::Size::new(MIN_WINDOW_WIDTH_PX, MIN_WINDOW_HEIGHT_PX)
+}
+
+/// The factor iced multiplies the system's display scaling by: the chosen interface size.
+pub(crate) fn scale_for(state: &AppState) -> f32 {
+    state.interface_size.factor()
+}
+
+/// Asks the window to hold [`min_window_size`]. winit converts a logical size with the window's
+/// **current** scale (the system's times the interface size) at the moment of the call, so the task
+/// runs at boot, once the window exists, and again after every change of the interface size.
+pub(crate) fn min_window_size_task() -> iced::Task<super::Message> {
+    iced::window::oldest().and_then(|id| iced::window::set_min_size(id, Some(min_window_size())))
+}

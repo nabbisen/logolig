@@ -9,6 +9,7 @@
 //! - `theme`:       theme mode selection (System / Light / Dark)
 //! - `locale`:      optional locale override; `Some("ja")` overrides the
 //!   OS locale. Unused in v1.4 but wired up in v1.5+.
+//! - `interface_size`: the interface size step (Normal / Large / Extra large).
 //!
 //! ## What is NOT persisted
 //!
@@ -18,7 +19,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::domain::{ExportPlan, ThemeMode};
+use crate::domain::{ExportPlan, InterfaceSize, ThemeMode};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
@@ -31,4 +32,8 @@ pub struct PersistedSettings {
     /// `None` follows the OS-detected locale.
     /// Value is an IETF BCP-47-style tag such as `"en"` or `"ja"`.
     pub locale: Option<String>,
+    /// How large the interface is drawn (RFC 034, 1.29.0). A file written before that version has no
+    /// such field and loads as `Normal`; so does an unknown or malformed value (see
+    /// [`InterfaceSize`]).
+    pub interface_size: InterfaceSize,
 }

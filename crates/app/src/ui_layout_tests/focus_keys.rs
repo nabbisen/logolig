@@ -121,8 +121,8 @@ fn tab_walks_the_stops_in_order_and_does_not_wrap() {
     let mut p = probe_of(&settings, SIZE);
     assert_eq!(
         p.focus_targets().len(),
-        NAV + 2,
-        "the side bar, the two groups"
+        NAV + 3,
+        "the side bar, the three groups (language, theme, interface size)"
     );
     assert_eq!(focused(&mut p), None);
     for i in 0..NAV {
@@ -133,6 +133,10 @@ fn tab_walks_the_stops_in_order_and_does_not_wrap() {
     assert_eq!(focused(&mut p), Some(NAV), "the language group");
     tab(&mut p);
     assert_eq!(focused(&mut p), Some(NAV + 1), "the theme group");
+    tab(&mut p);
+    assert_eq!(focused(&mut p), Some(NAV + 2), "the interface size group");
+    shift_tab(&mut p);
+    assert_eq!(focused(&mut p), Some(NAV + 1), "Shift+Tab goes back");
     shift_tab(&mut p);
     assert_eq!(focused(&mut p), Some(NAV), "Shift+Tab goes back");
     for _ in 0..NAV {
@@ -151,7 +155,7 @@ fn tab_walks_the_stops_in_order_and_does_not_wrap() {
     );
     tab(&mut p);
     assert_eq!(focused(&mut p), Some(0), "and the next Tab starts again");
-    for _ in 0..NAV + 2 {
+    for _ in 0..NAV + 3 {
         tab(&mut p);
     }
     assert_eq!(

@@ -473,9 +473,12 @@ pub(super) const CASES: [Case; 12] = [
     Case::ResultPreviewChecker,
 ];
 
-/// The window sizes, in logical pixels. 767 and 768 straddle the mobile breakpoint.
-pub(super) const SIZES: [(f32, f32); 7] = [
+/// The window sizes, in logical pixels. 767 and 768 straddle the mobile breakpoint. 853 × 480 is
+/// what a 1280 × 720 window reports at the Extra large interface size (RFC 034, J24: a layout depends
+/// only on the logical size, so this size stands for the 150 % step).
+pub(super) const SIZES: [(f32, f32); 8] = [
     (1280.0, 720.0),
+    (853.0, 480.0),
     (1024.0, 600.0),
     (800.0, 600.0),
     (767.0, 480.0),

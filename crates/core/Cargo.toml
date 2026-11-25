@@ -106,6 +106,10 @@ name = "vectorize"
 path = "tests/vectorize.rs"
 
 [[test]]
+name = "interface_size"
+path = "tests/interface_size.rs"
+
+[[test]]
 name = "persisted_settings"
 path = "tests/persisted_settings.rs"
 

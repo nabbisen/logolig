@@ -177,6 +177,13 @@ pub(crate) struct Dictionary {
     pub toast_dialog_unavailable_title: String,
     pub toast_dialog_unavailable_chooser_body: String,
     pub toast_dialog_unavailable_save_body: String,
+
+    // Interface size (RFC 034, J24)
+    pub section_interface_size: String,
+    pub section_interface_size_blurb: String,
+    pub interface_size_normal: String,
+    pub interface_size_large: String,
+    pub interface_size_extra_large: String,
     pub toast_format_mismatch_title: String,
     pub toast_format_mismatch_body: String,
     pub toast_format_mismatch_jpeg_tail: String,
@@ -434,6 +441,11 @@ impl Dictionary {
                 &self.toast_dialog_unavailable_chooser_body
             }
             MessageKey::ToastDialogUnavailableSaveBody => &self.toast_dialog_unavailable_save_body,
+            MessageKey::SectionInterfaceSize => &self.section_interface_size,
+            MessageKey::SectionInterfaceSizeBlurb => &self.section_interface_size_blurb,
+            MessageKey::InterfaceSizeNormal => &self.interface_size_normal,
+            MessageKey::InterfaceSizeLarge => &self.interface_size_large,
+            MessageKey::InterfaceSizeExtraLarge => &self.interface_size_extra_large,
             MessageKey::ToastFormatMismatchTitle => &self.toast_format_mismatch_title,
             MessageKey::ToastFormatMismatchBody => &self.toast_format_mismatch_body,
             MessageKey::ToastFormatMismatchJpegTail => &self.toast_format_mismatch_jpeg_tail,

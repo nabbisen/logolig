@@ -17,6 +17,7 @@ pub(super) fn snapshot_persisted(state: &AppState) -> logolig::PersistedSettings
         // v1.5.0: save the user locale override as a BCP-47 tag.
         // None means fall back to OS detection on next launch.
         locale: state.locale_override.map(|loc| loc.as_bcp47().to_string()),
+        interface_size: state.interface_size,
     }
 }
 

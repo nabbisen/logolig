@@ -7,7 +7,7 @@
 use iced::widget::{column, container, row, scrollable, text};
 use iced::{Element, Length, Theme};
 
-use logolig::{MessageKey, ThemeMode};
+use logolig::{InterfaceSize, MessageKey, ThemeMode};
 use logolig_i18n::Locale;
 
 use crate::app::{AppState, Message, resolve_theme};
@@ -66,16 +66,48 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
         &theme,
     );
 
+    // RFC 034, J24: how large the whole interface is drawn. It sits after Theme and before the
+    // shortcuts. The page itself growing as the choice is made is the preview: the names are not
+    // each drawn at their own size (snora's radio labels have one size).
+    let interface_size_section = section(
+        t.t(MessageKey::SectionInterfaceSize),
+        column![
+            text(t.t(MessageKey::SectionInterfaceSizeBlurb))
+                .size(type_scale::SECONDARY)
+                .color(colors::muted_text(&theme)),
+            radio_group(
+                InterfaceSize::all(),
+                &state.interface_size,
+                |size| t.t(match size {
+                    InterfaceSize::Normal => MessageKey::InterfaceSizeNormal,
+                    InterfaceSize::Large => MessageKey::InterfaceSizeLarge,
+                    InterfaceSize::ExtraLarge => MessageKey::InterfaceSizeExtraLarge,
+                    // `InterfaceSize` is `#[non_exhaustive]`: a step added later needs its own name.
+                    _ => MessageKey::InterfaceSizeNormal,
+                }),
+                Message::InterfaceSizeChosen,
+            )
+        ]
+        .spacing(8)
+        .into(),
+        &theme,
+    );
+
     let shortcuts_section = shortcuts_section(state, &theme);
 
     // The page scrolls as one (RFC 026), like Customize: at a height or width that does not hold
     // the content nothing is squeezed out; the content and its order do not change.
     scrollable(
         container(
-            column![language_section, theme_section, shortcuts_section]
-                .spacing(32)
-                .padding([24, 32])
-                .max_width(480),
+            column![
+                language_section,
+                theme_section,
+                interface_size_section,
+                shortcuts_section
+            ]
+            .spacing(32)
+            .padding([24, 32])
+            .max_width(480),
         )
         .width(Length::Fill),
     )

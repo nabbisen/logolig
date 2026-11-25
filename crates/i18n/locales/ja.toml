@@ -250,3 +250,10 @@ shortcuts_limit_note = "Tab キーでボタンや入力欄の間を移動する�
 toast_dialog_unavailable_title = "ファイルダイアログを開けません"
 toast_dialog_unavailable_chooser_body = "このシステムでは、ファイルダイアログを利用できません。ウィンドウにファイルをドラッグするか、ファイルダイアログを備えたデスクトップポータル (例: xdg-desktop-portal-gtk) をインストールしてください。"
 toast_dialog_unavailable_save_body = "このシステムでは、保存ダイアログを利用できません。ファイルダイアログを備えたデスクトップポータル (例: xdg-desktop-portal-gtk) をインストールしてください。"
+
+# RFC 034, J24: the Interface size setting on the Settings page.
+section_interface_size = "表示の大きさ"
+section_interface_size_blurb = "文字とボタンをまとめて大きくします。"
+interface_size_normal = "標準"
+interface_size_large = "大きい"
+interface_size_extra_large = "とても大きい"

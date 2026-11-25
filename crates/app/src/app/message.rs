@@ -96,6 +96,8 @@ pub enum Message {
     LocalePicked(Option<Locale>),
     /// Theme confirmed in the Settings page.
     ThemePicked(ThemeMode),
+    /// Interface size confirmed in the Settings page (RFC 034, J24).
+    InterfaceSizeChosen(logolig::InterfaceSize),
 
     // Theme / UI
     // v1.19.0: old `ThemeToggled` (cycle UI) removed; replaced by `ThemePicked`.

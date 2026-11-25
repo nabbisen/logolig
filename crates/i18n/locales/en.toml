@@ -250,3 +250,10 @@ shortcuts_limit_note = "Moving between buttons and fields with the Tab key is no
 toast_dialog_unavailable_title = "No file dialog available"
 toast_dialog_unavailable_chooser_body = "No file dialog is available on this system. Drag a file onto the window instead, or install a desktop portal with a file dialog (for example xdg-desktop-portal-gtk)."
 toast_dialog_unavailable_save_body = "No save dialog is available on this system. Install a desktop portal with a file dialog (for example xdg-desktop-portal-gtk)."
+
+# RFC 034, J24: the Interface size setting on the Settings page.
+section_interface_size = "Interface size"
+section_interface_size_blurb = "Makes text and buttons larger."
+interface_size_normal = "Normal"
+interface_size_large = "Large"
+interface_size_extra_large = "Extra large"

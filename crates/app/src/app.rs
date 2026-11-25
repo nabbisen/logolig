@@ -28,10 +28,12 @@ mod update;
 
 pub use manifest_inputs::{ManifestField, ManifestInputs};
 pub use message::{DialogKind, Message};
+#[cfg(test)]
+pub(crate) use state::min_window_size;
 pub use state::{AppState, IngestReturn, NavPage, Screen};
-pub(crate) use state::{is_mobile, resolve_mode, resolve_theme};
+pub(crate) use state::{is_mobile, min_window_size_task, resolve_mode, resolve_theme, scale_for};
 
-use iced::{Element, Subscription, Theme};
+use iced::{Element, Subscription, Task, Theme};
 
 use logolig::MessageKey;
 
@@ -39,8 +41,6 @@ use update::update;
 
 // Names the tests under `app/` reach through `use super::*` (the items they test moved out of
 // this file; the tests themselves are unchanged).
-#[cfg(test)]
-use iced::Task;
 #[cfg(test)]
 use logolig::{AppError, SourceAsset, ThemeMode};
 #[cfg(test)]
@@ -72,7 +72,12 @@ pub fn run() -> iced::Result {
         || {
             (
                 AppState::boot(),
-                iced::system::theme().map(Message::SystemThemeMode),
+                // RFC 034, J24: the window's minimum size, asked once the window exists (the boot
+                // task runs after the window opened).
+                Task::batch([
+                    iced::system::theme().map(Message::SystemThemeMode),
+                    min_window_size_task(),
+                ]),
             )
         },
         update,
@@ -82,6 +87,7 @@ pub fn run() -> iced::Result {
     .window(crate::window::settings())
     .title(window_title)
     .theme(theme)
+    .scale_factor(scale_for)
     .subscription(subscription)
     .run()
 }
@@ -172,6 +178,9 @@ fn view(state: &AppState) -> Element<'_, Message> {
 
 #[cfg(test)]
 mod format_note_tests;
+
+#[cfg(test)]
+mod interface_size_tests;
 
 #[cfg(test)]
 mod input_tests;

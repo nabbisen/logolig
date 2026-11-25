@@ -150,6 +150,8 @@ pub(super) fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
+        Message::InterfaceSizeChosen(size) => settings::interface_size_chosen(state, size),
+
         Message::AlgorithmChanged(alg) => settings::algorithm_changed(state, alg),
         Message::IncludeSvgToggled(on) => settings::include_svg_toggled(state, on),
         Message::VectorizeOnRasterToggled(on) => {

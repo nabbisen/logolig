@@ -22,7 +22,7 @@
 //! | `ui_layout_tests/command_keys.rs` | key events into a focused text field: a command chord is a shortcut, never text |
 //! | `ui_layout_tests/nav_cue.rs` | the active page in the navigation (filled, bold, accent bar), and no text glyph as a state cue |
 //! | `ui_layout_tests/plain_language.rs` | "recommended" is on the default algorithm and preset only; each blurb is drawn directly under its heading in both languages; no literal placeholder (J23) |
-//! | `ui_layout_tests/radio_groups.rs` | the single-choice groups: one Tab stop each, the keys and clicks publish the messages the buttons did |
+//! | `ui_layout_tests/radio_groups.rs` | the single-choice groups (Settings: language, theme, interface size; the preview pickers): one Tab stop each, the keys and clicks publish the messages the buttons did |
 //! | `ui_layout_tests/scroll_areas.rs` | a page scrolls as one: no scroll area inside another, the Customize page has exactly one |
 //! | `ui_layout_tests/result_middle.rs` | the Result screen's scrolling middle is at least 200 px high at every matrix size, in both languages, 7 and 15 cards, preview closed and open (J22) |
 //! | `ui_layout_tests/ring.rs` | the focus ring, drawn: present, neutral, outside the control (so never merged with a selection mark), in both themes |
