@@ -188,10 +188,14 @@ then replaces it.
 | ← Back (Result screen) | Result → Empty, with the last result kept for session history |
 | Esc key | Closes the newest message; with none, Result → Empty (the same as ← Back). Other keyboard shortcuts: §14 |
 
-ZIP bundle entries carry a local wall-clock modified timestamp so desktop
-archive tools show useful "Last Modified" metadata alongside the created file.
-The ZIP timestamp format has no timezone field, so this is intentionally local
-time rather than UTC.
+ZIP bundle entries are stamped with the moment the archive was made, in **UTC**, in two
+places: the ZIP's own time field (which has no time zone and a resolution of two seconds, and
+covers 1980 to 2107; a clock outside that range is clamped) and the extended timestamp field
+(Unix seconds). Archive tools that read the extended timestamp (for example Info-ZIP `unzip` and
+`bsdtar`) set the extracted file's modification time to the exact moment, in the user's own time
+zone. Tools that read only the ZIP's own field show the UTC time as if it were local (Python's
+`zipfile` does); Windows Explorer and the macOS Archive Utility were not tested. The date is
+computed from the system clock by the application's own code: no time package is used.
 
 ## 5. Navigation (v1.22.0 side nav)
 
