@@ -84,7 +84,10 @@ covered by unit tests of the key mapping only, not by a run on such a layout.
   is separate from the marks of selection, so a checked box is never confused with
   a focused one.
 - **The focused control is always in view.** When it lies in a part that scrolls,
-  the page scrolls by the least amount that shows it, with room for its ring.
+  the page scrolls by the least amount that shows it, with room for its ring. A form field
+  that has a line under it for its error (the web manifest fields) counts together with that
+  line: when a bad value makes the sentence appear, or when the focus arrives on a field that
+  already shows it, the sentence is in view too, without scrolling by hand.
 - Ctrl, Alt or Cmd with Tab is not Tab and does nothing here.
 - A text field passes Tab on: the focus leaves the field and the field keeps its
   text. Esc inside the field leaves it first.
