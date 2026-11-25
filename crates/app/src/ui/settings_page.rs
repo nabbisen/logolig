@@ -75,7 +75,9 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
             text(t.t(MessageKey::SectionInterfaceSizeBlurb))
                 .size(type_scale::SECONDARY)
                 .color(colors::muted_text(&theme)),
-            radio_group(
+            // Fixed id: the update that changes the step asks for the focus back on the group
+            // (the layout can switch, and the navigation then moves in the Tab order).
+            crate::focus::size_group(radio_group(
                 InterfaceSize::all(),
                 &state.interface_size,
                 |size| t.t(match size {
@@ -86,7 +88,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
                     _ => MessageKey::InterfaceSizeNormal,
                 }),
                 Message::InterfaceSizeChosen,
-            )
+            ))
         ]
         .spacing(8)
         .into(),

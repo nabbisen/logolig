@@ -30,7 +30,8 @@ pub(super) fn locale_picked(state: &mut AppState, opt: Option<Locale>) -> Task<M
 /// Handler for `Message::InterfaceSizeChosen` (RFC 034, J24): stores the step, saves that leaf of the
 /// settings file, and asks the window to hold its minimum size again (the logical minimum is converted
 /// with the scale in force when the request is made, so it must follow every change). Choosing the step
-/// already in force does nothing: no write, no task.
+/// already in force does nothing: no write, no task. A change also asks for the focus on the group again
+/// (J24b): the layout can switch, and the tree then changes shape, which drops the focus.
 pub(super) fn interface_size_chosen(
     state: &mut AppState,
     size: logolig::InterfaceSize,
@@ -50,7 +51,10 @@ pub(super) fn interface_size_chosen(
     );
     state.interface_size = size;
     persist_settings(state);
-    super::super::min_window_size_task()
+    Task::batch([
+        super::super::min_window_size_task(),
+        crate::focus::keep_size_group_focus(),
+    ])
 }
 
 /// Handler for `Message::AlgorithmChanged`.

@@ -54,6 +54,7 @@ mod focus_after;
 mod focus_disclosure;
 mod focus_in_view;
 mod focus_keys;
+mod focus_size_group;
 mod fonts;
 mod hit_area;
 mod manifest_input;

@@ -118,6 +118,22 @@ fn a_change_reissues_the_minimum_window_size_and_the_same_step_does_not() {
     assert_eq!(again.units(), 0, "the same step: no task");
 }
 
+/// J24b: a change returns the minimum-size request **and** the focus on the group (two tasks); the
+/// same step returns none of them.
+#[test]
+fn a_change_also_asks_for_the_focus_on_the_group() {
+    let mut state = AppState::default();
+    let change = update(
+        &mut state,
+        Message::InterfaceSizeChosen(InterfaceSize::Large),
+    );
+    assert_eq!(
+        change.units(),
+        min_window_size_task().units() + crate::focus::keep_size_group_focus().units(),
+        "the minimum size and the focus"
+    );
+}
+
 #[test]
 fn the_minimum_window_size_is_the_smallest_size_the_layout_is_tested_at() {
     assert_eq!(min_window_size(), iced::Size::new(360.0, 480.0));

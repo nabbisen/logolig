@@ -86,6 +86,37 @@ pub(crate) fn keep_focus(which: Disclosure) -> Task<Message> {
     iced::widget::operation::focus(which.id())
 }
 
+/// The Interface-size group (RFC 034, job J24b).
+///
+/// Choosing a step with an arrow key can switch the layout (at Extra large a desktop window is a
+/// phone-layout window): the navigation moves from first to last in the Tab order, and snora's
+/// rule for a tree that changes shape is "nothing is focused". The keyboard user who is choosing
+/// the size would lose the ring in the middle of the gesture, and the next arrow key would do
+/// nothing. So `update` asks for the focus on the group again, by its fixed `Id`, in the same
+/// step: the pattern, and the reason it needs no timer, are those of [`keep_focus`].
+///
+/// A click on an option publishes the same message, so it also leaves the group focused (see
+/// `focus_size_group.rs`).
+fn size_group_id() -> Id {
+    Id::new("interface-size-group")
+}
+
+/// `group`, given the fixed id that `keep_size_group_focus` looks for.
+pub(crate) fn size_group<'a, T>(
+    group: snora::RadioGroup<'a, T, Message>,
+) -> snora::RadioGroup<'a, T, Message>
+where
+    T: Clone + PartialEq + std::fmt::Display + 'a,
+{
+    group.id(size_group_id())
+}
+
+/// The task a change of the Interface size returns besides the minimum-size request: focus the
+/// group again.
+pub(crate) fn keep_size_group_focus() -> Task<Message> {
+    iced::widget::operation::focus(size_group_id())
+}
+
 /// Room kept around the control: the focus ring sits 2 px outside it and is 2 px thick.
 const RING: f32 = 4.0;
 
