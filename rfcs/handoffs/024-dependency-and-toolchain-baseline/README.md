@@ -9,3 +9,5 @@ Implementation handoff (J1, done) and follow-ups (J1b, done; J2a).
 - [`implementation-handoff-followup-tokio.md`](./implementation-handoff-followup-tokio.md)
 
 Review requests and evidence produced by the implementer are working material and are not stored here.
+
+- [`implementation-handoff-h1-spike.md`](./implementation-handoff-h1-spike.md) (H1, 1.29.0): evidence only. Replacement options for `chrono` (unmaintained, one use) and for the four warnings that come through `vtracer`'s old dependency chain; a recommendation and an outline for the implementation job.
