@@ -9,7 +9,7 @@ holds Fira Sans (bundled by `iced_graphics`), the Lucide icon font, and these tw
 
 | File | Source (system copy used) | Source sha256 | Subset sha256 |
 |---|---|---|---|
-| `NotoSansJP-subset.otf` | `/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc`, face 0 (Noto Sans CJK JP, Regular) | `b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a` | `520707a2e94c029d0c72f50a1770d97ca581abb7a29f3af4f1195dc76a57a2bc` |
+| `NotoSansJP-subset.otf` | `/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc`, face 0 (Noto Sans CJK JP, Regular) | `b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a` | `39bda53ecbafac522ec5d7f7975cc6db2324065e2cc6b9f2d52f9edad79a82d3` |
 | `AdwaitaSans-symbols-subset.ttf` | `/usr/share/fonts/Adwaita/AdwaitaSans-Regular.ttf` (Adwaita Sans, Regular) | `8381c33b9a44f066f2b99dba3d416a2342891e28c956a35dfd8d16ee2987e6d4` | `107b0b0bc8ef10f2c048d9bedc36c30aa163371444cf89d0b2ce67988abce541` |
 
 Sizes: 112728 bytes and 3880 bytes.

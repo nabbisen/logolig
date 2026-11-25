@@ -7,6 +7,8 @@ mod result;
 mod shell;
 mod shortcuts;
 mod task_queue;
+#[cfg(test)]
+mod text_guard_tests;
 mod toast_time;
 mod ui;
 #[cfg(test)]

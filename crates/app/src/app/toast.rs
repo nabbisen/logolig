@@ -11,14 +11,12 @@ use super::{AppState, Message};
 pub(super) fn push_error_toast(state: &mut AppState, err: AppError) {
     let id = next_id(state);
     let body = state.translator.translate_error(&err);
-    // Title is a generic 'operation failed' string.
-    // Currently hardcoded to English; a dedicated MessageKey could be added later.
-
+    let title = state.translator.t(MessageKey::ToastErrorTitle);
     state.toasts.push(
         Toast::new(
             id,
             ToastIntent::Error,
-            "Operation failed",
+            title,
             body,
             Message::DismissToast(id),
         )

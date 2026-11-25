@@ -54,7 +54,12 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
             PreviewContext::TransparencyChecker => checker_view(&cache.icon_120),
             // RFC 013: the mock-ups draw a resolved mode (Light or Dark), so "System" here follows
             // the operating system exactly as the app's own theme does.
-            _ => render_context(cache, context, resolve_mode(bg, state.system_theme)),
+            _ => render_context(
+                cache,
+                context,
+                resolve_mode(bg, state.system_theme),
+                &state.translator,
+            ),
         },
         None => loading_placeholder(state),
     };

@@ -33,17 +33,18 @@ pub fn ingest_task(path: PathBuf, job: u64) -> Task<Message> {
 ///
 /// `AsyncFileDialog::pick_file()` returns a `FileHandle`; call `.path()`
 /// to get a `&Path`, then clone to a `PathBuf` before sending as an iced Task message.
-pub fn pick_file_task() -> Task<Message> {
+/// `title` and `filter` are the translated title of the dialog and the name of its filter.
+pub fn pick_file_task(title: String, filter: String) -> Task<Message> {
     Task::perform(
-        async {
+        async move {
             // RFC 031: with positive evidence that no dialog can appear, say so instead.
             if crate::portal::no_dialog_can_appear().await {
                 return None;
             }
             Some(
                 rfd::AsyncFileDialog::new()
-                    .add_filter("Images", &["png", "svg", "webp", "jpg", "jpeg"])
-                    .set_title("Choose a PNG, SVG, WebP, or JPEG to forge favicons from")
+                    .add_filter(filter, &["png", "svg", "webp", "jpg", "jpeg"])
+                    .set_title(title)
                     .pick_file()
                     .await
                     .map(|handle| handle.path().to_path_buf()),

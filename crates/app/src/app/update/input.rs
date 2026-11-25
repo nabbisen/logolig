@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use iced::Task;
 
 use logolig::{
-    AppError, PreviewCache, PreviewProfile,
+    AppError, MessageKey, PreviewCache, PreviewProfile,
     services::transparency_audit::audit as audit_transparency,
 };
 
@@ -30,7 +30,10 @@ pub(super) fn pick_file_requested(state: &mut AppState) -> Task<Message> {
     // Result arrives as Message::FilePicked(Option<PathBuf>).
     // v1.12.0: re-select also reuses this message (keeps current screen,
     // cancelling returns to whatever screen was active).
-    crate::task_queue::pick_file_task()
+    crate::task_queue::pick_file_task(
+        state.translator.t(MessageKey::FileDialogChooseTitle),
+        state.translator.t(MessageKey::FileDialogImagesFilter),
+    )
 }
 
 /// Handler for `Message::DialogUnavailable` (RFC 031): the dialog was not opened because there is

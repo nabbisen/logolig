@@ -13,7 +13,7 @@
 //! - Click a per-card download button to save a single file via a dialog
 //! - Click "Download all (ZIP)" to bundle everything into a zip
 
-use logolig::Rgba8;
+use logolig::{MessageKey, Rgba8};
 
 /// Full set of conversion results held in memory.
 #[derive(Debug, Clone)]
@@ -93,15 +93,16 @@ pub enum ResultAssetKind {
 
 impl ResultAssetKind {
     /// Short label shown on the card badge.
-    pub fn badge_label(self) -> &'static str {
-        match self {
+    pub fn badge_label(self, t: &logolig_i18n::Translator) -> String {
+        let fixed = match self {
             ResultAssetKind::Png => "PNG",
             ResultAssetKind::Ico => "ICO",
             ResultAssetKind::Svg => "SVG",
-            ResultAssetKind::PngMono => "PNG mono",
+            ResultAssetKind::PngMono => return t.t(MessageKey::ResultBadgePngMono),
             ResultAssetKind::HtmlSnippet => "HTML",
             ResultAssetKind::WebManifest => "JSON",
-        }
+        };
+        fixed.to_string()
     }
 
     /// Whether a raster thumbnail can be rendered for this kind.

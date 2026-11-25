@@ -174,7 +174,10 @@ fn history_section<'a>(state: &'a AppState, theme: &Theme) -> Element<'a, Messag
     // Asset count from result_assets.
     let asset_count = state.result_assets.as_ref().map(|r| r.count()).unwrap_or(0);
 
-    let count_label = format!("{} files", asset_count);
+    let count_label = t.t_args(
+        MessageKey::HistoryFileCount,
+        &[("count", &asset_count.to_string())],
+    );
 
     let section_label = text(t.t(MessageKey::HistoryLastConversionLabel))
         .size(type_scale::SECONDARY)

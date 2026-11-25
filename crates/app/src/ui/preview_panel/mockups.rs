@@ -3,7 +3,8 @@
 use iced::widget::{Space, column, container, image, row, text};
 use iced::{Background, Border, Color, Element, Length, Theme};
 
-use logolig::{PreviewCache, PreviewContext, Rgba8, ThemeMode};
+use logolig::{MessageKey, PreviewCache, PreviewContext, Rgba8, ThemeMode};
+use logolig_i18n::Translator;
 
 use crate::app::Message;
 
@@ -17,10 +18,17 @@ pub(super) fn render_context<'a>(
     cache: &'a PreviewCache,
     context: PreviewContext,
     bg: ThemeMode,
+    t: &Translator,
 ) -> Element<'a, Message> {
     match context {
-        PreviewContext::BrowserTab16 => browser_tab_view(&cache.tab_16, bg),
-        PreviewContext::SmartphoneIcon => smartphone_view(&cache.icon_120, bg),
+        PreviewContext::BrowserTab16 => {
+            browser_tab_view(&cache.tab_16, bg, t.t(MessageKey::PreviewBrowserTabCaption))
+        }
+        PreviewContext::SmartphoneIcon => smartphone_view(
+            &cache.icon_120,
+            bg,
+            t.t(MessageKey::PreviewSmartphoneHomeCaption),
+        ),
         // Defensive: the outer `view` function routes TransparencyChecker
         // to `checker_view`, so this branch is never reached.
         // Return checker view defensively rather than panicking.
@@ -33,7 +41,7 @@ pub(super) fn render_context<'a>(
 /// Critical: display the 16×16 at **actual pixels** (§6.2 — visual quality check).
 /// `image::FilterMethod::Nearest` + `Length::Fixed(16.0)` prevent iced
 /// from auto-scaling.
-fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> {
+fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode, caption: String) -> Element<'a, Message> {
     let bg_color = chrome_bg_for(bg);
     let tab_color = tab_face_for(bg);
     let text_color = text_color_for(bg);
@@ -98,7 +106,7 @@ fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> 
     .width(Length::Fixed(560.0))
     .padding([8, 8]);
 
-    column![text("Browser tab — 16×16 actual size").size(12), chrome,]
+    column![text(caption).size(12), chrome,]
         .spacing(8)
         .align_x(iced::alignment::Horizontal::Center)
         .into()
@@ -108,7 +116,7 @@ fn browser_tab_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> 
 ///
 /// Displays 120×120 (60 pt at 2× DPI). Rounded-corner mask via
 /// container Border::radius.
-fn smartphone_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> {
+fn smartphone_view<'a>(rgba: &'a Rgba8, bg: ThemeMode, caption: String) -> Element<'a, Message> {
     let wallpaper = wallpaper_for(bg);
     let label_color = text_color_for(bg);
 
@@ -154,7 +162,7 @@ fn smartphone_view<'a>(rgba: &'a Rgba8, bg: ThemeMode) -> Element<'a, Message> {
         .center_x(Length::Fill)
         .center_y(Length::Fill);
 
-    column![text("Smartphone home — 60pt @2x").size(12), home,]
+    column![text(caption).size(12), home,]
         .spacing(8)
         .align_x(iced::alignment::Horizontal::Center)
         .into()

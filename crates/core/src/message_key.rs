@@ -393,4 +393,20 @@ pub enum MessageKey {
     InterfaceSizeLarge,
     /// "Extra large" (150 %) option.
     InterfaceSizeExtraLarge,
+
+    // --- RFC 016, K4: text that was written in the code ---
+    /// Title of the persistent error toast (generic: the body says what failed).
+    ToastErrorTitle,
+    /// Name of the file filter in the "choose a file" dialog.
+    FileDialogImagesFilter,
+    /// Title of the "choose a file" dialog.
+    FileDialogChooseTitle,
+    /// The history card: how many files the last conversion made (no plural form: a label and a number).
+    HistoryFileCount,
+    /// Caption under the browser-tab mock-up of the preview.
+    PreviewBrowserTabCaption,
+    /// Caption under the phone home-screen mock-up of the preview.
+    PreviewSmartphoneHomeCaption,
+    /// Badge on the result cards of the grayscale PNG files (the mono folder).
+    ResultBadgePngMono,
 }

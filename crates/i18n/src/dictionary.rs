@@ -178,6 +178,15 @@ pub(crate) struct Dictionary {
     pub toast_dialog_unavailable_chooser_body: String,
     pub toast_dialog_unavailable_save_body: String,
 
+    // Text that was written in the code (RFC 016, K4)
+    pub toast_error_title: String,
+    pub file_dialog_images_filter: String,
+    pub file_dialog_choose_title: String,
+    pub history_file_count: String,
+    pub preview_browser_tab_caption: String,
+    pub preview_smartphone_home_caption: String,
+    pub result_badge_png_mono: String,
+
     // Interface size (RFC 034, J24)
     pub section_interface_size: String,
     pub section_interface_size_blurb: String,
@@ -441,6 +450,13 @@ impl Dictionary {
                 &self.toast_dialog_unavailable_chooser_body
             }
             MessageKey::ToastDialogUnavailableSaveBody => &self.toast_dialog_unavailable_save_body,
+            MessageKey::ToastErrorTitle => &self.toast_error_title,
+            MessageKey::FileDialogImagesFilter => &self.file_dialog_images_filter,
+            MessageKey::FileDialogChooseTitle => &self.file_dialog_choose_title,
+            MessageKey::HistoryFileCount => &self.history_file_count,
+            MessageKey::PreviewBrowserTabCaption => &self.preview_browser_tab_caption,
+            MessageKey::PreviewSmartphoneHomeCaption => &self.preview_smartphone_home_caption,
+            MessageKey::ResultBadgePngMono => &self.result_badge_png_mono,
             MessageKey::SectionInterfaceSize => &self.section_interface_size,
             MessageKey::SectionInterfaceSizeBlurb => &self.section_interface_size_blurb,
             MessageKey::InterfaceSizeNormal => &self.interface_size_normal,

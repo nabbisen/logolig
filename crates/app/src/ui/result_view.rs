@@ -30,6 +30,7 @@ use snora::lucide;
 use snora::widget::icon_element_sized;
 
 use logolig::{MessageKey, Rgba8};
+use logolig_i18n::Translator;
 
 use crate::app::{AppState, Message, resolve_theme};
 use crate::result::{ResultAssetItem, ResultAssetKind, ResultAssets};
@@ -84,9 +85,8 @@ pub fn view<'a>(state: &'a AppState) -> Element<'a, Message> {
     } else {
         3
     };
-    let download_one_label = t.t(MessageKey::ResultDownloadOne);
     let compact = crate::app::is_mobile(state);
-    let grid = build_grid(assets, columns, compact, &theme, &download_one_label);
+    let grid = build_grid(assets, columns, compact, &theme, t);
 
     // 4. ZIP "Download all" button: the fixed footer.
     let download_all = container(
@@ -196,13 +196,13 @@ fn build_grid<'a>(
     columns: usize,
     compact: bool,
     theme: &Theme,
-    download_one_label: &str,
+    t: &Translator,
 ) -> Element<'a, Message> {
     let mut col = column![].spacing(12);
     let mut cur_row = row![].spacing(12);
     let mut count_in_row = 0usize;
     for (idx, item) in assets.items.iter().enumerate() {
-        cur_row = cur_row.push(asset_card(idx, item, compact, theme, download_one_label));
+        cur_row = cur_row.push(asset_card(idx, item, compact, theme, t));
         count_in_row += 1;
         if count_in_row == columns {
             col = col.push(cur_row);
@@ -226,7 +226,7 @@ fn asset_card<'a>(
     item: &'a ResultAssetItem,
     compact: bool,
     theme: &Theme,
-    download_one_label: &str,
+    t: &Translator,
 ) -> Element<'a, Message> {
     // Source file name (abbreviated)
     let file_name_text = text(item.relative_path.clone())
@@ -240,7 +240,7 @@ fn asset_card<'a>(
     };
 
     // Meta row: badge (ICO / PNG / SVG / HTML / JSON) + dimensions (images) + size
-    let badge = text(item.kind.badge_label())
+    let badge = text(item.kind.badge_label(t))
         .size(type_scale::SECONDARY)
         .color(colors::section_label(theme));
     let size_label = text(item.size_display())
@@ -276,7 +276,7 @@ fn asset_card<'a>(
     let dl_button = snora::control(
         row![
             icon_element_sized::<Message>(&Icon::Lucide(lucide::Download), type_scale::ICON_SMALL),
-            text(download_one_label.to_string())
+            text(t.t(MessageKey::ResultDownloadOne))
                 .size(type_scale::BODY)
                 .color(colors::file_name(theme)),
         ]

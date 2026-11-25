@@ -257,3 +257,12 @@ section_interface_size_blurb = "Makes text and buttons larger."
 interface_size_normal = "Normal"
 interface_size_large = "Large"
 interface_size_extra_large = "Extra large"
+
+# RFC 016, K4: text that was written in the code.
+toast_error_title = "Operation failed"
+file_dialog_images_filter = "Images"
+file_dialog_choose_title = "Choose a PNG, SVG, WebP, or JPEG to forge favicons from"
+history_file_count = "Files: {count}"
+preview_browser_tab_caption = "Browser tab — 16×16 actual size"
+preview_smartphone_home_caption = "Smartphone home — 60pt @2x"
+result_badge_png_mono = "PNG mono"
