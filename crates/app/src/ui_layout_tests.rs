@@ -57,6 +57,7 @@ mod focus_keys;
 mod focus_size_group;
 mod fonts;
 mod hit_area;
+mod manifest_error_in_view;
 mod manifest_input;
 mod marks;
 mod nav_cue;

@@ -117,6 +117,15 @@ pub(crate) fn keep_size_group_focus() -> Task<Message> {
     iced::widget::operation::focus(size_group_id())
 }
 
+/// The id that marks a container as "keep this together with its control in view" (release 1.29.0,
+/// job R2b): a form field with the line under it that explains an invalid value. The line is a part of
+/// the field for the user (it is what the field says), so when the focused control sits inside such
+/// a container, `keep_in_view` shows the **whole container**: a user who types a bad value must see
+/// the explanation without scrolling. Controls outside such containers behave as before.
+pub(crate) fn with_its_line() -> Id {
+    Id::new("keep-the-line-with-its-control")
+}
+
 /// Room kept around the control: the focus ring sits 2 px outside it and is 2 px thick.
 const RING: f32 = 4.0;
 
@@ -130,6 +139,10 @@ struct FindFocused {
     entering: Option<usize>,
     /// The areas we are inside, outermost first.
     inside: Vec<usize>,
+    /// The container marked by [`with_its_line`] whose children are about to be traversed.
+    entering_group: Option<Rectangle>,
+    /// The marked containers we are inside, outermost first.
+    groups: Vec<Rectangle>,
     found: Option<(Rectangle, Vec<usize>)>,
 }
 
@@ -139,9 +152,22 @@ impl Operation<()> for FindFocused {
         if let Some(area) = entered {
             self.inside.push(area);
         }
+        let group = self.entering_group.take();
+        if let Some(bounds) = group {
+            self.groups.push(bounds);
+        }
         operate(self);
+        if group.is_some() {
+            self.groups.pop();
+        }
         if entered.is_some() {
             self.inside.pop();
+        }
+    }
+
+    fn container(&mut self, id: Option<&Id>, bounds: Rectangle) {
+        if id == Some(&with_its_line()) {
+            self.entering_group = Some(bounds);
         }
     }
 
@@ -159,7 +185,9 @@ impl Operation<()> for FindFocused {
 
     fn focusable(&mut self, _id: Option<&Id>, bounds: Rectangle, state: &mut dyn Focusable) {
         if state.is_focused() {
-            self.found = Some((bounds, self.inside.clone()));
+            // A field inside a marked container is shown together with the rest of it.
+            let shown = self.groups.last().copied().unwrap_or(bounds);
+            self.found = Some((shown, self.inside.clone()));
         }
     }
 

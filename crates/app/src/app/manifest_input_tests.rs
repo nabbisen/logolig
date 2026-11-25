@@ -26,7 +26,18 @@ fn type_into(state: &mut AppState, field: ManifestField, text: &str) {
         BackgroundColor => Message::WebManifestBackgroundColorChanged(text.into()),
     };
     let task = update(state, message);
-    assert_eq!(task.units(), 0, "typing starts nothing");
+    // Typing starts no work. The one task there may be is the scroll that keeps the line under the
+    // field in view while that line is shown (release 1.29.0, R2b).
+    let expected = if state.manifest_inputs.shows_error(field) {
+        crate::focus::keep_in_view::<Message>().units()
+    } else {
+        0
+    };
+    assert_eq!(
+        task.units(),
+        expected,
+        "typing starts nothing but the scroll"
+    );
 }
 
 fn submit(state: &mut AppState, field: ManifestField) {

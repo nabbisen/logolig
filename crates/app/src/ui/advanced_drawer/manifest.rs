@@ -159,5 +159,8 @@ fn labeled_input<'a>(
         .into(),
         None => Space::new().into(),
     };
-    column![input_row, message].spacing(2).into()
+    // The field and its line are one thing for `keep_in_view`: the explanation is in view with the field.
+    container(column![input_row, message].spacing(2))
+        .id(crate::focus::with_its_line())
+        .into()
 }

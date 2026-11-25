@@ -60,7 +60,18 @@ fn edited(state: &mut AppState, field: ManifestField, text: String) -> Task<Mess
     if let Some(canonical) = canonical {
         commit(state, field, canonical);
     }
-    Task::none()
+    keep_error_in_view(state, field)
+}
+
+/// A line that has just appeared under the focused field must be in view (release 1.29.0, R2b): the
+/// field and its line are one container for `keep_in_view`, and the operation runs after the page is
+/// rebuilt with the line, in the same step (no timer). Nothing is asked when the field shows no error.
+fn keep_error_in_view(state: &AppState, field: ManifestField) -> Task<Message> {
+    if state.manifest_inputs.shows_error(field) {
+        crate::focus::keep_in_view()
+    } else {
+        Task::none()
+    }
 }
 
 /// Handler for `Message::WebManifestNameChanged`.
@@ -98,7 +109,7 @@ pub(super) fn web_manifest_submitted(state: &mut AppState, field: ManifestField)
         state.manifest_inputs.set(field, canonical.clone());
         commit(state, field, canonical);
     }
-    Task::none()
+    keep_error_in_view(state, field)
 }
 
 /// Handler for `Message::IncludeMonochromeToggled`.
