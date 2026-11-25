@@ -116,9 +116,12 @@ not expose and the exporter honours, so only an edited settings file can change 
 Three presets, named in the interface as follows:
 
 - **A balance for most pictures (Default, recommended)**: the default.
-- **Logos and icons, with crisp edges (Sharp)**: an opt-in preset intended for logos and icons.
-- **Photos and gradients, keeps fine color differences (Photo-rich)**: smooth curves for photo-like
-  or gradient sources.
+- **Logos and icons, keeps corners sharp (Sharp)**: an opt-in preset intended for logos and icons;
+  vtracer's `corner_threshold` is 45 (RFC 022: the earlier 80 smoothed corners of about 100 to 120
+  degrees more than the default 60 does).
+- **Photos and colorful images, keeps a little more color detail (Photo-rich)**: colour precision 8
+  and small noise ignored, for photo-like and colourful images. The gain over the default is small, and
+  no preset keeps a smooth gradient (it is flattened to one colour).
 
 One group of these three choices, in the Customize page's "Turning a picture into SVG" section, is
 the only control for this setting. It applies only when a PNG, WebP or JPEG is turned into SVG, that
@@ -257,8 +260,8 @@ width, always reachable via the Customize nav item.
 the export.
 
 **Turning a picture into SVG** — a line that says when the group applies, then one group of three
-named choices ("Logos and icons, with crisp edges (Sharp)", "A balance for most pictures (Default,
-recommended)" and "Photos and gradients, keeps fine color differences (Photo-rich)"), mapping to the
+named choices ("Logos and icons, keeps corners sharp (Sharp)", "A balance for most pictures (Default,
+recommended)" and "Photos and colorful images, keeps a little more color detail (Photo-rich)"), mapping to the
 vtracer presets Sharp / Default / PhotoRich. The same group is the only control
 for this setting (there is no separate preset list under the SVG option).
 
