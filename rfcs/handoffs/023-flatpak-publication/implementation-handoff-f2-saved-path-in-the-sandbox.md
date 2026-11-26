@@ -26,4 +26,4 @@ The code (`crates/app/src/app/update/download.rs`, `download_one_completed` and 
 A real-window run (the owner verifies in the Flatpak; I will not ask for a run), a Flatpak manifest or any Flatpak file, new packages or features, changes to the portal/file-chooser flow, version changes, tags, releases, publishing, edits to `rfcs/`, `ROADMAP.md` edits, `#[allow]`, absolute `cd`.
 
 ## Delivery
-`.git-exclude/review-request/flathub-f2-saved-path/README.md` (report only its path): commits and CI, gates, the list from item 1, red → green, the mutation, test-list diff, anything not verified.
+`.git-exclude/review-request/flathub-f2-saved-path/README.md` (report only its path): commits and CI, gates, the lists from items 1 and 2 (the sweep), red → green, the mutation, test-list diff, anything not verified.
