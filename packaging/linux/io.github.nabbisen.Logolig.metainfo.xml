@@ -64,6 +64,17 @@
   </provides>
 
   <releases>
+    <release version="1.30.0" date="2026-11-27">
+      <url type="details">https://github.com/nabbisen/logolig/blob/1.30.0/docs/release-notes/1.30.0.md</url>
+      <description>
+        <p>The start screen now says what is true on every system, and the message after saving is easier to read in a sandbox.</p>
+        <ul>
+          <li>The start screen leads with the click; dropping a file works where your system delivers file drops</li>
+          <li>After saving, the message shows the file name instead of an internal path when a file chooser portal is used</li>
+          <li>The file chooser's title writes favicon in Latin letters in Japanese</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.29.0" date="2026-11-26">
       <url type="details">https://github.com/nabbisen/logolig/blob/1.29.0/docs/release-notes/1.29.0.md</url>
       <description>
