@@ -70,7 +70,9 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          cargo test --workspace --locked 2>&1 | tee cargo-test.log
+          # --no-fail-fast: cargo stops after the first failing test binary otherwise, and the binaries after it never run
+          # (the first run lost the 37 tests of the i18n crate that way).
+          cargo test --workspace --locked --no-fail-fast 2>&1 | tee cargo-test.log
 
       - name: Test summary (what is true on Windows)
         if: always()
