@@ -62,6 +62,11 @@ const EXEMPT: &[(&str, &[&str], &str)] = &[
         "operating-system, environment and D-Bus names used to detect a file dialog (RFC 031): never shown",
     ),
     (
+        "app/saved_path.rs",
+        &["doc", "run", "user"],
+        "names of the directories of the document portal's tree (`/run/user/<uid>/doc/...`): path components compared with a path, never shown",
+    ),
+    (
         "result.rs",
         &["{} B", "{:.1} KB", "{} KB", "{:.1} MB"],
         "a size with its unit (B, KB, MB): units are the same in every language",

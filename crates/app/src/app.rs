@@ -22,6 +22,7 @@
 mod manifest_inputs;
 mod message;
 mod persist;
+mod saved_path;
 mod state;
 mod toast;
 mod update;
@@ -218,6 +219,9 @@ pub(crate) fn update_for_test(state: &mut AppState, message: Message) -> Task<Me
 
 #[cfg(test)]
 mod error_toast_title_tests;
+
+#[cfg(test)]
+mod saved_path_tests;
 
 #[cfg(test)]
 mod toast_hold_tests;

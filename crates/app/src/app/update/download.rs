@@ -7,6 +7,7 @@ use iced::Task;
 
 use logolig::MessageKey;
 
+use super::super::saved_path::saved_path_text;
 use super::super::toast::push_long_success_toast;
 use super::super::{AppState, Message};
 
@@ -78,7 +79,8 @@ pub(super) fn download_all_target_picked(state: &mut AppState, path: PathBuf) ->
 /// Handler for `Message::DownloadOneCompleted`.
 pub(super) fn download_one_completed(state: &mut AppState, path: PathBuf) -> Task<Message> {
     let title = state.translator.t(MessageKey::ToastExportTitle);
-    let body = format!("{}", path.display());
+    // A document-portal path (Flatpak) means nothing to the user: the file name is shown instead.
+    let body = saved_path_text(&path);
     push_long_success_toast(state, &title, &body);
     Task::none()
 }
@@ -86,7 +88,8 @@ pub(super) fn download_one_completed(state: &mut AppState, path: PathBuf) -> Tas
 /// Handler for `Message::DownloadAllCompleted`.
 pub(super) fn download_all_completed(state: &mut AppState, path: PathBuf) -> Task<Message> {
     let title = state.translator.t(MessageKey::ToastExportTitle);
-    let body = format!("{}", path.display());
+    // A document-portal path (Flatpak) means nothing to the user: the file name is shown instead.
+    let body = saved_path_text(&path);
     push_long_success_toast(state, &title, &body);
     Task::none()
 }
