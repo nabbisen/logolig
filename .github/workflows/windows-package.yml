@@ -115,6 +115,8 @@ jobs:
           ) | Where-Object { Test-Path $_ }
           if ($appcert) { "appcert.exe present (not run): $($appcert -join '; ')" } else { 'appcert.exe: not found on the runner (not run in any case)' }
           (where.exe appcert.exe 2>&1) -join ' '
+          # where.exe exits 1 when it finds nothing, and a step ends with the exit code of its last native command.
+          $global:LASTEXITCODE = 0
 
       - name: Stage the package directory
         shell: pwsh
