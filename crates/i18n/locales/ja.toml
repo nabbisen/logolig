@@ -261,7 +261,7 @@ interface_size_extra_large = "とても大きい"
 # RFC 016, K4: text that was written in the code.
 toast_error_title = "処理に失敗しました"
 file_dialog_images_filter = "画像"
-file_dialog_choose_title = "ファビコンのもとにする PNG、SVG、WebP、JPEG の画像を選んでください"
+file_dialog_choose_title = "favicon のもとにする PNG、SVG、WebP、JPEG の画像を選んでください"
 history_file_count = "ファイル数: {count}"
 preview_browser_tab_caption = "ブラウザタブ — 16×16 の実寸"
 preview_smartphone_home_caption = "スマートフォンのホーム — 60pt @2x"

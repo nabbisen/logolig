@@ -14,7 +14,7 @@ const TEXTS: &[(MessageKey, &str, &str)] = &[
     (
         MessageKey::FileDialogChooseTitle,
         "Choose a PNG, SVG, WebP, or JPEG to forge favicons from",
-        "ファビコンのもとにする PNG、SVG、WebP、JPEG の画像を選んでください",
+        "favicon のもとにする PNG、SVG、WebP、JPEG の画像を選んでください",
     ),
     (
         MessageKey::PreviewBrowserTabCaption,
