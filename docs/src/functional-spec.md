@@ -359,7 +359,7 @@ Every toast has a close button (`×`).
 
 | Event | Content |
 |---|---|
-| Download complete | "Saved N files to `<path>`" |
+| Download complete | Title "Exported"; the body says where the file was saved: the **full path** the file chooser returned, or **only the file name** when that path is a document-portal path (inside a Flatpak the chooser is the portal, and `/run/user/<uid>/doc/<id>/<name>` is a place the user cannot find; the folder was chosen in the chooser a moment ago) |
 | Transparency warning (PNG/SVG/WebP) | Advisory when the source is fully opaque |
 | **File name does not match the content** | "The file name does not match its content": the content is *X* but the name suggests *Y*; Logolig goes by the content. Shown once per loaded file, only when a **known** extension contradicts the content. For a JPEG the same toast also holds the JPEG explanation (below), so a mislabelled JPEG is explained once. |
 | **JPEG educational warning** | "JPEG cannot store transparency. Consider converting to PNG." |
