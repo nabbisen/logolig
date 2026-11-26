@@ -1,0 +1,158 @@
+name: Windows package
+
+# A Windows build, the first Windows test run and an UNSIGNED Microsoft Store package (RFC 037, phase B). Non-blocking:
+# it is not a job of ci.yml (the job names of ci.yml are a contract), nothing requires it, and it runs only
+#   - by hand (workflow_dispatch),
+#   - on a push of a version tag (the number is the workspace version, three parts),
+#   - on a push to main that changes ONLY this file (so that it can be iterated on: a workflow that has only
+#     workflow_dispatch cannot be started before it is on main).
+# What it does: prints what the runner has, checks the manifest version rule, builds logolig.exe (release), runs the
+# whole test suite (its failures are printed and do not stop the run: this first stage reports what is true on
+# Windows), finds makeappx.exe, stages logolig.exe with the Assets and the manifest of packaging/windows/, packs
+# an .msix and uploads it as a workflow artifact (14 days).
+# What it does NOT do: sign (Partner Center signs on ingestion; the package cannot be installed locally), submit to the
+# Store (phase C is not built: submission is manual), publish a release asset, read a secret or a certificate, run
+# the Windows App Certification Kit (its presence is only reported), or change the manifest.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
+    branches: [main]
+    paths:
+      - '.github/workflows/windows-package.yml'
+
+# Least privilege: the job only reads the repository.
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Runner and toolchain
+        shell: pwsh
+        run: |
+          "ImageOS=$env:ImageOS ImageVersion=$env:ImageVersion"
+          Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber, OSArchitecture | Format-List | Out-String
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustc -V
+          cargo -V
+          rustup show active-toolchain
+
+      - name: Store manifest version (the rule of scripts/appx-version.sh, on Windows too)
+        shell: bash
+        run: bash scripts/appx-version.sh check
+
+      - name: Build logolig.exe (release; does it build unchanged on Windows?)
+        shell: pwsh
+        run: |
+          $sw = [Diagnostics.Stopwatch]::StartNew()
+          cargo build --release --locked -p logolig-app
+          if ($LASTEXITCODE -ne 0) { throw "cargo build failed with $LASTEXITCODE" }
+          "build time: $($sw.Elapsed.ToString())"
+          $exe = Get-Item target\release\logolig.exe
+          "logolig.exe: $($exe.Length) bytes, SHA-256 $((Get-FileHash $exe.FullName -Algorithm SHA256).Hash)"
+
+      - name: Tests (the first Windows run; failures are findings and do not stop this stage)
+        id: tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test --workspace --locked 2>&1 | tee cargo-test.log
+
+      - name: Test summary (what is true on Windows)
+        if: always()
+        shell: bash
+        run: |
+          echo "outcome of the test step: ${{ steps.tests.outcome }}"
+          if [ -f cargo-test.log ]; then
+            grep '^test result:' cargo-test.log | awk '{ n++; for (i = 1; i <= NF; i++) { if ($i == "passed;") p += $(i-1); if ($i == "failed;") f += $(i-1); if ($i == "ignored;") g += $(i-1) } } END { printf "test binaries run: %d\npassed: %d\nfailed: %d\nignored: %d\n", n, p, f, g }'
+            echo "--- failed tests:"
+            grep -E '^test .* FAILED$' cargo-test.log || echo "(none)"
+            echo "--- compile errors, if the tests did not build:"
+            grep -E '^error(\[|:)' cargo-test.log | head -20 || true
+          else
+            echo "no test log"
+          fi
+
+      - name: MSRV 1.90 (informational)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          rustup toolchain install 1.90 --profile minimal
+          cargo +1.90 check --workspace --locked
+
+      - name: Find makeappx.exe and the App Certification Kit
+        id: kit
+        shell: pwsh
+        run: |
+          $bin = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
+          "Windows Kits bin: $bin (exists: $(Test-Path $bin))"
+          $found = Get-ChildItem -Path $bin -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match '^\d+\.\d+\.\d+\.\d+$' -and (Test-Path (Join-Path $_.FullName 'x64\makeappx.exe')) } |
+            Sort-Object { [version]$_.Name } -Descending
+          "SDK versions with makeappx: $(($found | ForEach-Object Name) -join ', ')"
+          if (-not $found) { throw 'makeappx.exe not found under Windows Kits\10\bin\<version>\x64' }
+          $makeappx = Join-Path $found[0].FullName 'x64\makeappx.exe'
+          "makeappx: $makeappx"
+          "makeappx file version: $((Get-Item $makeappx).VersionInfo.FileVersion)"
+          "MAKEAPPX=$makeappx" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $appcert = @(
+            (Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\App Certification Kit\appcert.exe'),
+            (Join-Path $env:ProgramFiles 'Windows Kits\10\App Certification Kit\appcert.exe')
+          ) | Where-Object { Test-Path $_ }
+          if ($appcert) { "appcert.exe present (not run): $($appcert -join '; ')" } else { 'appcert.exe: not found on the runner (not run in any case)' }
+          (where.exe appcert.exe 2>&1) -join ' '
+
+      - name: Stage the package directory
+        shell: pwsh
+        run: |
+          $stage = Join-Path $env:RUNNER_TEMP 'stage'
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          Copy-Item target\release\logolig.exe $stage
+          Copy-Item packaging\windows\Assets (Join-Path $stage 'Assets') -Recurse
+          Copy-Item packaging\windows\AppxManifest.xml $stage
+          "STAGE=$stage" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "staged tree:"
+          Get-ChildItem $stage -Recurse -File | ForEach-Object { '{0,12}  {1}' -f $_.Length, $_.FullName.Substring($stage.Length + 1) }
+
+      - name: Pack the unsigned .msix (makeappx pack, validation on)
+        id: pack
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          "workspace version: $version"
+          $name = "logolig-$version.0-unsigned.msix"
+          "MSIX_NAME=$name" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "MSIX=$($env:GITHUB_WORKSPACE)\$name" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          # No /nv: the layout and the manifest are validated. The full output is the answer to "what does makeappx say".
+          & $env:MAKEAPPX pack /d $env:STAGE /p $name /o 2>&1 | ForEach-Object { "$_" }
+          if ($LASTEXITCODE -ne 0) { throw "makeappx pack failed with exit code $LASTEXITCODE" }
+
+      - name: Size and SHA-256 of the package and the executable
+        shell: pwsh
+        run: |
+          $msix = Get-Item $env:MSIX
+          "$($msix.Name): $($msix.Length) bytes, SHA-256 $((Get-FileHash $msix.FullName -Algorithm SHA256).Hash)"
+          $exe = Get-Item target\release\logolig.exe
+          "logolig.exe: $($exe.Length) bytes, SHA-256 $((Get-FileHash $exe.FullName -Algorithm SHA256).Hash)"
+
+      - name: Upload the unsigned package
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ env.MSIX_NAME }}
+          path: ${{ env.MSIX }}
+          retention-days: 14
+          if-no-files-found: error
