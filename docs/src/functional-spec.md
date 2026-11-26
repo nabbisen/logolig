@@ -37,12 +37,14 @@ use. Follows ABDD principles: accessible, internationalised, fully local.
 ### Ingestion paths
 
 1. **File dialog** — click the drop zone or the "Choose file" control
-2. **Drag and drop** — anywhere on the window when the platform delivers native file-drop events
+2. **Drag and drop** — anywhere on the window **where the platform delivers file drops**; on some
+   systems (for example some Wayland setups) the toolkit delivers none, and the click always works
 
 The file dialogs (choosing a file, and the two Save dialogs) are provided by the desktop's
 portal. Where the system has no portal, or a portal with no file-dialog backend, and no `zenity`
 program, no dialog can appear: the application then says so in one message instead of doing
-nothing, and dragging a file onto the window still works. Known limit: a portal that accepts a
+nothing, and, where the platform delivers file drops, dropping a file onto the window still works.
+Known limit: a portal that accepts a
 dialog and never answers leaves the application waiting; if a dialog never appears and never
 answers, restart the application.
 
@@ -167,7 +169,9 @@ The app moves through three states (v1.16.0):
 
 The Empty screen uses the full drop-zone card as one large click target. This
 keeps the startup action accessible even on platforms where native OS file-drop
-events are unavailable or unreliable. When the runtime reports file-hover events,
+events are unavailable or unreliable: **the click always works; a drop works only where the
+platform delivers file drops**, and the card's text says so (RFC 038). When the runtime reports
+file-hover events,
 the card border and background are strengthened to show that a file can be
 dropped.
 
@@ -214,8 +218,10 @@ of the screen.
 ## 6. Drop zone (Empty state)
 
 - Central drop area with a soft-bordered card and a weak fill background.
-- Headline: "Drop PNG, SVG, WebP, or JPEG" and a "Choose file…" button.
-- The entire window accepts drag-and-drop.
+- Headline: "Choose a PNG, SVG, WebP, or JPEG", the line "Click anywhere in this area. You can also
+  drop a file here, if your system allows it." and a "Choose file…" button.
+- The entire window accepts a dropped file **where the platform delivers file drops**; the click
+  works everywhere. The wording never promises a drop unconditionally.
 
 ## 7. Result screen
 
@@ -365,7 +371,7 @@ Every toast has a close button (`×`).
 | **JPEG educational warning** | "JPEG cannot store transparency. Consider converting to PNG." |
 | **Non-square source advisory** | "Your logo is not square" / the logo is shown in full with empty space around it, so the icon may look small. Shown once per loaded image when the sides differ by more than 2 % (any source kind). |
 | **SVG parts not shown** | "Some parts of your SVG are not shown": one toast per loaded SVG when it refers to image files on the computer (not read, for safety) and/or contains text (not drawn yet); the body holds the applicable sentences, images first. Nothing is shown for an SVG without either. |
-| **No file dialog available** | "No file dialog available" with a body that says to drag a file onto the window or to install a desktop portal with a file dialog (a similar body for the Save dialogs). Shown when the application has positive evidence that no dialog can appear; **persistent** (stays until dismissed); **shown once**: while it is on screen, asking again does not add another. |
+| **No file dialog available** | "No file dialog available" with a body that says to install a desktop portal with a file dialog or, if the system allows it, to drop a file onto the window (a similar body for the Save dialogs). Shown when the application has positive evidence that no dialog can appear; **persistent** (stays until dismissed); **shown once**: while it is on screen, asking again does not add another. |
 | Error | Decode failure, write failure, etc. |
 
 ### JPEG vs. generic transparency warning
