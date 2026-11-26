@@ -21,8 +21,8 @@ fn state(case: Case, size: Size, locale: Locale) -> crate::app::AppState {
 fn the_drop_zone_card_is_one_tab_stop_and_asks_for_the_file_chooser() {
     for size in [Size::new(1280.0, 720.0), Size::new(360.0, 640.0)] {
         for (locale, headline) in [
-            (Locale::En, "Drop PNG, SVG, WebP, or JPEG"),
-            (Locale::Ja, "PNG / SVG / WebP / JPEG をドロップ"),
+            (Locale::En, "Choose a PNG, SVG, WebP, or JPEG"),
+            (Locale::Ja, "PNG / SVG / WebP / JPEG を選択"),
         ] {
             for case in [Case::Home, Case::HomeWithHistory] {
                 let s = state(case, size, locale);

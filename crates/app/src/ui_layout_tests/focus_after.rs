@@ -161,7 +161,11 @@ fn back_leaves_nothing_focused_and_tab_starts_again() {
 fn a_page_change_by_shortcut_leaves_no_trap() {
     let mut s = Session::new(Case::Home, SIZE);
     tabs(&mut s, 4); // the drop-zone card
-    assert!(s.focused_text().starts_with("Drop"), "{}", s.focused_text());
+    assert!(
+        s.focused_text().starts_with("Choose a PNG"),
+        "{}",
+        s.focused_text()
+    );
     ctrl_digit(&mut s, 2);
     assert_eq!(s.state.nav_page, crate::app::NavPage::Customize);
     assert_eq!(s.focus().0, None, "the card is gone with its page");

@@ -71,8 +71,9 @@ cargo run -p logolig-app --release
 The app uses a three-item side navigation: **Home**, **Customize**, and
 **Settings**. On narrow windows the same navigation moves to the bottom.
 
-1. On **Home**, drop a PNG, SVG, WebP, or JPEG onto the window, or click
-   anywhere inside the bordered drop-zone card to open the file picker.
+1. On **Home**, click anywhere inside the bordered drop-zone card to open the file picker and
+   choose a PNG, SVG, WebP, or JPEG. Where your system delivers file drops, you can also drop the
+   file onto the window (on some systems, for example some Wayland setups, drops do not arrive).
    - JPEG inputs work, but the format cannot store transparency, so
      Logolig shows an educational toast suggesting a PNG with the
      background cut out for favicons that adapt to light and dark tabs.

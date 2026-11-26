@@ -14,7 +14,7 @@ app_title = "Logolig"
 
 # --- ドロップゾーン ---
 drop_zone_instruction = "PNG / SVG / WebP / JPEG をここにドロップ"
-drop_zone_secondary = "またはこの領域をクリックしてファイルを選択"
+drop_zone_secondary = "クリックして選べます。対応するシステムではドロップも可能です。"
 drop_zone_accepted_formats = "対応形式: .png / .svg / .webp / .jpg / .jpeg"
 choose_file_button = "ファイルを選択…"
 change_file_button = "ファイルを変更…"
@@ -151,7 +151,7 @@ group_app_preferences = "アプリ設定"
 
 # --- メイン画面刷新 (v1.10.2) ---
 app_tagline = "favicon ジェネレータ"
-drop_zone_headline = "PNG / SVG / WebP / JPEG をドロップ"
+drop_zone_headline = "PNG / SVG / WebP / JPEG を選択"
 tooltip_language = "言語: システム → English → 日本語 を循環"
 tooltip_theme = "テーマ: システム → ライト → ダーク を循環"
 tooltip_advanced = "詳細設定を表示"
@@ -248,7 +248,7 @@ shortcuts_limit_note = "Tab キーでボタンや入力欄の間を移動する�
 
 # RFC 031: ファイルダイアログを出せない環境 (ポータルが無い、または ポータルのバックエンドが無く、 zenity も無い)。
 toast_dialog_unavailable_title = "ファイルダイアログを開けません"
-toast_dialog_unavailable_chooser_body = "このシステムでは、ファイルダイアログを利用できません。ウィンドウにファイルをドラッグするか、ファイルダイアログを備えたデスクトップポータル (例: xdg-desktop-portal-gtk) をインストールしてください。"
+toast_dialog_unavailable_chooser_body = "このシステムでは、ファイルダイアログを利用できません。ファイルダイアログを備えたデスクトップポータル (例: xdg-desktop-portal-gtk) をインストールするか、お使いのシステムが対応していれば、ウィンドウにファイルをドロップしてください。"
 toast_dialog_unavailable_save_body = "このシステムでは、保存ダイアログを利用できません。ファイルダイアログを備えたデスクトップポータル (例: xdg-desktop-portal-gtk) をインストールしてください。"
 
 # RFC 034, J24: the Interface size setting on the Settings page.

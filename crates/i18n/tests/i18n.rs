@@ -415,7 +415,7 @@ fn dialog_unavailable_texts_match_the_specification() {
     let en = Translator::for_locale(Locale::En);
     assert_eq!(
         en.t(MessageKey::ToastDialogUnavailableChooserBody),
-        "No file dialog is available on this system. Drag a file onto the window instead, or install a desktop portal with a file dialog (for example xdg-desktop-portal-gtk)."
+        "No file dialog is available on this system. Install a desktop portal with a file dialog (for example xdg-desktop-portal-gtk), or, if your system allows it, drop a file onto the window."
     );
     assert_eq!(
         en.t(MessageKey::ToastDialogUnavailableSaveBody),
@@ -541,5 +541,41 @@ fn the_manifest_messages_say_what_is_accepted_in_both_languages() {
         ] {
             assert!(!t.t(key).is_empty(), "{locale:?} {key:?}");
         }
+    }
+}
+
+/// RFC 038 (job W1): the drop-zone wording is true on every system: the click is named first and
+/// always works; a drop is something that may also work, never "the way".
+#[test]
+fn drop_zone_wording_names_the_click_first_and_the_drop_only_if_the_system_allows_it() {
+    let en = Translator::for_locale(Locale::En);
+    assert_eq!(
+        en.t(MessageKey::DropZoneHeadline),
+        "Choose a PNG, SVG, WebP, or JPEG"
+    );
+    assert_eq!(
+        en.t(MessageKey::DropZoneSecondary),
+        "Click anywhere here, or drop a file if your system allows it."
+    );
+    let ja = Translator::for_locale(Locale::Ja);
+    assert_eq!(
+        ja.t(MessageKey::DropZoneHeadline),
+        "PNG / SVG / WebP / JPEG を選択"
+    );
+    assert_eq!(
+        ja.t(MessageKey::DropZoneSecondary),
+        "クリックして選べます。対応するシステムではドロップも可能です。"
+    );
+    assert_eq!(
+        ja.t(MessageKey::ToastDialogUnavailableChooserBody),
+        "このシステムでは、ファイルダイアログを利用できません。ファイルダイアログを備えたデスクトップポータル (例: xdg-desktop-portal-gtk) をインストールするか、お使いのシステムが対応していれば、ウィンドウにファイルをドロップしてください。"
+    );
+    // The chooser-unavailable advice never promises a drop unconditionally.
+    for locale in [Locale::En, Locale::Ja] {
+        let body = Translator::for_locale(locale).t(MessageKey::ToastDialogUnavailableChooserBody);
+        assert!(
+            !body.contains("instead") && !body.contains("ドラッグ"),
+            "{body}"
+        );
     }
 }

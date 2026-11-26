@@ -50,6 +50,7 @@ mod controls_customize;
 mod controls_home;
 mod controls_nav;
 mod controls_result;
+mod drop_zone_text;
 mod focus_after;
 mod focus_disclosure;
 mod focus_in_view;
