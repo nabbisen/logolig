@@ -194,7 +194,8 @@ fn sources() -> Vec<PathBuf> {
 
 /// The part of a file that is not an inline test module (`#[cfg(test)]` followed by `mod x {`).
 pub(super) fn without_inline_tests(src: &str) -> &str {
-    let lines: Vec<&str> = src.lines().collect();
+    // `split_inclusive` keeps each line's own terminator (`\n` or `\r\n`), so the offsets are exact.
+    let lines: Vec<&str> = src.split_inclusive('\n').collect();
     let mut offset = 0;
     for (i, line) in lines.iter().enumerate() {
         if line.trim() == "#[cfg(test)]"
@@ -204,7 +205,7 @@ pub(super) fn without_inline_tests(src: &str) -> &str {
         {
             return &src[..offset];
         }
-        offset += line.len() + 1;
+        offset += line.len();
     }
     src
 }
@@ -326,4 +327,22 @@ mod tests {
     // A literal written back into the toast code is found (the K4 mutation, in miniature).
     let toast = r#"Toast::new(id, ToastIntent::Error, "Operation failed", body, msg)"#;
     assert_eq!(offenders("app/toast.rs", toast).len(), 1);
+}
+
+/// The inline test module is cut off at the same place whatever the line ending is: with `\r\n`
+/// the earlier code counted one byte too few per line and cut the file short (RFC 037 B2).
+#[test]
+fn the_inline_tests_are_cut_off_with_unix_and_with_windows_line_endings() {
+    let lf = "fn a() {}\nfn b() {}\nfn c() {}\n#[cfg(test)]\nmod tests {\n    fn t() {}\n}\n";
+    let crlf = lf.replace('\n', "\r\n");
+    for (name, src, want) in [
+        ("LF", lf, "fn a() {}\nfn b() {}\nfn c() {}\n"),
+        (
+            "CRLF",
+            crlf.as_str(),
+            "fn a() {}\r\nfn b() {}\r\nfn c() {}\r\n",
+        ),
+    ] {
+        assert_eq!(without_inline_tests(src), want, "{name}");
+    }
 }

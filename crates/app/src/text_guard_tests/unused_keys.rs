@@ -87,11 +87,17 @@ const UNUSED_UNTIL_2_0: &[(&[&str], &str)] = &[
     ),
 ];
 
-/// The variants of `enum MessageKey` in `src`, each with whether it is `#[deprecated]`.
-fn variants(src: &str) -> Vec<(String, bool)> {
+/// The text of `enum MessageKey` in `src`, from its first word to its closing brace.
+fn enum_body(src: &str) -> &str {
     let start = src.find("pub enum MessageKey").expect("the enum");
     let body = &src[start..];
-    let body = &body[..body.find("\n}\n").expect("the end of the enum")];
+    // The closing brace is the only `}` in the first column; `\n}` is found with `\n` and `\r\n`.
+    &body[..body.find("\n}").expect("the end of the enum")]
+}
+
+/// The variants of `enum MessageKey` in `src`, each with whether it is `#[deprecated]`.
+fn variants(src: &str) -> Vec<(String, bool)> {
+    let body = enum_body(src);
     let (mut out, mut deprecated) = (Vec::new(), false);
     for line in body.lines().map(str::trim) {
         if line.starts_with("#[deprecated") {
@@ -245,4 +251,25 @@ fn the_check_fails_for_a_new_unused_key_and_for_a_stale_entry() {
     let mut stale = stale;
     stale.sort();
     assert_eq!(stale, vec!["Gone".to_string(), "Used".to_string()]);
+}
+
+/// The end of the enum is found whatever the line ending of the file is: a Windows checkout of a
+/// repository without `.gitattributes` has `\r\n` (the K4 test failed there, RFC 037 B1).
+#[test]
+fn the_enum_is_found_with_unix_and_with_windows_line_endings() {
+    let lf = "use x;\n\npub enum MessageKey {\n    Used,\n    #[deprecated(note = \"x\")]\n    Old,\n}\n\nimpl MessageKey {}\n";
+    let crlf = lf.replace('\n', "\r\n");
+    for (name, src) in [("LF", lf), ("CRLF", crlf.as_str())] {
+        let body = enum_body(src);
+        assert!(
+            body.starts_with("pub enum MessageKey {"),
+            "{name}: starts at the enum"
+        );
+        assert!(!body.contains("impl"), "{name}: stops at the closing brace");
+        assert_eq!(
+            variants(src),
+            vec![("Used".to_string(), false), ("Old".to_string(), true)],
+            "{name}: the variants"
+        );
+    }
 }
