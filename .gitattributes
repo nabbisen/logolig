@@ -1,0 +1,2 @@
+* text=auto eol=lf
+packaging/windows/AppxManifest.xml -text
