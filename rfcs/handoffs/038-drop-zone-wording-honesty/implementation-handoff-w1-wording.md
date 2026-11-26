@@ -1,0 +1,15 @@
+# Developer Handoff — RFC 038, job W1: drop-zone wording that is true on every system
+
+Role and rules as always (commits on `main`, gates chained with `&&` and their exit status tested before commit and push, `git log origin/main..` before every push, wait for CI on each commit, relative `cd`). No version change, no tag, no release. Governing RFC: [RFC 038](../../accepted/038-drop-zone-wording-honesty.md) (the decision and the exact English and Japanese strings are there; take them verbatim unless the layout rule below forces a shorter wording, which you then report).
+
+## Work
+1. **Red first.** Change the expectations of the tests that name the old strings (start with `ui_layout_tests/controls_home.rs`, `the_drop_zone_card_is_one_tab_stop_and_asks_for_the_file_chooser`; find the others by searching for the old English and Japanese texts, including `i18n` tests and any golden or text-inventory test) and show them red on the unchanged strings.
+2. **The strings** in `crates/i18n/locales/en.toml` and `ja.toml`: `drop_zone_headline`, `drop_zone_secondary`, `toast_dialog_unavailable_chooser_body`. No new key, no removed key; `drop_zone_accepted_formats` and `drop_zone_instruction` are not touched. The catalogue tests (both locales complete, placeholders) stay green.
+3. **Layout.** The new secondary line is longer than the old one. At every size the layout tests already cover (desktop, the phone layout, the largest interface size, English and Japanese) the card text must be fully visible and not clipped, the card must still be one tab stop with the same action, and the focus ring must still be in view. If the text does not fit, **shorten the wording** (the meaning is fixed: *click always works; a drop only if the system allows it*) and report the change; do not change the card's layout or size to make room. Add or extend a headless test that checks the text is inside the card's bounds at the narrowest and the largest-size cases in both locales.
+4. **Docs.** `docs/src/functional-spec.md` (the drag-and-drop item around line 40 and the "Drop-zone behaviour" paragraph around line 166): a drop works where the platform delivers file drops; the click works everywhere. `docs/src/ui-a11y.md` only if it names the old headline text. Search the repository (README, docs, `packaging/`, release notes of past versions are history and stay) for any sentence that promises a drop unconditionally and report what you find; fix the ones in current docs.
+
+## Prohibited
+Any change to drop behaviour, the card's layout, size, colours or the focus model; new keys, packages, features; `#[allow]`; version changes, tags, releases, publishing; a real-window run (the owner will look); edits to `rfcs/` other than this folder, `ROADMAP.md`; absolute `cd`.
+
+## Delivery
+`.git-exclude/review-request/rfc-038-w1-wording/README.md` (report only its path): commits and CI, gates, red → green, the layout evidence per size and locale (numbers or a picture from the headless renderer), any wording you had to shorten, the list from item 4, test-list diff, anything not verified.

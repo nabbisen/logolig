@@ -60,6 +60,7 @@ recommendation; the owner authorizes the plan.
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
 | [037](./accepted/037-microsoft-store-packaging-automation.md) | Microsoft Store packaging: a guarded version, a Windows build in CI, optional submission | P1 |
 | [023](./accepted/023-flatpak-publication.md) | Flatpak publication (Flathub) | P1 |
+| [038](./accepted/038-drop-zone-wording-honesty.md) | Drop-zone wording that is true on every system | P2 |
 ### Proposed (`proposed/`)
 
 | # | Title | Priority |
