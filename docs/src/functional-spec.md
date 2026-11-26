@@ -1,7 +1,7 @@
 # Logolig Functional Specification
 
 > This document describes **what logolig can do and how it behaves** in the
-> current tree (release 1.29.0; the previous release is 1.28.0), as observable
+> current tree (release 1.30.0; the previous release is 1.29.0), as observable
 > behaviour rather than implementation detail.
 > It is intended as input for UX review and external design decisions.
 >
@@ -491,6 +491,7 @@ No network communication. All processing runs on the local CPU.
 | v1.27.0 | First public release | Non-square logos shown in full; keyboard shortcuts; ZIP written all-or-nothing; safer SVG sources; toast time follows the text; faster large conversions |
 | v1.28.0 | Keyboard and interface correctness | Every control reachable and operable by keyboard (Tab order, focus ring, always in view); radio groups, checkboxes and an accent bar as selection cues; "Back" and "Download all" always in view; a result always belongs to the file chosen; one notice when no file dialog exists |
 | v1.29.0 | Readable and robust | Text sizes and contrast rules, larger targets, an Interface size setting, plain-language Customize labels; the file's content decides its type, with input limits and a refused file keeping the previous result; "System" follows the OS; web manifest colours checked as typed; the Sharp preset keeps corners |
+| v1.30.0 | Distribution reach | The Empty screen leads with the click and says a drop works only where the system allows it; the saved-file message shows the file name for a document-portal path; Windows build and tests in CI (not run by a person) |
 
 ## 17. Design review axes
 
