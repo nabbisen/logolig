@@ -1,15 +1,16 @@
 name: Windows package
 
-# A Windows build, the first Windows test run and an UNSIGNED Microsoft Store package (RFC 037, phase B). Non-blocking:
-# it is not a job of ci.yml (the job names of ci.yml are a contract), nothing requires it, and it runs only
+# A Windows build, the first Windows test run and an UNSIGNED Microsoft Store package (RFC 037, phase B). Non-blocking
+# for the project (nothing requires it, a red run blocks no merge, tag or release): it is not a job of ci.yml (the job
+# names of ci.yml are a contract) and it runs only
 #   - by hand (workflow_dispatch),
 #   - on a push of a version tag (the number is the workspace version, three parts),
 #   - on a push to main that changes ONLY this file (so that it can be iterated on: a workflow that has only
 #     workflow_dispatch cannot be started before it is on main).
 # What it does: prints what the runner has, checks the manifest version rule, builds logolig.exe (release), runs the
-# whole test suite (its failures are printed and do not stop the run: this first stage reports what is true on
-# Windows), finds makeappx.exe, stages logolig.exe with the Assets and the manifest of packaging/windows/, packs
-# an .msix and uploads it as a workflow artifact (14 days).
+# whole test suite (a failing test fails the job, red: the run stops there and nothing is packed; the summary of the
+# counts and the names of the failing tests is printed anyway), finds makeappx.exe, stages logolig.exe with the
+# Assets and the manifest of packaging/windows/, packs an .msix and uploads it as a workflow artifact (14 days).
 # What it does NOT do: sign (Partner Center signs on ingestion; the package cannot be installed locally), submit to the
 # Store (phase C is not built: submission is manual), publish a release asset, read a secret or a certificate, run
 # the Windows App Certification Kit (its presence is only reported), or change the manifest.
@@ -64,9 +65,8 @@ jobs:
           $exe = Get-Item target\release\logolig.exe
           "logolig.exe: $($exe.Length) bytes, SHA-256 $((Get-FileHash $exe.FullName -Algorithm SHA256).Hash)"
 
-      - name: Tests (the first Windows run; failures are findings and do not stop this stage)
+      - name: Tests (strict, a failing test fails the job)
         id: tests
-        continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
