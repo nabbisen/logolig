@@ -103,7 +103,7 @@ Use **Settings** for language and theme. Supported languages are English,
 Japanese, and system default; themes are light, dark, and system. **System** follows
 your operating system's light or dark setting while Logolig runs (on Linux through the
 desktop portal; where nothing reports a theme it uses light, and Settings says so).
-Windows and macOS have not been tested.
+Windows and macOS have not been tried by a person.
 
 To make everything larger, choose **Interface size** in **Settings**: **Normal**,
 **Large** (125 %) or **Extra large** (150 %). Text, icons and spacing grow together, the

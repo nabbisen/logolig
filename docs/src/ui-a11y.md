@@ -57,7 +57,7 @@ Run again on the release candidate, in real windows as above:
 
 Not run in a real window: the Japanese interface (the automated layout tests cover it).
 
-Windows and macOS have not been tested (on macOS the command key is Cmd instead of
+Windows and macOS have not been tried by a person (on macOS the command key is Cmd instead of
 Ctrl; that is the intended mapping and is not verified). Non-Latin keyboard layouts are
 covered by unit tests of the key mapping only, not by a run on such a layout.
 

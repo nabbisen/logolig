@@ -218,8 +218,8 @@ of the screen.
 ## 6. Drop zone (Empty state)
 
 - Central drop area with a soft-bordered card and a weak fill background.
-- Headline: "Choose a PNG, SVG, WebP, or JPEG", the line "Click anywhere in this area. You can also
-  drop a file here, if your system allows it." and a "Choose file…" button.
+- Headline: "Choose a PNG, SVG, WebP, or JPEG", the line "Click anywhere here, or drop a file
+  if your system allows it." and a "Choose file…" button.
 - The entire window accepts a dropped file **where the platform delivers file drops**; the click
   works everywhere. The wording never promises a drop unconditionally.
 
@@ -314,7 +314,7 @@ case applies, in words: "System (currently Dark)", "System (currently Light)" or
 reported; using Light)" (the last one covers "no portal" and "no preference" alike: the program cannot
 tell them apart). Light and Dark ignore the system. Only the choice (System, Light or Dark) is saved;
 what the system reported is not. The Surface picker's **System** surface in the preview follows the
-same value. **Windows and macOS were not exercised:** the same code path is expected to work there (the
+same value. **Windows and macOS were not run by a person:** the same code path is expected to work there (the
 windowing library reports the theme on both) but it has not been run.
 
 ### Interface size
