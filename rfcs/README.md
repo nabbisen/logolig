@@ -52,6 +52,7 @@ recommendation; the owner authorizes the plan.
 | [034](./done/034-readable-interface-for-older-users.md) | A readable, comfortable interface for older users and low vision (1.29.0) | 1.29.0 |
 | [035](./done/035-headless-ui-test-level.md) | A headless UI test level (layout, size, language and theme matrix without a window) | 1.28.0 |
 | [036](./done/036-snora-0-62-upgrade.md) | Upgrade snora 0.57 → 0.65 (steps 0.62 and 0.65; the keyboard `control` and form controls) | 1.28.0 |
+| [038](./done/038-drop-zone-wording-honesty.md) | Drop-zone wording that is true on every system | 1.30.0 |
 
 ### Accepted (`accepted/`)
 
@@ -60,7 +61,6 @@ recommendation; the owner authorizes the plan.
 | [015](./accepted/015-svg-text-and-external-resources.md) | SVG input: text rendering and external resources (phased) | P1 / P2 |
 | [037](./accepted/037-microsoft-store-packaging-automation.md) | Microsoft Store packaging: a guarded version, a Windows build in CI, optional submission | P1 |
 | [023](./accepted/023-flatpak-publication.md) | Flatpak publication (Flathub) | P1 |
-| [038](./accepted/038-drop-zone-wording-honesty.md) | Drop-zone wording that is true on every system | P2 |
 ### Proposed (`proposed/`)
 
 | # | Title | Priority |

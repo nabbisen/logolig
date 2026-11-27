@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 038, job W1: drop-zone wording that is true on every system
 
-Role and rules as always (commits on `main`, gates chained with `&&` and their exit status tested before commit and push, `git log origin/main..` before every push, wait for CI on each commit, relative `cd`). No version change, no tag, no release. Governing RFC: [RFC 038](../../accepted/038-drop-zone-wording-honesty.md) (the decision and the exact English and Japanese strings are there; take them verbatim unless the layout rule below forces a shorter wording, which you then report).
+Role and rules as always (commits on `main`, gates chained with `&&` and their exit status tested before commit and push, `git log origin/main..` before every push, wait for CI on each commit, relative `cd`). No version change, no tag, no release. Governing RFC: [RFC 038](../../done/038-drop-zone-wording-honesty.md) (the decision and the exact English and Japanese strings are there; take them verbatim unless the layout rule below forces a shorter wording, which you then report).
 
 ## Work
 1. **Red first.** Change the expectations of the tests that name the old strings (start with `ui_layout_tests/controls_home.rs`, `the_drop_zone_card_is_one_tab_stop_and_asks_for_the_file_chooser`; find the others by searching for the old English and Japanese texts, including `i18n` tests and any golden or text-inventory test) and show them red on the unchanged strings.

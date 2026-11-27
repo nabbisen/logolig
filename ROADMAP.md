@@ -130,6 +130,8 @@
 | RFC 007 Wayland drag-hover feedback | P3 |
 | snora requests (expose `on_focus_change` on `snora::Control`; a text-size setter; a horizontal radio group) | Drafts in `.git-exclude/upstream/snora/send/draft/`, unsent until the owner sends them |
 
+**1.30.0 RELEASED 2026-11-27** (signed tag `1.30.0` on `b4c482a`; GitHub Release `1.30.0`; crates.io `logolig`, `logolig-i18n`, `logolig-app` 1.30.0, none yanked). Contents: the drop-zone wording true on every system (RFC 038), the saved-file message showing the file name for a document-portal path (found in the owner's Flatpak run), "favicon" in Latin letters in the Japanese file chooser title, the Windows build and tests in CI with an unsigned package artifact (RFC 037 phase B; 525 tests passed on Windows; the tag-triggered run was green: the tag trigger is verified), `.gitattributes`. **Deviations and lessons:** (1) the owner's Flatpak run found a defect no test could (a portal path in the success message) and the drop limit on Wayland; the lateral sweep it prompted found nothing else in the code; (2) a source guard had silently scanned less on a CRLF checkout (found by the Windows job), so a guard that quietly weakens is worse than a red one; (3) the manifest-origin question (Flathub's generative-AI policy) is the owner's decision and is not recorded here. **Next:** the owner's Flathub submission at tag `1.30.0` (update the manifest's tag and commit, regenerate `cargo-sources.json` from that tag's `Cargo.lock`); the SVG preset group placement, the logo tile-corner notches, the Japanese line break in "対応形式:" at 360 px, the squeezed hint line at 360 × 480, `vtracer` 1.0 when final; RFC 037 phase C and Windows runtime evidence are the owner's.
+
 ### Next major version (2.0) list, kept so that nothing is forgotten
 
 Remove the items deprecated in 1.28.0 (`MessageKey::{PresetLabel, SvgConversionSimple, SvgConversionDetailed, ShortcutsLimitNote}`, `ThemeMode::next`, `ExportPlan::overrides`/`SizeOverride`, `PreviewContext::label`) and the 41 unused `MessageKey` variants; make `MessageKey` and `AppError` `#[non_exhaustive]` (each minor release that adds a variant is a source-compatibility note until then; K1 adds `AppError` variants); the owner decides when.
@@ -171,7 +173,8 @@ Remove the items deprecated in 1.28.0 (`MessageKey::{PresetLabel, SvgConversionS
 5. **Granted 2026-11-09:** the scope and order of 1.28.0 (§3), RFC 021 Q1 (accent bar plus bold) and RFC 032 D1 (toast attention).
 6. **Delegated 2026-11-12:** the four questions of RFC 034 (sizes, interface-size steps, contrast approach, release split) were left to the architect under the owner's philosophy; decided and recorded in RFC 034 (D1–D5), release 1.29.0. The owner can overrule any of them.
 7. **Granted 2026-11-21:** tag and publication of 1.28.0. **Granted 2026-11-26:** tag and publication of 1.29.0 (done: signed tag `1.29.0` on `9e9f8a4`, GitHub Release titled `1.29.0`, crates.io `logolig`, `logolig-i18n`, `logolig-app` 1.29.0).
-8. **Still to be authorized separately, when the time comes:** the release tag and publication of every later release.
+8. **Granted 2026-11-27:** tag and publication of 1.30.0 ("Yes. Authorized on both."; done).
+9. **Still to be authorized separately, when the time comes:** the release tag and publication of every later release.
 
 ## 7. Risks to the schedule
 

@@ -1,6 +1,6 @@
 # RFC 038 — Drop-zone wording that is true on every system
 
-**Status.** Accepted (architect; owner authorized 2026-11-26: "Authorized." to my recommendation of the same day)
+**Status.** Implemented (1.30.0); accepted by the architect, owner authorized 2026-11-26. The shipped secondary line is shorter than the table below (the RFC's lines did not fit at 640 × 480 and 360 × 480): "Click anywhere here, or drop a file if your system allows it." / "クリックして選べます。対応するシステムではドロップも可能です。".
 **Priority.** P2
 **Target version.** 1.30.0
 **Touches.** `crates/i18n/locales/{en,ja}.toml` (four strings), `crates/app/src/ui/drop_zone.rs` (no layout change expected), the tests that name the old strings, `docs/src/functional-spec.md`
